@@ -20,12 +20,12 @@ public final class ActorSystem implements Closeable {
     executor = Executors.newWorkStealingPool(numThreads);
   }
   
-  public ActorSystem with(Object type, Consumer<Message> consumer) {
+  public ActorSystem of(Object type, Consumer<Message> consumer) {
     final LambdaActor lambda = new LambdaActor(consumer);
-    return with(type, () -> lambda);
+    return of(type, () -> lambda);
   }
   
-  public ActorSystem with(Object type, Supplier<Actor> factory) {
+  public ActorSystem of(Object type, Supplier<Actor> factory) {
     final Supplier<Actor> existing = factories.put(type, factory);
     if (existing != null) {
       factories.put(type, existing);
