@@ -74,6 +74,10 @@ final class Activation {
   public MessageBuilder to(ActorId to) {
     return new MessageBuilder(to);
   }
+  
+  public MessageBuilder self() {
+    return to(id);
+  }
 
   @Override
   public String toString() {

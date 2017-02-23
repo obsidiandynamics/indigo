@@ -54,6 +54,10 @@ public final class ActorId {
     return true;
   }
   
+  public static ActorId of(Object type) {
+    return new ActorId(type, 0);
+  }
+  
   public static ActorId of(Object type, Object key) {
     return new ActorId(type, key);
   }

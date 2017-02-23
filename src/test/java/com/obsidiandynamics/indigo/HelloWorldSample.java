@@ -6,13 +6,13 @@ public final class HelloWorldSample {
       system
       .when("echo").apply(a -> {
         System.out.println("Received " + a.message());
-        a.to(ActorId.of("exit", 0)).tell("bye");
+        a.to(ActorId.of("exit")).tell("bye");
       })
       .when("exit").apply(a -> {
         System.out.println("Received " + a.message());
         System.exit(0);
       })
-      .ingress(a -> a.to(ActorId.of("echo", 0)).tell("hello world"));
+      .ingress(a -> a.to(ActorId.of("echo")).tell("hello world"));
     }
   }
 }

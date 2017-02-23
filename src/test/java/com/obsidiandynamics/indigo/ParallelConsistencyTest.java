@@ -17,7 +17,7 @@ public class ParallelConsistencyTest {
   }
   
   @Test
-  public void test() throws InterruptedException {
+  public void test() {
     test(1, 10);
     test(10, 100);
     test(100, 1_000);
@@ -37,7 +37,7 @@ public class ParallelConsistencyTest {
         s.value = msg;
         
         if (s.value == runs) {
-          a.to(ActorId.of(DONE, 0)).tell(a.id());
+          a.to(ActorId.of(DONE)).tell(a.id());
         }
       })
       .when(DONE).apply(a -> completed.add(a.message().body()))
