@@ -5,7 +5,7 @@ public final class Message {
   
   private final Object body;
 
-  public Message(ActorId to, Object body) {
+  Message(ActorId to, Object body) {
     this.to = to;
     this.body = body;
   }
@@ -14,8 +14,9 @@ public final class Message {
     return to;
   }
 
-  public Object body() {
-    return body;
+  @SuppressWarnings("unchecked")
+  public <T> T body() {
+    return (T) body;
   }
 
   @Override

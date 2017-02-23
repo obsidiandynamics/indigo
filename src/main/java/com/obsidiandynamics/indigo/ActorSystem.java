@@ -20,18 +20,34 @@ public final class ActorSystem implements Closeable {
     executor = Executors.newWorkStealingPool(numThreads);
   }
   
-  public ActorSystem of(Object type, Consumer<Message> consumer) {
-    final LambdaActor lambda = new LambdaActor(consumer);
-    return of(type, () -> lambda);
+  public final class ActorBuilder {
+    private final Object type;
+    
+    ActorBuilder(Object type) { 
+      this.type = type;
+    }
+    
+    public ActorSystem apply(Consumer<Activation> consumer) {
+      final LambdaActor lambda = new LambdaActor(consumer);
+      return use(() -> lambda); 
+    }
+    
+    public ActorSystem use(Supplier<Actor> factory) {
+      register(type, factory);
+      return ActorSystem.this;
+    }
   }
   
-  public ActorSystem of(Object type, Supplier<Actor> factory) {
+  public ActorBuilder when(Object type) {
+    return new ActorBuilder(type);
+  }
+  
+  private void register(Object type, Supplier<Actor> factory) {
     final Supplier<Actor> existing = factories.put(type, factory);
     if (existing != null) {
       factories.put(type, existing);
       throw new IllegalStateException("Factory for actor of type " + type + " has already been registered");
     }
-    return this;
   }
   
   public void send(Message m) {

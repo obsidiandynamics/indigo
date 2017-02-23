@@ -11,5 +11,4 @@ final class DispatchTask implements Runnable {
   public void run() {
     activation.run();
   }
-
 }

@@ -11,7 +11,7 @@ final class Activation {
   
   private final Deque<Message> backlog = new LinkedList<>();
   
-  private boolean busy;
+  private Message message;
 
   Activation(ActorId id, ActorSystem system, Actor actor) {
     this.id = id;
@@ -20,20 +20,18 @@ final class Activation {
   }
   
   void run() {
-    final Message m;
     synchronized (backlog) {
-      if (busy) throw new IllegalStateException("Actor " + id + " was already entered");
+      if (message != null) throw new IllegalStateException("Actor " + id + " was already entered");
       
-      busy = true;
-      m = backlog.removeFirst();
+      message = backlog.removeFirst();
     }
     
-    actor.act(m);
+    actor.act(this);
     
     synchronized (backlog) {
-      if (! busy) throw new IllegalStateException("Actor " + id + " was already cleared");
+      if (message == null) throw new IllegalStateException("Actor " + id + " was already cleared");
       
-      busy = false;
+      message = null;
       if (! backlog.isEmpty()) {
         system.dispatch(this);
       }
@@ -42,11 +40,40 @@ final class Activation {
   
   void enqueue(Message m) {
     synchronized (backlog) {
-      final boolean wasEmpty = backlog.isEmpty();
+      final boolean wasEmpty = message == null && backlog.isEmpty();
       backlog.addLast(m);
       if (wasEmpty) {
         system.dispatch(this);
       }
     }
+  }
+  
+  public ActorId id() {
+    return id;
+  }
+  
+  public Message message() {
+    return message;
+  }
+  
+  public final class MessageBuilder {
+    private final ActorId to;
+
+    MessageBuilder(ActorId to) {
+      this.to = to;
+    }
+    
+    public void tell(Object body) {
+      system.send(new Message(to, body));
+    }
+  }
+  
+  public MessageBuilder to(ActorId to) {
+    return new MessageBuilder(to);
+  }
+
+  @Override
+  public String toString() {
+    return "Activation [id=" + id + ", message=" + message + "]";
   }
 }

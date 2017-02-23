@@ -5,7 +5,7 @@ public final class ActorId {
   
   private final Object key;
 
-  public ActorId(Object type, Object key) {
+  private ActorId(Object type, Object key) {
     this.type = type;
     this.key = key;
   }
@@ -52,5 +52,9 @@ public final class ActorId {
     } else if (!type.equals(other.type))
       return false;
     return true;
+  }
+  
+  public static ActorId of(Object type, Object key) {
+    return new ActorId(type, key);
   }
 }
