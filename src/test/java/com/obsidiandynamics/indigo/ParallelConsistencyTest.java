@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ParallelConsistencyTest.Type.*;
 import static junit.framework.TestCase.*;
+
 import java.util.*;
 
 import org.junit.*;
@@ -9,6 +10,10 @@ import org.junit.*;
 public class ParallelConsistencyTest {
   static enum Type {
     RUN, DONE
+  }
+  
+  private static class IntegerState {
+    int value;
   }
   
   @Test
@@ -20,27 +25,22 @@ public class ParallelConsistencyTest {
   }
   
   private static void test(int actors, int runs) {
-    final Set<Activation> completed = new HashSet<>();
+    final Set<ActorId> completed = new HashSet<>();
     
     try (ActorSystem system = new ActorSystem()) {
       system
-      .when(RUN).use(() -> new Actor() {
-        private int state;
+      .when(RUN).apply(IntegerState::new, (a, s) -> {
+        final int msg = a.message().body();
+        if (msg != s.value + 1) {
+          throw new IllegalStateException("Actor " + a.id() + " with state " + s.value + " got message " + msg);
+        }
+        s.value = msg;
         
-        @Override
-        public void act(Activation a) {
-          final int msg = a.message().body();
-          if (msg != state + 1) {
-            throw new IllegalStateException("Actor " + a.id() + " with state " + state + " got message " + msg);
-          }
-          state = msg;
-          
-          if (state == runs) {
-            a.to(ActorId.of(DONE, 0)).tell(a.id());
-          }
+        if (s.value == runs) {
+          a.to(ActorId.of(DONE, 0)).tell(a.id());
         }
       })
-      .when(DONE).apply(completed::add)
+      .when(DONE).apply(a -> completed.add(a.message().body()))
       .ingress(a -> {
         for (int i = 0; i < actors; i++) {
           for (int j = 1; j <= runs; j++) {

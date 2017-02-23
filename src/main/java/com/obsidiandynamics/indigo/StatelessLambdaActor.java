@@ -2,10 +2,10 @@ package com.obsidiandynamics.indigo;
 
 import java.util.function.*;
 
-public final class LambdaActor extends Actor {
-  private Consumer<Activation> consumer;
+public final class StatelessLambdaActor extends Actor {
+  private final Consumer<Activation> consumer;
   
-  LambdaActor(Consumer<Activation> consumer) {
+  StatelessLambdaActor(Consumer<Activation> consumer) {
     this.consumer = consumer;
   }
 

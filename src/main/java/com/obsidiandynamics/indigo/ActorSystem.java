@@ -25,7 +25,7 @@ public final class ActorSystem implements Closeable {
   
   public ActorSystem(int numThreads) {
     executor = Executors.newWorkStealingPool(numThreads);
-    register(rootId.type(), () -> new LambdaActor(a -> {}));
+    register(rootId.type(), () -> new StatelessLambdaActor(a -> {}));
     rootActivation = activate(rootId);
   }
   
@@ -42,8 +42,12 @@ public final class ActorSystem implements Closeable {
     }
     
     public ActorSystem apply(Consumer<Activation> consumer) {
-      final LambdaActor lambda = new LambdaActor(consumer);
+      final StatelessLambdaActor lambda = new StatelessLambdaActor(consumer);
       return use(() -> lambda); 
+    }
+    
+    public <S> ActorSystem apply(Supplier<S> stateFactory, BiConsumer<Activation, S> consumer) {
+      return use(() -> new StatefulLambdaActor<>(consumer, stateFactory.get()));
     }
     
     public ActorSystem use(Supplier<Actor> factory) {
