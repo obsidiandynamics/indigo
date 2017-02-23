@@ -29,7 +29,7 @@ public final class ActorSystem implements Closeable {
     rootActivation = activate(rootId);
   }
   
-  public ActorSystem enter(Consumer<Activation> consumer) {
+  public ActorSystem ingress(Consumer<Activation> consumer) {
     consumer.accept(rootActivation);
     return this;
   }
@@ -132,6 +132,12 @@ public final class ActorSystem implements Closeable {
 
   @Override
   public void close() {
+    while (true) {
+      try {
+        await();
+        break;
+      } catch (InterruptedException e) {}
+    }
     executor.shutdown();
   }
 }

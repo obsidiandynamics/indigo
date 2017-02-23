@@ -1,13 +1,15 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.ParallelConsistencyTest.Type.*;
 import static junit.framework.TestCase.*;
-
-import java.util.concurrent.atomic.*;
+import java.util.*;
 
 import org.junit.*;
 
 public class ParallelConsistencyTest {
-  private static final String TEST_TYPE = "test";
+  static enum Type {
+    RUN, DONE
+  }
   
   @Test
   public void test() throws InterruptedException {
@@ -17,11 +19,12 @@ public class ParallelConsistencyTest {
     test(10, 10_000);
   }
   
-  private static void test(int actors, int runs) throws InterruptedException {
-    final AtomicInteger completed = new AtomicInteger();
+  private static void test(int actors, int runs) {
+    final Set<Activation> completed = new HashSet<>();
+    
     try (ActorSystem system = new ActorSystem()) {
       system
-      .when(TEST_TYPE).use(() -> new Actor() {
+      .when(RUN).use(() -> new Actor() {
         private int state;
         
         @Override
@@ -33,20 +36,20 @@ public class ParallelConsistencyTest {
           state = msg;
           
           if (state == runs) {
-            completed.incrementAndGet();
+            a.to(ActorId.of(DONE, 0)).tell(a.id());
           }
         }
       })
-      .enter(a -> {
+      .when(DONE).apply(completed::add)
+      .ingress(a -> {
         for (int i = 0; i < actors; i++) {
           for (int j = 1; j <= runs; j++) {
-            a.to(ActorId.of(TEST_TYPE, i)).tell(j);
+            a.to(ActorId.of(RUN, i)).tell(j);
           }
         }
-      })
-      .await();
-
-      assertEquals(actors, completed.get());
+      });
     }
+    
+    assertEquals(actors, completed.size());
   }
 }
