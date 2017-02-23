@@ -67,7 +67,7 @@ final class Activation {
     }
     
     public void tell(Object body) {
-      system.send(new Message(to, body));
+      system.send(new Message(id, to, body));
     }
   }
   

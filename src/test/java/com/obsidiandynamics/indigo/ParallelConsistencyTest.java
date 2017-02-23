@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.ParallelConsistencyTest.Type.*;
+import static com.obsidiandynamics.indigo.ParallelConsistencyTest.ActorType.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -8,7 +8,7 @@ import java.util.*;
 import org.junit.*;
 
 public class ParallelConsistencyTest {
-  static enum Type {
+  static enum ActorType {
     RUN, DONE
   }
   

@@ -1,13 +1,20 @@
 package com.obsidiandynamics.indigo;
 
 public final class Message {
+  private final ActorId from;
+  
   private final ActorId to;
   
   private final Object body;
 
-  Message(ActorId to, Object body) {
+  Message(ActorId from, ActorId to, Object body) {
+    this.from = from;
     this.to = to;
     this.body = body;
+  }
+  
+  public ActorId from() {
+    return from;
   }
   
   public ActorId to() {
@@ -21,6 +28,6 @@ public final class Message {
 
   @Override
   public String toString() {
-    return "Message [to=" + to + ", body=" + body + "]";
+    return "Message [from=" + from + ", to=" + to + ", body=" + body + "]";
   }
 }
