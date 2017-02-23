@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 public final class HelloWorldSample {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     try (ActorSystem system = new ActorSystem()) {
       system
       .when("echo").apply(a -> {
@@ -12,12 +12,8 @@ public final class HelloWorldSample {
         System.out.println("Received " + a.message());
         System.exit(0);
       })
-      .send(new Message(ActorId.of("echo", 0), "hello world"));
-      
-
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {}
+      .enter(a -> a.to(ActorId.of("echo", 0)).tell("hello world"))
+      .await();
     }
   }
 }

@@ -34,6 +34,8 @@ final class Activation {
       message = null;
       if (! backlog.isEmpty()) {
         system.dispatch(this);
+      } else {
+        system.decBusyActors();
       }
     }
   }
@@ -44,6 +46,7 @@ final class Activation {
       backlog.addLast(m);
       if (wasEmpty) {
         system.dispatch(this);
+        system.incBusyActors();
       }
     }
   }

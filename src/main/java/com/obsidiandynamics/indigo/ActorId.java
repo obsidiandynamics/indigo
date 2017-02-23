@@ -10,11 +10,11 @@ public final class ActorId {
     this.key = key;
   }
 
-  public Object getType() {
+  public Object type() {
     return type;
   }
 
-  public Object getKey() {
+  public Object key() {
     return key;
   }
 

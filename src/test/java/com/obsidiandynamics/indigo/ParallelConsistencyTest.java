@@ -1,6 +1,8 @@
 package com.obsidiandynamics.indigo;
 
-import java.util.concurrent.*;
+import static junit.framework.TestCase.*;
+
+import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
@@ -16,7 +18,7 @@ public class ParallelConsistencyTest {
   }
   
   private static void test(int actors, int runs) throws InterruptedException {
-    final CountDownLatch latch = new CountDownLatch(actors);
+    final AtomicInteger completed = new AtomicInteger();
     try (ActorSystem system = new ActorSystem()) {
       system
       .when(TEST_TYPE).use(() -> new Actor() {
@@ -31,18 +33,20 @@ public class ParallelConsistencyTest {
           state = msg;
           
           if (state == runs) {
-            latch.countDown();
+            completed.incrementAndGet();
           }
         }
-      });
-      
-      for (int i = 0; i < actors; i++) {
-        for (int j = 1; j <= runs; j++) {
-          system.send(new Message(ActorId.of(TEST_TYPE, i), j));
+      })
+      .enter(a -> {
+        for (int i = 0; i < actors; i++) {
+          for (int j = 1; j <= runs; j++) {
+            a.to(ActorId.of(TEST_TYPE, i)).tell(j);
+          }
         }
-      }
-      
-      latch.await();
+      })
+      .await();
+
+      assertEquals(actors, completed.get());
     }
   }
 }

@@ -3,6 +3,7 @@ package com.obsidiandynamics.indigo;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 public final class ActorSystem implements Closeable {
@@ -12,12 +13,25 @@ public final class ActorSystem implements Closeable {
   
   private final Map<Object, Supplier<Actor>> factories = new HashMap<>();
   
+  private final AtomicInteger busyActors = new AtomicInteger();
+  
+  private final ActorId rootId = ActorId.of("_root", 0);
+  
+  private final Activation rootActivation;
+  
   public ActorSystem() {
     this(getDefaultThreads());
   }
   
   public ActorSystem(int numThreads) {
     executor = Executors.newWorkStealingPool(numThreads);
+    register(rootId.type(), () -> new LambdaActor(a -> {}));
+    rootActivation = activate(rootId);
+  }
+  
+  public ActorSystem enter(Consumer<Activation> consumer) {
+    consumer.accept(rootActivation);
+    return this;
   }
   
   public final class ActorBuilder {
@@ -50,13 +64,36 @@ public final class ActorSystem implements Closeable {
     }
   }
   
-  public void send(Message m) {
+  public ActorSystem send(Message m) {
     final Activation a = activate(m.to());
     a.enqueue(m);
+    return this;
   }
   
   void dispatch(Activation a) {
     executor.execute(new DispatchTask(a));
+  }
+  
+  void incBusyActors() {
+    busyActors.incrementAndGet();
+  }
+  
+  void decBusyActors() {
+    final int newCount = busyActors.decrementAndGet();
+    if (newCount == 0) {
+      synchronized (busyActors) {
+        busyActors.notifyAll();
+      }
+    }
+  }
+  
+  public ActorSystem await() throws InterruptedException {
+    while (busyActors.get() != 0) {
+      synchronized (busyActors) {
+        busyActors.wait(1_000);
+      }
+    }
+    return this;
   }
   
   private Activation activate(ActorId id) {
@@ -69,7 +106,7 @@ public final class ActorSystem implements Closeable {
         if (existing2 != null) {
           return existing2;
         } else {
-          final Activation created = new Activation(id, this, createActor(id.getType()));
+          final Activation created = new Activation(id, this, createActor(id.type()));
           activations.put(id, created);
           return created;
         }
