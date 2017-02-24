@@ -6,7 +6,7 @@ import java.util.*;
 
 import org.junit.*;
 
-public class ParallelConsistencyTest {
+public class ParallelConsistencyTest implements TestSupport {
   private static final String RUN = "run";
   private static final String DONE = "done";
 
@@ -22,8 +22,8 @@ public class ParallelConsistencyTest {
     test(10, 10_000);
   }
 
-  private static void test(int actors, int runs) {
-    final Set<ActorRef> completed = new HashSet<>();
+  private void test(int actors, int runs) {
+    final Set<ActorRef> doneRun = new HashSet<>();
 
     new ActorSystem()
     .when(RUN).apply(IntegerState::new, (a, s) -> {
@@ -34,10 +34,10 @@ public class ParallelConsistencyTest {
       s.value = msg;
 
       if (s.value == runs) {
-        a.to(ActorRef.of(DONE)).tell(a.self());
+        a.to(ActorRef.of(DONE)).tell();
       }
     })
-    .when(DONE).apply(a -> completed.add(a.message().body()))
+    .when(DONE).apply(refCollector(doneRun))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
         for (int j = 1; j <= runs; j++) {
@@ -47,6 +47,6 @@ public class ParallelConsistencyTest {
     })
     .shutdown();
 
-    assertEquals(actors, completed.size());
+    assertEquals(actors, doneRun.size());
   }
 }
