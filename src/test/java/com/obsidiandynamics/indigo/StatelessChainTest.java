@@ -6,7 +6,7 @@ import java.util.*;
 
 import org.junit.*;
 
-public class StatelessChainTest {
+public class StatelessChainTest implements TestSupport {
   private static final String RUN = "run";
   private static final String DONE = "done";
   
@@ -14,18 +14,18 @@ public class StatelessChainTest {
   public void test() {
     final int actors = 5;
     final int runs = 10;
-    final Set<ActorRef> completed = new HashSet<>();
+    final Set<ActorRef> doneRun = new HashSet<>();
 
     new ActorSystem()
-    .when(RUN).apply(a -> {
+    .when(RUN).lambda(a -> {
       final int msg = a.message().body();
       if (msg < runs) {
         a.toSelf().tell(msg + 1);
       } else {
-        a.to(ActorRef.of(DONE)).tell(a.self());
+        a.to(ActorRef.of(DONE)).tell();
       }
     })
-    .when(DONE).apply(a -> completed.add(a.message().body()))
+    .when(DONE).lambda(refCollector(doneRun))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
         a.to(ActorRef.of(RUN, i + "")).tell(1);
@@ -33,6 +33,6 @@ public class StatelessChainTest {
     })
     .shutdown();
 
-    assertEquals(actors, completed.size());
+    assertEquals(actors, doneRun.size());
   }
 }

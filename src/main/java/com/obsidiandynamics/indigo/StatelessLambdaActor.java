@@ -7,7 +7,9 @@ public final class StatelessLambdaActor extends Actor {
   private final Consumer<Activation> activated;
   private final Consumer<Activation> passivated;
   
-  private StatelessLambdaActor(Consumer<Activation> act, Consumer<Activation> activated, Consumer<Activation> passivated) {
+  private StatelessLambdaActor(Consumer<Activation> act, 
+                               Consumer<Activation> activated, 
+                               Consumer<Activation> passivated) {
     this.act = act;
     this.activated = activated;
     this.passivated = passivated;

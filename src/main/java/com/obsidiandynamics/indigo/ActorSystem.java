@@ -24,7 +24,7 @@ public final class ActorSystem {
   
   public ActorSystem(int numThreads) {
     executor = Executors.newWorkStealingPool(numThreads);
-    when(rootId.role()).apply(a -> {});
+    when(rootId.role()).lambda(a -> {});
     rootActivation = activate(rootId);
   }
   
@@ -40,12 +40,12 @@ public final class ActorSystem {
       this.role = role;
     }
     
-    public ActorSystem apply(Consumer<Activation> act) {
-      return use(StatelessLambdaActor.builder().act(act)::build); 
+    public ActorSystem lambda(Consumer<Activation> act) {
+      return use(StatelessLambdaActor.builder().act(act)); 
     }
     
-    public <S> ActorSystem apply(Supplier<S> stateFactory, BiConsumer<Activation, S> act) {
-      return use(() -> new StatefulLambdaActor<>(act, stateFactory.get()));
+    public <S> ActorSystem lambda(Supplier<S> stateFactory, BiConsumer<Activation, S> act) {
+      return use(StatefulLambdaActor.<S>builder().stateFactory(stateFactory).act(act));
     }
     
     public ActorSystem use(Supplier<Actor> factory) {

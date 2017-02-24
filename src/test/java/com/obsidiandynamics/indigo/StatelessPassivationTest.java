@@ -6,9 +6,9 @@ import java.util.*;
 
 import org.junit.*;
 
-public class PassivationTest implements TestSupport {
-  private static final String A = "a";
-  private static final String B = "b";
+public class StatelessPassivationTest implements TestSupport {
+  private static final String TICK = "tick";
+  private static final String TOCK = "tock";
   private static final String DONE_RUN = "done_run";
   private static final String DONE_ACTIVATION = "done_activation";
   private static final String DONE_PASSIVATION = "done_passivation";
@@ -22,7 +22,7 @@ public class PassivationTest implements TestSupport {
     final Set<ActorRef> donePassivation = new HashSet<>();
     
     new ActorSystem()
-    .when(A)
+    .when(TICK)
     .use(StatelessLambdaActor
          .builder()
          .act(a -> {
@@ -30,17 +30,13 @@ public class PassivationTest implements TestSupport {
            if (msg == runs) {
              a.to(ActorRef.of(DONE_RUN)).tell();
            } else {
-             a.to(ActorRef.of(B, a.self().key())).tell(msg + 1);
+             a.to(ActorRef.of(TOCK, a.self().key())).tell(msg + 1);
              a.passivate();
            }
          })
-         .activated(a -> {
-           a.to(ActorRef.of(DONE_ACTIVATION)).tell();
-         })
-         .passivated(a -> {
-           a.to(ActorRef.of(DONE_PASSIVATION)).tell();
-         }))
-    .when(B)
+         .activated(tell(DONE_ACTIVATION))
+         .passivated(tell(DONE_PASSIVATION)))
+    .when(TOCK)
     .use(StatelessLambdaActor
          .builder()
          .act(a -> {
@@ -52,18 +48,14 @@ public class PassivationTest implements TestSupport {
              a.passivate();
            }
          })
-         .activated(a -> {
-           a.to(ActorRef.of(DONE_ACTIVATION)).tell();
-         })
-         .passivated(a -> {
-           a.to(ActorRef.of(DONE_PASSIVATION)).tell();
-         }))
-    .when(DONE_RUN).apply(refCollector(doneRun))
-    .when(DONE_ACTIVATION).apply(refCollector(doneActivation))
-    .when(DONE_PASSIVATION).apply(refCollector(donePassivation))
+         .activated(tell(DONE_ACTIVATION))
+         .passivated(tell(DONE_PASSIVATION)))
+    .when(DONE_RUN).lambda(refCollector(doneRun))
+    .when(DONE_ACTIVATION).lambda(refCollector(doneActivation))
+    .when(DONE_PASSIVATION).lambda(refCollector(donePassivation))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
-        a.to(ActorRef.of(A, i + "")).tell(1);
+        a.to(ActorRef.of(TICK, i + "")).tell(1);
       }
     })
     .shutdown();
