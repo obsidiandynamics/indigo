@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo;
 import java.util.*;
 
 final class Activation {
-  private final ActorId id;
+  private final ActorRef ref;
   
   private final ActorSystem system;
   
@@ -13,15 +13,15 @@ final class Activation {
   
   private Message message;
 
-  Activation(ActorId id, ActorSystem system, Actor actor) {
-    this.id = id;
+  Activation(ActorRef ref, ActorSystem system, Actor actor) {
+    this.ref = ref;
     this.system = system;
     this.actor = actor;
   }
   
   void run() {
     synchronized (backlog) {
-      if (message != null) throw new IllegalStateException("Actor " + id + " was already entered");
+      if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
       
       message = backlog.removeFirst();
     }
@@ -29,7 +29,7 @@ final class Activation {
     actor.act(this);
     
     synchronized (backlog) {
-      if (message == null) throw new IllegalStateException("Actor " + id + " was already cleared");
+      if (message == null) throw new IllegalStateException("Actor " + ref + " was already cleared");
       
       message = null;
       if (! backlog.isEmpty()) {
@@ -51,8 +51,8 @@ final class Activation {
     }
   }
   
-  public ActorId id() {
-    return id;
+  public ActorRef self() {
+    return ref;
   }
   
   public Message message() {
@@ -60,27 +60,27 @@ final class Activation {
   }
   
   public final class MessageBuilder {
-    private final ActorId to;
+    private final ActorRef to;
 
-    MessageBuilder(ActorId to) {
+    MessageBuilder(ActorRef to) {
       this.to = to;
     }
     
     public void tell(Object body) {
-      system.send(new Message(id, to, body));
+      system.send(new Message(ref, to, body));
     }
   }
   
-  public MessageBuilder to(ActorId to) {
+  public MessageBuilder to(ActorRef to) {
     return new MessageBuilder(to);
   }
   
-  public MessageBuilder self() {
-    return to(id);
+  public MessageBuilder toSelf() {
+    return to(ref);
   }
 
   @Override
   public String toString() {
-    return "Activation [id=" + id + ", message=" + message + "]";
+    return "Activation [ref=" + ref + ", message=" + message + "]";
   }
 }

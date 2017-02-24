@@ -1,6 +1,5 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.ParallelConsistencyTest.ActorType.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -8,14 +7,13 @@ import java.util.*;
 import org.junit.*;
 
 public class ParallelConsistencyTest {
-  static enum ActorType {
-    RUN, DONE
-  }
-  
+  private static final String RUN = "run";
+  private static final String DONE = "done";
+
   private static class IntegerState {
     int value;
   }
-  
+
   @Test
   public void test() {
     test(1, 10);
@@ -23,33 +21,32 @@ public class ParallelConsistencyTest {
     test(100, 1_000);
     test(10, 10_000);
   }
-  
+
   private static void test(int actors, int runs) {
-    final Set<ActorId> completed = new HashSet<>();
-    
-    try (ActorSystem system = new ActorSystem()) {
-      system
-      .when(RUN).apply(IntegerState::new, (a, s) -> {
-        final int msg = a.message().body();
-        if (msg != s.value + 1) {
-          throw new IllegalStateException("Actor " + a.id() + " with state " + s.value + " got message " + msg);
+    final Set<ActorRef> completed = new HashSet<>();
+
+    new ActorSystem()
+    .when(RUN).apply(IntegerState::new, (a, s) -> {
+      final int msg = a.message().body();
+      if (msg != s.value + 1) {
+        throw new IllegalStateException("Actor " + a.self() + " with state " + s.value + " got message " + msg);
+      }
+      s.value = msg;
+
+      if (s.value == runs) {
+        a.to(ActorRef.of(DONE)).tell(a.self());
+      }
+    })
+    .when(DONE).apply(a -> completed.add(a.message().body()))
+    .ingress(a -> {
+      for (int i = 0; i < actors; i++) {
+        for (int j = 1; j <= runs; j++) {
+          a.to(ActorRef.of(RUN, i + "")).tell(j);
         }
-        s.value = msg;
-        
-        if (s.value == runs) {
-          a.to(ActorId.of(DONE)).tell(a.id());
-        }
-      })
-      .when(DONE).apply(a -> completed.add(a.message().body()))
-      .ingress(a -> {
-        for (int i = 0; i < actors; i++) {
-          for (int j = 1; j <= runs; j++) {
-            a.to(ActorId.of(RUN, i)).tell(j);
-          }
-        }
-      });
-    }
-    
+      }
+    })
+    .shutdown();
+
     assertEquals(actors, completed.size());
   }
 }

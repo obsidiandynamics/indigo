@@ -1,21 +1,20 @@
 package com.obsidiandynamics.indigo;
 
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
-public final class ActorSystem implements Closeable {
+public final class ActorSystem {
   private final ExecutorService executor;
   
-  private final Map<ActorId, Activation> activations = new ConcurrentHashMap<>();
+  private final Map<ActorRef, Activation> activations = new ConcurrentHashMap<>();
   
   private final Map<Object, Supplier<Actor>> factories = new HashMap<>();
   
   private final AtomicInteger busyActors = new AtomicInteger();
   
-  private final ActorId rootId = ActorId.of("_root", 0);
+  private final ActorRef rootId = ActorRef.of("_root");
   
   private final Activation rootActivation;
   
@@ -25,7 +24,7 @@ public final class ActorSystem implements Closeable {
   
   public ActorSystem(int numThreads) {
     executor = Executors.newWorkStealingPool(numThreads);
-    register(rootId.type(), () -> new StatelessLambdaActor(a -> {}));
+    register(rootId.role(), () -> new StatelessLambdaActor(a -> {}));
     rootActivation = activate(rootId);
   }
   
@@ -35,10 +34,10 @@ public final class ActorSystem implements Closeable {
   }
   
   public final class ActorBuilder {
-    private final Object type;
+    private final Object role;
     
-    ActorBuilder(Object type) { 
-      this.type = type;
+    ActorBuilder(Object role) { 
+      this.role = role;
     }
     
     public ActorSystem apply(Consumer<Activation> consumer) {
@@ -51,20 +50,20 @@ public final class ActorSystem implements Closeable {
     }
     
     public ActorSystem use(Supplier<Actor> factory) {
-      register(type, factory);
+      register(role, factory);
       return ActorSystem.this;
     }
   }
   
-  public ActorBuilder when(Object type) {
-    return new ActorBuilder(type);
+  public ActorBuilder when(Object role) {
+    return new ActorBuilder(role);
   }
   
-  private void register(Object type, Supplier<Actor> factory) {
-    final Supplier<Actor> existing = factories.put(type, factory);
+  private void register(Object role, Supplier<Actor> factory) {
+    final Supplier<Actor> existing = factories.put(role, factory);
     if (existing != null) {
-      factories.put(type, existing);
-      throw new IllegalStateException("Factory for actor of type " + type + " has already been registered");
+      factories.put(role, existing);
+      throw new IllegalStateException("Factory for actor of role " + role + " has already been registered");
     }
   }
   
@@ -100,27 +99,27 @@ public final class ActorSystem implements Closeable {
     return this;
   }
   
-  private Activation activate(ActorId id) {
-    final Activation existing = activations.get(id);
+  private Activation activate(ActorRef ref) {
+    final Activation existing = activations.get(ref);
     if (existing != null) {
       return existing;
     } else {
       synchronized (activations) {
-        final Activation existing2 = activations.get(id);
+        final Activation existing2 = activations.get(ref);
         if (existing2 != null) {
           return existing2;
         } else {
-          final Activation created = new Activation(id, this, createActor(id.type()));
-          activations.put(id, created);
+          final Activation created = new Activation(ref, this, createActor(ref.role()));
+          activations.put(ref, created);
           return created;
         }
       }
     }
   }
   
-  private Actor createActor(Object type) {
-    final Supplier<Actor> factory = factories.get(type);
-    if (factory == null) throw new IllegalArgumentException("No registered factory for actor of type " + type);
+  private Actor createActor(Object role) {
+    final Supplier<Actor> factory = factories.get(role);
+    if (factory == null) throw new IllegalArgumentException("No registered factory for actor of role " + role);
     return factory.get();
   }
   
@@ -134,8 +133,7 @@ public final class ActorSystem implements Closeable {
     return Math.max(1, Runtime.getRuntime().availableProcessors());
   }
 
-  @Override
-  public void close() {
+  public void shutdown() {
     while (true) {
       try {
         await();

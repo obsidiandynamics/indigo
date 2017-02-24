@@ -2,17 +2,16 @@ package com.obsidiandynamics.indigo;
 
 public final class HelloWorldSample {
   public static void main(String[] args) {
-    try (ActorSystem system = new ActorSystem()) {
-      system
-      .when("echo").apply(a -> {
-        System.out.println("Received " + a.message());
-        a.to(ActorId.of("exit")).tell("bye");
-      })
-      .when("exit").apply(a -> {
-        System.out.println("Received " + a.message());
-        System.exit(0);
-      })
-      .ingress(a -> a.to(ActorId.of("echo")).tell("hello world"));
-    }
+    new ActorSystem()
+    .when("echo").apply(a -> {
+      System.out.println("Received " + a.message());
+      a.to(ActorRef.of("exit")).tell("bye");
+    })
+    .when("exit").apply(a -> {
+      System.out.println("Received " + a.message());
+      System.exit(0);
+    })
+    .ingress(a -> a.to(ActorRef.of("echo")).tell("hello world"))
+    .shutdown();
   }
 }

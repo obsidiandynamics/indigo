@@ -1,23 +1,23 @@
 package com.obsidiandynamics.indigo;
 
 public final class Message {
-  private final ActorId from;
+  private final ActorRef from;
   
-  private final ActorId to;
+  private final ActorRef to;
   
   private final Object body;
 
-  Message(ActorId from, ActorId to, Object body) {
+  Message(ActorRef from, ActorRef to, Object body) {
     this.from = from;
     this.to = to;
     this.body = body;
   }
   
-  public ActorId from() {
+  public ActorRef from() {
     return from;
   }
   
-  public ActorId to() {
+  public ActorRef to() {
     return to;
   }
 

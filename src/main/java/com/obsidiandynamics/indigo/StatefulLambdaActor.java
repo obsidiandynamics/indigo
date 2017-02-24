@@ -12,7 +12,7 @@ public final class StatefulLambdaActor<S> extends Actor {
   }
 
   @Override
-  public void act(Activation a) {
+  protected void act(Activation a) {
     consumer.accept(a, state);
   }
 }

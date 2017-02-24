@@ -1,26 +1,26 @@
 package com.obsidiandynamics.indigo;
 
-public final class ActorId {
-  private final Object type;
+public final class ActorRef {
+  private final String role;
   
-  private final Object key;
+  private final String key;
 
-  private ActorId(Object type, Object key) {
-    this.type = type;
+  private ActorRef(String role, String key) {
+    this.role = role;
     this.key = key;
   }
 
-  public Object type() {
-    return type;
+  public String role() {
+    return role;
   }
 
-  public Object key() {
+  public String key() {
     return key;
   }
 
   @Override
   public String toString() {
-    return "ActorId [type=" + type + ", key=" + key + "]";
+    return "ActorRef [role=" + role + ", key=" + key + "]";
   }
 
   @Override
@@ -28,7 +28,7 @@ public final class ActorId {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((key == null) ? 0 : key.hashCode());
-    result = prime * result + ((type == null) ? 0 : type.hashCode());
+    result = prime * result + ((role == null) ? 0 : role.hashCode());
     return result;
   }
 
@@ -40,25 +40,25 @@ public final class ActorId {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    ActorId other = (ActorId) obj;
+    ActorRef other = (ActorRef) obj;
     if (key == null) {
       if (other.key != null)
         return false;
     } else if (!key.equals(other.key))
       return false;
-    if (type == null) {
-      if (other.type != null)
+    if (role == null) {
+      if (other.role != null)
         return false;
-    } else if (!type.equals(other.type))
+    } else if (!role.equals(other.role))
       return false;
     return true;
   }
   
-  public static ActorId of(Object type) {
-    return new ActorId(type, 0);
+  public static ActorRef of(String type) {
+    return new ActorRef(type, null);
   }
   
-  public static ActorId of(Object type, Object key) {
-    return new ActorId(type, key);
+  public static ActorRef of(String type, String key) {
+    return new ActorRef(type, key);
   }
 }
