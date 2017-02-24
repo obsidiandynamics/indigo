@@ -20,7 +20,7 @@ public final class ActorRef {
 
   @Override
   public String toString() {
-    return "ActorRef [role=" + role + ", key=" + key + "]";
+    return "ActorRef [role=" + role + (key != null ? ", key=" + key : "") + "]";
   }
 
   @Override

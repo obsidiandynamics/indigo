@@ -45,7 +45,7 @@ public final class ActorSystem {
     }
     
     public <S> ActorSystem lambda(Supplier<S> stateFactory, BiConsumer<Activation, S> act) {
-      return use(StatefulLambdaActor.<S>builder().stateFactory(stateFactory).act(act));
+      return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> stateFactory.get()));
     }
     
     public ActorSystem use(Supplier<Actor> factory) {

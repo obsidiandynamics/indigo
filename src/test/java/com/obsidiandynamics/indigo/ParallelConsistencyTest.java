@@ -26,21 +26,17 @@ public class ParallelConsistencyTest implements TestSupport {
     final Set<ActorRef> doneRun = new HashSet<>();
 
     new ActorSystem()
-    .when(RUN)
-    .use(StatefulLambdaActor
-         .<IntegerState>builder()
-         .stateFactory(IntegerState::new)
-         .act((a, s) -> {
-           final int msg = a.message().body();
-           if (msg != s.value + 1) {
-             throw new IllegalStateException("Actor " + a.self() + " with state " + s.value + " got message " + msg);
-           }
-           s.value = msg;
+    .when(RUN).lambda(IntegerState::new, (a, s) -> {
+      final int msg = a.message().body();
+      if (msg != s.value + 1) {
+        throw new IllegalStateException("Actor " + a.self() + " with state " + s.value + " got message " + msg);
+      }
+      s.value = msg;
 
-           if (s.value == runs) {
-             a.to(ActorRef.of(DONE)).tell();
-           }
-         }))
+      if (s.value == runs) {
+        a.to(ActorRef.of(DONE)).tell();
+      }
+    })
     .when(DONE).lambda(refCollector(doneRun))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {

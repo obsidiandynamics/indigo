@@ -4,16 +4,14 @@ import java.util.function.*;
 
 public final class StatefulLambdaActor<S> extends Actor {
   private final BiConsumer<Activation, S> act;
-  private final S state;
-  private final Consumer<Activation> activated;
-  private final Consumer<Activation> passivated;
+  private final Function<Activation, S> activated;
+  private final BiConsumer<Activation, S> passivated;
+  private S state;
   
   StatefulLambdaActor(BiConsumer<Activation, S> act, 
-                      S state,
-                      Consumer<Activation> activated, 
-                      Consumer<Activation> passivated) {
+                      Function<Activation, S> activated, 
+                      BiConsumer<Activation, S> passivated) {
     this.act = act;
-    this.state = state;
     this.activated = activated;
     this.passivated = passivated;
   }
@@ -25,49 +23,43 @@ public final class StatefulLambdaActor<S> extends Actor {
   
   @Override
   protected void activated(Activation a) {
-    if (activated != null) activated.accept(a);
+    state = activated.apply(a);
   }
   
   @Override
   protected void passivated(Activation a) {
-    if (passivated != null) passivated.accept(a);
+    if (passivated != null) passivated.accept(a, state);
   }
   
   public static final class Builder<S> implements Supplier<Actor> {
-    private Supplier<S> stateFactory;
     private BiConsumer<Activation, S> act;
-    private Consumer<Activation> activated;
-    private Consumer<Activation> passivated;
-    
-    public Builder<S> stateFactory(Supplier<S> stateFactory) {
-      this.stateFactory = stateFactory;
-      return this;
-    }
+    private Function<Activation, S> activated;
+    private BiConsumer<Activation, S> passivated;
     
     public Builder<S> act(BiConsumer<Activation, S> act) {
       this.act = act;
       return this;
     }
     
-    public Builder<S> activated(Consumer<Activation> activated) {
+    public Builder<S> activated(Function<Activation, S> activated) {
       this.activated = activated;
       return this;
     }
     
-    public Builder<S> passivated(Consumer<Activation> passivated) {
+    public Builder<S> passivated(BiConsumer<Activation, S> passivated) {
       this.passivated = passivated;
       return this;
     }
     
-    public StatefulLambdaActor<S> build(S state) {
+    public StatefulLambdaActor<S> build() {
       if (act == null) throw new IllegalStateException("No act lambda has been assigned");
-      if (stateFactory == null) throw new IllegalStateException("No state factory has been assigned");
-      return new StatefulLambdaActor<>(act, state, activated, passivated);
+      if (activated == null) throw new IllegalStateException("No activated lambda has been assigned");
+      return new StatefulLambdaActor<>(act, activated, passivated);
     }
 
     @Override
     public StatefulLambdaActor<S> get() {
-      return build(stateFactory.get());
+      return build();
     }
   }
   
