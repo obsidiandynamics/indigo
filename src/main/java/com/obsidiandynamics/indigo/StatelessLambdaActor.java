@@ -3,56 +3,56 @@ package com.obsidiandynamics.indigo;
 import java.util.function.*;
 
 public final class StatelessLambdaActor extends Actor {
-  private final Consumer<Activation> act;
-  private final Consumer<Activation> activated;
-  private final Consumer<Activation> passivated;
+  private final Consumer<Activation> onAct;
+  private final Consumer<Activation> onActivated;
+  private final Consumer<Activation> onPassivated;
   
-  private StatelessLambdaActor(Consumer<Activation> act, 
-                               Consumer<Activation> activated, 
-                               Consumer<Activation> passivated) {
-    this.act = act;
-    this.activated = activated;
-    this.passivated = passivated;
+  private StatelessLambdaActor(Consumer<Activation> onAct, 
+                               Consumer<Activation> onActivated, 
+                               Consumer<Activation> onPassivated) {
+    this.onAct = onAct;
+    this.onActivated = onActivated;
+    this.onPassivated = onPassivated;
   }
 
   @Override
   protected void act(Activation a) {
-    act.accept(a);
+    onAct.accept(a);
   }
   
   @Override
   protected void activated(Activation a) {
-    if (activated != null) activated.accept(a);
+    if (onActivated != null) onActivated.accept(a);
   }
   
   @Override
   protected void passivated(Activation a) {
-    if (passivated != null) passivated.accept(a);
+    if (onPassivated != null) onPassivated.accept(a);
   }
   
   public static final class Builder implements Supplier<Actor> {
-    private Consumer<Activation> act;
-    private Consumer<Activation> activated;
-    private Consumer<Activation> passivated;
+    private Consumer<Activation> onAct;
+    private Consumer<Activation> onActivated;
+    private Consumer<Activation> onPassivated;
     
-    public Builder act(Consumer<Activation> act) {
-      this.act = act;
+    public Builder act(Consumer<Activation> onAct) {
+      this.onAct = onAct;
       return this;
     }
     
-    public Builder activated(Consumer<Activation> activated) {
-      this.activated = activated;
+    public Builder activated(Consumer<Activation> onActivated) {
+      this.onActivated = onActivated;
       return this;
     }
     
-    public Builder passivated(Consumer<Activation> passivated) {
-      this.passivated = passivated;
+    public Builder passivated(Consumer<Activation> onPassivated) {
+      this.onPassivated = onPassivated;
       return this;
     }
     
     public StatelessLambdaActor build() {
-      if (act == null) throw new IllegalStateException("No act lambda has been assigned");
-      return new StatelessLambdaActor(act, activated, passivated);
+      if (onAct == null) throw new IllegalStateException("No act lambda has been assigned");
+      return new StatelessLambdaActor(onAct, onActivated, onPassivated);
     }
 
     @Override

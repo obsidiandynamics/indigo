@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import java.util.*;
+import java.util.function.*;
 
 public final class Activation {
   private final ActorRef ref;
@@ -10,6 +11,8 @@ public final class Activation {
   private final Actor actor;
   
   private final Deque<Message> backlog = new LinkedList<>();
+  
+  private final Map<UUID, PendingRequest> requests = new HashMap<>();
   
   private Message message;
   
@@ -93,13 +96,43 @@ public final class Activation {
   
   public final class MessageBuilder {
     private final ActorRef to;
-
+    
+    private Object requestBody;
+    
+    private int timeoutMillis;
+    
+    private Consumer<Activation> onTimeout;
+    
     MessageBuilder(ActorRef to) {
       this.to = to;
     }
     
     public void tell(Object body) {
-      system.send(new Message(ref, to, body));
+      system.send(new Message(ref, to, body, null));
+    }
+    
+    public MessageBuilder ask(Object requestBody) {
+      this.requestBody = requestBody;
+      return this;
+    }
+    
+    public MessageBuilder after(int timeoutMillis) {
+      this.timeoutMillis = timeoutMillis;
+      return this;
+    }
+    
+    public MessageBuilder timeout(Consumer<Activation> onTimeout) {
+      this.onTimeout = onTimeout;
+      return this;
+    }
+    
+    public void response(Consumer<Activation> onResponse) {
+      if (timeoutMillis != 0 ^ onTimeout != null) {
+        throw new IllegalStateException("Only one of the timeout time or handler has been set");
+      }
+      final UUID requestId = UUID.randomUUID();
+      requests.put(requestId, new PendingRequest(onResponse, onTimeout));
+      system.send(new Message(ref, to, requestBody, requestId));
     }
     
     public void tell() {

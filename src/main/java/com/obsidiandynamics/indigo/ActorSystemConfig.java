@@ -5,7 +5,7 @@ public abstract class ActorSystemConfig {
   
   protected long backlogCapacity = 100_000;
   
-  protected int backlogBackoff = 10;
+  protected int backlogBackoffMillis = 10;
   
   public final ActorSystem define() {
     return new ActorSystem(this);
