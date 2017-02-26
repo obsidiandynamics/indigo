@@ -6,7 +6,7 @@ import java.util.*;
 
 import org.junit.*;
 
-public class ParallelConsistencyTest implements TestSupport {
+public final class ParallelConsistencyTest implements TestSupport {
   private static final String RUN = "run";
   private static final String DONE = "done";
 

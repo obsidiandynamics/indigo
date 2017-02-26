@@ -6,7 +6,7 @@ import java.util.*;
 
 import org.junit.*;
 
-public class StatelessPassivationTest implements TestSupport {
+public final class StatelessPassivationTest implements TestSupport {
   private static final String TICK = "tick";
   private static final String TOCK = "tock";
   private static final String DONE_RUN = "done_run";

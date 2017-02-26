@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 
 import org.junit.*;
 
-public class StatefulPassivationTest implements TestSupport {
+public final class StatefulPassivationTest implements TestSupport {
   private static final String TICK = "tick";
   private static final String TOCK = "tock";
   private static final String DONE_RUN = "done_run";

@@ -6,7 +6,7 @@ import java.util.*;
 
 import org.junit.*;
 
-public class StatelessChainTest implements TestSupport {
+public final class StatelessChainTest implements TestSupport {
   private static final String RUN = "run";
   private static final String DONE = "done";
   
