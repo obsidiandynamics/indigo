@@ -96,14 +96,6 @@ public final class ActorSystem {
     busyActors.incrementAndGet();
   }
   
-  void incBacklog() {
-    backlog.incrementAndGet();
-  }
-  
-  void decBacklog() {
-    backlog.decrementAndGet();
-  }
-  
   void decBusyActors() {
     final int newCount = busyActors.decrementAndGet();
     if (newCount == 0) {
@@ -111,6 +103,14 @@ public final class ActorSystem {
         busyActors.notifyAll();
       }
     }
+  }
+  
+  void incBacklog() {
+    backlog.incrementAndGet();
+  }
+  
+  void decBacklog() {
+    backlog.decrementAndGet();
   }
   
   public ActorSystem await() throws InterruptedException {

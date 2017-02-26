@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 public final class Activation {
@@ -26,7 +27,9 @@ public final class Activation {
     this.actor = actor;
   }
   
+  AtomicInteger entries = new AtomicInteger();
   void run() {
+    entries.incrementAndGet();
     final boolean activationRequired;
     synchronized (backlog) {
       if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
@@ -45,7 +48,7 @@ public final class Activation {
     }
     
     actor.act(this);
-    
+
     final boolean backlogEmpty;
     synchronized (backlog) {
       if (message == null) throw new IllegalStateException("Actor " + ref + " was already cleared");
@@ -53,10 +56,10 @@ public final class Activation {
       message = null;
       backlogEmpty = backlog.isEmpty();
     }
-
+    
     if (! backlogEmpty) {
       system.dispatch(this);
-    } else {
+    } else { 
       system.decBusyActors();
       if (passivationScheduled) {
         system.passivate(ref);
@@ -73,13 +76,16 @@ public final class Activation {
       if (wasEmpty && passivationScheduled) throw new ActorPassivatingException();
       
       backlog.addLast(m);
+      
+      if (wasEmpty) {
+        system.incBusyActors();
+      }
+      system.incBacklog();
     }
     
     if (wasEmpty) {
       system.dispatch(this);
-      system.incBusyActors();
     }
-    system.incBacklog();
   }
   
   public ActorRef self() {
@@ -108,12 +114,16 @@ public final class Activation {
     }
     
     public void tell(Object body) {
-      system.send(new Message(ref, to, body, null));
+      system.send(new Message(ref, to, body, null, false));
     }
     
     public MessageBuilder ask(Object requestBody) {
       this.requestBody = requestBody;
       return this;
+    }
+    
+    public MessageBuilder ask() {
+      return ask(null);
     }
     
     public MessageBuilder after(int timeoutMillis) {
@@ -132,7 +142,7 @@ public final class Activation {
       }
       final UUID requestId = UUID.randomUUID();
       requests.put(requestId, new PendingRequest(onResponse, onTimeout));
-      system.send(new Message(ref, to, requestBody, requestId));
+      system.send(new Message(ref, to, requestBody, requestId, false));
     }
     
     public void tell() {
@@ -150,6 +160,10 @@ public final class Activation {
   
   public MessageBuilder toSender() {
     return to(message.from());
+  }
+  
+  public void reply(Object responseBody) {
+    system.send(new Message(ref, message.from(), responseBody, message.requestId(), true));
   }
 
   @Override

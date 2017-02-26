@@ -10,12 +10,15 @@ public final class Message {
   private final Object body;
   
   private final UUID requestId;
+  
+  private final boolean response;
 
-  Message(ActorRef from, ActorRef to, Object body, UUID requestId) {
+  Message(ActorRef from, ActorRef to, Object body, UUID requestId, boolean response) {
     this.from = from;
     this.to = to;
     this.body = body;
     this.requestId = requestId;
+    this.response = response;
   }
   
   public ActorRef from() {
@@ -29,6 +32,10 @@ public final class Message {
   public UUID requestId() {
     return requestId;
   }
+  
+  public boolean isResponse() {
+    return response;
+  }
 
   @SuppressWarnings("unchecked")
   public <T> T body() {
@@ -38,6 +45,6 @@ public final class Message {
   @Override
   public String toString() {
     return "Message [from=" + from + ", to=" + to + ", body=" + body + 
-        (requestId != null ? ", requestId=" + requestId : "") + "]";
+        (requestId != null ? ", requestId=" + requestId + ", response=" + response : "") + "]";
   }
 }
