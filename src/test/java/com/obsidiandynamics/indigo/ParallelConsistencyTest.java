@@ -25,9 +25,7 @@ public final class ParallelConsistencyTest implements TestSupport {
     .define()
     .when(RUN).lambda(IntegerState::new, (a, s) -> {
       final int msg = a.message().body();
-      if (msg != s.value + 1) {
-        throw new IllegalStateException("Actor " + a.self() + " with state " + s.value + " got message " + msg);
-      }
+      assertEquals(s.value + 1, msg);
       s.value = msg;
 
       if (s.value == runs) {

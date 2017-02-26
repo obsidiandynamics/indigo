@@ -7,6 +7,7 @@ import org.junit.runners.Suite.*;
 @RunWith(Suite.class)
 @SuiteClasses({
   ParallelConsistencyTest.class,
+  RequestResponseTest.class,
   StatelessChainTest.class,
   StatelessPassivationTest.class,
   StatefulPassivationTest.class

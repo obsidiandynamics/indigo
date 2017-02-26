@@ -47,7 +47,15 @@ public final class Activation {
       actor.activated(this);
     }
     
-    actor.act(this);
+    if (message.isResponse()) {
+      final PendingRequest req = requests.remove(message.requestId());
+      if (req == null) {
+        throw new IllegalStateException("No pending request for ID " + message.requestId());
+      }
+      req.getOnResponse().accept(this);
+    } else {
+      actor.act(this);
+    }
 
     final boolean backlogEmpty;
     synchronized (backlog) {
