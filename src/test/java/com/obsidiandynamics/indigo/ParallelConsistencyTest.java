@@ -10,10 +10,6 @@ public class ParallelConsistencyTest implements TestSupport {
   private static final String RUN = "run";
   private static final String DONE = "done";
 
-  private static class IntegerState {
-    int value;
-  }
-
   @Test
   public void test() {
     test(1, 10);
@@ -25,7 +21,8 @@ public class ParallelConsistencyTest implements TestSupport {
   private void test(int actors, int runs) {
     final Set<ActorRef> doneRun = new HashSet<>();
 
-    new ActorSystem()
+    new ActorSystemConfig() {}
+    .define()
     .when(RUN).lambda(IntegerState::new, (a, s) -> {
       final int msg = a.message().body();
       if (msg != s.value + 1) {

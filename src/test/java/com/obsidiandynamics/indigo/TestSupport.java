@@ -4,6 +4,10 @@ import java.util.*;
 import java.util.function.*;
 
 interface TestSupport {
+  static final class IntegerState {
+    int value;
+  }
+  
   default Consumer<Activation> refCollector(Set<ActorRef> set) {
     return a -> set.add(a.message().from());
   }

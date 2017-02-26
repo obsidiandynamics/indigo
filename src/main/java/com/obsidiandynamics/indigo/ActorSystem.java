@@ -14,22 +14,23 @@ public final class ActorSystem {
   
   private final AtomicInteger busyActors = new AtomicInteger();
   
-  private final ActorRef rootId = ActorRef.of("_root");
+  private final AtomicLong backlog = new AtomicLong();
   
-  private final Activation rootActivation;
+  private final ActorRef ingressRef = ActorRef.of("_ingress");
   
-  public ActorSystem() {
-    this(getDefaultThreads());
+  private final Activation ingressActivation;
+  
+  private final long backlogCapacity = 100_000;
+  private final int backlogBackoff = 10;
+  
+  ActorSystem(ActorSystemConfig config) {
+    executor = Executors.newFixedThreadPool(config.numThreads);
+    when(ingressRef.role()).lambda(a -> {});
+    ingressActivation = activate(ingressRef);
   }
   
-  public ActorSystem(int numThreads) {
-    executor = Executors.newWorkStealingPool(numThreads);
-    when(rootId.role()).lambda(a -> {});
-    rootActivation = activate(rootId);
-  }
-  
-  public ActorSystem ingress(Consumer<Activation> consumer) {
-    consumer.accept(rootActivation);
+  public ActorSystem ingress(Consumer<Activation> act) {
+    act.accept(ingressActivation);
     return this;
   }
   
@@ -66,7 +67,9 @@ public final class ActorSystem {
     }
   }
   
-  public ActorSystem send(Message m) {
+  ActorSystem send(Message m) {
+    throttleBacklog(m.from());
+    
     while (true) {
       final Activation a = activate(m.to());
       try {
@@ -77,12 +80,28 @@ public final class ActorSystem {
     return this;
   }
   
+  private void throttleBacklog(ActorRef from) {
+    while (from == ingressRef && backlog.get() > backlogCapacity) {
+      try {
+        Thread.sleep(backlogBackoff);
+      } catch (InterruptedException e) {}
+    }
+  }
+  
   void dispatch(Activation a) {
     executor.execute(new DispatchTask(a));
   }
   
   void incBusyActors() {
     busyActors.incrementAndGet();
+  }
+  
+  void incBacklog() {
+    backlog.incrementAndGet();
+  }
+  
+  void decBacklog() {
+    backlog.decrementAndGet();
   }
   
   void decBusyActors() {
@@ -129,16 +148,6 @@ public final class ActorSystem {
     final Supplier<Actor> factory = factories.get(role);
     if (factory == null) throw new IllegalArgumentException("No registered factory for actor of role " + role);
     return factory.get();
-  }
-  
-  private static int getDefaultThreads() {
-    final String defStr = System.getProperty("indigo.actorThreads", "0");
-    final int defInt = Integer.parseInt(defStr);
-    return defInt > 0 ? defInt : getNumProcessors() - defInt;
-  }
-  
-  private static int getNumProcessors() {
-    return Math.max(1, Runtime.getRuntime().availableProcessors());
   }
 
   public void shutdown() {

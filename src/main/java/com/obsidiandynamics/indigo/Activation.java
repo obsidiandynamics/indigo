@@ -43,33 +43,40 @@ public final class Activation {
     
     actor.act(this);
     
+    final boolean backlogEmpty;
     synchronized (backlog) {
       if (message == null) throw new IllegalStateException("Actor " + ref + " was already cleared");
       
       message = null;
-      if (! backlog.isEmpty()) {
-        system.dispatch(this);
-      } else {
-        system.decBusyActors();
-        if (passivationScheduled) {
-          system.passivate(ref);
-          actor.passivated(this);
-        }
+      backlogEmpty = backlog.isEmpty();
+    }
+
+    if (! backlogEmpty) {
+      system.dispatch(this);
+    } else {
+      system.decBusyActors();
+      if (passivationScheduled) {
+        system.passivate(ref);
+        actor.passivated(this);
       }
     }
+    system.decBacklog();
   }
   
   void enqueue(Message m) throws ActorPassivatingException {
+    final boolean wasEmpty;
     synchronized (backlog) {
-      final boolean wasEmpty = message == null && backlog.isEmpty();
+      wasEmpty = message == null && backlog.isEmpty();
       if (wasEmpty && passivationScheduled) throw new ActorPassivatingException();
       
       backlog.addLast(m);
-      if (wasEmpty) {
-        system.dispatch(this);
-        system.incBusyActors();
-      }
     }
+    
+    if (wasEmpty) {
+      system.dispatch(this);
+      system.incBusyActors();
+    }
+    system.incBacklog();
   }
   
   public ActorRef self() {

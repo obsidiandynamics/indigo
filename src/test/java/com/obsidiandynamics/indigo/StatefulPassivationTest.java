@@ -3,15 +3,36 @@ package com.obsidiandynamics.indigo;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import org.junit.*;
 
-public class StatelessPassivationTest implements TestSupport {
+public class StatefulPassivationTest implements TestSupport {
   private static final String TICK = "tick";
   private static final String TOCK = "tock";
   private static final String DONE_RUN = "done_run";
   private static final String DONE_ACTIVATION = "done_activation";
   private static final String DONE_PASSIVATION = "done_passivation";
+  
+  private static class MockDB {
+    private final Map<ActorRef, IntegerState> states = new ConcurrentHashMap<>();
+    
+    IntegerState get(ActorRef ref) {
+      if (! states.containsKey(ref)) {
+        final IntegerState state = new IntegerState();
+        states.put(ref, state);
+        return state;
+      } else {
+        return states.get(ref);
+      }
+    }
+    
+    void put(ActorRef ref, IntegerState state) {
+      states.put(ref, state);
+    }
+    
+    int size() { return states.size(); }
+  }
 
   @Test
   public void test() {
@@ -20,6 +41,8 @@ public class StatelessPassivationTest implements TestSupport {
     final Set<ActorRef> doneRun = new HashSet<>();
     final Set<ActorRef> doneActivation = new HashSet<>();
     final Set<ActorRef> donePassivation = new HashSet<>();
+    
+    final MockDB db = new MockDB();
     
     new ActorSystemConfig() {}
     .define()
@@ -38,10 +61,15 @@ public class StatelessPassivationTest implements TestSupport {
          .activated(tell(DONE_ACTIVATION))
          .passivated(tell(DONE_PASSIVATION)))
     .when(TOCK)
-    .use(StatelessLambdaActor
-         .builder()
-         .act(a -> {
+    .use(StatefulLambdaActor
+         .<IntegerState>builder()
+         .act((a, s) -> {
            final int msg = a.message().body();
+           if (msg != s.value + 1) {
+             throw new IllegalStateException("Actor " + a.self() + " with state " + s.value + " got message " + msg);
+           }
+           s.value = msg;
+           
            if (msg == runs) {
              a.to(ActorRef.of(DONE_RUN)).tell();
            } else {
@@ -49,14 +77,20 @@ public class StatelessPassivationTest implements TestSupport {
              a.passivate();
            }
          })
-         .activated(tell(DONE_ACTIVATION))
-         .passivated(tell(DONE_PASSIVATION)))
+         .activated(a -> {
+           a.to(ActorRef.of(DONE_ACTIVATION)).tell();
+           return db.get(a.self());
+         })
+         .passivated((a, s) -> {
+           db.put(a.self(), s);
+           a.to(ActorRef.of(DONE_PASSIVATION)).tell();
+         }))
     .when(DONE_RUN).lambda(refCollector(doneRun))
     .when(DONE_ACTIVATION).lambda(refCollector(doneActivation))
     .when(DONE_PASSIVATION).lambda(refCollector(donePassivation))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
-        a.to(ActorRef.of(TICK, i + "")).tell(1);
+        a.to(ActorRef.of(TICK, i + "")).tell(0);
       }
     })
     .shutdown();
@@ -64,5 +98,6 @@ public class StatelessPassivationTest implements TestSupport {
     assertEquals(actors, doneRun.size());
     assertEquals(actors * 2, doneActivation.size());
     assertEquals(actors * 2, donePassivation.size());
+    assertEquals(actors, db.size());
   }
 }
