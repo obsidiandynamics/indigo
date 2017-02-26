@@ -10,7 +10,7 @@ import org.junit.*;
 public final class StatefulPassivationTest implements TestSupport {
   private static final String TICK = "tick";
   private static final String TOCK = "tock";
-  private static final String DONE_RUN = "done_run";
+  private static final String DONE_RUNS = "done_runs";
   private static final String DONE_ACTIVATION = "done_activation";
   private static final String DONE_PASSIVATION = "done_passivation";
   
@@ -38,7 +38,7 @@ public final class StatefulPassivationTest implements TestSupport {
   public void test() {
     final int actors = 5;
     final int runs = 10;
-    final Set<ActorRef> doneRun = new HashSet<>();
+    final Set<ActorRef> doneRuns = new HashSet<>();
     final Set<ActorRef> doneActivation = new HashSet<>();
     final Set<ActorRef> donePassivation = new HashSet<>();
     
@@ -52,7 +52,7 @@ public final class StatefulPassivationTest implements TestSupport {
          .act(a -> {
            final int msg = a.message().body();
            if (msg == runs) {
-             a.to(ActorRef.of(DONE_RUN)).tell();
+             a.to(ActorRef.of(DONE_RUNS)).tell();
            } else {
              a.to(ActorRef.of(TOCK, a.self().key())).tell(msg + 1);
              a.passivate();
@@ -69,7 +69,7 @@ public final class StatefulPassivationTest implements TestSupport {
            s.value = msg;
            
            if (msg == runs) {
-             a.to(ActorRef.of(DONE_RUN)).tell();
+             a.to(ActorRef.of(DONE_RUNS)).tell();
            } else {
              a.toSender().tell(msg);
              a.passivate();
@@ -83,7 +83,7 @@ public final class StatefulPassivationTest implements TestSupport {
            db.put(a.self(), s);
            a.to(ActorRef.of(DONE_PASSIVATION)).tell();
          }))
-    .when(DONE_RUN).lambda(refCollector(doneRun))
+    .when(DONE_RUNS).lambda(refCollector(doneRuns))
     .when(DONE_ACTIVATION).lambda(refCollector(doneActivation))
     .when(DONE_PASSIVATION).lambda(refCollector(donePassivation))
     .ingress(a -> {
@@ -93,7 +93,7 @@ public final class StatefulPassivationTest implements TestSupport {
     })
     .shutdown();
 
-    assertEquals(actors, doneRun.size());
+    assertEquals(actors, doneRuns.size());
     assertEquals(actors * 2, doneActivation.size());
     assertEquals(actors * 2, donePassivation.size());
     assertEquals(actors, db.size());

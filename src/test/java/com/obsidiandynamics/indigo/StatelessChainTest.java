@@ -8,13 +8,13 @@ import org.junit.*;
 
 public final class StatelessChainTest implements TestSupport {
   private static final String RUN = "run";
-  private static final String DONE = "done";
+  private static final String DONE_RUNS = "done";
   
   @Test
   public void test() {
     final int actors = 5;
     final int runs = 10;
-    final Set<ActorRef> doneRun = new HashSet<>();
+    final Set<ActorRef> doneRuns = new HashSet<>();
 
     new ActorSystemConfig() {}
     .define()
@@ -23,10 +23,10 @@ public final class StatelessChainTest implements TestSupport {
       if (msg < runs) {
         a.toSelf().tell(msg + 1);
       } else {
-        a.to(ActorRef.of(DONE)).tell();
+        a.to(ActorRef.of(DONE_RUNS)).tell();
       }
     })
-    .when(DONE).lambda(refCollector(doneRun))
+    .when(DONE_RUNS).lambda(refCollector(doneRuns))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
         a.to(ActorRef.of(RUN, i + "")).tell(1);
@@ -34,6 +34,6 @@ public final class StatelessChainTest implements TestSupport {
     })
     .shutdown();
 
-    assertEquals(actors, doneRun.size());
+    assertEquals(actors, doneRuns.size());
   }
 }

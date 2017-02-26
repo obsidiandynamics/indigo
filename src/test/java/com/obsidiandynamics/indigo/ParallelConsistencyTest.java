@@ -8,7 +8,7 @@ import org.junit.*;
 
 public final class ParallelConsistencyTest implements TestSupport {
   private static final String RUN = "run";
-  private static final String DONE = "done";
+  private static final String DONE_RUNS = "done";
 
   @Test
   public void test() {
@@ -19,7 +19,7 @@ public final class ParallelConsistencyTest implements TestSupport {
   }
 
   private void test(int actors, int runs) {
-    final Set<ActorRef> doneRun = new HashSet<>();
+    final Set<ActorRef> doneRuns = new HashSet<>();
 
     new ActorSystemConfig() {}
     .define()
@@ -29,10 +29,10 @@ public final class ParallelConsistencyTest implements TestSupport {
       s.value = msg;
 
       if (s.value == runs) {
-        a.to(ActorRef.of(DONE)).tell();
+        a.to(ActorRef.of(DONE_RUNS)).tell();
       }
     })
-    .when(DONE).lambda(refCollector(doneRun))
+    .when(DONE_RUNS).lambda(refCollector(doneRuns))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
         for (int j = 1; j <= runs; j++) {
@@ -42,6 +42,6 @@ public final class ParallelConsistencyTest implements TestSupport {
     })
     .shutdown();
 
-    assertEquals(actors, doneRun.size());
+    assertEquals(actors, doneRuns.size());
   }
 }
