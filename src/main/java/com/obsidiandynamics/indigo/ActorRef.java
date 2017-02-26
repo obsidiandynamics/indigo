@@ -54,11 +54,11 @@ public final class ActorRef {
     return true;
   }
   
-  public static ActorRef of(String type) {
-    return new ActorRef(type, null);
+  public static ActorRef of(String role) {
+    return new ActorRef(role, null);
   }
   
-  public static ActorRef of(String type, String key) {
-    return new ActorRef(type, key);
+  public static ActorRef of(String role, String key) {
+    return new ActorRef(role, key);
   }
 }
