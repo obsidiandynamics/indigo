@@ -49,10 +49,23 @@ public final class Activation {
     
     if (message.isResponse()) {
       final PendingRequest req = requests.remove(message.requestId());
-      if (req == null) {
-        throw new IllegalStateException("No pending request for ID " + message.requestId());
+      
+      if (message.body() instanceof Signal) {
+        if (message.body() instanceof TimeoutSignal) {
+          if (req != null && ! req.isComplete()) {
+            req.setComplete(true);
+            req.getOnTimeout().accept(this);
+          }
+        } else {
+          throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
+        }
+      } else {
+        if (req == null) {
+          throw new IllegalStateException("No pending request for ID " + message.requestId());
+        }
+        req.setComplete(true);
+        req.getOnResponse().accept(this);
       }
-      req.getOnResponse().accept(this);
     } else {
       actor.act(this);
     }
@@ -67,12 +80,12 @@ public final class Activation {
     
     if (! backlogEmpty) {
       system.dispatch(this);
-    } else { 
-      system.decBusyActors();
+    } else {
       if (passivationScheduled) {
         system.passivate(ref);
         actor.passivated(this);
       }
+      system.decBusyActors();
     }
     system.decBacklog();
   }
@@ -147,10 +160,19 @@ public final class Activation {
     public void response(Consumer<Activation> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
         throw new IllegalStateException("Only one of the timeout time or handler has been set");
-      }
+      }      
+      
       final UUID requestId = UUID.randomUUID();
-      requests.put(requestId, new PendingRequest(onResponse, onTimeout));
+      final PendingRequest req = new PendingRequest(onResponse, onTimeout);
+      requests.put(requestId, req);
       system.send(new Message(ref, to, requestBody, requestId, false));
+      
+      if (timeoutMillis != 0) {
+        system.getTimeoutWatchdog().enqueue(new TimeoutTask(System.currentTimeMillis() + timeoutMillis,
+                                                            requestId,
+                                                            Activation.this,
+                                                            req));
+      }
     }
     
     public void tell() {

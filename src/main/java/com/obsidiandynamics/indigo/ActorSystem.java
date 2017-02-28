@@ -18,6 +18,8 @@ public final class ActorSystem {
   
   private final ActorRef ingressRef = ActorRef.of("_ingress");
   
+  private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
+  
   private final Activation ingressActivation;
   
   private final long backlogCapacity = 100_000;
@@ -27,10 +29,13 @@ public final class ActorSystem {
     executor = Executors.newFixedThreadPool(config.numThreads);
     when(ingressRef.role()).lambda(a -> {});
     ingressActivation = activate(ingressRef);
+    timeoutWatchdog.start();
   }
   
   public ActorSystem ingress(Consumer<Activation> act) {
-    act.accept(ingressActivation);
+    synchronized (ingressActivation) {
+      act.accept(ingressActivation);
+    }
     return this;
   }
   
@@ -144,6 +149,10 @@ public final class ActorSystem {
     activations.remove(ref);
   }
   
+  TimeoutWatchdog getTimeoutWatchdog() {
+    return timeoutWatchdog;
+  }
+  
   private Actor createActor(Object role) {
     final Supplier<Actor> factory = factories.get(role);
     if (factory == null) throw new IllegalArgumentException("No registered factory for actor of role " + role);
@@ -151,6 +160,7 @@ public final class ActorSystem {
   }
 
   public void shutdown() {
+    timeoutWatchdog.terminate();
     while (true) {
       try {
         await();

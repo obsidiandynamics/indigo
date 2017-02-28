@@ -13,6 +13,8 @@ public final class RequestResponseTest implements TestSupport {
 
   @Test
   public void test() {
+    logTestName();
+    
     final int actors = 5;
     final int runs = 10;
     final Set<ActorRef> doneRuns = new HashSet<>();

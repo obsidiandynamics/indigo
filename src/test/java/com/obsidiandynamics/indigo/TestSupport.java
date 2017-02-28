@@ -1,11 +1,15 @@
 package com.obsidiandynamics.indigo;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
 interface TestSupport {
-  static final class IntegerState {
-    int value;
+  static final boolean LOG = false;
+  static final PrintStream LOG_STREAM = System.out;
+  
+  default void logTestName() {
+    if (LOG) LOG_STREAM.println("Testing " + getClass().getSimpleName());
   }
   
   default Consumer<Activation> refCollector(Set<ActorRef> set) {
