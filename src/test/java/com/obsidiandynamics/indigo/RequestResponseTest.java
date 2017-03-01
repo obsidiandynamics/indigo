@@ -22,7 +22,7 @@ public final class RequestResponseTest implements TestSupport {
     new ActorSystemConfig() {}
     .define()
     .when(DRIVER).lambda(IntegerState::new, (a, s) -> {
-      a.to(ActorRef.of(ADDER)).ask(s.value).response(r -> {
+      a.to(ActorRef.of(ADDER)).ask(s.value).onResponse(r -> {
         final int res = r.message().body();
         if (res == runs) {
           a.to(ActorRef.of(DONE_RUNS)).tell();

@@ -37,8 +37,7 @@ final class TimeoutWatchdog extends Thread {
     while (running) {
       synchronized (sleepLock) {
         if (! timeouts.isEmpty()) {
-          final TimeoutTask first = timeouts.first();
-          delay(first.getExpiresAt());
+          delay(timeouts.first().getExpiresAt());
         } else {
           delay(System.currentTimeMillis() + DEF_SLEEP);
         }
@@ -55,6 +54,7 @@ final class TimeoutWatchdog extends Thread {
       synchronized (sleepLock) {
         final TimeoutTask first2 = safeGetFirst();
         if (first2 != null && first2.getExpiresAt() < nextWake) {
+          nextWake = first2.getExpiresAt();
           sleepLock.notify();
         }
       }

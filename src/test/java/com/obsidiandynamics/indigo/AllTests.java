@@ -10,6 +10,7 @@ import org.junit.runners.Suite.*;
   RequestResponseTest.class,
   StatelessChainTest.class,
   StatelessPassivationTest.class,
-  StatefulPassivationTest.class
+  StatefulPassivationTest.class,
+  TimeoutTest.class
 })         
 public class AllTests {}

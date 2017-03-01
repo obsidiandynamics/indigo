@@ -1,7 +1,6 @@
 package com.obsidiandynamics.indigo;
 
 import java.util.*;
-import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 public final class Activation {
@@ -13,7 +12,7 @@ public final class Activation {
   
   private final Deque<Message> backlog = new LinkedList<>();
   
-  private final Map<UUID, PendingRequest> requests = new HashMap<>();
+  private final Map<UUID, PendingRequest> pending = new HashMap<>();
   
   private Message message;
   
@@ -27,9 +26,7 @@ public final class Activation {
     this.actor = actor;
   }
   
-  AtomicInteger entries = new AtomicInteger();
   void run() {
-    entries.incrementAndGet();
     final boolean activationRequired;
     synchronized (backlog) {
       if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
@@ -48,7 +45,7 @@ public final class Activation {
     }
     
     if (message.isResponse()) {
-      final PendingRequest req = requests.remove(message.requestId());
+      final PendingRequest req = pending.remove(message.requestId());
       
       if (message.body() instanceof Signal) {
         if (message.body() instanceof TimeoutSignal) {
@@ -70,17 +67,19 @@ public final class Activation {
       actor.act(this);
     }
 
-    final boolean backlogEmpty;
+    final boolean noBacklog;
+    final boolean noPending;
     synchronized (backlog) {
       if (message == null) throw new IllegalStateException("Actor " + ref + " was already cleared");
       
       message = null;
-      backlogEmpty = backlog.isEmpty();
+      noBacklog = backlog.isEmpty();
+      noPending = pending.isEmpty();
     }
     
-    if (! backlogEmpty) {
+    if (! noBacklog) {
       system.dispatch(this);
-    } else {
+    } else if (noPending) {
       if (passivationScheduled) {
         system.passivate(ref);
         actor.passivated(this);
@@ -91,20 +90,23 @@ public final class Activation {
   }
   
   void enqueue(Message m) throws ActorPassivatingException {
-    final boolean wasEmpty;
+    final boolean noBacklog;
+    final boolean noPending;
     synchronized (backlog) {
-      wasEmpty = message == null && backlog.isEmpty();
-      if (wasEmpty && passivationScheduled) throw new ActorPassivatingException();
+      noBacklog = message == null && backlog.isEmpty();
+      noPending = pending.isEmpty();
+      
+      if (noBacklog && noPending && passivationScheduled) throw new ActorPassivatingException();
       
       backlog.addLast(m);
       
-      if (wasEmpty) {
+      if (noBacklog && noPending) {
         system.incBusyActors();
       }
       system.incBacklog();
     }
     
-    if (wasEmpty) {
+    if (noBacklog) {
       system.dispatch(this);
     }
   }
@@ -126,7 +128,7 @@ public final class Activation {
     
     private Object requestBody;
     
-    private int timeoutMillis;
+    private long timeoutMillis;
     
     private Consumer<Activation> onTimeout;
     
@@ -147,24 +149,24 @@ public final class Activation {
       return ask(null);
     }
     
-    public MessageBuilder after(int timeoutMillis) {
+    public MessageBuilder allow(long timeoutMillis) {
       this.timeoutMillis = timeoutMillis;
       return this;
     }
     
-    public MessageBuilder timeout(Consumer<Activation> onTimeout) {
+    public MessageBuilder onTimeout(Consumer<Activation> onTimeout) {
       this.onTimeout = onTimeout;
       return this;
     }
     
-    public void response(Consumer<Activation> onResponse) {
+    public void onResponse(Consumer<Activation> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
         throw new IllegalStateException("Only one of the timeout time or handler has been set");
       }      
       
       final UUID requestId = UUID.randomUUID();
       final PendingRequest req = new PendingRequest(onResponse, onTimeout);
-      requests.put(requestId, req);
+      pending.put(requestId, req);
       system.send(new Message(ref, to, requestBody, requestId, false));
       
       if (timeoutMillis != 0) {
@@ -190,6 +192,10 @@ public final class Activation {
   
   public MessageBuilder toSender() {
     return to(message.from());
+  }
+  
+  public void reply() {
+    reply(null);
   }
   
   public void reply(Object responseBody) {

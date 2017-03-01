@@ -39,4 +39,10 @@ final class TimeoutTask implements Comparable<TimeoutTask> {
     final int expiresComp = Long.compare(expiresAt, o.expiresAt);
     return expiresComp != 0 ? expiresComp : requestId.compareTo(o.requestId);
   }
+
+  @Override
+  public String toString() {
+    return "TimeoutTask [expiresAt=" + expiresAt + ", requestId=" + requestId + ", activation=" + activation
+           + ", request=" + request + "]";
+  }
 }

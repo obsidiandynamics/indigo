@@ -160,13 +160,13 @@ public final class ActorSystem {
   }
 
   public void shutdown() {
-    timeoutWatchdog.terminate();
     while (true) {
       try {
         await();
         break;
       } catch (InterruptedException e) {}
     }
+    timeoutWatchdog.terminate();
     executor.shutdown();
   }
 }
