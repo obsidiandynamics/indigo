@@ -200,6 +200,10 @@ public final class Activation {
   public void reply(Object responseBody) {
     system.send(new Message(ref, message.from(), responseBody, message.requestId(), true));
   }
+  
+  public void forward(ActorRef to) {
+    system.send(new Message(message.from(), to, message.body(), message.requestId(), message.isResponse()));
+  }
 
   @Override
   public String toString() {
