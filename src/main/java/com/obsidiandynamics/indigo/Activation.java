@@ -57,11 +57,10 @@ public final class Activation {
           throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
         }
       } else {
-        if (req == null) {
-          throw new IllegalStateException("No pending request for ID " + message.requestId());
+        if (req != null) {
+          req.setComplete(true);
+          req.getOnResponse().accept(this);
         }
-        req.setComplete(true);
-        req.getOnResponse().accept(this);
       }
     } else {
       actor.act(this);
@@ -149,7 +148,7 @@ public final class Activation {
       return ask(null);
     }
     
-    public MessageBuilder allow(long timeoutMillis) {
+    public MessageBuilder await(long timeoutMillis) {
       this.timeoutMillis = timeoutMillis;
       return this;
     }
@@ -170,7 +169,7 @@ public final class Activation {
       system.send(new Message(ref, to, requestBody, requestId, false));
       
       if (timeoutMillis != 0) {
-        system.getTimeoutWatchdog().enqueue(new TimeoutTask(System.currentTimeMillis() + timeoutMillis,
+        system.getTimeoutWatchdog().enqueue(new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
                                                             requestId,
                                                             Activation.this,
                                                             req));

@@ -4,7 +4,15 @@ import java.util.*;
 import java.util.concurrent.*;
 
 final class TimeoutWatchdog extends Thread {
-  private static final int DEF_SLEEP = 1_000;
+  /** Maximum sleep time. If the expiry time is longer, the sleep will be performed in a loop.
+   *  This is also the default time that the timer sleeps for if it has no timeout tasks. */
+  private static final long MAX_SLEEP_NANOS = 1_000_000_000l;
+  
+  /** Minimum sleep time. Below this threshold sleeping isn't worthwhile. */
+  private static final long MIN_SLEEP_NANOS = 1_000_000l;
+  
+  /** Compensation for overhead of scheduling a timeout message with the dispatcher. */
+  private static final long ADJ_NANOS = 500_000l;
   
   private final ActorSystem system;
   
@@ -39,7 +47,7 @@ final class TimeoutWatchdog extends Thread {
         if (! timeouts.isEmpty()) {
           delay(timeouts.first().getExpiresAt());
         } else {
-          delay(System.currentTimeMillis() + DEF_SLEEP);
+          delay(System.nanoTime() + MAX_SLEEP_NANOS);
         }
       }
 
@@ -70,10 +78,12 @@ final class TimeoutWatchdog extends Thread {
     synchronized (sleepLock) {
       nextWake = until;
       while (running) {
-        final long timeDiff = nextWake - System.currentTimeMillis();
+        final long timeDiff = Math.min(MAX_SLEEP_NANOS, nextWake - System.nanoTime() - ADJ_NANOS);
         try {
-          if (timeDiff > 0) {
-            sleepLock.wait(Math.min(timeDiff, DEF_SLEEP));
+          if (timeDiff >= MIN_SLEEP_NANOS) {
+            final long millis = timeDiff / 1_000_000l;
+            final int nanos = (int) (timeDiff - millis * 1_000_000l);
+            sleepLock.wait(millis, nanos);
           } else {
             break;
           }
@@ -85,7 +95,7 @@ final class TimeoutWatchdog extends Thread {
   private void cycle() {
     if (! timeouts.isEmpty()) {
       final TimeoutTask first = timeouts.first();
-      if (System.currentTimeMillis() > first.getExpiresAt()) {
+      if (System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
         timeouts.remove(first);
         if (! first.getRequest().isComplete()) {
           system.send(new Message(null, first.getActivation().self(), new TimeoutSignal(), first.getRequestId(), true));
