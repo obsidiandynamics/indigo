@@ -20,23 +20,18 @@ public final class ActorSystem {
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
-  private final Activation ingressActivation;
-  
   private final long backlogCapacity = 100_000;
+  
   private final int backlogBackoff = 10;
   
   ActorSystem(ActorSystemConfig config) {
     executor = Executors.newFixedThreadPool(config.numThreads);
-    when(ingressRef.role()).lambda(a -> {});
-    ingressActivation = activate(ingressRef);
+    when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
   }
   
   public ActorSystem ingress(Consumer<Activation> act) {
-    synchronized (ingressActivation) {
-      act.accept(ingressActivation);
-    }
-    return this;
+    return send(new Message(null, ingressRef, act, null, false));
   }
   
   public final class ActorBuilder {

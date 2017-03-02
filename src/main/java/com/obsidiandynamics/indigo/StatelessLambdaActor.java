@@ -64,4 +64,8 @@ public final class StatelessLambdaActor extends Actor {
   public static Builder builder() {
     return new Builder();
   }
+  
+  public static void agent(Activation a) {
+    a.message().<Consumer<Activation>>body().accept(a);
+  }
 }
