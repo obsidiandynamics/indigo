@@ -10,7 +10,7 @@ public final class ActorSystem {
   
   private final Map<ActorRef, Activation> activations = new ConcurrentHashMap<>();
   
-  private final Map<Object, Supplier<Actor>> factories = new HashMap<>();
+  private final Map<String, Supplier<Actor>> factories = new HashMap<>();
   
   private final AtomicInteger busyActors = new AtomicInteger();
   
@@ -35,9 +35,9 @@ public final class ActorSystem {
   }
   
   public final class ActorBuilder {
-    private final Object role;
+    private final String role;
     
-    ActorBuilder(Object role) { 
+    ActorBuilder(String role) { 
       this.role = role;
     }
     
@@ -55,11 +55,11 @@ public final class ActorSystem {
     }
   }
   
-  public ActorBuilder when(Object role) {
+  public ActorBuilder when(String role) {
     return new ActorBuilder(role);
   }
   
-  private void register(Object role, Supplier<Actor> factory) {
+  private void register(String role, Supplier<Actor> factory) {
     final Supplier<Actor> existing = factories.put(role, factory);
     if (existing != null) {
       factories.put(role, existing);
