@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 public final class ActorSystem {
+  private final ActorSystemConfig config;
+  
   private final ExecutorService executor;
   
   private final Map<ActorRef, Activation> activations = new ConcurrentHashMap<>();
@@ -20,11 +22,8 @@ public final class ActorSystem {
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
-  private final long backlogCapacity = 100_000;
-  
-  private final int backlogBackoff = 10;
-  
   ActorSystem(ActorSystemConfig config) {
+    this.config = config;
     executor = Executors.newFixedThreadPool(config.numThreads);
     when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
@@ -81,9 +80,9 @@ public final class ActorSystem {
   }
   
   private void throttleBacklog(ActorRef from) {
-    while (from == ingressRef && backlog.get() > backlogCapacity) {
+    while (from == ingressRef && backlog.get() > config.backlogCapacity) {
       try {
-        Thread.sleep(backlogBackoff);
+        Thread.sleep(config.backlogThrottleMillis);
       } catch (InterruptedException e) {}
     }
   }
