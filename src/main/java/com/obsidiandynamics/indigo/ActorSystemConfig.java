@@ -7,6 +7,8 @@ public abstract class ActorSystemConfig {
   
   protected int backlogThrottleMillis = PropertyUtils.get("indigo.backlogThrottleMillis", Integer::parseInt, 10);
   
+  protected ActorConfig defaultActorConfig = new ActorConfig() {};
+  
   public final ActorSystem define() {
     return new ActorSystem(this);
   }

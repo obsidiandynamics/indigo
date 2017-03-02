@@ -12,7 +12,7 @@ public final class ActorSystem {
   
   private final Map<ActorRef, Activation> activations = new ConcurrentHashMap<>();
   
-  private final Map<String, Supplier<Actor>> factories = new HashMap<>();
+  private final Map<String, ActorSetup> factories = new HashMap<>();
   
   private final AtomicInteger busyActors = new AtomicInteger();
   
@@ -21,6 +21,15 @@ public final class ActorSystem {
   private final ActorRef ingressRef = ActorRef.of("_ingress");
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
+  
+  private static final class ActorSetup {
+    final Supplier<Actor> factory;
+    final ActorConfig config;
+    ActorSetup(Supplier<Actor> factory, ActorConfig config) {
+      this.factory = factory;
+      this.config = config;
+    }
+  }
   
   ActorSystem(ActorSystemConfig config) {
     this.config = config;
@@ -58,8 +67,8 @@ public final class ActorSystem {
     return new ActorBuilder(role);
   }
   
-  private void register(String role, Supplier<Actor> factory) {
-    final Supplier<Actor> existing = factories.put(role, factory);
+  private void register(String role, Supplier<Actor> factory, ActorConfig config) {
+    final ActorSetup existing = factories.put(role, new ActorSetup(factory, config));
     if (existing != null) {
       factories.put(role, existing);
       throw new IllegalStateException("Factory for actor of role " + role + " has already been registered");
