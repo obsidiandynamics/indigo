@@ -1,9 +1,12 @@
 package com.obsidiandynamics.indigo;
 
 public abstract class ActorSystemConfig {
+  /** Number of threads to use for the dispatch pool. While it is allowed, the number of threads should not
+   *  be fewer than two. This leaves at least one thread for ingress, which could be throttled while injecting
+   *  messages into the actor system. */
   protected int numThreads = getDefaultThreads();
   
-  protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 100_000L);
+  protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 10_000L);
   
   protected int backlogThrottleMillis = PropertyUtils.get("indigo.backlogThrottleMillis", Integer::parseInt, 10);
   
@@ -14,8 +17,8 @@ public abstract class ActorSystemConfig {
   }
   
   private static int getDefaultThreads() {
-    final int defInt = PropertyUtils.get("indigo.actorThreads", Integer::parseInt, 0);
-    return defInt > 0 ? defInt : getNumProcessors() - defInt;
+    final int numThreads = PropertyUtils.get("indigo.actorThreads", Integer::parseInt, 0);
+    return numThreads > 0 ? numThreads : getNumProcessors() - numThreads;
   }
   
   private static int getNumProcessors() {

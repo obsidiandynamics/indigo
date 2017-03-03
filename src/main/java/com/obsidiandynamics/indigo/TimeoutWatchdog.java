@@ -98,7 +98,7 @@ final class TimeoutWatchdog extends Thread {
       if (System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
         timeouts.remove(first);
         if (! first.getRequest().isComplete()) {
-          system.send(new Message(null, first.getActivation().self(), new TimeoutSignal(), first.getRequestId(), true));
+          system.send(new Message(null, first.getActivation().self(), new TimeoutSignal(), first.getRequestId(), true), false);
         }
       }
     }

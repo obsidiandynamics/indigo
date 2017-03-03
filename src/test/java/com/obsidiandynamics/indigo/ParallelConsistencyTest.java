@@ -7,6 +7,7 @@ import java.util.*;
 import org.junit.*;
 
 public final class ParallelConsistencyTest implements TestSupport {
+  private static final String DRIVER = "driver";
   private static final String RUN = "run";
   private static final String DONE_RUNS = "done";
 
@@ -23,8 +24,20 @@ public final class ParallelConsistencyTest implements TestSupport {
     
     final Set<ActorRef> doneRuns = new HashSet<>();
 
-    new ActorSystemConfig() {}
+    new ActorSystemConfig() {{ 
+      numThreads = actors * 2;
+      defaultActorConfig = new ActorConfig() {{
+        priority = 10;
+      }};
+    }}
     .define()
+    .when(DRIVER).lambda(a -> {
+      final ActorRef target = a.message().body();
+      for (int j = 1; j <= runs; j++) {
+        a.to(target).tell(j);
+      }
+      a.to(ActorRef.of(DONE_RUNS)).tell();
+    })
     .when(RUN).lambda(IntegerState::new, (a, s) -> {
       final int msg = a.message().body();
       assertEquals(s.value + 1, msg);
@@ -37,13 +50,11 @@ public final class ParallelConsistencyTest implements TestSupport {
     .when(DONE_RUNS).lambda(refCollector(doneRuns))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
-        for (int j = 1; j <= runs; j++) {
-          a.to(ActorRef.of(RUN, i + "")).tell(j);
-        }
+        a.to(ActorRef.of(DRIVER, i + "")).tell(ActorRef.of(RUN, i + ""));
       }
     })
     .shutdown();
 
-    assertEquals(actors, doneRuns.size());
+    assertEquals(actors * 2, doneRuns.size());
   }
 }

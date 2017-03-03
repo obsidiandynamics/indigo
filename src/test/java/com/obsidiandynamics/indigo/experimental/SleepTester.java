@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo;
+package com.obsidiandynamics.indigo.experimental;
 
 public final class SleepTester {
   public static void main(String[] args) {

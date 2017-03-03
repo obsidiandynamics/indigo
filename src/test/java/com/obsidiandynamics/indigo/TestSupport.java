@@ -13,7 +13,10 @@ interface TestSupport {
   }
   
   default Consumer<Activation> refCollector(Set<ActorRef> set) {
-    return a -> set.add(a.message().from());
+    return a -> {
+      if (LOG) LOG_STREAM.println("Finished " + a.message().from());
+      set.add(a.message().from());
+    };
   }
   
   default Consumer<Activation> tell(String role) {

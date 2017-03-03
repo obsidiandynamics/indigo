@@ -12,7 +12,7 @@ public final class ActorSystem {
   
   private final Map<ActorRef, Activation> activations = new ConcurrentHashMap<>();
   
-  private final Map<String, ActorSetup> factories = new HashMap<>();
+  private final Map<String, ActorSetup> setupRegistry = new HashMap<>();
   
   private final AtomicInteger busyActors = new AtomicInteger();
   
@@ -24,29 +24,40 @@ public final class ActorSystem {
   
   private static final class ActorSetup {
     final Supplier<Actor> factory;
-    final ActorConfig config;
-    ActorSetup(Supplier<Actor> factory, ActorConfig config) {
+    final ActorConfig actorConfig;
+    ActorSetup(Supplier<Actor> factory, ActorConfig actorConfig) {
       this.factory = factory;
-      this.config = config;
+      this.actorConfig = actorConfig;
     }
   }
   
   ActorSystem(ActorSystemConfig config) {
     this.config = config;
-    executor = Executors.newFixedThreadPool(config.numThreads);
-    when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
+    executor = Executors.newWorkStealingPool(config.numThreads);
+    when(ingressRef.role()).configure(new ActorConfig() {{
+      // if we throttle with only one thread in the pool, then the ingress will cause a deadlock
+      // under throttling conditions
+      throttleSend = config.numThreads >= 2;
+    }})
+    .lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
   }
   
   public ActorSystem ingress(Consumer<Activation> act) {
-    return send(new Message(null, ingressRef, act, null, false));
+    return send(new Message(null, ingressRef, act, null, false), true);
   }
   
   public final class ActorBuilder {
     private final String role;
+    private ActorConfig actorConfig = config.defaultActorConfig;
     
     ActorBuilder(String role) { 
       this.role = role;
+    }
+    
+    public ActorBuilder configure(ActorConfig actorConfig) {
+      this.actorConfig = actorConfig;
+      return this;
     }
     
     public ActorSystem lambda(Consumer<Activation> act) {
@@ -58,7 +69,7 @@ public final class ActorSystem {
     }
     
     public ActorSystem use(Supplier<Actor> factory) {
-      register(role, factory);
+      register(role, factory, actorConfig);
       return ActorSystem.this;
     }
   }
@@ -67,16 +78,16 @@ public final class ActorSystem {
     return new ActorBuilder(role);
   }
   
-  private void register(String role, Supplier<Actor> factory, ActorConfig config) {
-    final ActorSetup existing = factories.put(role, new ActorSetup(factory, config));
+  private void register(String role, Supplier<Actor> factory, ActorConfig actorConfig) {
+    final ActorSetup existing = setupRegistry.put(role, new ActorSetup(factory, actorConfig));
     if (existing != null) {
-      factories.put(role, existing);
+      setupRegistry.put(role, existing);
       throw new IllegalStateException("Factory for actor of role " + role + " has already been registered");
     }
   }
   
-  ActorSystem send(Message m) {
-    throttleBacklog(m.from());
+  ActorSystem send(Message m, boolean throttle) {
+    if (throttle) throttleBacklog(m.from());
     
     while (true) {
       final Activation a = activate(m.to());
@@ -140,7 +151,7 @@ public final class ActorSystem {
         if (existing2 != null) {
           return existing2;
         } else {
-          final Activation created = new Activation(ref, this, createActor(ref.role()));
+          final Activation created = createActivation(ref);
           activations.put(ref, created);
           return created;
         }
@@ -156,10 +167,11 @@ public final class ActorSystem {
     return timeoutWatchdog;
   }
   
-  private Actor createActor(Object role) {
-    final Supplier<Actor> factory = factories.get(role);
-    if (factory == null) throw new IllegalArgumentException("No registered factory for actor of role " + role);
-    return factory.get();
+  private Activation createActivation(ActorRef ref) {
+    final ActorSetup setup = setupRegistry.get(ref.role());
+    if (setup == null) throw new IllegalArgumentException("No setup for actor of role " + ref.role());
+    final Actor actor = setup.factory.get();
+    return new Activation(ref, this, setup.actorConfig, actor);
   }
 
   public void shutdown() {
