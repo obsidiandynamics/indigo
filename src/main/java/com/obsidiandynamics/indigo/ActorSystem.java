@@ -100,7 +100,7 @@ public final class ActorSystem {
   }
   
   private void throttleBacklog(ActorRef from) {
-    while (from == ingressRef && backlog.get() > config.backlogCapacity) {
+    while (backlog.get() > config.backlogCapacity) {
       try {
         Thread.sleep(config.backlogThrottleMillis);
       } catch (InterruptedException e) {}
