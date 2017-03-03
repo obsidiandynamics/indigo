@@ -9,12 +9,16 @@ interface TestSupport {
   static final PrintStream LOG_STREAM = System.out;
   
   default void logTestName() {
-    if (LOG) LOG_STREAM.println("Testing " + getClass().getSimpleName());
+    log("Testing %s\n", getClass().getSimpleName());
+  }
+  
+  default void log(String format, Object ... args) {
+    if (LOG) LOG_STREAM.printf(format, args);
   }
   
   default Consumer<Activation> refCollector(Set<ActorRef> set) {
     return a -> {
-      if (LOG) LOG_STREAM.println("Finished " + a.message().from());
+      log("Finished %s\n", a.message().from());
       set.add(a.message().from());
     };
   }

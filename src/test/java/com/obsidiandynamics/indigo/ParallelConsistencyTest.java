@@ -27,7 +27,8 @@ public final class ParallelConsistencyTest implements TestSupport {
     new ActorSystemConfig() {{ 
       numThreads = actors * 2;
       defaultActorConfig = new ActorConfig() {{
-        priority = 10;
+        priority = 100;
+        throttleSend = true;
       }};
     }}
     .define()

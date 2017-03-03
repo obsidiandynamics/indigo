@@ -36,7 +36,7 @@ public final class TimeoutTest implements TestSupport {
       .onTimeout(t -> {
         final long elapsed = System.currentTimeMillis() - startTime;
         final long timeDiff = Math.abs(elapsed - timeout);
-        if (LOG) System.out.format("timed out %s, diff=%d, t/o=%d, actual=%d\n", a.self(), timeDiff, timeout, elapsed);
+        log("Timed out %s, diff=%d, t/o=%d, actual=%d\n", a.self(), timeDiff, timeout, elapsed);
         
         t.to(ActorRef.of(DONE)).tell(timeDiff);
       })
@@ -59,7 +59,7 @@ public final class TimeoutTest implements TestSupport {
       totalDiff += diff; 
     }
     final double avgDiff = (double) totalDiff / actors;
-    if (LOG) LOG_STREAM.format("Average diff: %.1f\n", avgDiff);
+    log("Average diff: %.1f\n", avgDiff);
     assertTrue(String.format("Average timeout threshold above tolerance: %.1f", avgDiff), 
                avgDiff <= TIMEOUT_TOLERANCE);
   }
