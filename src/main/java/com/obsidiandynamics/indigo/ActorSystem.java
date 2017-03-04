@@ -33,7 +33,7 @@ public final class ActorSystem {
   
   ActorSystem(ActorSystemConfig config) {
     this.config = config;
-    executor = Executors.newWorkStealingPool(config.numThreads);
+    executor = Executors.newFixedThreadPool(config.numThreads);
     when(ingressRef.role()).configure(new ActorConfig() {{
       // if we throttle with only one thread in the pool, then the ingress will cause a deadlock
       // under throttling conditions
