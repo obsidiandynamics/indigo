@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.ForkJoinPool.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
@@ -33,11 +34,9 @@ public final class ActorSystem {
   
   ActorSystem(ActorSystemConfig config) {
     this.config = config;
-    executor = Executors.newFixedThreadPool(config.numThreads);
+    executor = Executors.newWorkStealingPool(config.numThreads);
     when(ingressRef.role()).configure(new ActorConfig() {{
-      // if we throttle with only one thread in the pool, then the ingress will cause a deadlock
-      // under throttling conditions
-      throttleSend = config.numThreads >= 2;
+      throttleSend = true;
     }})
     .lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
@@ -100,11 +99,28 @@ public final class ActorSystem {
   }
   
   private void throttleBacklog(ActorRef from) {
-    while (backlog.get() > config.backlogCapacity) {
+    while (shouldThrottle()) {
       try {
-        Thread.sleep(config.backlogThrottleMillis);
+        // if we throttle with insufficient threads in the pool, then a deadlock is possible;
+        // hence we throttle in a ManagedBlocker which may add threads as required
+        ForkJoinPool.managedBlock(new ManagedBlocker() {
+          @Override
+          public boolean block() throws InterruptedException {
+            Thread.sleep(config.backlogThrottleMillis);
+            return false;
+          }
+
+          @Override
+          public boolean isReleasable() {
+            return ! shouldThrottle();
+          }
+        });
       } catch (InterruptedException e) {}
     }
+  }
+  
+  private boolean shouldThrottle() {
+    return backlog.get() > config.backlogCapacity;
   }
   
   void dispatch(Activation a) {
