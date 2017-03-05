@@ -3,9 +3,11 @@ package com.obsidiandynamics.indigo;
 public abstract class ActorSystemConfig {
   protected int numThreads = getDefaultThreads();
   
-  protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 100_000L);
+  protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 10_000L);
   
   protected int backlogThrottleMillis = PropertyUtils.get("indigo.backlogThrottleMillis", Integer::parseInt, 1);
+  
+  protected int backlogThrottleTries = PropertyUtils.get("indigo.backlogThrottleTries", Integer::parseInt, 10);
   
   protected ActorConfig defaultActorConfig = new ActorConfig() {};
   

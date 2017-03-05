@@ -101,18 +101,21 @@ public final class ActorSystem {
   private void throttleBacklog(ActorRef from) {
     while (shouldThrottle()) {
       try {
-        // if we throttle with insufficient threads in the pool, then a deadlock is possible;
+        // if we throttle with insufficient threads in the pool, then starvation is possible;
         // hence we throttle in a ManagedBlocker which may add threads as required
         ForkJoinPool.managedBlock(new ManagedBlocker() {
+          private final AtomicInteger triesLeft = new AtomicInteger(config.backlogThrottleTries);
+          
           @Override
           public boolean block() throws InterruptedException {
             Thread.sleep(config.backlogThrottleMillis);
-            return false;
+            final int left = triesLeft.decrementAndGet();
+            return left == 0;
           }
 
           @Override
           public boolean isReleasable() {
-            return ! shouldThrottle();
+            return triesLeft.get() == 0 || ! shouldThrottle();
           }
         });
       } catch (InterruptedException e) {}
