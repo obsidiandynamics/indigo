@@ -1,6 +1,8 @@
 package com.obsidiandynamics.indigo;
 
 public final class ActorRef {
+  public static final String INGRESS = "_ingress";
+  
   private final String role;
   
   private final String key;
@@ -16,6 +18,10 @@ public final class ActorRef {
 
   public String key() {
     return key;
+  }
+  
+  public boolean isIngress() {
+    return role.equals(INGRESS);
   }
 
   @Override

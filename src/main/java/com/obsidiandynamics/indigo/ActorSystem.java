@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.ActorRef.*;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.ForkJoinPool.*;
@@ -19,7 +21,7 @@ public final class ActorSystem {
   
   private final AtomicLong backlog = new AtomicLong();
   
-  private final ActorRef ingressRef = ActorRef.of("_ingress");
+  private final ActorRef ingressRef = ActorRef.of(INGRESS);
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
@@ -44,6 +46,27 @@ public final class ActorSystem {
   
   public ActorSystem ingress(Consumer<Activation> act) {
     return send(new Message(null, ingressRef, act, null, false), true);
+  }
+  
+  public IngressBuilder ingress() {
+    return new IngressBuilder();
+  }
+  
+  public final class IngressBuilder {
+    private int iterations;
+    
+    public IngressBuilder times(int iterations) {
+      this.iterations = iterations;
+      return this;
+    }
+    
+    public ActorSystem act(BiConsumer<Activation, Integer> act) {
+      for (int i = 0; i < iterations; i++) {
+        final int _i = i;
+        ActorSystem.this.ingress(a -> act.accept(a, _i));
+      }
+      return ActorSystem.this;
+    }
   }
   
   public final class ActorBuilder {

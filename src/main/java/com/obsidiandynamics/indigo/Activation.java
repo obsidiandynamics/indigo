@@ -135,6 +135,8 @@ public final class Activation {
   public final class MessageBuilder {
     private final ActorRef to;
     
+    private int copies = 1;
+    
     private Object requestBody;
     
     private long timeoutMillis;
@@ -145,11 +147,19 @@ public final class Activation {
       this.to = to;
     }
     
+    public MessageBuilder times(int copies) {
+      this.copies = copies;
+      return this;
+    }
+    
     public void tell(Object body) {
-      send(new Message(ref, to, body, null, false));
+      for (int i = copies; --i >= 0;) {
+        send(new Message(ref, to, body, null, false));
+      }
     }
     
     public MessageBuilder ask(Object requestBody) {
+      if (copies != 1) throw new IllegalArgumentException("Cannot 'ask' with more than 1 copy");
       this.requestBody = requestBody;
       return this;
     }
@@ -170,7 +180,7 @@ public final class Activation {
     
     public void onResponse(Consumer<Activation> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
-        throw new IllegalStateException("Only one of the timeout time or handler has been set");
+        throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
       }      
       
       final UUID requestId = UUID.randomUUID();
@@ -208,7 +218,8 @@ public final class Activation {
   }
   
   public void reply(Object responseBody) {
-    send(new Message(ref, message.from(), responseBody, message.requestId(), true));
+    final boolean responding = message.requestId() != null;
+    send(new Message(ref, message.from(), responseBody, message.requestId(), responding));
   }
   
   public void forward(ActorRef to) {
