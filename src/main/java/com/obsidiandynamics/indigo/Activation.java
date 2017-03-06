@@ -12,7 +12,7 @@ public final class Activation {
   
   private final Actor actor;
   
-  private final Deque<Message> backlog = new LinkedList<>();
+  private final Deque<Message> backlog = new ArrayDeque<>();
   
   private final Map<UUID, PendingRequest> pending = new HashMap<>();
   
