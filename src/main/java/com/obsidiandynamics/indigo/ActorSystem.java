@@ -53,7 +53,7 @@ public final class ActorSystem {
   }
   
   public final class IngressBuilder {
-    private int iterations;
+    private int iterations = 1;
     
     public IngressBuilder times(int iterations) {
       this.iterations = iterations;
