@@ -17,9 +17,11 @@ public final class ActorSystem {
   
   private final Map<String, ActorSetup> setupRegistry = new HashMap<>();
   
-  private final AtomicInteger busyActors = new AtomicInteger();
+  //private final AtomicInteger busyActors = new AtomicInteger();
+  private final LongAdder busyActors = new LongAdder();
   
-  private final AtomicLong backlog = new AtomicLong();
+  //private final AtomicLong backlog = new AtomicLong();
+  private final LongAdder backlog = new LongAdder();
   
   private final ActorRef ingressRef = ActorRef.of(INGRESS);
   
@@ -146,7 +148,8 @@ public final class ActorSystem {
   }
   
   private boolean shouldThrottle() {
-    return backlog.get() > config.backlogCapacity;
+    //return backlog.get() > config.backlogCapacity;
+    return backlog.sum() > config.backlogCapacity;
   }
   
   void dispatch(Activation a) {
@@ -154,30 +157,34 @@ public final class ActorSystem {
   }
   
   void incBusyActors() {
-    busyActors.incrementAndGet();
+    //busyActors.incrementAndGet();
+    busyActors.increment();
   }
   
   void decBusyActors() {
-    final int newCount = busyActors.decrementAndGet();
-    if (newCount == 0) {
-      synchronized (busyActors) {
-        busyActors.notifyAll();
-      }
-    }
+//    final int newCount = busyActors.decrementAndGet();
+//    if (newCount == 0) {
+//      synchronized (busyActors) {
+//        busyActors.notifyAll();
+//      }
+//    }
+    busyActors.decrement();
   }
   
   void incBacklog() {
-    backlog.incrementAndGet();
+    //backlog.incrementAndGet();
+    backlog.increment();
   }
   
   void decBacklog() {
-    backlog.decrementAndGet();
+    //backlog.decrementAndGet();
+    backlog.decrement();
   }
   
   public ActorSystem await() throws InterruptedException {
-    while (busyActors.get() != 0) {
+    while (busyActors.sum() != 0) {
       synchronized (busyActors) {
-        busyActors.wait(1_000);
+        busyActors.wait(10);
       }
     }
     return this;

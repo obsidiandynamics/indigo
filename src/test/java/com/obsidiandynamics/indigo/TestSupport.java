@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
-interface TestSupport {
+public interface TestSupport {
   static final boolean LOG = false;
   static final PrintStream LOG_STREAM = System.out;
   
