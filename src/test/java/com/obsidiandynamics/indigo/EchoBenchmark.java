@@ -11,7 +11,7 @@ import org.junit.*;
  *  Benchmarks raw message throughput. Nearly identical to 
  *  http://letitcrash.com/post/20397701710/50-million-messages-per-second-on-a-single.
  *  
- *  Run with -server -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M 
+ *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M 
  *  -Xss1M -XX:+UseParallelGC
  */
 public final class EchoBenchmark implements TestSupport {
@@ -30,7 +30,7 @@ public final class EchoBenchmark implements TestSupport {
     final Set<ActorRef> done = new HashSet<>();
 
     new ActorSystemConfig() {{
-      numThreads = actors;
+      //numThreads = actors;
       defaultActorConfig = new ActorConfig() {{
         priority = 1_000;
         throttleSend = false;
@@ -71,6 +71,6 @@ public final class EchoBenchmark implements TestSupport {
     System.out.format("Running benchmark...\n");
     System.out.format("%,d actors, %,d total messages/actor, %,d seed messages/actor\n", actors, messages, seedMessages);
     final long took = TestSupport.took(() -> new EchoBenchmark().test(actors, messages, seedMessages));
-    System.out.format("Took %,d s, %,d msgs/s\n", took / 1000, messages * actors / took * 1000);
+    System.out.format("Took %,d s, %,d msgs/s\n", took / 1000, (long) messages * actors / took * 1000);
   }
 }
