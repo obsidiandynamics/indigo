@@ -30,7 +30,7 @@ public final class EchoBenchmark implements TestSupport {
     final Set<ActorRef> done = new HashSet<>();
 
     new ActorSystemConfig() {{
-      //numThreads = actors;
+      numThreads = actors;
       defaultActorConfig = new ActorConfig() {{
         priority = 1_000;
         throttleSend = false;
