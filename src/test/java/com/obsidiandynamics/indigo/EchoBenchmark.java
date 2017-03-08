@@ -36,7 +36,7 @@ public final class EchoBenchmark implements TestSupport {
   
   @Test
   public void test() {
-    test(4, 1_000, 100, 0f, false, false);
+    test(4, 1_000, 100, 0f, LOG, false);
   }
   
   private Timings test(int actors, int messages, int seedMessages, float warmupFrac, boolean log, boolean verbose) {
