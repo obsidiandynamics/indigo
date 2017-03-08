@@ -105,8 +105,8 @@ public final class EchoBenchmark implements TestSupport {
   
   public static void main(String[] args) {
     final int threads = Runtime.getRuntime().availableProcessors();
-    final int actors = threads * 8;
-    final int messages = 20_000_000;
+    final int actors = threads * 2;
+    final int messages = 100_000_000;
     final int seedMessages = 1_000;
     final float warmupFrac = .05f;
     System.out.format("Running benchmark...\n");
