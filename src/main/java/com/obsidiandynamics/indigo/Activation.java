@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.*;
 
 public final class Activation {
@@ -132,8 +133,13 @@ public final class Activation {
     passivationScheduled = true;
   }
   
+  @FunctionalInterface
+  private interface MessageTarget {
+    void send(Object body, UUID requestId);
+  }
+  
   public final class MessageBuilder {
-    private final ActorRef to;
+    private final MessageTarget target;
     
     private int copies = 1;
     
@@ -143,8 +149,8 @@ public final class Activation {
     
     private Consumer<Activation> onTimeout;
     
-    MessageBuilder(ActorRef to) {
-      this.to = to;
+    MessageBuilder(MessageTarget target) {
+      this.target = target;
     }
     
     public MessageBuilder times(int copies) {
@@ -154,7 +160,7 @@ public final class Activation {
     
     public void tell(Object body) {
       for (int i = copies; --i >= 0;) {
-        send(new Message(ref, to, body, null, false));
+        target.send(body, null);
       }
     }
     
@@ -186,7 +192,7 @@ public final class Activation {
       final UUID requestId = UUID.randomUUID();
       final PendingRequest req = new PendingRequest(onResponse, onTimeout);
       pending.put(requestId, req);
-      send(new Message(ref, to, requestBody, requestId, false));
+      target.send(requestBody, requestId);
       
       if (timeoutMillis != 0) {
         system.getTimeoutWatchdog().enqueue(new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
@@ -202,7 +208,39 @@ public final class Activation {
   }
   
   public MessageBuilder to(ActorRef to) {
-    return new MessageBuilder(to);
+    return new MessageBuilder((body, requestId) -> send(new Message(ref, to, body, requestId, false)));
+  }
+  
+  public final class EgressBuilder<I, O> {
+    private final Function<I, O> func;
+
+    EgressBuilder(Function<I, O> func) {
+      this.func = func;
+    }
+
+    @SuppressWarnings("unchecked")
+    public MessageBuilder using(Executor executor) {
+      return new MessageBuilder((body, requestId) -> {
+        executor.execute(() -> {
+          final O out = func.apply((I) body);
+          if (requestId != null) {
+            final Message resp = new Message(null, ref, out, requestId, true);
+            system.send(resp, false);
+          }
+        });
+      });
+    }
+  }
+  
+  public <I, O> EgressBuilder<I, O> egress(Function<I, O> func) {
+    return new EgressBuilder<>(func);
+  }
+  
+  public <I> EgressBuilder<I, Void> egress(Consumer<I> consumer) {
+    return new EgressBuilder<>(in -> {
+      consumer.accept(in);
+      return null;
+    });
   }
   
   public MessageBuilder toSelf() {

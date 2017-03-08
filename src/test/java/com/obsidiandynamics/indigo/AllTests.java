@@ -7,6 +7,7 @@ import org.junit.runners.Suite.*;
 @RunWith(Suite.class)
 @SuiteClasses({
   EchoBenchmark.class,
+  EgressTest.class,
   ParallelConsistencyTest.class,
   RequestResponseTest.class,
   StatelessChainTest.class,
