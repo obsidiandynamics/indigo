@@ -67,11 +67,9 @@ public final class Activation {
           } else {
             throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
           }
-        } else {
-          if (req != null) {
-            req.setComplete(true);
-            req.getOnResponse().accept(this);
-          }
+        } else if (req != null) {
+          req.setComplete(true);
+          req.getOnResponse().accept(this);
         }
       } else {
         actor.act(this);
