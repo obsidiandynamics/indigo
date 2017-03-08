@@ -119,6 +119,22 @@ public final class ActorSystem {
     return this;
   }
   
+  public <T> CompletableFuture<T> ask(ActorRef ref, Object requestBody) {
+    final CompletableFuture<T> f = new CompletableFuture<>();
+    ingress(a -> 
+      a.to(ref).ask(requestBody).onResponse(r -> f.complete(r.message().body()))
+    );
+    return f;
+  }
+  
+  public <T> CompletableFuture<T> ask(ActorRef ref, long timeoutMillis, Object requestBody) {
+    final CompletableFuture<T> f = new CompletableFuture<>();
+    ingress(a -> 
+      a.to(ref).ask(requestBody).await(timeoutMillis).onTimeout(t -> f.completeExceptionally(new TimeoutException())).onResponse(r -> f.complete(r.message().body()))
+    );
+    return f;
+  }
+  
   private void throttleBacklog(ActorRef from) {
     while (shouldThrottle()) {
       try {
