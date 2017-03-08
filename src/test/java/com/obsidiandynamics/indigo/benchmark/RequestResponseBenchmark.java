@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo;
+package com.obsidiandynamics.indigo.benchmark;
 
 import static com.obsidiandynamics.indigo.ActorRef.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.FIXED_THREAD_POOL;
@@ -8,13 +8,14 @@ import java.util.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.*;
+
 /**
- *  Benchmarks raw message throughput. Nearly identical to 
- *  http://letitcrash.com/post/20397701710/50-million-messages-per-second-on-a-single.
+ *  Benchmarks request-response pair throughput.
  *  
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
  */
-public final class EchoBenchmark implements TestSupport {
+public final class RequestResponseBenchmark implements TestSupport {
   private static final class State {
     int rx;
     int tx;
@@ -112,7 +113,7 @@ public final class EchoBenchmark implements TestSupport {
     System.out.format("Running benchmark...\n");
     System.out.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction\n", 
                       threads, actors, messages, seedMessages, warmupFrac * 100);
-    final Timings t = new EchoBenchmark().test(actors, messages, seedMessages, warmupFrac, true, false);
+    final Timings t = new RequestResponseBenchmark().test(actors, messages, seedMessages, warmupFrac, true, false);
     System.out.format("Took %,d s, %,d msgs/s\n", t.avgTime / 1000, t.timedMessages / t.avgTime * 1000);
   }
 }
