@@ -36,8 +36,8 @@ public final class ActorSystem {
   
   ActorSystem(ActorSystemConfig config) {
     this.config = config;
-    executor = config.executor.apply(config.parallelism);
-    activations = new ConcurrentHashMap<>(16, .75f, config.parallelism);
+    executor = config.executor.apply(config.getParallelism());
+    activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
   }

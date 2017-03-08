@@ -6,7 +6,7 @@ import java.util.function.*;
 public abstract class ActorSystemConfig {
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
    *  be sized dynamically depending on the thread pool used. */
-  protected int parallelism = getDefaultThreads();
+  protected int parallelism = PropertyUtils.get("indigo.parallelism", Integer::parseInt, 0);
   
   /** The total (system-wide) backlog at which point throttling is enforced. */
   protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 100_000L);
@@ -35,9 +35,8 @@ public abstract class ActorSystemConfig {
     return new ActorSystem(this);
   }
   
-  private static int getDefaultThreads() {
-    final int numThreads = PropertyUtils.get("indigo.parallelism", Integer::parseInt, 0);
-    return numThreads > 0 ? numThreads : getNumProcessors() - numThreads;
+  int getParallelism() {
+    return parallelism > 0 ? parallelism : getNumProcessors() - parallelism;
   }
   
   private static int getNumProcessors() {
