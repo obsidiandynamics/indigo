@@ -37,11 +37,7 @@ public final class RequestResponseTest implements TestSupport {
       a.reply(a.message().<Integer>body() + 1);
     })
     .when(DONE_RUNS).lambda(refCollector(doneRuns))
-    .ingress(a -> {
-      for (int i = 0; i < actors; i++) {
-        a.to(ActorRef.of(DRIVER, i + "")).tell();
-      }
-    })
+    .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdown();
 
     assertEquals(actors, doneRuns.size());

@@ -29,11 +29,7 @@ public final class StatelessChainTest implements TestSupport {
       }
     })
     .when(DONE_RUNS).lambda(refCollector(doneRuns))
-    .ingress(a -> {
-      for (int i = 0; i < actors; i++) {
-        a.to(ActorRef.of(RUN, i + "")).tell(1);
-      }
-    })
+    .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(RUN, String.valueOf(i))).tell(1))
     .shutdown();
 
     assertEquals(actors, doneRuns.size());
