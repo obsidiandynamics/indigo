@@ -13,14 +13,12 @@ public final class ActorSystem {
   
   private final ExecutorService executor;
   
-  private final Map<ActorRef, Activation> activations = new ConcurrentHashMap<>();
+  private final Map<ActorRef, Activation> activations;
   
   private final Map<String, ActorSetup> setupRegistry = new HashMap<>();
   
-  //private final AtomicInteger busyActors = new AtomicInteger();
   private final LongAdder busyActors = new LongAdder();
   
-  //private final AtomicLong backlog = new AtomicLong();
   private final LongAdder backlog = new LongAdder();
   
   private final ActorRef ingressRef = ActorRef.of(INGRESS);
@@ -38,11 +36,9 @@ public final class ActorSystem {
   
   ActorSystem(ActorSystemConfig config) {
     this.config = config;
-    executor = Executors.newWorkStealingPool(config.numThreads);
-    when(ingressRef.role()).configure(new ActorConfig() {{
-      throttleSend = true;
-    }})
-    .lambda(StatelessLambdaActor::agent);
+    executor = config.executor.apply(config.parallelism);
+    activations = new ConcurrentHashMap<>(16, .75f, config.parallelism);
+    when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
   }
   
@@ -126,8 +122,10 @@ public final class ActorSystem {
   private void throttleBacklog(ActorRef from) {
     while (shouldThrottle()) {
       try {
-        // if we throttle with insufficient threads in the pool, then starvation is possible;
-        // hence we throttle in a ManagedBlocker which may add threads as required
+        // If we throttle messages with insufficient threads in the pool, then poor throughput is possible
+        // due to starvation; hence we throttle in a ManagedBlocker which may add threads as required.
+        // Note: this only works for the fork-join pool. A fixed thread pool will not be expanded
+        // automatically.
         ForkJoinPool.managedBlock(new ManagedBlocker() {
           private final AtomicInteger triesLeft = new AtomicInteger(config.backlogThrottleTries);
           
@@ -148,7 +146,6 @@ public final class ActorSystem {
   }
   
   private boolean shouldThrottle() {
-    //return backlog.get() > config.backlogCapacity;
     return backlog.sum() > config.backlogCapacity;
   }
   
@@ -157,27 +154,18 @@ public final class ActorSystem {
   }
   
   void incBusyActors() {
-    //busyActors.incrementAndGet();
     busyActors.increment();
   }
   
   void decBusyActors() {
-//    final int newCount = busyActors.decrementAndGet();
-//    if (newCount == 0) {
-//      synchronized (busyActors) {
-//        busyActors.notifyAll();
-//      }
-//    }
     busyActors.decrement();
   }
   
   void incBacklog() {
-    //backlog.incrementAndGet();
     backlog.increment();
   }
   
   void decBacklog() {
-    //backlog.decrementAndGet();
     backlog.decrement();
   }
   

@@ -25,7 +25,6 @@ public final class ParallelConsistencyTest implements TestSupport {
     final Set<ActorRef> doneRuns = new HashSet<>();
 
     new ActorSystemConfig() {{ 
-      numThreads = actors * 2;
       defaultActorConfig = new ActorConfig() {{
         priority = 100;
         throttleSend = true;

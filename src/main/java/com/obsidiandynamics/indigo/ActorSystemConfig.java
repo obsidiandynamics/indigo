@@ -1,9 +1,12 @@
 package com.obsidiandynamics.indigo;
 
+import java.util.concurrent.*;
+import java.util.function.*;
+
 public abstract class ActorSystemConfig {
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
-   *  be sized dynamically. */
-  protected int numThreads = getDefaultThreads();
+   *  be sized dynamically depending on the thread pool used. */
+  protected int parallelism = getDefaultThreads();
   
   /** The total (system-wide) backlog at which point throttling is enforced. */
   protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 100_000L);
@@ -14,6 +17,18 @@ public abstract class ActorSystemConfig {
   /** Upper bound on the number of consecutive blocks imposed during throttling. */
   protected int backlogThrottleTries = PropertyUtils.get("indigo.backlogThrottleTries", Integer::parseInt, 10);
   
+  public static enum Executor implements Function<Integer, ExecutorService> {
+    FORK_JOIN_POOL(Executors::newWorkStealingPool),
+    FIXED_THREAD_POOL(Executors::newFixedThreadPool);
+    
+    private final Function<Integer, ExecutorService> func;
+    private Executor(Function<Integer, ExecutorService> func) { this.func = func; }
+    @Override public ExecutorService apply(Integer parallelism) { return func.apply(parallelism); }
+  }
+  
+  /** Maps a given parallelism value to an appropriately sized thread pool. */
+  protected Function<Integer, ExecutorService> executor = PropertyUtils.get("indigo.executor", Executor::valueOf, Executor.FORK_JOIN_POOL);
+  
   protected ActorConfig defaultActorConfig = new ActorConfig() {};
   
   public final ActorSystem define() {
@@ -21,7 +36,7 @@ public abstract class ActorSystemConfig {
   }
   
   private static int getDefaultThreads() {
-    final int numThreads = PropertyUtils.get("indigo.numThreads", Integer::parseInt, 0);
+    final int numThreads = PropertyUtils.get("indigo.parallelism", Integer::parseInt, 0);
     return numThreads > 0 ? numThreads : getNumProcessors() - numThreads;
   }
   
