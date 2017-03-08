@@ -1,10 +1,10 @@
 package com.obsidiandynamics.indigo.benchmark;
 
-import static com.obsidiandynamics.indigo.ActorRef.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.FIXED_THREAD_POOL;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
+import java.util.function.*;
 
 import org.junit.*;
 
@@ -37,19 +37,37 @@ public final class RequestResponseBenchmark implements TestSupport {
   
   @Test
   public void test() {
-    test(4, 1_000, 100, 0f, LOG, false);
+    final Config c = new Config() {{
+      threads = Runtime.getRuntime().availableProcessors();
+      actors = 4;
+      pairs = 1_000;
+      seedPairs = 100;
+      warmupPairs = 0;
+      log = LOG;
+    }};
+    test(c);
   }
   
-  private Timings test(int actors, int messages, int seedMessages, float warmupFrac, boolean log, boolean verbose) {
-    if (seedMessages > messages / 2) 
-      throw new IllegalArgumentException("Seed messages cannot be greater than half the total number of messages");
+  private static abstract class Config {
+    int threads;
+    int actors; 
+    int pairs; 
+    int seedPairs;
+    int warmupPairs; 
+    boolean log; 
+    boolean verbose;
+  }
+  
+  private Timings test(Config c) {
+    if (c.seedPairs > c.pairs) 
+      throw new IllegalArgumentException("Seed pairs cannot be greater than total number of pairs");
     
-    final int warmupMessages = (int) (messages * warmupFrac);
     final Set<State> states = new HashSet<>();
     
-    if (log) System.out.format("Warming up...\n");
+    if (c.log) System.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
+      parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         priority = 1_000;
@@ -57,64 +75,67 @@ public final class RequestResponseBenchmark implements TestSupport {
     }}
     .define()
     .when(DRIVER).lambda(State::new, (a, s) -> {
-      switch (a.message().from().role()) {
-        case ECHO:
-          s.rx++;
-          if (verbose) System.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), a.message().from(), s.rx, s.tx);
-          
-          if (s.rx == warmupMessages) {
-            s.txOnStart = s.tx;
-            if (log && a.self().key().equals("0")) System.out.format("Starting timed run...\n");
-            s.started = System.nanoTime();
-          }
-          
-          if (s.rx == messages / 2 && s.tx == messages / 2) {
-            if (verbose) System.out.format("Done %s\n", a.self());
-            s.took = (System.nanoTime() - s.started) / 1_000_000l;
-            s.totalProcessed = messages / 2 - warmupMessages + messages / 2 - s.txOnStart;
-            a.to(ActorRef.of(TIMER)).tell(s);
-          } else if (s.tx != messages / 2) {
-            s.tx++;
-            a.reply();
-          }
-          break;
-          
-        case INGRESS:
-          a.to(ActorRef.of(ECHO, a.message().body().toString())).times(seedMessages).tell();
-          s.tx += seedMessages;
-          break;
-          
-        default: throw new UnsupportedOperationException(a.message().from().role());
-      }
+      final ActorRef to = ActorRef.of(ECHO, a.message().body().toString());
+      a.to(to).times(c.seedPairs).ask().onResponse(onResponse(to, s, c));
+      s.tx += c.seedPairs;
     })
     .when(ECHO).lambda(a -> a.reply())
     .when(TIMER).lambda(a -> states.add(a.message().body()))
-    .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
+    .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
     .shutdown();
 
-    assertEquals(actors, states.size());
+    assertEquals(c.actors, states.size());
     
     final Timings t = new Timings();
     for (State s : states) {
       t.timedMessages += s.totalProcessed;
       t.avgTime += s.took;
     }
-    t.avgTime /= actors;
+    t.avgTime /= c.actors;
     
     return t;
   }
   
+  private static Consumer<Activation> onResponse(ActorRef to, State s, Config c) {
+    return a -> {
+      s.rx++;
+      if (c.verbose) System.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), a.message().from(), s.rx, s.tx);
+      
+      if (s.rx == c.warmupPairs) {
+        s.txOnStart = s.tx;
+        if (c.log && a.self().key().equals("0")) System.out.format("Starting timed run...\n");
+        s.started = System.nanoTime();
+      }
+      
+      if (s.rx == c.pairs) {
+        if (c.verbose) System.out.format("Done %s\n", a.self());
+        s.took = (System.nanoTime() - s.started) / 1_000_000l;
+        s.totalProcessed = (c.pairs - c.warmupPairs + c.pairs - s.txOnStart) / 2;
+        a.to(ActorRef.of(TIMER)).tell(s);
+      } else if (s.tx != c.pairs) {
+        a.to(to).ask().onResponse(onResponse(to, s, c));
+        s.tx++;
+      }
+    };
+  }
+  
   public static void main(String[] args) {
-    final int threads = Runtime.getRuntime().availableProcessors();
-    final int actors = threads * 2;
-    final int messages = 100_000_000;
-    final int seedMessages = 1_000;
     final float warmupFrac = .05f;
+    final Config c = new Config() {{
+      threads = Runtime.getRuntime().availableProcessors();
+      actors = threads * 2;
+      pairs = 10_000_000;
+      seedPairs = 1_000;
+      warmupPairs = (int) (pairs * warmupFrac); 
+      log = true;
+      verbose = false;
+    }};
     System.out.format("Running benchmark...\n");
-    System.out.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction\n", 
-                      threads, actors, messages, seedMessages, warmupFrac * 100);
-    final Timings t = new RequestResponseBenchmark().test(actors, messages, seedMessages, warmupFrac, true, false);
-    System.out.format("Took %,d s, %,d msgs/s\n", t.avgTime / 1000, t.timedMessages / t.avgTime * 1000);
+    System.out.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction\n", 
+                      c.threads, c.actors, c.pairs, c.seedPairs, warmupFrac * 100);
+
+    final Timings t = new RequestResponseBenchmark().test(c);
+    System.out.format("Took %,d s, %,d pair/s\n", t.avgTime / 1000, t.timedMessages / Math.max(1, t.avgTime) * 1000);
   }
 }
 

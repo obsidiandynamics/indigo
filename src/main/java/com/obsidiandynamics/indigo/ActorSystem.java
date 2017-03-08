@@ -25,6 +25,8 @@ public final class ActorSystem {
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
+  private long nextActivationId = CryptoUtils.machineRandom();
+  
   private static final class ActorSetup {
     final Supplier<Actor> factory;
     final ActorConfig actorConfig;
@@ -260,7 +262,7 @@ public final class ActorSystem {
     final ActorSetup setup = setupRegistry.get(ref.role());
     if (setup == null) throw new IllegalArgumentException("No setup for actor of role " + ref.role());
     final Actor actor = setup.factory.get();
-    return new Activation(ref, this, setup.actorConfig, actor);
+    return new Activation(nextActivationId++, ref, this, setup.actorConfig, actor);
   }
 
   public void shutdown() {

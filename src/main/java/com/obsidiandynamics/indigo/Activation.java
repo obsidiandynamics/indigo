@@ -5,6 +5,8 @@ import java.util.concurrent.*;
 import java.util.function.*;
 
 public final class Activation {
+  private final long id;
+  
   private final ActorRef ref;
   
   private final ActorSystem system;
@@ -23,7 +25,10 @@ public final class Activation {
   
   private boolean passivationScheduled;
   
-  Activation(ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
+  private long requestCounter = CryptoUtils.machineRandom();
+  
+  Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
+    this.id = id;
     this.ref = ref;
     this.system = system;
     this.actorConfig = actorConfig;
@@ -83,17 +88,18 @@ public final class Activation {
       }
       
       runsRemaining--;
-      if (! noBacklog) {
-        if (runsRemaining == 0) {
-          system.dispatch(this);
-        }
-      } else if (noPending) {
+      if (noBacklog) {
         runsRemaining = 0;
-        if (passivationScheduled) {
-          system.passivate(ref);
-          actor.passivated(this);
+        
+        if (noPending) {
+          if (passivationScheduled) {
+            system.passivate(ref);
+            actor.passivated(this);
+          }
+          system.decBusyActors();
         }
-        system.decBusyActors();
+      } else if (runsRemaining == 0) {
+        system.dispatch(this);
       }
       system.decBacklog();
     } while (runsRemaining > 0);
@@ -165,7 +171,6 @@ public final class Activation {
     }
     
     public MessageBuilder ask(Object requestBody) {
-      if (copies != 1) throw new IllegalArgumentException("Cannot 'ask' with more than 1 copy");
       this.requestBody = requestBody;
       return this;
     }
@@ -188,17 +193,19 @@ public final class Activation {
       if (timeoutMillis != 0 ^ onTimeout != null) {
         throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
       }      
-      
-      final UUID requestId = UUID.randomUUID();
-      final PendingRequest req = new PendingRequest(onResponse, onTimeout);
-      pending.put(requestId, req);
-      target.send(requestBody, requestId);
-      
-      if (timeoutMillis != 0) {
-        system.getTimeoutWatchdog().enqueue(new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
-                                                            requestId,
-                                                            Activation.this,
-                                                            req));
+
+      for (int i = copies; --i >= 0;) {
+        final UUID requestId = new UUID(id, requestCounter++);
+        final PendingRequest req = new PendingRequest(onResponse, onTimeout);
+        pending.put(requestId, req);
+        target.send(requestBody, requestId);
+        
+        if (timeoutMillis != 0) {
+          system.getTimeoutWatchdog().enqueue(new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
+                                                              requestId,
+                                                              Activation.this,
+                                                              req));
+        }
       }
     }
     

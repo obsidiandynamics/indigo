@@ -38,10 +38,10 @@ public final class EchoBenchmark implements TestSupport {
   
   @Test
   public void test() {
-    test(4, 1_000, 100, 0f, LOG, false);
+    test(Runtime.getRuntime().availableProcessors(), 4, 1_000, 100, 0f, LOG, false);
   }
   
-  private Timings test(int actors, int messages, int seedMessages, float warmupFrac, boolean log, boolean verbose) {
+  private Timings test(int threads, int actors, int messages, int seedMessages, float warmupFrac, boolean log, boolean verbose) {
     if (seedMessages > messages / 2) 
       throw new IllegalArgumentException("Seed messages cannot be greater than half the total number of messages");
     
@@ -51,6 +51,7 @@ public final class EchoBenchmark implements TestSupport {
     if (log) System.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
+      parallelism = threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         priority = 1_000;
@@ -114,8 +115,8 @@ public final class EchoBenchmark implements TestSupport {
     System.out.format("Running benchmark...\n");
     System.out.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction\n", 
                       threads, actors, messages, seedMessages, warmupFrac * 100);
-    final Timings t = new EchoBenchmark().test(actors, messages, seedMessages, warmupFrac, true, false);
-    System.out.format("Took %,d s, %,d msgs/s\n", t.avgTime / 1000, t.timedMessages / t.avgTime * 1000);
+    final Timings t = new EchoBenchmark().test(threads, actors, messages, seedMessages, warmupFrac, true, false);
+    System.out.format("Took %,d s, %,d msgs/s\n", t.avgTime / 1000, t.timedMessages / Math.max(1, t.avgTime) * 1000);
   }
 }
 

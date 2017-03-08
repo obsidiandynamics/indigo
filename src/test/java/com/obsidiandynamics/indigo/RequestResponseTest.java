@@ -25,7 +25,7 @@ public final class RequestResponseTest implements TestSupport {
       a.to(ActorRef.of(ADDER)).ask(s.value).onResponse(r -> {
         final int res = r.message().body();
         if (res == runs) {
-          a.to(ActorRef.of(DONE_RUNS)).tell();
+          r.to(ActorRef.of(DONE_RUNS)).tell();
         } else {
           assertEquals(s.value + 1, res);
           s.value = res;
