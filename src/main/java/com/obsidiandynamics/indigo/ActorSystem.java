@@ -119,18 +119,54 @@ public final class ActorSystem {
     return this;
   }
   
-  public <T> CompletableFuture<T> ask(ActorRef ref, Object requestBody) {
-    final CompletableFuture<T> f = new CompletableFuture<>();
-    ingress(a -> 
-      a.to(ref).ask(requestBody).onResponse(r -> f.complete(r.message().body()))
-    );
-    return f;
+  public void tell(ActorRef ref) {
+    tell(ref, null);
   }
   
-  public <T> CompletableFuture<T> ask(ActorRef ref, long timeoutMillis, Object requestBody) {
+  public void tell(ActorRef ref, Object body) {
+    ingress(a -> a.to(ref).tell(body));
+  }
+  
+  public <T> CompletableFuture<T> ask(ActorRef ref) {
+    return ask(ref, null);
+  }
+  
+  /**
+   *  Asks an actor for a given request, returning a future. This method is intended to be called
+   *  from outside the actor system.<p>
+   *  
+   *  Although the consumer of the future is free to set their own timeout when calling <code>get()</code>,
+   *  the actor system will impose a default upper bound on the timeout, after which a
+   *  <code>TimeoutException</code> is thrown. To override this limit, call the overloaded
+   *  <code>ask()</code> that takes a <code>timeoutMillisUpperBound</code> argument.
+   *  
+   *  @param ref The target actor.
+   *  @param requestBody The request body.
+   *  @return A future.
+   */
+  public <T> CompletableFuture<T> ask(ActorRef ref, Object requestBody) {
+    return ask(ref, config.defaultAskTimeoutMillis, requestBody);
+  }
+  
+  /**
+   *  Asks an actor for a given request, returning a future. This method is intended to be called
+   *  from outside the actor system.<p>
+   *  
+   *  This method provides the ability to override the default upper bound on the timeout that is
+   *  set in <code>ActorSystemConfig</code>.
+   *  
+   *  @param ref The target actor.
+   *  @param timeoutMillisUpperBound The upper bound on the timeout. Beyond this time, the future
+   *                                 will yield a <code>TimeoutException</code>.
+   *  @param requestBody The request body.
+   *  @return A future.
+   */
+  public <T> CompletableFuture<T> ask(ActorRef ref, long timeoutMillisUpperBound, Object requestBody) {
     final CompletableFuture<T> f = new CompletableFuture<>();
     ingress(a -> 
-      a.to(ref).ask(requestBody).await(timeoutMillis).onTimeout(t -> f.completeExceptionally(new TimeoutException())).onResponse(r -> f.complete(r.message().body()))
+      a.to(ref).ask(requestBody).await(timeoutMillisUpperBound)
+      .onTimeout(t -> f.completeExceptionally(new TimeoutException()))
+      .onResponse(r -> f.complete(r.message().body()))
     );
     return f;
   }

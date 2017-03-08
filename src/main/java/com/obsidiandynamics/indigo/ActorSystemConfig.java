@@ -17,6 +17,9 @@ public abstract class ActorSystemConfig {
   /** Upper bound on the number of consecutive blocks imposed during throttling. */
   protected int backlogThrottleTries = PropertyUtils.get("indigo.backlogThrottleTries", Integer::parseInt, 10);
   
+  /** The default timeout when asking from outside the actor system. */
+  protected int defaultAskTimeoutMillis = PropertyUtils.get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);
+  
   public static enum Executor implements Function<Integer, ExecutorService> {
     FORK_JOIN_POOL(Executors::newWorkStealingPool),
     FIXED_THREAD_POOL(Executors::newFixedThreadPool);
