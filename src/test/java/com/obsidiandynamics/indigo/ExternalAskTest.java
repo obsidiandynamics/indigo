@@ -17,7 +17,9 @@ public final class ExternalAskTest implements TestSupport {
     .define()
     .when(ADDER).lambda(a -> a.reply(a.message().<Integer>body() + 1));
     
-    system.ask(ActorRef.of(ADDER), 41).whenComplete((resp, throwable) -> assertEquals(42, (int) resp));
+    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
+    final int resp = f.get();
+    assertEquals(42, resp);
   }
 
   @Test(expected=TimeoutException.class)
