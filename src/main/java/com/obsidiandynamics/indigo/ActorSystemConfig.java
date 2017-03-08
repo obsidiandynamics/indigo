@@ -38,7 +38,7 @@ public abstract class ActorSystemConfig {
     return new ActorSystem(this);
   }
   
-  int getParallelism() {
+  final int getParallelism() {
     return parallelism > 0 ? parallelism : getNumProcessors() - parallelism;
   }
   
