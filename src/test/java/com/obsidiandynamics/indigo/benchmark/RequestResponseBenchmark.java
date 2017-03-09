@@ -9,6 +9,7 @@ import java.util.function.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.Activation.*;
 
 /**
  *  Benchmarks request-response pair throughput.
@@ -53,7 +54,8 @@ public final class RequestResponseBenchmark implements TestSupport {
     int actors; 
     int pairs; 
     int seedPairs;
-    int warmupPairs; 
+    int warmupPairs;
+    long timeout = 1_000;
     boolean log; 
     boolean verbose;
   }
@@ -76,8 +78,7 @@ public final class RequestResponseBenchmark implements TestSupport {
     .define()
     .when(DRIVER).lambda(State::new, (a, s) -> {
       final ActorRef to = ActorRef.of(ECHO, a.message().body().toString());
-      a.to(to).times(c.seedPairs).ask().onResponse(onResponse(to, s, c));
-      s.tx += c.seedPairs;
+      send(a, to, s, c, c.seedPairs);
     })
     .when(ECHO).lambda(a -> a.reply())
     .when(TIMER).lambda(a -> states.add(a.message().body()))
@@ -94,6 +95,17 @@ public final class RequestResponseBenchmark implements TestSupport {
     t.avgTime /= c.actors;
     
     return t;
+  }
+  
+  private static void send(Activation a, ActorRef to, State s, Config c, int times) {
+    final MessageBuilder m = a.to(to).times(times).ask();
+    if (c.timeout != 0) {
+      m.await(c.timeout).onTimeout(t -> {
+        fail("Timed out waiting for " + to);
+      });
+    }
+    m.onResponse(onResponse(to, s, c));
+    s.tx += times;
   }
   
   private static Consumer<Activation> onResponse(ActorRef to, State s, Config c) {
@@ -113,8 +125,7 @@ public final class RequestResponseBenchmark implements TestSupport {
         s.totalProcessed = (c.pairs - c.warmupPairs + c.pairs - s.txOnStart) / 2;
         a.to(ActorRef.of(TIMER)).tell(s);
       } else if (s.tx != c.pairs) {
-        a.to(to).ask().onResponse(onResponse(to, s, c));
-        s.tx++;
+        send(a, to, s, c, 1);
       }
     };
   }
@@ -126,7 +137,8 @@ public final class RequestResponseBenchmark implements TestSupport {
       actors = threads * 2;
       pairs = 20_000_000;
       seedPairs = 1_000;
-      warmupPairs = (int) (pairs * warmupFrac); 
+      warmupPairs = (int) (pairs * warmupFrac);
+      timeout = 0;
       log = true;
       verbose = false;
     }};
