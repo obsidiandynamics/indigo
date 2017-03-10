@@ -68,6 +68,9 @@ public final class Activation {
             throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
           }
         } else if (req != null) {
+          if (req.getTimeoutTask() != null) {
+            system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
+          }
           req.setComplete(true);
           req.getOnResponse().accept(this);
         }
@@ -199,10 +202,12 @@ public final class Activation {
         target.send(requestBody, requestId);
         
         if (timeoutMillis != 0) {
-          system.getTimeoutWatchdog().enqueue(new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
-                                                              requestId,
-                                                              Activation.this,
-                                                              req));
+          final TimeoutTask timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
+                                                          requestId,
+                                                          Activation.this,
+                                                          req);
+          req.setTimeoutTask(timeoutTask);
+          system.getTimeoutWatchdog().enqueue(timeoutTask);
         }
       }
     }

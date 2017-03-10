@@ -135,10 +135,10 @@ public final class RequestResponseBenchmark implements TestSupport {
     final Config c = new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 2;
-      pairs = 20_000_000;
+      pairs = 10_000_000;
       seedPairs = 1_000;
       warmupPairs = (int) (pairs * warmupFrac);
-      timeout = 0;
+      timeout = 1_000;
       log = true;
       verbose = false;
     }};

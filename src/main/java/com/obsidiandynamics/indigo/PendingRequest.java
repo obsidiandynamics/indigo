@@ -7,6 +7,8 @@ final class PendingRequest {
   
   private final Consumer<Activation> onTimeout;
   
+  private TimeoutTask timeoutTask;
+  
   private volatile boolean complete;
   
   PendingRequest(Consumer<Activation> onResponse, Consumer<Activation> onTimeout) {
@@ -28,5 +30,13 @@ final class PendingRequest {
   
   void setComplete(boolean complete) {
     this.complete = complete;
+  }
+
+  TimeoutTask getTimeoutTask() {
+    return timeoutTask;
+  }
+
+  void setTimeoutTask(TimeoutTask timeoutTask) {
+    this.timeoutTask = timeoutTask;
   }
 }

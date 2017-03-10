@@ -57,21 +57,18 @@ final class TimeoutWatchdog extends Thread {
   
   void enqueue(TimeoutTask task) {
     timeouts.add(task);
-    final TimeoutTask first = safeGetFirst();
-    if (first != null && first.getExpiresAt() < nextWake) {
+    if (task.getExpiresAt() < nextWake) {
       synchronized (sleepLock) {
-        final TimeoutTask first2 = safeGetFirst();
-        if (first2 != null && first2.getExpiresAt() < nextWake) {
-          nextWake = first2.getExpiresAt();
+        if (task.getExpiresAt() < nextWake) {
+          nextWake = task.getExpiresAt();
           sleepLock.notify();
         }
       }
     }
   }
   
-  private TimeoutTask safeGetFirst() {
-    final Iterator<TimeoutTask> timeoutsIt = timeouts.iterator();
-    return timeoutsIt.hasNext() ? timeoutsIt.next() : null;
+  void dequeue(TimeoutTask task) {
+    timeouts.remove(task);
   }
   
   private void delay(long until) {
@@ -94,13 +91,15 @@ final class TimeoutWatchdog extends Thread {
   
   private void cycle() {
     if (! timeouts.isEmpty()) {
-      final TimeoutTask first = timeouts.first();
-      if (System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
-        timeouts.remove(first);
-        if (! first.getRequest().isComplete()) {
-          system.send(new Message(null, first.getActivation().self(), new TimeoutSignal(), first.getRequestId(), true), false);
+      try {
+        final TimeoutTask first = timeouts.first();
+        if (System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
+          timeouts.remove(first);
+          if (! first.getRequest().isComplete()) {
+            system.send(new Message(null, first.getActivation().self(), new TimeoutSignal(), first.getRequestId(), true), false);
+          }
         }
-      }
+      } catch (NoSuchElementException e) {} // in case the task was dequeued in the meantime
     }
   }
 }
