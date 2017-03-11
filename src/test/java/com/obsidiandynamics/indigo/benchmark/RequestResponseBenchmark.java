@@ -3,11 +3,10 @@ package com.obsidiandynamics.indigo.benchmark;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.*;
 import static junit.framework.TestCase.*;
 
+import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.function.*;
 
-import org.apache.commons.math3.stat.descriptive.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
@@ -18,54 +17,8 @@ import com.obsidiandynamics.indigo.Activation.*;
  *  
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
  */
-public final class RequestResponseBenchmark implements TestSupport {
-  private static final class State {
-    int rx;
-    int tx;
-    
-    int txOnStart;
-    int totalProcessed;
-    long started;
-    long took;
-  }
-  
-  private static final class Timings {
-    long timedTxns = 0;
-    long avgTime = 0;
-    final Stats stats = new Stats();
-  }
-  
-  private static class Stats {
-    final DescriptiveStatistics samples = new DescriptiveStatistics();
-    final ExecutorService executor = Executors.newFixedThreadPool(1);
-    
-    void await() {
-      executor.shutdown();
-      try {
-        executor.awaitTermination(1, TimeUnit.MINUTES);
-      } catch (InterruptedException e) {}
-    }
-  }
-  
-  private static final String DRIVER = "driver";
-  private static final String ECHO = "echo";
-  private static final String TIMER = "timer";
-  
-  @Test
-  public void test() {
-    final Config c = new Config() {{
-      threads = Runtime.getRuntime().availableProcessors();
-      actors = 4;
-      bias = 1_000;
-      pairs = 1_000;
-      seedPairs = 100;
-      warmupFrac = .05f;
-      log = LOG;
-    }};
-    test(c);
-  }
-  
-  private static abstract class Config {
+public final class RequestResponseBenchmark implements TestSupport, BenchmarkSupport {
+  static abstract class Config {
     int threads;
     int actors;
     int bias;
@@ -78,25 +31,65 @@ public final class RequestResponseBenchmark implements TestSupport {
     boolean stats;
     boolean statsSync;
     int statsSamples;
+    PrintStream out = System.out;
     
     /* Derived fields. */
     int warmupPairs;
     int statsPeriod;
     
-    void init() {
+    private void init() {
       warmupPairs = (int) (pairs * warmupFrac);
-      statsSamples = Math.max(1, (pairs - warmupPairs) * actors / statsSamples);
+      statsPeriod = Math.max(1, (pairs - warmupPairs) * actors / statsSamples);
+    }
+    
+    Timings test() {
+      init();
+      out.format("Request-response pairs benchmark...\n");
+      out.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction\n", 
+                 threads, actors, pairs, seedPairs, warmupFrac * 100);
+      final Timings t = new RequestResponseBenchmark().test(this);
+      out.format("%s\n", t);
+      return t;
     }
   }
   
-  private Timings test(Config c) {
-    c.init();
+  private static final class State implements TimedState {
+    int rx;
+    int tx;
     
+    int txOnStart;
+    long totalProcessed;
+    long started;
+    long timeTaken;
+    
+    @Override
+    public long getTotalProcessed() { return totalProcessed; }
+    @Override
+    public long getTimeTaken() { return timeTaken; }
+  }
+  
+  private static final String DRIVER = "driver";
+  private static final String ECHO = "echo";
+  private static final String TIMER = "timer";
+  
+  @Test
+  public void test() {
+    new Config() {{
+      threads = Runtime.getRuntime().availableProcessors();
+      actors = 4;
+      bias = 1_000;
+      pairs = 1_000;
+      seedPairs = 100;
+      warmupFrac = .05f;
+      log = LOG;
+    }}.test();
+  }
+  
+  private Timings test(Config c) {
     if (c.seedPairs > c.pairs) 
       throw new IllegalArgumentException("Seed pairs cannot be greater than total number of pairs");
     
     final Set<State> states = new HashSet<>();
-
     final Timings t = new Timings();
     
     if (c.log) System.out.format("Warming up...\n");
@@ -120,13 +113,7 @@ public final class RequestResponseBenchmark implements TestSupport {
 
     assertEquals(c.actors, states.size());
     
-    for (State s : states) {
-      t.timedTxns += s.totalProcessed;
-      t.avgTime += s.took;
-    }
-    t.avgTime /= c.actors;
-    t.stats.await();
-    
+    t.compute(states, c.actors);
     return t;
   }
   
@@ -134,21 +121,20 @@ public final class RequestResponseBenchmark implements TestSupport {
     final long startTime = c.stats ? System.nanoTime() : 0;
     final MessageBuilder m = a.to(to).times(times).ask();
     if (c.timeout != 0) {
-      m.await(c.timeout).onTimeout(t -> {
-        fail("Timed out waiting for " + to);
-      });
+      m.await(c.timeout).onTimeout(t -> fail("Timed out waiting for " + to));
     }
     m.onResponse(onResponse(to, s, c, startTime, stats));
     s.tx += times;
   }
   
-  private static Consumer<Activation> onResponse(ActorRef to, State s, Config c, long startTime, Stats stats) {
+  private static Consumer<Activation> onResponse(ActorRef to, State s, Config c, long sendTime, Stats stats) {
     return a -> {
-      if (c.stats && s.rx >= c.warmupPairs && (s.rx - c.warmupPairs) % c.statsSamples == 0) {
+      if (c.stats && s.rx >= c.warmupPairs && (s.rx - c.warmupPairs) % c.statsPeriod == 0) {
+        final long took = System.nanoTime() - sendTime;
         if (c.statsSync) {
-          stats.samples.addValue(System.nanoTime() - startTime);
+          stats.samples.addValue(took);
         } else {
-          a.<Long>egress(stats.samples::addValue).using(stats.executor).tell(System.nanoTime() - startTime);
+          a.<Long>egress(stats.samples::addValue).using(stats.executor).tell(took);
         }
       }
       
@@ -163,7 +149,7 @@ public final class RequestResponseBenchmark implements TestSupport {
       
       if (s.rx == c.pairs) {
         if (c.verbose) System.out.format("Done %s\n", a.self());
-        s.took = (System.nanoTime() - s.started) / 1_000_000l;
+        s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
         s.totalProcessed = (c.pairs - c.warmupPairs + c.pairs - s.txOnStart) / 2;
         a.to(ActorRef.of(TIMER)).tell(s);
       } else if (s.tx != c.pairs) {
@@ -173,7 +159,7 @@ public final class RequestResponseBenchmark implements TestSupport {
   }
   
   public static void main(String[] args) {
-    final Config c = new Config() {{
+    new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 2;
       bias = 1;
@@ -186,24 +172,7 @@ public final class RequestResponseBenchmark implements TestSupport {
       stats = true;
       statsSync = true;
       statsSamples = 1_000;
-    }};
-    System.out.format("Request-response pairs benchmark...\n");
-    System.out.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction\n", 
-                      c.threads, c.actors, c.pairs, c.seedPairs, c.warmupFrac * 100);
-
-    final Timings t = new RequestResponseBenchmark().test(c);
-    System.out.format("%,d txns took %,d s, %,d txn/s\n", t.timedTxns, t.avgTime / 1000, t.timedTxns / Math.max(1, t.avgTime) * 1000);
-    if (c.stats) {
-      System.out.format("Latency: mean: %,.1f, sd: %,.1f, min: %,.1f, 50%%: %,.1f, 95%%: %,.1f, 99%%: %,.1f, max: %,.1f (µs, N=%,d)\n", 
-                        t.stats.samples.getMean() / 1000, 
-                        t.stats.samples.getStandardDeviation() / 1000,
-                        t.stats.samples.getMin() / 1000,
-                        t.stats.samples.getPercentile(5) / 1000, 
-                        t.stats.samples.getPercentile(95) / 1000,
-                        t.stats.samples.getPercentile(99) / 1000,
-                        t.stats.samples.getMax() / 1000,
-                        t.stats.samples.getN());
-    }
+    }}.test();
   }
 }
 

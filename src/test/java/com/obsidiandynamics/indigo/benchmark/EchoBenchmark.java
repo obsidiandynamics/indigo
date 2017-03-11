@@ -1,9 +1,10 @@
 package com.obsidiandynamics.indigo.benchmark;
 
 import static com.obsidiandynamics.indigo.ActorRef.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.FIXED_THREAD_POOL;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.*;
 import static junit.framework.TestCase.*;
 
+import java.io.*;
 import java.util.*;
 
 import org.junit.*;
@@ -16,20 +17,64 @@ import com.obsidiandynamics.indigo.*;
  *  
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
  */
-public final class EchoBenchmark implements TestSupport {
-  private static final class State {
+public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
+  static abstract class Config {
+    int threads;
+    int actors;
+    int bias;
+    int messages;
+    int seedMessages;
+    float warmupFrac;
+    boolean log;
+    boolean verbose;
+    boolean stats;
+    boolean statsSync;
+    int statsSamples;
+    PrintStream out = System.out;
+    
+    /* Derived fields. */
+    int warmupMessages;
+    int statsPeriod;
+    
+    private void init() {
+      warmupMessages = (int) (messages * warmupFrac) / 2;
+      statsPeriod = Math.max(1, (messages / 2 - warmupMessages) * actors / statsSamples);
+    }
+    
+    Timings test() {
+      init();
+      if (log) {
+        out.format("Message echo benchmark...\n");
+        out.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction\n", 
+                   threads, actors, messages, seedMessages, warmupFrac * 100);
+      }
+      final Timings t = new EchoBenchmark().test(this);
+      if (log) out.format("%s\n", t);
+      return t;
+    }
+  }
+  
+  private static final class State implements TimedState {
     int rx;
     int tx;
     
     int txOnStart;
     int totalProcessed;
     long started;
-    long took;
-  }
-  
-  private static final class Timings {
-    long timedTxns = 0;
-    long avgTime = 0;
+    long timeTaken;
+    
+    @Override
+    public long getTotalProcessed() { return totalProcessed; }
+    @Override
+    public long getTimeTaken() { return timeTaken; }
+    
+    long getSendTime(Config c) {
+      if (c.stats && tx >= c.warmupMessages && (tx - c.warmupMessages) % c.statsPeriod == 0) {
+        return System.nanoTime();
+      } else {
+        return 0;
+      }
+    }
   }
   
   private static final String DRIVER = "driver";
@@ -38,23 +83,31 @@ public final class EchoBenchmark implements TestSupport {
   
   @Test
   public void test() {
-    test(Runtime.getRuntime().availableProcessors(), 4, 1_000, 100, 0f, LOG, false);
+    new Config() {{
+      threads = Runtime.getRuntime().availableProcessors();
+      actors = 4;
+      bias = 1_000;
+      messages = 1_000;
+      seedMessages = 100;
+      warmupFrac = .05f;
+      log = LOG;
+    }}.test();
   }
   
-  private Timings test(int threads, int actors, int messages, int seedMessages, float warmupFrac, boolean log, boolean verbose) {
-    if (seedMessages > messages / 2) 
+  private Timings test(Config c) {
+    if (c.seedMessages > c.messages / 2) 
       throw new IllegalArgumentException("Seed messages cannot be greater than half the total number of messages");
     
-    final int warmupMessages = (int) (messages * warmupFrac);
     final Set<State> states = new HashSet<>();
+    final Timings t = new Timings();
     
-    if (log) System.out.format("Warming up...\n");
+    if (c.log) System.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
-      parallelism = threads;
+      parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
-        priority = 1_000;
+        priority = c.bias;
       }};
     }}
     .define()
@@ -62,61 +115,69 @@ public final class EchoBenchmark implements TestSupport {
       switch (a.message().from().role()) {
         case ECHO:
           s.rx++;
-          if (verbose) System.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), a.message().from(), s.rx, s.tx);
+          if (c.verbose) System.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), a.message().from(), s.rx, s.tx);
           
-          if (s.rx == warmupMessages) {
+          if (s.rx == c.warmupMessages) {
             s.txOnStart = s.tx;
-            if (log && a.self().key().equals("0")) System.out.format("Starting timed run...\n");
+            if (c.log && a.self().key().equals("0")) System.out.format("Starting timed run...\n");
             s.started = System.nanoTime();
           }
           
-          if (s.rx == messages / 2 && s.tx == messages / 2) {
-            if (verbose) System.out.format("Done %s\n", a.self());
-            s.took = (System.nanoTime() - s.started) / 1_000_000l;
-            s.totalProcessed = messages / 2 - warmupMessages + messages / 2 - s.txOnStart;
+          if (s.rx == c.messages / 2 && s.tx == c.messages / 2) {
+            if (c.verbose) System.out.format("Done %s\n", a.self());
+            s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
+            s.totalProcessed = c.messages / 2 - c.warmupMessages + c.messages / 2 - s.txOnStart;
             a.to(ActorRef.of(TIMER)).tell(s);
-          } else if (s.tx != messages / 2) {
+          } else if (s.tx != c.messages / 2) {
+            a.reply(s.getSendTime(c));
             s.tx++;
-            a.reply();
           }
           break;
           
         case INGRESS:
-          a.to(ActorRef.of(ECHO, a.message().body().toString())).times(seedMessages).tell();
-          s.tx += seedMessages;
+          a.to(ActorRef.of(ECHO, a.message().body().toString())).times(c.seedMessages).tell(s.getSendTime(c));
+          s.tx += c.seedMessages;
           break;
           
         default: throw new UnsupportedOperationException(a.message().from().role());
       }
     })
-    .when(ECHO).lambda(a -> a.reply())
+    .when(ECHO).lambda(a -> {
+      final long sendTime = a.message().body();
+      if (sendTime != 0) {
+        final long took = System.nanoTime() - sendTime;
+        if (c.statsSync) {
+          t.stats.samples.addValue(took);
+        } else {
+          a.<Long>egress(t.stats.samples::addValue).using(t.stats.executor).tell(took);
+        }
+      }
+      a.reply();
+    })
     .when(TIMER).lambda(a -> states.add(a.message().body()))
-    .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
+    .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
     .shutdown();
 
-    assertEquals(actors, states.size());
+    assertEquals(c.actors, states.size());
     
-    final Timings t = new Timings();
-    for (State s : states) {
-      t.timedTxns += s.totalProcessed;
-      t.avgTime += s.took;
-    }
-    t.avgTime /= actors;
-    
+    t.compute(states, c.actors);
     return t;
   }
   
   public static void main(String[] args) {
-    final int threads = Runtime.getRuntime().availableProcessors();
-    final int actors = threads * 2;
-    final int messages = 100_000_000;
-    final int seedMessages = 1_000;
-    final float warmupFrac = .05f;
-    System.out.format("Message echo benchmark...\n");
-    System.out.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction\n", 
-                      threads, actors, messages, seedMessages, warmupFrac * 100);
-    final Timings t = new EchoBenchmark().test(threads, actors, messages, seedMessages, warmupFrac, true, false);
-    System.out.format("%,d transactions took %,d s, %,d txn/s\n", t.timedTxns, t.avgTime / 1000, t.timedTxns / Math.max(1, t.avgTime) * 1000);
+    new Config() {{
+      threads = Runtime.getRuntime().availableProcessors();
+      actors = threads * 2;
+      bias = 1_000;
+      messages = 10_000_000;
+      seedMessages = 1_000;
+      warmupFrac = .05f;
+      log = true;
+      verbose = false;
+      stats = false;
+      statsSync = true;
+      statsSamples = 1_000;
+    }}.test();
   }
 }
 
