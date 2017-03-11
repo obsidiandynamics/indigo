@@ -28,7 +28,7 @@ public final class EchoBenchmark implements TestSupport {
   }
   
   private static final class Timings {
-    long timedMessages = 0;
+    long timedTxns = 0;
     long avgTime = 0;
   }
   
@@ -98,7 +98,7 @@ public final class EchoBenchmark implements TestSupport {
     
     final Timings t = new Timings();
     for (State s : states) {
-      t.timedMessages += s.totalProcessed;
+      t.timedTxns += s.totalProcessed;
       t.avgTime += s.took;
     }
     t.avgTime /= actors;
@@ -112,11 +112,11 @@ public final class EchoBenchmark implements TestSupport {
     final int messages = 100_000_000;
     final int seedMessages = 1_000;
     final float warmupFrac = .05f;
-    System.out.format("Running benchmark...\n");
+    System.out.format("Message echo benchmark...\n");
     System.out.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction\n", 
                       threads, actors, messages, seedMessages, warmupFrac * 100);
     final Timings t = new EchoBenchmark().test(threads, actors, messages, seedMessages, warmupFrac, true, false);
-    System.out.format("Took %,d s, %,d msgs/s\n", t.avgTime / 1000, t.timedMessages / Math.max(1, t.avgTime) * 1000);
+    System.out.format("%,d transactions took %,d s, %,d txn/s\n", t.timedTxns, t.avgTime / 1000, t.timedTxns / Math.max(1, t.avgTime) * 1000);
   }
 }
 

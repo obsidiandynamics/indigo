@@ -30,9 +30,21 @@ public final class RequestResponseBenchmark implements TestSupport {
   }
   
   private static final class Timings {
-    long timedMessages = 0;
+    long timedTxns = 0;
     long avgTime = 0;
-    Stats stats;
+    final Stats stats = new Stats();
+  }
+  
+  private static class Stats {
+    final DescriptiveStatistics samples = new DescriptiveStatistics();
+    final ExecutorService executor = Executors.newFixedThreadPool(1);
+    
+    void await() {
+      executor.shutdown();
+      try {
+        executor.awaitTermination(1, TimeUnit.MINUTES);
+      } catch (InterruptedException e) {}
+    }
   }
   
   private static final String DRIVER = "driver";
@@ -44,6 +56,7 @@ public final class RequestResponseBenchmark implements TestSupport {
     final Config c = new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = 4;
+      bias = 1_000;
       pairs = 1_000;
       seedPairs = 100;
       warmupFrac = .05f;
@@ -55,25 +68,26 @@ public final class RequestResponseBenchmark implements TestSupport {
   private static abstract class Config {
     int threads;
     int actors;
+    int bias;
     int pairs;
     int seedPairs;
     float warmupFrac;
     long timeout;
     boolean log;
     boolean verbose;
-    int warmupPairs;
     boolean stats;
+    boolean statsSync;
+    int statsSamples;
+    
+    /* Derived fields. */
+    int warmupPairs;
+    int statsPeriod;
     
     void init() {
       warmupPairs = (int) (pairs * warmupFrac);
+      statsSamples = Math.max(1, (pairs - warmupPairs) * actors / statsSamples);
     }
   }
-  
-  private static class Stats {
-    final DescriptiveStatistics samples = new DescriptiveStatistics();
-    final ExecutorService executor = Executors.newFixedThreadPool(1);
-  }
-  
   
   private Timings test(Config c) {
     c.init();
@@ -84,7 +98,6 @@ public final class RequestResponseBenchmark implements TestSupport {
     final Set<State> states = new HashSet<>();
 
     final Timings t = new Timings();
-    t.stats = new Stats();
     
     if (c.log) System.out.format("Warming up...\n");
     
@@ -92,7 +105,7 @@ public final class RequestResponseBenchmark implements TestSupport {
       parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
-        priority = 1_000;
+        priority = c.bias;
       }};
     }}
     .define()
@@ -108,15 +121,11 @@ public final class RequestResponseBenchmark implements TestSupport {
     assertEquals(c.actors, states.size());
     
     for (State s : states) {
-      t.timedMessages += s.totalProcessed;
+      t.timedTxns += s.totalProcessed;
       t.avgTime += s.took;
     }
     t.avgTime /= c.actors;
-    
-    t.stats.executor.shutdown();
-    try {
-      t.stats.executor.awaitTermination(1, TimeUnit.MINUTES);
-    } catch (InterruptedException e) {}
+    t.stats.await();
     
     return t;
   }
@@ -135,8 +144,12 @@ public final class RequestResponseBenchmark implements TestSupport {
   
   private static Consumer<Activation> onResponse(ActorRef to, State s, Config c, long startTime, Stats stats) {
     return a -> {
-      if (c.stats && s.rx >= c.warmupPairs) {
-        a.<Long>egress(stats.samples::addValue).using(stats.executor).tell(System.nanoTime() - startTime);
+      if (c.stats && s.rx >= c.warmupPairs && (s.rx - c.warmupPairs) % c.statsSamples == 0) {
+        if (c.statsSync) {
+          stats.samples.addValue(System.nanoTime() - startTime);
+        } else {
+          a.<Long>egress(stats.samples::addValue).using(stats.executor).tell(System.nanoTime() - startTime);
+        }
       }
       
       s.rx++;
@@ -163,25 +176,33 @@ public final class RequestResponseBenchmark implements TestSupport {
     final Config c = new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 2;
-      pairs = 10_000_000;
-      seedPairs = 1_000;
+      bias = 1;
+      pairs = 1_000_000;
+      seedPairs = 1;
       warmupFrac = .05f;
       timeout = 0;
       log = true;
       verbose = false;
-      stats = false;
+      stats = true;
+      statsSync = true;
+      statsSamples = 1_000;
     }};
-    System.out.format("Running benchmark...\n");
+    System.out.format("Request-response pairs benchmark...\n");
     System.out.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction\n", 
                       c.threads, c.actors, c.pairs, c.seedPairs, c.warmupFrac * 100);
 
     final Timings t = new RequestResponseBenchmark().test(c);
-    System.out.format("Took %,d s, %,d pair/s\n", t.avgTime / 1000, t.timedMessages / Math.max(1, t.avgTime) * 1000);
+    System.out.format("%,d txns took %,d s, %,d txn/s\n", t.timedTxns, t.avgTime / 1000, t.timedTxns / Math.max(1, t.avgTime) * 1000);
     if (c.stats) {
-      System.out.format("[mean: %,.0f, 50%%: %,.0f, 95%%: %,.0f, 99%%: %,.0f, max: %,.0f (µs)]\n", 
-                        t.stats.samples.getMean() / 1000, t.stats.samples.getPercentile(.5) / 1000, 
-                        t.stats.samples.getPercentile(.95) / 1000, t.stats.samples.getPercentile(.99) / 1000,
-                        t.stats.samples.getMax() / 1000);
+      System.out.format("Latency: mean: %,.1f, sd: %,.1f, min: %,.1f, 50%%: %,.1f, 95%%: %,.1f, 99%%: %,.1f, max: %,.1f (µs, N=%,d)\n", 
+                        t.stats.samples.getMean() / 1000, 
+                        t.stats.samples.getStandardDeviation() / 1000,
+                        t.stats.samples.getMin() / 1000,
+                        t.stats.samples.getPercentile(5) / 1000, 
+                        t.stats.samples.getPercentile(95) / 1000,
+                        t.stats.samples.getPercentile(99) / 1000,
+                        t.stats.samples.getMax() / 1000,
+                        t.stats.samples.getN());
     }
   }
 }
