@@ -7,9 +7,10 @@ import com.obsidiandynamics.indigo.*;
 
 public final class ListTester {
   public static void main(String[] args) {
-    final int steps = 1_000_000;
-    final int stepSize = 1_000;
+    final int steps = 4_000_000;
+    final int stepSize = 100;
     final int threads = Runtime.getRuntime().availableProcessors();
+    final boolean sync = false;
     
     System.out.format("Running benchmark...\n");
     System.out.format("steps=%,d, stepSize=%,d\n", steps, stepSize);
@@ -17,23 +18,30 @@ public final class ListTester {
     final CountDownLatch latch = new CountDownLatch(threads);
     final long took = TestSupport.took(() -> {
       for (int t = 0; t < threads; t++) {
-        new Thread() {
-          @Override public void run() {
-            final Deque<Object> list = new ArrayDeque<>();
-            for (int i = 0; i < steps; i++) {
-              for (int j = 0; j < stepSize; j++) {
-                final Object obj = new Object();
+        new Thread(() -> {
+          final Deque<Object> list = new ArrayDeque<>();
+          for (int i = 0; i < steps; i++) {
+            for (int j = 0; j < stepSize; j++) {
+              final Object obj = new Object();
+              if (sync) synchronized (list) {
+                list.addLast(obj);
+              } else {
                 list.addLast(obj);
               }
-              
-              for (int j = 0; j < stepSize; j++) {
-                final Object first = list.removeFirst();
-                first.hashCode();
-              }
             }
-            latch.countDown();
+            
+            for (int j = 0; j < stepSize; j++) {
+              final Object first;
+              if (sync) synchronized (list) {
+                first = list.removeFirst();
+              } else {
+                first = list.removeFirst();
+              }
+              first.equals(first);
+            }
           }
-        }.start();
+          latch.countDown();
+        }).start();
       }
       
       try {
