@@ -44,11 +44,13 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     
     Timings test() {
       init();
-      out.format("Request-response pairs benchmark...\n");
-      out.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction\n", 
-                 threads, actors, pairs, seedPairs, warmupFrac * 100);
+      if (log) {
+        out.format("Request-response pairs benchmark...\n");
+        out.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction\n", 
+                   threads, actors, pairs, seedPairs, warmupFrac * 100);
+      }
       final Timings t = new RequestResponseBenchmark().test(this);
-      out.format("%s\n", t);
+      if (log) out.format("%s\n", t);
       return t;
     }
   }
@@ -82,6 +84,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       seedPairs = 100;
       warmupFrac = .05f;
       log = LOG;
+      statsSamples = 1_000;
     }}.test();
   }
   

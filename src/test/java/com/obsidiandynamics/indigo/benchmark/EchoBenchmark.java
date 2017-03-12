@@ -91,6 +91,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       seedMessages = 100;
       warmupFrac = .05f;
       log = LOG;
+      statsSamples = 1_000;
     }}.test();
   }
   
