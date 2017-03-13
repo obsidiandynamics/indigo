@@ -165,14 +165,14 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 2;
-      bias = 1;
-      pairs = 1_000_000;
-      seedPairs = 1;
+      bias = 1_000;
+      pairs = 10_000_000;
+      seedPairs = 1_000;
       warmupFrac = .05f;
       timeout = 0;
       log = true;
       verbose = false;
-      stats = true;
+      stats = false;
       statsSync = true;
       statsSamples = 1_000;
     }}.test();
