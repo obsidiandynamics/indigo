@@ -116,7 +116,9 @@ public final class ActorSystem {
       try {
         a.enqueue(m);
         break;
-      } catch (ActorPassivatingException e) {}
+      } catch (ActorPassivatingException e) {
+        m.to().setCachedActivation(null);
+      }
     }
     return this;
   }
@@ -233,17 +235,25 @@ public final class ActorSystem {
   }
   
   private Activation activate(ActorRef ref) {
+    final Activation cached = ref.getCachedActivation();
+    if (cached != null) {
+      return cached;
+    }
+    
     final Activation existing = activations.get(ref);
     if (existing != null) {
+      ref.setCachedActivation(existing);
       return existing;
     } else {
       synchronized (activations) {
         final Activation existing2 = activations.get(ref);
         if (existing2 != null) {
+          ref.setCachedActivation(existing2);
           return existing2;
         } else {
           final Activation created = createActivation(ref);
           activations.put(ref, created);
+          ref.setCachedActivation(created);
           return created;
         }
       }

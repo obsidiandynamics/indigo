@@ -6,6 +6,8 @@ public final class ActorRef {
   private final String role;
   
   private final String key;
+  
+  private Activation cachedActivation;
 
   private ActorRef(String role, String key) {
     this.role = role;
@@ -60,6 +62,14 @@ public final class ActorRef {
     return true;
   }
   
+  Activation getCachedActivation() {
+    return cachedActivation;
+  }
+
+  void setCachedActivation(Activation cachedActivation) {
+    this.cachedActivation = cachedActivation;
+  }
+
   public static ActorRef of(String role) {
     return new ActorRef(role, null);
   }
