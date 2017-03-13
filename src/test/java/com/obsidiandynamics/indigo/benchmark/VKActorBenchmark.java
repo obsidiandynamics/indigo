@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.benchmark;
 import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.benchmark.VKActor.*;
+import com.obsidiandynamics.indigo.benchmark.VKBatchActor.*;
 
 public final class VKActorBenchmark {
   
@@ -43,14 +43,14 @@ public final class VKActorBenchmark {
   }
   
   private static Address countingActor(int messages, Executor executor, CountDownLatch latch) {
-    return VKActor.create(address -> {
+    return VKBatchActor.create(address -> {
       final Counter counter = new Counter();
       return m -> {
         counter.value++;
         if (counter.value == messages) {
           latch.countDown();
         }
-        return VKActor.stay;
+        return VKBatchActor.stay;
       };
     }, executor);
   }
