@@ -7,7 +7,7 @@ public final class ActorRef {
   
   private final String key;
   
-  private Activation cachedActivation;
+  private transient volatile Activation cachedActivation;
 
   private ActorRef(String role, String key) {
     this.role = role;
