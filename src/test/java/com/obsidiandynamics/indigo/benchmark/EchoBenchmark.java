@@ -168,9 +168,9 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
   public static void main(String[] args) {
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
-      actors = threads * 2;
+      actors = threads * 4;
       bias = 1_000;
-      messages = 10_000_000;
+      messages = 20_000_000;
       seedMessages = 1_000;
       warmupFrac = .05f;
       log = true;
