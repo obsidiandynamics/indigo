@@ -7,7 +7,7 @@ import com.obsidiandynamics.indigo.*;
 
 public final class ListTester {
   public static void main(String[] args) {
-    final int steps = 4_000_000;
+    final int steps = 1_000_000;
     final int stepSize = 100;
     final int threads = Runtime.getRuntime().availableProcessors();
     final boolean sync = false;
@@ -19,23 +19,23 @@ public final class ListTester {
     final long took = TestSupport.took(() -> {
       for (int t = 0; t < threads; t++) {
         new Thread(() -> {
-          final Deque<Object> list = new ArrayDeque<>();
+          final Queue<Object> list = new ArrayDeque<>();
           for (int i = 0; i < steps; i++) {
             for (int j = 0; j < stepSize; j++) {
               final Object obj = new Object();
               if (sync) synchronized (list) {
-                list.addLast(obj);
+                list.add(obj);
               } else {
-                list.addLast(obj);
+                list.add(obj);
               }
             }
             
             for (int j = 0; j < stepSize; j++) {
               final Object first;
               if (sync) synchronized (list) {
-                first = list.removeFirst();
+                first = list.remove();
               } else {
-                first = list.removeFirst();
+                first = list.remove();
               }
               first.equals(first);
             }
