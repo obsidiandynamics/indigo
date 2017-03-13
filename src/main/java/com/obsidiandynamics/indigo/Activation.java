@@ -15,7 +15,7 @@ public final class Activation {
   
   private final Actor actor;
   
-  private final Deque<Message> backlog = new ArrayDeque<>(1);
+  private final Queue<Message> backlog = new ArrayDeque<>(1);
   
   private final Map<UUID, PendingRequest> pending = new HashMap<>();
   
@@ -43,14 +43,9 @@ public final class Activation {
       if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
 
       messages = new Message[Math.min(actorConfig.priority, backlog.size())];
-      int i = 0;
-      for (Iterator<Message> backlogIt = backlog.iterator(); backlogIt.hasNext(); ) {
-        messages[i++] = backlogIt.next();
+      for (int i = 0; i < messages.length; i++) {
+        messages[i] = backlog.remove();
       }
-      backlog.clear();
-//        for (int i = 0; i < messages.length; i++) {
-//          messages[i] = backlog.removeFirst();
-//        }
       message = messages[0];
       
       if (activated == false) {
@@ -115,77 +110,6 @@ public final class Activation {
     system.decBacklog();
   }
   
-//  void run() {
-//    int runsRemaining = actorConfig.priority;
-//    do {
-//      final boolean activationRequired;
-//      synchronized (backlog) {
-//        if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
-//        
-//        message = backlog.removeFirst();
-//        if (activated == false) {
-//          activationRequired = true;
-//          activated = true;
-//        } else {
-//          activationRequired = false;
-//        }
-//      }
-//      
-//      if (activationRequired) {
-//        actor.activated(this);
-//      }
-//      
-//      if (message.isResponse()) {
-//        final PendingRequest req = pending.remove(message.requestId());
-//        
-//        if (message.body() instanceof Signal) {
-//          if (message.body() instanceof TimeoutSignal) {
-//            if (req != null && ! req.isComplete()) {
-//              req.setComplete(true);
-//              req.getOnTimeout().accept(this);
-//            }
-//          } else {
-//            throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
-//          }
-//        } else if (req != null) {
-//          if (req.getTimeoutTask() != null) {
-//            system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
-//          }
-//          req.setComplete(true);
-//          req.getOnResponse().accept(this);
-//        }
-//      } else {
-//        actor.act(this);
-//      }
-//  
-//      final boolean noBacklog;
-//      final boolean noPending;
-//      synchronized (backlog) {
-//        if (message == null) throw new IllegalStateException("Actor " + ref + " was already cleared");
-//        
-//        message = null;
-//        noBacklog = backlog.isEmpty();
-//        noPending = pending.isEmpty();
-//      }
-//      
-//      runsRemaining--;
-//      if (noBacklog) {
-//        runsRemaining = 0;
-//        
-//        if (noPending) {
-//          if (passivationScheduled) {
-//            system.passivate(ref);
-//            actor.passivated(this);
-//          }
-//          system.decBusyActors();
-//        }
-//      } else if (runsRemaining == 0) {
-//        system.dispatch(this);
-//      }
-//      system.decBacklog();
-//    } while (runsRemaining > 0);
-//  }
-  
   void enqueue(Message m) throws ActorPassivatingException {
     final boolean noBacklog;
     final boolean noPending;
@@ -195,13 +119,13 @@ public final class Activation {
       
       if (noBacklog && noPending && passivationScheduled) throw new ActorPassivatingException();
       
-      backlog.addLast(m);
-      
-      if (noBacklog && noPending) {
-        system.incBusyActors();
-      }
-      system.incBacklog();
+      backlog.add(m);
     }
+    
+    if (noBacklog && noPending) {
+      system.incBusyActors();
+    }
+    system.incBacklog();
     
     if (noBacklog) {
       system.dispatch(this);
