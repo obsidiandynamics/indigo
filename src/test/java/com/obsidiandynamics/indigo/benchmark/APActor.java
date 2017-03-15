@@ -43,11 +43,14 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
       return String.format("(%s)->%s", m, get());
     }
   }
+  
+  private static final Node ANCHOR = new Node(null);
 
-  public static Address create(final Function<Address, Behavior> initial, final Executor e) {
+  //static abstract class AtomicAddress extends AtomicReference<Node> implements Address {}
+  
+  public static Address create(final Function<Address, Behavior> initial, final Executor e, int batch) {
     final Address a = new Address() {
-      private final Node anchor = new Node(null);
-      private final AtomicReference<Node> tail = new AtomicReference<>(anchor);
+      private final AtomicReference<Node> tail = new AtomicReference<>(ANCHOR);
       
       private Behavior behavior = new Behavior() { 
         @Override public Effect apply(Object m) { 
@@ -60,37 +63,48 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         final Node t = new Node(m);
         final Node t1 = tail.getAndSet(t);
         
-        if (t1 == anchor) {
+        if (t1 == ANCHOR) {
           async(t);
         } else {
-          t1.set(t);
+          t1.lazySet(t);
         }
         return this; 
       }
       
-      volatile boolean acting;
+      //volatile boolean acting;
 
       private void act(Node h) {
-        if (acting) throw new IllegalStateException();
-        acting = true;
-        behavior = behavior.apply(h.m).apply(behavior);
-        
-        while (true) {
-          final Node h1 = h.get();
-          if (h1 != null) {
-            if (! acting) throw new IllegalStateException();
-            acting = false;
+        int remaining = batch;
+        batch: while (true) {
+//          if (acting) throw new IllegalStateException();
+//          acting = true;
+          
+          behavior = behavior.apply(h.m).apply(behavior);
+
+//          if (! acting) throw new IllegalStateException();
+//          acting = false;
+          
+          parking: while (true) {
+            final Node h1 = h.get();
             
-            async(h1);
-            break;
-          } else {
-            if (tail.compareAndSet(h, anchor)) {
-              if (! acting) throw new IllegalStateException();
-              acting = false;
-              //System.out.format("%x parked\n", System.identityHashCode(this));
-              break;
+            if (h1 != null) {
+              if (remaining-- > 0) {
+                h = h1;
+                continue batch;
+              } else {
+                async(h1);
+                break batch;
+              }
             } else {
-              //System.out.println("parking..");
+              if (tail.compareAndSet(h, ANCHOR)) {
+                //System.out.format("%x parked\n", System.identityHashCode(this));
+                break batch;
+              } else {
+//                System.out.println("parking..");
+                Thread.yield();
+//                b++;
+                continue parking;
+              }
             }
           }
         }

@@ -21,20 +21,20 @@ public final class APActorTester {
         }
         return stay;
       };
-    }, e);
+    }, e, 100);
   }
   
   public static void main(String[] args) throws InterruptedException {
     final int actorThreads = Runtime.getRuntime().availableProcessors();
-    final int driverThreads = 4;
-    final int n = 100;
+    final int driverThreads = 8;
+    final int n = 1000000;
     
     final ExecutorService e = Executors.newFixedThreadPool(actorThreads);
     final CountDownLatch latch = new CountDownLatch(driverThreads);
     for (int d = 0; d < driverThreads; d++) {
-      final Address a = createActor(latch, n, e);
       final int _d = d;
       new Thread(() -> {
+        final Address a = createActor(latch, n, e);
         for (int i = 0; i < n; i++) {
           a.tell(_d * 1_000_000 + i);
         }

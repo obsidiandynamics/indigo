@@ -7,9 +7,10 @@ import com.obsidiandynamics.indigo.benchmark.APActor.*;
 
 public final class APActorBenchmark {
   public static void main(String[] args) {
-    final int threads = 8;//Runtime.getRuntime().availableProcessors();
+    final int threads = Runtime.getRuntime().availableProcessors();
     final ExecutorService executor = Executors.newWorkStealingPool(threads);
-    final int n = 4_000_000;
+//    final ExecutorService executor = Executors.newFixedThreadPool(threads);
+    final int n = 100_000_000;
     
     final long took = TestSupport.took(() -> {
       final CountDownLatch latch = new CountDownLatch(threads);
@@ -44,14 +45,15 @@ public final class APActorBenchmark {
   private static Address countingActor(int messages, Executor executor, CountDownLatch latch) {
     return APActor.create(address -> {
       final Counter counter = new Counter();
+      counter.value = messages;
       return m -> {
-        counter.value++;
+        counter.value--;
         //System.out.format("%x value=%d\n", System.identityHashCode(address), counter.value);
-        if (counter.value == messages) {
+        if (counter.value == 0) {
           latch.countDown();
         }
         return APActor.stay;
       };
-    }, executor);
+    }, executor, 1000);
   }
 }
