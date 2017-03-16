@@ -11,9 +11,9 @@ public final class VKActorBenchmark {
     final int threads = Runtime.getRuntime().availableProcessors();
     final ExecutorService executor = Executors.newWorkStealingPool(threads);
     final int n = 40_000_000;
-    
+
+    final CountDownLatch latch = new CountDownLatch(threads);
     final long took = TestSupport.took(() -> {
-      final CountDownLatch latch = new CountDownLatch(threads);
       for (int t = 0; t < threads; t++) {
         new Thread(() -> {
           final Address a = countingActor(n, executor, latch);

@@ -8,13 +8,13 @@ import com.obsidiandynamics.indigo.benchmark.APActor.*;
 public final class APActorBenchmark {
   public static void main(String[] args) {
     final int threads = Runtime.getRuntime().availableProcessors() * 1;
+    final int actors = threads * 1;
     final ForkJoinPool executor = (ForkJoinPool) Executors.newWorkStealingPool(threads);
-//    final ExecutorService executor = Executors.newFixedThreadPool(threads);
-    final int n = 200_000_000;
+    final int n = 100_000_000;
     
     final long took = TestSupport.took(() -> {
-      final CountDownLatch latch = new CountDownLatch(threads);
-      for (int t = 0; t < threads; t++) {
+      final CountDownLatch latch = new CountDownLatch(actors);
+      for (int i = 0; i < actors; i++) {
         new Thread(() -> {
           final Address a = countingActor(n, executor, latch);
           send(a, n);
@@ -28,13 +28,16 @@ public final class APActorBenchmark {
     executor.shutdown();
     
     System.out.format("%,d took %,d s, %,d ops/sec\n",
-                      threads * n, took / 1000, threads * n / took * 1000);
+                      actors * n, took / 1000, actors * n / took * 1000);
   }
   
   private static void send(Address address, int messages) {
     final String m = "hi";
     for (int i = 0; i < messages; i++) {
       address.tell(m);
+      while (address.getBacklog() > 10_000) {
+        Thread.yield();
+      }
     }
   }
   

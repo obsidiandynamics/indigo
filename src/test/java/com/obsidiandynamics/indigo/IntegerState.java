@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo;
 
-final class IntegerState {
-  int value;
+public final class IntegerState {
+  public int value;
+  
+  @Override public String toString() { return String.valueOf(value); }
 }

@@ -9,7 +9,9 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
   public static interface Behavior extends Function<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
 
   public static interface Address { 
-    Address tell(Object msg); 
+    Address tell(Object msg);
+    
+    long getBacklog();
   }; // An Address is somewhere you can send messages
 
   public final static Effect become(final Behavior behavior) { 
@@ -65,6 +67,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
       };
 
       @Override public final Address tell(Object m) {
+        backlog.increment();
         final Node t = new Node(m);
         final Node t1 = getAndSet(t);
         
@@ -104,17 +107,22 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           } else if (attempts < 9999) {
             attempts++;
           } else {
-            Thread.yield();
-            async(h, false);
-            break;
+//            Thread.yield(); //<
+//            async(h, false); //<
+//            break; //<
+            if (compareAndSet(h, ANCHOR)) {
+              break;
+            }
           }
         }
       }
 
       private void act(Node h) {
+        int cycles = 0;
         int remaining = batch;
         while (true) {
           behavior = behavior.apply(h.m).apply(behavior);
+          cycles++;
           
           final Node h1 = h.get();
           if (h1 != null) {
@@ -131,6 +139,14 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
             break;
           }
         }
+        backlog.add(-cycles);
+      }
+      
+      private final LongAdder backlog = new LongAdder();
+
+      @Override
+      public long getBacklog() {
+        return backlog.sum();
       }
     };
     return a.tell(a); // Make self-aware
