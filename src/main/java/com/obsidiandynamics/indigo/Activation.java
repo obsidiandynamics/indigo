@@ -107,7 +107,7 @@ public final class Activation {
     } else {
       system.dispatch(this);
     }
-    system.decBacklog();
+    system.adjBacklog(-messages.length);
   }
   
   void enqueue(Message m) throws ActorPassivatingException {
@@ -125,7 +125,7 @@ public final class Activation {
     if (noBacklog && noPending) {
       system.incBusyActors();
     }
-    system.incBacklog();
+    system.adjBacklog(1);
     
     if (noBacklog) {
       system.dispatch(this);

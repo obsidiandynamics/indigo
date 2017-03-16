@@ -45,7 +45,8 @@ public final class ActorSystem {
   }
   
   public ActorSystem ingress(Consumer<Activation> act) {
-    return send(new Message(null, ingressRef, act, null, false), true);
+    tell(ingressRef, act);
+    return this;
   }
   
   public IngressBuilder ingress() {
@@ -128,7 +129,7 @@ public final class ActorSystem {
   }
   
   public void tell(ActorRef ref, Object body) {
-    ingress(a -> a.to(ref).tell(body));
+    send(new Message(null, ref, body, null, false), true);
   }
   
   public <T> CompletableFuture<T> ask(ActorRef ref) {
@@ -176,28 +177,36 @@ public final class ActorSystem {
   }
   
   private void throttleBacklog(ActorRef from) {
+    AtomicInteger triesLeft = null;
     while (shouldThrottle()) {
+      if (triesLeft == null) {
+        triesLeft = new AtomicInteger(config.backlogThrottleTries);
+      }
+      
+      final AtomicInteger _triesLeft = triesLeft;
       try {
         // If we throttle messages with insufficient threads in the pool, then poor throughput is possible
         // due to starvation; hence we throttle in a ManagedBlocker which may add threads as required.
         // Note: this only works for the fork-join pool. A fixed thread pool will not be expanded
         // automatically.
         ForkJoinPool.managedBlock(new ManagedBlocker() {
-          private final AtomicInteger triesLeft = new AtomicInteger(config.backlogThrottleTries);
-          
           @Override
           public boolean block() throws InterruptedException {
             Thread.sleep(config.backlogThrottleMillis);
-            final int left = triesLeft.decrementAndGet();
-            return left == 0;
+            final int left = _triesLeft.decrementAndGet();
+            return left <= 0;
           }
 
           @Override
           public boolean isReleasable() {
-            return triesLeft.get() == 0 || ! shouldThrottle();
+            return _triesLeft.get() == 0 || ! shouldThrottle();
           }
         });
       } catch (InterruptedException e) {}
+      
+      if (triesLeft.get() <= 0) {
+        return;
+      }
     }
   }
   
@@ -217,12 +226,8 @@ public final class ActorSystem {
     busyActors.decrement();
   }
   
-  void incBacklog() {
-    backlog.increment();
-  }
-  
-  void decBacklog() {
-    backlog.decrement();
+  void adjBacklog(long adj) {
+    backlog.add(adj);
   }
   
   public ActorSystem await() throws InterruptedException {

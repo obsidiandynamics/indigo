@@ -9,7 +9,7 @@ public abstract class ActorSystemConfig {
   protected int parallelism = PropertyUtils.get("indigo.parallelism", Integer::parseInt, 0);
   
   /** The total (system-wide) backlog at which point throttling is enforced. */
-  protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 100_000L);
+  protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 10_000L);
   
   /** The time penalty for each throttling block. */
   protected int backlogThrottleMillis = PropertyUtils.get("indigo.backlogThrottleMillis", Integer::parseInt, 1);
