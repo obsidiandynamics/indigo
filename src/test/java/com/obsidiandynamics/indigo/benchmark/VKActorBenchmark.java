@@ -10,7 +10,7 @@ public final class VKActorBenchmark {
   public static void main(String[] args) {
     final int threads = Runtime.getRuntime().availableProcessors();
     final ExecutorService executor = Executors.newWorkStealingPool(threads);
-    final int n = 10_000_000;
+    final int n = 40_000_000;
     
     final long took = TestSupport.took(() -> {
       final CountDownLatch latch = new CountDownLatch(threads);

@@ -9,7 +9,7 @@ public final class APActorTester {
     int value;
   }
   
-  private static Address createActor(CountDownLatch latch, int expected, Executor e) {
+  private static Address createActor(CountDownLatch latch, int expected, ForkJoinPool e) {
     return APActor.create(addr -> {
       final Counter counter = new Counter();
       return m -> {
@@ -27,9 +27,9 @@ public final class APActorTester {
   public static void main(String[] args) throws InterruptedException {
     final int actorThreads = Runtime.getRuntime().availableProcessors();
     final int driverThreads = 8;
-    final int n = 1000000;
+    final int n = 1_000_000;
     
-    final ExecutorService e = Executors.newFixedThreadPool(actorThreads);
+    final ForkJoinPool e = (ForkJoinPool) Executors.newWorkStealingPool(actorThreads);
     final CountDownLatch latch = new CountDownLatch(driverThreads);
     for (int d = 0; d < driverThreads; d++) {
       final int _d = d;

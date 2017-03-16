@@ -4,7 +4,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
-public class APActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
+public class APActor2 { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
   public static interface Effect extends Function<Behavior, Behavior> { }; // An Effect returns a Behavior given a Behavior
   public static interface Behavior extends Function<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
 
@@ -60,77 +60,106 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
       
       private Behavior behavior = new Behavior() { 
         @Override public Effect apply(Object m) { 
-          return (m instanceof Address) ? become(initial.apply((Address) m)) : stay; 
+          return (m instanceof Address) ? become(initial.apply((Address)m)) : stay; 
         } 
       };
 
       @Override public final Address tell(Object m) {
+        //System.out.println("Sent " + m);
         final Node t = new Node(m);
         final Node t1 = getAndSet(t);
         
         if (t1 == ANCHOR) {
-          async(t, true);
+          async(t);
         } else {
           t1.lazySet(t);
         }
         return this; 
       }
       
-      private void async(Node n, boolean x) {
-        final AtomicAddress addr = this;
+      //volatile boolean acting;
+
+      private void act(Node h) {
+        int remaining = batch;
+        int attempts = 0;
+        batch: while (true) {
+//          if (acting) throw new IllegalStateException();
+//          acting = true;
+          
+          behavior = behavior.apply(h.m).apply(behavior);
+
+//          if (! acting) throw new IllegalStateException();
+//          acting = false;
+          
+          parking: while (true) {
+            final Node h1 = h.get();
+            
+            if (h1 != null) {
+              if (remaining-- > 0) {
+                h = h1;
+                continue batch;
+              } else {
+                async(h1);
+                break batch;
+              }
+            } else {
+              attempts++;
+              if (attempts < 9999) {
+                continue parking;
+              } else {
+                deferClose(h);
+                break batch;
+              }
+            }
+          }
+        }
+      }
+      
+      private void deferClose(Node h) {
         e.execute(new ForkJoinTask<Void>() {
           private static final long serialVersionUID = 1L;
-          @Override public Void getRawResult() { return null; }
-          @Override protected void setRawResult(Void value) {}
-          @Override protected boolean exec() {
-            if (x) {
-              act(n);
-            } else if (addr.get() != n || ! compareAndSet(n, ANCHOR)) {
-              actOrAsync(n);
+
+          @Override
+          public Void getRawResult() {
+            return null;
+          }
+
+          @Override
+          protected void setRawResult(Void value) {}
+
+          @Override
+          protected boolean exec() {
+            final Node h1 = h.get();
+            if (h1 != null) {
+              act(h1);
+            } else {
+              if (! compareAndSet(h, ANCHOR)) {
+                deferClose(h);
+              }
             }
             return false;
           }
         });
       }
       
-      private void actOrAsync(Node h) {
-        int attempts = 0;
-        
-        while (true) {
-          final Node h1 = h.get();
-          if (h1 != null) {
-            act(h1);
-            break;
-          } else if (attempts < 9999) {
-            attempts++;
-          } else {
-            Thread.yield();
-            async(h, false);
-            break;
-          }
-        }
-      }
+      private void async(Node n) {
+        e.execute(new ForkJoinTask<Void>() {
+          private static final long serialVersionUID = 1L;
 
-      private void act(Node h) {
-        int remaining = batch;
-        while (true) {
-          behavior = behavior.apply(h.m).apply(behavior);
-          
-          final Node h1 = h.get();
-          if (h1 != null) {
-            if (remaining > 1) {
-              h = h1;
-              remaining--;
-            } else {
-              h.lazySet(null);
-              async(h1, true);
-              break;
-            }
-          } else { // no more elements observed
-            async(h, false);
-            break;
+          @Override
+          public Void getRawResult() {
+            return null;
           }
-        }
+
+          @Override
+          protected void setRawResult(Void value) {}
+
+          @Override
+          protected boolean exec() {
+            act(n);
+            return false;
+          }
+        });
       }
     };
     return a.tell(a); // Make self-aware
