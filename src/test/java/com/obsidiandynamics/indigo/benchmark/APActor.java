@@ -104,10 +104,11 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           if (h1 != null) {
             act(h1);
             break;
-          } else if (attempts < 9999) {
+          } else if (attempts < 0 /*9999*/) {
             attempts++;
           } else {
-//            Thread.yield(); //<
+            attempts = 0;
+            Thread.yield(); //<
 //            async(h, false); //<
 //            break; //<
             if (compareAndSet(h, ANCHOR)) {
