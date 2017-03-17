@@ -2,11 +2,14 @@ package com.obsidiandynamics.indigo.benchmark;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import java.util.function.*;
 
 public class APActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
-  public static interface Effect extends Function<Behavior, Behavior> { }; // An Effect returns a Behavior given a Behavior
-  public static interface Behavior extends Function<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
+  public static interface Func<I, O> {
+    O apply(I in);
+  }
+  
+  public static interface Effect extends Func<Behavior, Behavior> { }; // An Effect returns a Behavior given a Behavior
+  public static interface Behavior extends Func<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
 
   public static interface Address { 
     Address tell(Object msg);
@@ -52,7 +55,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
     private static final long serialVersionUID = 1L;
   }
   
-  public static Address create(final Function<Address, Behavior> initial, final ForkJoinPool e, int batch) {
+  public static Address create(final Func<Address, Behavior> initial, final ForkJoinPool e, int batch) {
     final Address a = new AtomicAddress() {
       private static final long serialVersionUID = 1L;
 
@@ -67,7 +70,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
       };
 
       @Override public final Address tell(Object m) {
-        backlog.increment();
+        //backlog.increment();
         final Node t = new Node(m);
         final Node t1 = getAndSet(t);
         
@@ -104,16 +107,16 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           if (h1 != null) {
             act(h1);
             break;
-          } else if (attempts < 0 /*9999*/) {
+          } else if (attempts < 9999) {
             attempts++;
           } else {
             attempts = 0;
             Thread.yield(); //<
-//            async(h, false); //<
-//            break; //<
-            if (compareAndSet(h, ANCHOR)) {
-              break;
-            }
+            async(h, false); //<
+            break; //<
+//            if (compareAndSet(h, ANCHOR)) {
+//              break;
+//            }
           }
         }
       }
@@ -140,7 +143,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
             break;
           }
         }
-        backlog.add(-cycles);
+        //backlog.add(-cycles);
       }
       
       private final LongAdder backlog = new LongAdder();
