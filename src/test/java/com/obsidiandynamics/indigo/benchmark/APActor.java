@@ -85,31 +85,32 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
       }
       
       private void async(Node n, boolean x) {
-        final AtomicAddress addr = this;
+        //final AtomicAddress addr = this;
         e.execute(new ForkJoinTask<Void>() {
           private static final long serialVersionUID = 1L;
           @Override public Void getRawResult() { return null; }
           @Override protected void setRawResult(Void value) {}
           @Override protected boolean exec() {
             if (x) {
-              act(n);
+              act(n, false);
             } else if (/*addr.get() != n ||*/ ! compareAndSet(n, ANCHOR)) {
-              actOrAsync(n);
+              //actOrAsync(n); //<
+              act(n, true);
             }
             return false;
           }
         });
       }
       
-      private void actOrAsync(Node h) {
+      /*private void actOrAsync(Node h) {
         int attempts = 0;
         
         while (true) {
           final Node h1 = h.get();
           if (h1 != null) {
-            act(h1);
+            act(h1, false);
             return;
-          } else if (attempts < 9) {
+          } else if (attempts != 9) {
             attempts++;
           } else {
             Thread.yield(); //<
@@ -120,26 +121,33 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
             return; //<
           }
         }
-      }
+      }*/
 
-      private void act(Node h) {
-        int cycles = 0;
+      private void act(Node h, boolean skipCurrent) {
+        //int cycles = 0;
         int remaining = batch;
+        if (! skipCurrent) behavior.apply(h.m);
+        
+        int spins = 0;
         while (true) {
           //behavior = behavior.apply(h.m).apply(behavior);
-          behavior.apply(h.m);
+          //behavior.apply(h.m); //<
           //cycles++;
           
           final Node h1 = h.get();
           if (h1 != null) {
             if (remaining > 0) {
               h = h1;
+              behavior.apply(h.m);
+              spins = 0;
               remaining--;
             } else {
               //h.lazySet(null);
               async(h1, true);
               return;
             }
+          } else if (spins != 9) {
+            spins++;
           } else { // no more elements observed
             Thread.yield();
             //async(h, false); //<

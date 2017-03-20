@@ -43,6 +43,7 @@ public final class APActorBenchmark {
   private static void send(Address address, int messages) {
     final String m = "hi";
     for (int i = 0; i < messages; i++) {
+      if (i % 100_000_000 == 0) Thread.yield();
       address.tell(m);
 //      while (address.getBacklog() > 10_000) {
 //        Thread.yield();
