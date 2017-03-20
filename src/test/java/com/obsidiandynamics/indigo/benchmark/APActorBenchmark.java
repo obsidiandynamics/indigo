@@ -6,7 +6,7 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.benchmark.APActor.*;
 
 public final class APActorBenchmark {
-  public static void main(String[] args) {
+  private static void benchmark() {
     final int threads = Runtime.getRuntime().availableProcessors() * 1;
     final int actors = threads * 1;
     final ForkJoinPool executor = (ForkJoinPool) Executors.newWorkStealingPool(threads);
@@ -29,6 +29,15 @@ public final class APActorBenchmark {
     
     System.out.format("%,d took %,d s, %,d ops/sec\n",
                       actors * n, took / 1000, actors * n / took * 1000);
+  }
+  
+
+  public static void main(String[] args) {
+    System.out.println("bench started");
+    for (int i = 0; i< 5; i++) {
+      System.gc();
+      benchmark();
+    }
   }
   
   private static void send(Address address, int messages) {

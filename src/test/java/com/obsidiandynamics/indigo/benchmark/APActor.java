@@ -93,7 +93,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           @Override protected boolean exec() {
             if (x) {
               act(n);
-            } else if (addr.get() != n || ! compareAndSet(n, ANCHOR)) {
+            } else if (/*addr.get() != n ||*/ ! compareAndSet(n, ANCHOR)) {
               actOrAsync(n);
             }
             return false;
@@ -108,17 +108,16 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           final Node h1 = h.get();
           if (h1 != null) {
             act(h1);
-            break;
-          } else if (attempts < 9999) {
+            return;
+          } else if (attempts < 9) {
             attempts++;
           } else {
-            attempts = 0;
             Thread.yield(); //<
-//            async(h, false); //<
-//            break; //<
-            if (compareAndSet(h, ANCHOR)) {
-              break;
+            //async(h, false); //<
+            if (!compareAndSet(h, ANCHOR)) {
+              async(h, false);
             }
+            return; //<
           }
         }
       }
@@ -129,21 +128,25 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         while (true) {
           //behavior = behavior.apply(h.m).apply(behavior);
           behavior.apply(h.m);
-          cycles++;
+          //cycles++;
           
           final Node h1 = h.get();
           if (h1 != null) {
-            if (remaining > 1) {
+            if (remaining > 0) {
               h = h1;
               remaining--;
             } else {
-              h.lazySet(null);
+              //h.lazySet(null);
               async(h1, true);
-              break;
+              return;
             }
           } else { // no more elements observed
-            async(h, false);
-            break;
+            Thread.yield();
+            //async(h, false); //<
+            if (!compareAndSet(h, ANCHOR)) {
+              async(h, false);
+            }
+            return; //<
           }
         }
         //backlog.add(-cycles);
