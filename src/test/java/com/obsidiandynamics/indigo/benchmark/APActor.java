@@ -63,11 +63,13 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         set(ANCHOR);
       }
       
-      private Behavior behavior = new Behavior() { 
-        @Override public Effect apply(Object m) { 
-          return (m instanceof Address) ? become(initial.apply((Address) m)) : stay; 
-        } 
-      };
+//      private Behavior behavior = new Behavior() { 
+//        @Override public Effect apply(Object m) { 
+//          return (m instanceof Address) ? become(initial.apply((Address) m)) : stay; 
+//        } 
+//      };
+      
+      private final Behavior behavior = initial.apply(null);
 
       @Override public final Address tell(Object m) {
         //backlog.increment();
@@ -112,11 +114,11 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           } else {
             attempts = 0;
             Thread.yield(); //<
-            async(h, false); //<
-            break; //<
-//            if (compareAndSet(h, ANCHOR)) {
-//              break;
-//            }
+//            async(h, false); //<
+//            break; //<
+            if (compareAndSet(h, ANCHOR)) {
+              break;
+            }
           }
         }
       }
@@ -125,7 +127,8 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         int cycles = 0;
         int remaining = batch;
         while (true) {
-          behavior = behavior.apply(h.m).apply(behavior);
+          //behavior = behavior.apply(h.m).apply(behavior);
+          behavior.apply(h.m);
           cycles++;
           
           final Node h1 = h.get();
@@ -153,6 +156,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         return backlog.sum();
       }
     };
-    return a.tell(a); // Make self-aware
+    //return a.tell(a); // Make self-aware
+    return a;
   }
 }

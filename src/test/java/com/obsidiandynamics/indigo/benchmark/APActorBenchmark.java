@@ -10,7 +10,7 @@ public final class APActorBenchmark {
     final int threads = Runtime.getRuntime().availableProcessors() * 1;
     final int actors = threads * 1;
     final ForkJoinPool executor = (ForkJoinPool) Executors.newWorkStealingPool(threads);
-    final int n = 100_000_000;
+    final int n = 200_000_000;
     
     final long took = TestSupport.took(() -> {
       final CountDownLatch latch = new CountDownLatch(actors);
@@ -35,9 +35,9 @@ public final class APActorBenchmark {
     final String m = "hi";
     for (int i = 0; i < messages; i++) {
       address.tell(m);
-      while (address.getBacklog() > 10_000) {
-        Thread.yield();
-      }
+//      while (address.getBacklog() > 10_000) {
+//        Thread.yield();
+//      }
     }
   }
   
