@@ -23,8 +23,6 @@ public abstract class Activation {
   
   protected Message message;
   
-  protected boolean passivationScheduled;
-  
   protected long requestCounter = Crypto.machineRandom();
   
   protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
@@ -37,7 +35,7 @@ public abstract class Activation {
   
   public abstract void run();
   
-  public abstract void enqueue(Message m) throws ActorPassivatingException;
+  public abstract void enqueue(Message m) throws ActorPassivatedException;
   
   public final ActorRef self() {
     return ref;
@@ -47,9 +45,7 @@ public abstract class Activation {
     return message;
   }
   
-  public final void passivate() {
-    passivationScheduled = true;
-  }
+  public abstract void passivate();
   
   @FunctionalInterface
   private interface MessageTarget {

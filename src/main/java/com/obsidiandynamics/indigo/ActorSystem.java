@@ -119,7 +119,7 @@ public final class ActorSystem {
       try {
         a.enqueue(m);
         break;
-      } catch (ActorPassivatingException e) {
+      } catch (ActorPassivatedException e) {
         m.to().setCachedActivation(null);
       }
     }

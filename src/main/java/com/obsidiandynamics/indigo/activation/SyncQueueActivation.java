@@ -3,7 +3,13 @@ package com.obsidiandynamics.indigo.activation;
 import com.obsidiandynamics.indigo.*;
 
 public final class SyncQueueActivation extends Activation {
+  private static final long PASSIVATION_AWAIT_DELAY = 10;
+  
   private boolean activated;
+  
+  protected boolean passivationScheduled;
+  
+  protected volatile boolean passivationComplete;
   
   public SyncQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     super(id, ref, system, actorConfig, actor);
@@ -23,7 +29,7 @@ public final class SyncQueueActivation extends Activation {
       }
       message = messages[0];
       
-      if (activated == false) {
+      if (! activated) {
         activationRequired = true;
         activated = true;
       } else {
@@ -55,6 +61,7 @@ public final class SyncQueueActivation extends Activation {
         if (passivationScheduled) {
           system._passivate(ref);
           actor.passivated(this);
+          passivationComplete = true;
         }
         system._decBusyActors();
       }
@@ -65,16 +72,28 @@ public final class SyncQueueActivation extends Activation {
   }
   
   @Override
-  public void enqueue(Message m) throws ActorPassivatingException {
+  public void enqueue(Message m) throws ActorPassivatedException {
     final boolean noBacklog;
     final boolean noPending;
+    final boolean awaitPassivation;
     synchronized (backlog) {
       noBacklog = message == null && backlog.isEmpty();
       noPending = pending.isEmpty();
       
-      if (noBacklog && noPending && passivationScheduled) throw new ActorPassivatingException();
-      
-      backlog.add(m);
+      awaitPassivation = noBacklog && noPending && passivationScheduled;
+      if (! awaitPassivation) {
+        backlog.add(m);
+      }
+    }
+    
+    while (awaitPassivation) {
+      if (passivationComplete) {
+        throw new ActorPassivatedException();
+      } else {
+        try {
+          Thread.sleep(PASSIVATION_AWAIT_DELAY);
+        } catch (InterruptedException e) {}
+      }
     }
     
     if (noBacklog && noPending) {
@@ -85,5 +104,10 @@ public final class SyncQueueActivation extends Activation {
     if (noBacklog) {
       system._dispatch(this);
     }
+  }
+  
+  @Override
+  public void passivate() {
+    passivationScheduled = true;
   }
 }
