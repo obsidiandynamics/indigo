@@ -108,7 +108,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
-        priority = c.bias;
+        bias = c.bias;
       }};
     }}
     .define()

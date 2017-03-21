@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo;
 
+import java.lang.ref.*;
+
 public final class ActorRef {
   public static final String INGRESS = "_ingress";
   
@@ -7,7 +9,7 @@ public final class ActorRef {
   
   private final String key;
   
-  private transient volatile Activation cachedActivation;
+  private transient volatile Reference<Activation> cachedActivation;
 
   private ActorRef(String role, String key) {
     this.role = role;
@@ -63,11 +65,11 @@ public final class ActorRef {
   }
   
   Activation getCachedActivation() {
-    return cachedActivation;
+    return cachedActivation != null ? cachedActivation.get() : null;
   }
 
   void setCachedActivation(Activation cachedActivation) {
-    this.cachedActivation = cachedActivation;
+    this.cachedActivation = new WeakReference<>(cachedActivation);
   }
 
   public static ActorRef of(String role) {

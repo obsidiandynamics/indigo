@@ -20,7 +20,7 @@ public final class ThroughputBenchmark {
       executor = FORK_JOIN_POOL;
       backlogCapacity = 10_000;
       defaultActorConfig = new ActorConfig() {{
-        priority = 1000;
+        bias = 1000;
       }};
     }}
     .define()

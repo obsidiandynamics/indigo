@@ -101,7 +101,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
-        priority = c.bias;
+        bias = c.bias;
       }};
     }}
     .define()

@@ -17,7 +17,7 @@ public final class SyncQueueActivation extends Activation {
     synchronized (backlog) {
       if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
 
-      messages = new Message[Math.min(actorConfig.priority, backlog.size())];
+      messages = new Message[Math.min(actorConfig.bias, backlog.size())];
       for (int i = 0; i < messages.length; i++) {
         messages[i] = backlog.remove();
       }
