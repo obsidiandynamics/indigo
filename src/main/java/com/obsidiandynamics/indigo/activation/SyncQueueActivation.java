@@ -17,8 +17,6 @@ public final class SyncQueueActivation extends Activation {
   
   @Override
   public void run() {
-    final boolean activationRequired;
-    
     final Message[] messages;
     synchronized (backlog) {
       if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
@@ -28,17 +26,11 @@ public final class SyncQueueActivation extends Activation {
         messages[i] = backlog.remove();
       }
       message = messages[0];
-      
-      if (! activated) {
-        activationRequired = true;
-        activated = true;
-      } else {
-        activationRequired = false;
-      }
     }
 
-    if (activationRequired) {
+    if (! activated) {
       actor.activated(this);
+      activated = true;
     }
 
     for (int i = 0; i < messages.length; i++) {
