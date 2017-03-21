@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.FIXED_THREAD_POOL;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
 import static junit.framework.TestCase.*;
 
 import java.util.*;

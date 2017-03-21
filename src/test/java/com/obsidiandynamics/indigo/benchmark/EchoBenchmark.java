@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo.benchmark;
 
 import static com.obsidiandynamics.indigo.ActorRef.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.Executor.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.io.*;

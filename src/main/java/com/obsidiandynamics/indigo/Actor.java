@@ -1,9 +1,9 @@
 package com.obsidiandynamics.indigo;
 
-public abstract class Actor {
-  protected void activated(Activation a) {}
+public interface Actor {
+  default void activated(Activation a) {}
   
-  protected void passivated(Activation a) {}
+  default void passivated(Activation a) {}
   
-  protected abstract void act(Activation a);
+  void act(Activation a);
 }

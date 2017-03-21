@@ -1,7 +1,9 @@
 package com.obsidiandynamics.indigo;
 
-public abstract class ActorConfig {
-  protected int priority = PropertyUtils.get("indigo.priority", Integer::parseInt, 1);
+import com.obsidiandynamics.indigo.util.*;
 
-  protected boolean throttleSend = PropertyUtils.get("indigo.throttleSend", Boolean::parseBoolean, false);
+public abstract class ActorConfig {
+  public int priority = PropertyUtils.get("indigo.priority", Integer::parseInt, 1);
+
+  public boolean throttleSend = PropertyUtils.get("indigo.throttleSend", Boolean::parseBoolean, false);
 }

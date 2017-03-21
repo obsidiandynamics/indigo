@@ -1,11 +1,11 @@
-package com.obsidiandynamics.indigo;
+package com.obsidiandynamics.indigo.util;
 
 import java.util.function.*;
 
-final class PropertyUtils {
+public final class PropertyUtils {
   private PropertyUtils() {}
   
-  static <T> T get(String key, Function<String, T> parser, T defaultValue) {
+  public static <T> T get(String key, Function<String, T> parser, T defaultValue) {
     final String str = System.getProperty(key);
     return str != null ? parser.apply(str) : defaultValue;
   }

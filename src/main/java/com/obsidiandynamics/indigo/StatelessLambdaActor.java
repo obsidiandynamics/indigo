@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import java.util.function.*;
 
-public final class StatelessLambdaActor extends Actor {
+public final class StatelessLambdaActor implements Actor {
   private final Consumer<Activation> onAct;
   private final Consumer<Activation> onActivated;
   private final Consumer<Activation> onPassivated;
@@ -16,17 +16,17 @@ public final class StatelessLambdaActor extends Actor {
   }
 
   @Override
-  protected void act(Activation a) {
+  public void act(Activation a) {
     onAct.accept(a);
   }
   
   @Override
-  protected void activated(Activation a) {
+  public void activated(Activation a) {
     if (onActivated != null) onActivated.accept(a);
   }
   
   @Override
-  protected void passivated(Activation a) {
+  public void passivated(Activation a) {
     if (onPassivated != null) onPassivated.accept(a);
   }
   

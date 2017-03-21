@@ -4,30 +4,30 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-public final class Activation {
-  private final long id;
+import com.obsidiandynamics.indigo.util.*;
+
+public abstract class Activation {
+  protected final long id;
   
-  private final ActorRef ref;
+  protected final ActorRef ref;
   
-  private final ActorSystem system;
+  protected final ActorSystem system;
   
-  private final ActorConfig actorConfig;
+  protected final ActorConfig actorConfig;
   
-  private final Actor actor;
+  protected final Actor actor;
   
-  private final Queue<Message> backlog = new ArrayDeque<>(1);
+  protected final Queue<Message> backlog = new ArrayDeque<>(1);
   
-  private final Map<UUID, PendingRequest> pending = new HashMap<>();
+  protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
-  private Message message;
+  protected Message message;
   
-  private boolean activated;
+  protected boolean passivationScheduled;
   
-  private boolean passivationScheduled;
+  protected long requestCounter = Crypto.machineRandom();
   
-  private long requestCounter = CryptoUtils.machineRandom();
-  
-  Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
+  protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     this.id = id;
     this.ref = ref;
     this.system = system;
@@ -35,112 +35,19 @@ public final class Activation {
     this.actor = actor;
   }
   
-  void run() {
-    final boolean activationRequired;
-    
-    final Message[] messages;
-    synchronized (backlog) {
-      if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
-
-      messages = new Message[Math.min(actorConfig.priority, backlog.size())];
-      for (int i = 0; i < messages.length; i++) {
-        messages[i] = backlog.remove();
-      }
-      message = messages[0];
-      
-      if (activated == false) {
-        activationRequired = true;
-        activated = true;
-      } else {
-        activationRequired = false;
-      }
-    }
-
-    if (activationRequired) {
-      actor.activated(this);
-    }
-
-    for (int i = 0; i < messages.length; i++) {
-      message = messages[i];
-      if (message.isResponse()) {
-        final PendingRequest req = pending.remove(message.requestId());
+  public abstract void run();
   
-        if (message.body() instanceof Signal) {
-          if (message.body() instanceof TimeoutSignal) {
-            if (req != null && ! req.isComplete()) {
-              req.setComplete(true);
-              req.getOnTimeout().accept(this);
-            }
-          } else {
-            throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
-          }
-        } else if (req != null) {
-          if (req.getTimeoutTask() != null) {
-            system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
-          }
-          req.setComplete(true);
-          req.getOnResponse().accept(this);
-        }
-      } else {
-        actor.act(this);
-      }
-    }
-
-    final boolean noBacklog;
-    final boolean noPending;
-    synchronized (backlog) {
-      if (message == null) throw new IllegalStateException("Actor " + ref + " was already cleared");
-
-      message = null;
-      noBacklog = backlog.isEmpty();
-      noPending = pending.isEmpty();
-    }
-
-    if (noBacklog) {
-      if (noPending) {
-        if (passivationScheduled) {
-          system.passivate(ref);
-          actor.passivated(this);
-        }
-        system.decBusyActors();
-      }
-    } else {
-      system.dispatch(this);
-    }
-    system.adjBacklog(-messages.length);
-  }
+  public abstract void enqueue(Message m) throws ActorPassivatingException;
   
-  void enqueue(Message m) throws ActorPassivatingException {
-    final boolean noBacklog;
-    final boolean noPending;
-    synchronized (backlog) {
-      noBacklog = message == null && backlog.isEmpty();
-      noPending = pending.isEmpty();
-      
-      if (noBacklog && noPending && passivationScheduled) throw new ActorPassivatingException();
-      
-      backlog.add(m);
-    }
-    
-    if (noBacklog && noPending) {
-      system.incBusyActors();
-    }
-    system.adjBacklog(1);
-    
-    if (noBacklog) {
-      system.dispatch(this);
-    }
-  }
-  
-  public ActorRef self() {
+  public final ActorRef self() {
     return ref;
   }
   
-  public Message message() {
+  public final Message message() {
     return message;
   }
   
-  public void passivate() {
+  public final void passivate() {
     passivationScheduled = true;
   }
   
@@ -221,7 +128,7 @@ public final class Activation {
     }
   }
   
-  public MessageBuilder to(ActorRef to) {
+  public final MessageBuilder to(ActorRef to) {
     return new MessageBuilder((body, requestId) -> send(new Message(ref, to, body, requestId, false)));
   }
   
@@ -246,44 +153,70 @@ public final class Activation {
     }
   }
   
-  public <I, O> EgressBuilder<I, O> egress(Function<I, O> func) {
+  public final <I, O> EgressBuilder<I, O> egress(Function<I, O> func) {
     return new EgressBuilder<>(func);
   }
   
-  public <I> EgressBuilder<I, Void> egress(Consumer<I> consumer) {
+  public final <I> EgressBuilder<I, Void> egress(Consumer<I> consumer) {
     return new EgressBuilder<>(in -> {
       consumer.accept(in);
       return null;
     });
   }
   
-  public MessageBuilder toSelf() {
+  public final MessageBuilder toSelf() {
     return to(ref);
   }
   
-  public MessageBuilder toSender() {
+  public final MessageBuilder toSender() {
     return to(message.from());
   }
   
-  public void reply() {
+  public final void reply() {
     reply(null);
   }
   
-  public void reply(Object responseBody) {
+  public final void reply(Object responseBody) {
     final boolean responding = message.requestId() != null;
     send(new Message(ref, message.from(), responseBody, message.requestId(), responding));
   }
   
-  public void forward(ActorRef to) {
+  public final void forward(ActorRef to) {
     send(new Message(message.from(), to, message.body(), message.requestId(), message.isResponse()));
   }
   
-  private void send(Message message) {
+  private final void send(Message message) {
     system.send(message, actorConfig.throttleSend);
+  }
+  
+  protected final void processMessage(Message message) {
+    this.message = message;
+    if (message.isResponse()) {
+      final PendingRequest req = pending.remove(message.requestId());
+
+      if (message.body() instanceof Signal) {
+        if (message.body() instanceof TimeoutSignal) {
+          if (req != null && ! req.isComplete()) {
+            req.setComplete(true);
+            req.getOnTimeout().accept(this);
+          }
+        } else {
+          throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
+        }
+      } else if (req != null) {
+        if (req.getTimeoutTask() != null) {
+          system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
+        }
+        req.setComplete(true);
+        req.getOnResponse().accept(this);
+      }
+    } else {
+      actor.act(this);
+    }
   }
 
   @Override
-  public String toString() {
+  public final String toString() {
     return "Activation [ref=" + ref + ", message=" + message + "]";
   }
 }

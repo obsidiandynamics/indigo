@@ -8,6 +8,8 @@ import java.util.concurrent.ForkJoinPool.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class ActorSystem {
   private final ActorSystemConfig config;
   
@@ -25,7 +27,7 @@ public final class ActorSystem {
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
-  private long nextActivationId = CryptoUtils.machineRandom();
+  private long nextActivationId = Crypto.machineRandom();
   
   private static final class ActorSetup {
     final Supplier<Actor> factory;
@@ -214,19 +216,19 @@ public final class ActorSystem {
     return backlog.sum() > config.backlogCapacity;
   }
   
-  void dispatch(Activation a) {
+  public void _dispatch(Activation a) {
     executor.execute(new DispatchTask(a));
   }
   
-  void incBusyActors() {
+  public void _incBusyActors() {
     busyActors.increment();
   }
   
-  void decBusyActors() {
+  public void _decBusyActors() {
     busyActors.decrement();
   }
   
-  void adjBacklog(long adj) {
+  public void _adjBacklog(long adj) {
     backlog.add(adj);
   }
   
@@ -265,7 +267,7 @@ public final class ActorSystem {
     }
   }
   
-  void passivate(ActorRef ref) {
+  public void _passivate(ActorRef ref) {
     activations.remove(ref);
   }
   
@@ -277,7 +279,7 @@ public final class ActorSystem {
     final ActorSetup setup = setupRegistry.get(ref.role());
     if (setup == null) throw new IllegalArgumentException("No setup for actor of role " + ref.role());
     final Actor actor = setup.factory.get();
-    return new Activation(nextActivationId++, ref, this, setup.actorConfig, actor);
+    return config.activationFactory.create(nextActivationId++, ref, this, setup.actorConfig, actor);
   }
 
   public void shutdown() {

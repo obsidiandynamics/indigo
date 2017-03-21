@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import java.util.function.*;
 
-public final class StatefulLambdaActor<S> extends Actor {
+public final class StatefulLambdaActor<S> implements Actor {
   private final BiConsumer<Activation, S> onAct;
   private final Function<Activation, S> onActivated;
   private final BiConsumer<Activation, S> onPassivated;
@@ -17,17 +17,17 @@ public final class StatefulLambdaActor<S> extends Actor {
   }
 
   @Override
-  protected void act(Activation a) {
+  public void act(Activation a) {
     onAct.accept(a, state);
   }
   
   @Override
-  protected void activated(Activation a) {
+  public void activated(Activation a) {
     state = onActivated.apply(a);
   }
   
   @Override
-  protected void passivated(Activation a) {
+  public void passivated(Activation a) {
     if (onPassivated != null) onPassivated.accept(a, state);
   }
   
