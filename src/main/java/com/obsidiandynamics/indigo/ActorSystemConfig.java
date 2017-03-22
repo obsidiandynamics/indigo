@@ -23,15 +23,6 @@ public abstract class ActorSystemConfig {
   
   protected ActivationFactory activationFactory = PropertyUtils.get("indigo.activationFactory", ActivationChoice::valueOf, ActivationChoice.SYNC_QUEUE);
   
-  /** The total (system-wide) backlog at which point throttling is enforced. */
-  protected long backlogCapacity = PropertyUtils.get("indigo.backlogCapacity", Long::parseLong, 10_000L);
-  
-  /** The time penalty for each throttling block. */
-  protected int backlogThrottleMillis = PropertyUtils.get("indigo.backlogThrottleMillis", Integer::parseInt, 1);
-  
-  /** Upper bound on the number of consecutive blocks imposed during throttling. */
-  protected int backlogThrottleTries = PropertyUtils.get("indigo.backlogThrottleTries", Integer::parseInt, 10);
-  
   /** The default timeout when asking from outside the actor system. */
   protected int defaultAskTimeoutMillis = PropertyUtils.get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);
   

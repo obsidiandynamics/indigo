@@ -18,14 +18,14 @@ public final class ThroughputBenchmark {
     final ActorSystem system = new ActorSystemConfig() {{
       parallelism = threads;
       executor = FORK_JOIN_POOL;
-      backlogCapacity = 10_000;
       defaultActorConfig = new ActorConfig() {{
-        bias = 1000;
+        bias = 10_000;
+        backlogThrottleCapacity = Integer.MAX_VALUE;
+        backlogThrottleTries = 1;
       }};
     }}
     .define()
     .when(ECHO).lambda(IntegerState::new, (a, s) -> {
-      //System.out.format("got %s\n", s);
       if (++s.value == n) {
         latch.countDown();
       }

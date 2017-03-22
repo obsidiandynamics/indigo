@@ -109,6 +109,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
+        backlogThrottleCapacity = Integer.MAX_VALUE;
       }};
     }}
     .define()
@@ -170,7 +171,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 4;
       bias = 1_000;
-      messages = 20_000_000;
+      messages = 50_000_000;
       seedMessages = 1_000;
       warmupFrac = .05f;
       log = true;

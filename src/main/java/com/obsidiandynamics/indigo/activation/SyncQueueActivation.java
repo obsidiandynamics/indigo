@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo.activation;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class SyncQueueActivation extends Activation {
   private static final long PASSIVATION_AWAIT_DELAY = 10;
@@ -60,42 +61,57 @@ public final class SyncQueueActivation extends Activation {
     } else {
       system._dispatch(this);
     }
-    system._adjBacklog(-messages.length);
   }
   
   @Override
   public void enqueue(Message m) throws ActorPassivatedException {
-    final boolean noBacklog;
-    final boolean noPending;
-    final boolean awaitPassivation;
-    synchronized (backlog) {
-      noBacklog = message == null && backlog.isEmpty();
-      noPending = pending.isEmpty();
+    for (;;) {
+      final boolean noBacklog;
+      final boolean noPending;
+      final boolean awaitPassivation;
+      final boolean throttleBacklog;
+      synchronized (backlog) {
+        noBacklog = message == null && backlog.isEmpty();
+        noPending = pending.isEmpty();
+        
+        awaitPassivation = noBacklog && noPending && passivationScheduled;
+        if (! awaitPassivation) {
+          throttleBacklog = shouldThrottle();
+          if (! throttleBacklog) {
+            backlog.add(m);
+          }
+        } else {
+          throttleBacklog = false;
+        }
+      }
       
-      awaitPassivation = noBacklog && noPending && passivationScheduled;
-      if (! awaitPassivation) {
-        backlog.add(m);
+      if (throttleBacklog) {
+        Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
+        continue;
       }
-    }
     
-    while (awaitPassivation) {
-      if (passivationComplete) {
-        throw new ActorPassivatedException();
-      } else {
-        try {
-          Thread.sleep(PASSIVATION_AWAIT_DELAY);
-        } catch (InterruptedException e) {}
+      while (awaitPassivation) {
+        if (passivationComplete) {
+          throw new ActorPassivatedException();
+        } else {
+          Threads.sleep(PASSIVATION_AWAIT_DELAY);
+        }
       }
+      
+      if (noBacklog && noPending) {
+        system._incBusyActors();
+      }
+      
+      if (noBacklog) {
+        system._dispatch(this);
+      }
+      
+      return;
     }
-    
-    if (noBacklog && noPending) {
-      system._incBusyActors();
-    }
-    system._adjBacklog(1);
-    
-    if (noBacklog) {
-      system._dispatch(this);
-    }
+  }
+  
+  private boolean shouldThrottle() {
+    return backlog.size() >= actorConfig.backlogThrottleCapacity;
   }
   
   @Override

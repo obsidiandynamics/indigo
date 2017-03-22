@@ -102,6 +102,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
+        backlogThrottleCapacity = Integer.MAX_VALUE;
       }};
     }}
     .define()

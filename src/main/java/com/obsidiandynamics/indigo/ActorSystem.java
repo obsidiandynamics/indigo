@@ -4,7 +4,6 @@ import static com.obsidiandynamics.indigo.ActorRef.*;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.ForkJoinPool.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
@@ -20,8 +19,6 @@ public final class ActorSystem {
   private final Map<String, ActorSetup> setupRegistry = new HashMap<>();
   
   private final LongAdder busyActors = new LongAdder();
-  
-  private final LongAdder backlog = new LongAdder();
   
   private final ActorRef ingressRef = ActorRef.of(INGRESS);
   
@@ -111,9 +108,7 @@ public final class ActorSystem {
     }
   }
   
-  ActorSystem send(Message m, boolean throttle) {
-    if (throttle) throttleBacklog(m.from());
-    
+  ActorSystem send(Message m) {
     while (true) {
       final Activation a = activate(m.to());
       try {
@@ -131,7 +126,7 @@ public final class ActorSystem {
   }
   
   public void tell(ActorRef ref, Object body) {
-    send(new Message(null, ref, body, null, false), true);
+    send(new Message(null, ref, body, null, false));
   }
   
   public <T> CompletableFuture<T> ask(ActorRef ref) {
@@ -178,44 +173,6 @@ public final class ActorSystem {
     return f;
   }
   
-  private void throttleBacklog(ActorRef from) {
-    AtomicInteger triesLeft = null;
-    while (shouldThrottle()) {
-      if (triesLeft == null) {
-        triesLeft = new AtomicInteger(config.backlogThrottleTries);
-      }
-      
-      final AtomicInteger _triesLeft = triesLeft;
-      try {
-        // If we throttle messages with insufficient threads in the pool, then poor throughput is possible
-        // due to starvation; hence we throttle in a ManagedBlocker which may add threads as required.
-        // Note: this only works for the fork-join pool. A fixed thread pool will not be expanded
-        // automatically.
-        ForkJoinPool.managedBlock(new ManagedBlocker() {
-          @Override
-          public boolean block() throws InterruptedException {
-            Thread.sleep(config.backlogThrottleMillis);
-            final int left = _triesLeft.decrementAndGet();
-            return left <= 0;
-          }
-
-          @Override
-          public boolean isReleasable() {
-            return _triesLeft.get() == 0 || ! shouldThrottle();
-          }
-        });
-      } catch (InterruptedException e) {}
-      
-      if (triesLeft.get() <= 0) {
-        return;
-      }
-    }
-  }
-  
-  private boolean shouldThrottle() {
-    return backlog.sum() > config.backlogCapacity;
-  }
-  
   public void _dispatch(Activation a) {
     executor.execute(new DispatchTask(a));
   }
@@ -226,10 +183,6 @@ public final class ActorSystem {
   
   public void _decBusyActors() {
     busyActors.decrement();
-  }
-  
-  public void _adjBacklog(long adj) {
-    backlog.add(adj);
   }
   
   public ActorSystem await() throws InterruptedException {

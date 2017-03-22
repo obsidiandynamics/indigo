@@ -142,7 +142,7 @@ public abstract class Activation {
           final O out = func.apply((I) body);
           if (requestId != null) {
             final Message resp = new Message(null, ref, out, requestId, true);
-            system.send(resp, false);
+            system.send(resp);
           }
         });
       });
@@ -182,7 +182,7 @@ public abstract class Activation {
   }
   
   private final void send(Message message) {
-    system.send(message, actorConfig.throttleSend);
+    system.send(message);
   }
   
   protected final void processMessage(Message message) {
