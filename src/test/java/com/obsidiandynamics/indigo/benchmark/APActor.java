@@ -76,10 +76,12 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         final Node t = new Node(m);
         final Node t1 = getAndSet(t);
         
-        if (t1 == ANCHOR) {
-          async(t, true);
-        } else {
-          t1.lazySet(t);
+        synchronized (this) {
+          if (t1 == ANCHOR) {
+            async(t, true);
+          } else {
+            t1.lazySet(t);
+          }
         }
         return this; 
       }
@@ -93,13 +95,19 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           @Override protected boolean exec() {
             if (x) {
               act(n, false);
-            } else if (/*addr.get() != n ||*/ ! compareAndSet(n, ANCHOR)) {
+            } else if (/*addr.get() != n ||*/ ! cas(n)) {
               //actOrAsync(n); //<
               act(n, true);
             }
             return false;
           }
         });
+      }
+      
+      private boolean cas(Node n) {
+        synchronized (this) {
+          return compareAndSet(n, ANCHOR);
+        }
       }
       
       /*private void actOrAsync(Node h) {
@@ -151,7 +159,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           } else { // no more elements observed
             Thread.yield();
             //async(h, false); //<
-            if (!compareAndSet(h, ANCHOR)) {
+            if (!cas(h)) {
               async(h, false);
             }
             return; //<

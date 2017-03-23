@@ -32,5 +32,13 @@ public final class Threads {
     try {
       Thread.sleep(millis);
     } catch (InterruptedException e) {}
+  }  
+  
+  public static void await(CountDownLatch latch) {
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

@@ -10,28 +10,20 @@ public final class APActorBenchmark {
     final int threads = Runtime.getRuntime().availableProcessors() * 1;
     final int actors = threads * 1;
     final ForkJoinPool executor = (ForkJoinPool) Executors.newWorkStealingPool(threads);
-    final int n = 200_000_000;
-    
-    final long took = TestSupport.took(() -> {
-      final CountDownLatch latch = new CountDownLatch(actors);
-      for (int i = 0; i < actors; i++) {
-        new Thread(() -> {
-          final Address a = countingActor(n, executor, latch);
-          send(a, n);
-        }).start();
-      }
-      
-      try {
-        latch.await();
-      } catch (Exception e) {}
-    });
-    executor.shutdown();
+    final long n = 100_000_000;
+
+    final CountDownLatch latch = new CountDownLatch(actors);
+    final long took = TestSupport.took(() ->
+      TestSupport.parallel(actors, latch, i -> 
+        send(countingActor(n, executor, latch), n)
+      )
+    );
     
     System.out.format("%,d took %,d s, %,d ops/sec\n",
                       actors * n, took / 1000, actors * n / took * 1000);
+    executor.shutdown();
   }
   
-
   public static void main(String[] args) {
     System.out.println("bench started");
     for (int i = 0; i< 5; i++) {
@@ -40,9 +32,9 @@ public final class APActorBenchmark {
     }
   }
   
-  private static void send(Address address, int messages) {
+  private static void send(Address address, long messages) {
     final String m = "hi";
-    for (int i = 0; i < messages; i++) {
+    for (long i = 0; i < messages; i++) {
       if (i % 100_000_000 == 0) Thread.yield();
       address.tell(m);
 //      while (address.getBacklog() > 10_000) {
@@ -52,10 +44,10 @@ public final class APActorBenchmark {
   }
   
   private static class Counter {
-    int value;
+    long value;
   }
   
-  private static Address countingActor(int messages, ForkJoinPool executor, CountDownLatch latch) {
+  private static Address countingActor(long messages, ForkJoinPool executor, CountDownLatch latch) {
     return APActor.create(address -> {
       final Counter counter = new Counter();
       counter.value = messages;
