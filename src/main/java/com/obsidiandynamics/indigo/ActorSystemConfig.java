@@ -12,7 +12,8 @@ public abstract class ActorSystemConfig {
   protected int parallelism = PropertyUtils.get("indigo.parallelism", Integer::parseInt, 0);
   
   public static enum ActivationChoice implements ActivationFactory {
-    SYNC_QUEUE(SyncQueueActivation::new);
+    SYNC_QUEUE(SyncQueueActivation::new),
+    NODE_QUEUE(NodeQueueActivation::new),;
     
     private final ActivationFactory factory;
     private ActivationChoice(ActivationFactory factory) { this.factory = factory; }

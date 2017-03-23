@@ -1,12 +1,14 @@
 package com.obsidiandynamics.indigo.activation;
 
+import java.util.*;
+
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class SyncQueueActivation extends Activation {
   private static final long PASSIVATION_AWAIT_DELAY = 10;
   
-  private boolean activated;
+  private final Queue<Message> backlog = new ArrayDeque<>(1);
   
   protected boolean passivationScheduled;
   
@@ -75,10 +77,7 @@ public final class SyncQueueActivation extends Activation {
       message = messages[0];
     }
 
-    if (! activated) {
-      actor.activated(this);
-      activated = true;
-    }
+    ensureActivated();
 
     for (int i = 0; i < messages.length; i++) {
       message = messages[i];

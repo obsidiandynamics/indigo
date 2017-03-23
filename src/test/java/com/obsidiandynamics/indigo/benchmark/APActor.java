@@ -76,38 +76,46 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         final Node t = new Node(m);
         final Node t1 = getAndSet(t);
         
-        synchronized (this) {
+        //synchronized (this) {
           if (t1 == ANCHOR) {
             async(t, true);
           } else {
             t1.lazySet(t);
           }
-        }
+        //}
         return this; 
       }
       
       private void async(Node n, boolean x) {
         //final AtomicAddress addr = this;
-        e.execute(new ForkJoinTask<Void>() {
-          private static final long serialVersionUID = 1L;
-          @Override public Void getRawResult() { return null; }
-          @Override protected void setRawResult(Void value) {}
-          @Override protected boolean exec() {
-            if (x) {
-              act(n, false);
-            } else if (/*addr.get() != n ||*/ ! cas(n)) {
-              //actOrAsync(n); //<
-              act(n, true);
-            }
-            return false;
+        e.execute(() -> {
+          if (x) {
+            act(n, false);
+          } else if (/*addr.get() != n ||*/ ! cas(n)) {
+            //actOrAsync(n); //<
+            act(n, true);
           }
         });
+//        e.execute(new ForkJoinTask<Void>() {
+//          private static final long serialVersionUID = 1L;
+//          @Override public Void getRawResult() { return null; }
+//          @Override protected void setRawResult(Void value) {}
+//          @Override protected boolean exec() {
+//            if (x) {
+//              act(n, false);
+//            } else if (/*addr.get() != n ||*/ ! cas(n)) {
+//              //actOrAsync(n); //<
+//              act(n, true);
+//            }
+//            return false;
+//          }
+//        });
       }
       
       private boolean cas(Node n) {
-        synchronized (this) {
+        //synchronized (this) {
           return compareAndSet(n, ANCHOR);
-        }
+        //}
       }
       
       /*private void actOrAsync(Node h) {

@@ -127,6 +127,17 @@ public final class ActorSystem {
     send(new Message(null, ref, body, null, false));
   }
   
+  public void _fastTell(ActorRef ref) {
+    while (true) {
+      final Activation a = activate(ref);
+      if (a._enqueue(null)) {
+        return;
+      } else {
+        ref.setCachedActivation(null);
+      }
+    }
+  }
+  
   public <T> CompletableFuture<T> ask(ActorRef ref) {
     return ask(ref, null);
   }

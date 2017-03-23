@@ -17,9 +17,9 @@ public abstract class Activation {
   
   protected final Actor actor;
   
-  protected final Queue<Message> backlog = new ArrayDeque<>(1);
-  
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
+  
+  private boolean activated;
   
   protected Message message;
   
@@ -181,6 +181,13 @@ public abstract class Activation {
   
   private final void send(Message message) {
     system.send(message);
+  }
+  
+  protected final void ensureActivated() {
+    if (! activated) {
+      actor.activated(this);
+      activated = true;
+    }
   }
   
   protected final void processMessage(Message message) {
