@@ -97,8 +97,8 @@ public final class SyncQueueActivation extends Activation {
     if (noBacklog) {
       if (noPending) {
         if (passivationScheduled) {
-          system._passivate(ref);
           actor.passivated(this);
+          system._passivate(ref);
           passivationComplete = true;
         }
         system._decBusyActors();

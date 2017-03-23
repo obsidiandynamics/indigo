@@ -1,15 +1,16 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
+
 import java.util.concurrent.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.activation.*;
-import com.obsidiandynamics.indigo.util.*;
 
 public abstract class ActorSystemConfig {
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
    *  be sized dynamically depending on the thread pool used. */
-  protected int parallelism = PropertyUtils.get("indigo.parallelism", Integer::parseInt, 0);
+  protected int parallelism = get("indigo.parallelism", Integer::parseInt, 0);
   
   public static enum ActivationChoice implements ActivationFactory {
     SYNC_QUEUE(SyncQueueActivation::new),
@@ -22,10 +23,10 @@ public abstract class ActorSystemConfig {
     }
   }
   
-  protected ActivationFactory activationFactory = PropertyUtils.get("indigo.activationFactory", ActivationChoice::valueOf, ActivationChoice.SYNC_QUEUE);
+  protected ActivationFactory activationFactory = get("indigo.activationFactory", ActivationChoice::valueOf, ActivationChoice.NODE_QUEUE);
   
   /** The default timeout when asking from outside the actor system. */
-  protected int defaultAskTimeoutMillis = PropertyUtils.get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);
+  protected int defaultAskTimeoutMillis = get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);
   
   public static enum ExecutorChoice implements Function<Integer, ExecutorService> {
     FORK_JOIN_POOL(Executors::newWorkStealingPool),
@@ -37,7 +38,7 @@ public abstract class ActorSystemConfig {
   }
   
   /** Maps a given parallelism value to an appropriately sized thread pool. */
-  protected Function<Integer, ExecutorService> executor = PropertyUtils.get("indigo.executor", ExecutorChoice::valueOf, ExecutorChoice.FORK_JOIN_POOL);
+  protected Function<Integer, ExecutorService> executor = get("indigo.executor", ExecutorChoice::valueOf, ExecutorChoice.FORK_JOIN_POOL);
   
   protected ActorConfig defaultActorConfig = new ActorConfig() {};
   

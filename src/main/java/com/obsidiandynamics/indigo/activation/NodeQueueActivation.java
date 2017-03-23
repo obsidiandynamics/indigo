@@ -3,7 +3,6 @@ package com.obsidiandynamics.indigo.activation;
 import java.util.concurrent.atomic.*;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.benchmark.APActor.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class NodeQueueActivation extends Activation {
@@ -15,6 +14,8 @@ public final class NodeQueueActivation extends Activation {
     private static final long serialVersionUID = 1L;
     
     private final Message m;
+    
+    private volatile Node sentinel;
     
     Node(Message m) { this.m = m; }
   }
@@ -44,33 +45,62 @@ public final class NodeQueueActivation extends Activation {
     
     final Node t = new Node(m);
     final Node t1 = tail.getAndSet(t);
-    if (t1 == SENTINEL_PARKED) {
-      system._incBusyActors();
-      scheduleRun(t);
-    } else if (t1 == SENTINEL_PASSIVATING) {
-      //TODO
-    } else {
-      t1.lazySet(t);
-    }
     
-    return true;
+    for (;;) {
+      if (t1 == SENTINEL_PARKED) {
+        t.sentinel = t1;
+        if (pending.isEmpty()) {
+          system._incBusyActors();
+        }
+        scheduleRun(t);
+        return true;
+      } else if (t1 == SENTINEL_PASSIVATING) {
+        t.sentinel = t1;
+        if (passivationComplete) {
+          return false;
+        } else {
+          Threads.sleep(PASSIVATION_AWAIT_DELAY);
+        }
+      } else {
+        if (t1.sentinel == SENTINEL_PASSIVATING) {
+          t.sentinel = t1.sentinel;
+          if (passivationComplete) {
+            return false;
+          } else {
+            Threads.sleep(PASSIVATION_AWAIT_DELAY);
+          }
+        } else if (t1.sentinel == SENTINEL_PARKED) {
+          t.sentinel = t1.sentinel;
+          t1.lazySet(t);
+          return true;
+        } else {
+          Thread.yield();
+        }
+      }
+    }
   }
   
   private void scheduleRun(Node h) {
     system._dispatch(() -> run(h, false));
   }
   
-  private void schedulePark(Node n, Node sentinel) {
+  private void schedulePark(Node n) {
     system._dispatch(() -> {
-      if (! park(n, sentinel)) {
+      if (! park(n)) {
         run(n, true);
       }
     });
   }
   
-  private boolean park(Node n, Node sentinel) {
+  private boolean park(Node n) {
+    final Node sentinel = passivationScheduled ? SENTINEL_PASSIVATING : SENTINEL_PARKED;
     final boolean parked = tail.compareAndSet(n, sentinel);
-    if (parked) {
+    if (parked && pending.isEmpty()) {
+      if (passivationScheduled) {
+        actor.passivated(this);
+        system._passivate(ref);
+        passivationComplete = true;
+      }
       system._decBusyActors();
     }
     return parked;
@@ -82,7 +112,6 @@ public final class NodeQueueActivation extends Activation {
       cycles++;
       ensureActivated();
       processMessage(h.m);
-//      actor.act(this);
     }
     
     int spins = 0;
@@ -94,7 +123,6 @@ public final class NodeQueueActivation extends Activation {
             h = h1;
             cycles++;
             processMessage(h.m);
-//            actor.act(this);
             spins = 0;
           } else {
             scheduleRun(h1);
@@ -104,8 +132,8 @@ public final class NodeQueueActivation extends Activation {
           spins++;
         } else {
           Thread.yield();
-          if (! park(h, SENTINEL_PARKED)) {
-            schedulePark(h, SENTINEL_PARKED);
+          if (! park(h)) {
+            schedulePark(h);
           }
           return;
         }
