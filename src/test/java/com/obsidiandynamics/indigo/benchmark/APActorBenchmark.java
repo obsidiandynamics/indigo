@@ -26,7 +26,7 @@ public final class APActorBenchmark {
   
   public static void main(String[] args) {
     System.out.println("bench started");
-    for (int i = 0; i< 5; i++) {
+    for (int i = 0; i < 7; i++) {
       System.gc();
       benchmark();
     }

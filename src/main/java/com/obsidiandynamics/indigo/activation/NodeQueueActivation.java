@@ -28,10 +28,11 @@ public final class NodeQueueActivation extends Activation {
   
   protected volatile boolean passivationComplete;
   
-  private final AtomicInteger backlogSize = new AtomicInteger();
+  private final AtomicInteger backlogSize;
   
   public NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     super(id, ref, system, actorConfig, actor);
+    backlogSize = actorConfig.backlogThrottleCapacity != Integer.MAX_VALUE ? new AtomicInteger() : null;
   }
   
   @Override
@@ -39,7 +40,7 @@ public final class NodeQueueActivation extends Activation {
     if (shouldThrottle()) {
       Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
     }
-    backlogSize.incrementAndGet();
+    if (backlogSize != null) backlogSize.incrementAndGet();
     
     final Node t = new Node(m);
     final Node t1 = tail.getAndSet(t);
@@ -77,13 +78,11 @@ public final class NodeQueueActivation extends Activation {
   
   private void run(Node h, boolean skipCurrent) {
     int cycles = 0;
-    int remaining = actorConfig.bias;
     if (! skipCurrent) {
-      remaining--;
       cycles++;
       ensureActivated();
-//      processMessage(h.m);
-      actor.act(this);
+      processMessage(h.m);
+//      actor.act(this);
     }
     
     int spins = 0;
@@ -91,13 +90,12 @@ public final class NodeQueueActivation extends Activation {
       while (true) {
         final Node h1 = h.get();
         if (h1 != null) {
-          if (remaining > 0) {
+          if (cycles < actorConfig.bias) {
             h = h1;
             cycles++;
-  //          processMessage(h.m);
-            actor.act(this);
+            processMessage(h.m);
+//            actor.act(this);
             spins = 0;
-            remaining--;
           } else {
             scheduleRun(h1);
             return;
@@ -113,12 +111,12 @@ public final class NodeQueueActivation extends Activation {
         }
       }
     } finally {
-      backlogSize.addAndGet(-cycles);
+      if (backlogSize != null) backlogSize.addAndGet(-cycles);
     }
   }
   
   private boolean shouldThrottle() {
-    return backlogSize.get() >= actorConfig.backlogThrottleCapacity;
+    return backlogSize != null && backlogSize.get() >= actorConfig.backlogThrottleCapacity;
   }
   
   @Override

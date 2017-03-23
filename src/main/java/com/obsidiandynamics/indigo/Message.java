@@ -41,6 +41,24 @@ public final class Message {
   public <T> T body() {
     return (T) body;
   }
+  
+  public static final class MessageBuilder {
+    private ActorRef from, to;
+    private Object body;
+    
+    public MessageBuilder from(ActorRef from) { this.from = from; return this; }
+    public MessageBuilder to(ActorRef to) { this.to = to; return this; }
+    public MessageBuilder body(Object body) { this.body = body; return this; }
+    
+    public Message build() {
+      if (to == null) throw new IllegalArgumentException("Destination not specified");
+      return new Message(from, to, body, null, false);
+    }
+  }
+  
+  public static MessageBuilder builder() {
+    return new MessageBuilder();
+  }
 
   @Override
   public String toString() {

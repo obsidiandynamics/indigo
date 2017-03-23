@@ -12,17 +12,17 @@ public final class ThroughputBenchmark {
     final String SINK = "sink";
     
     final int threads = Runtime.getRuntime().availableProcessors() * 1;
-    final int actors = threads * 8;
-    final long n = 10_000_000;
+    final int actors = threads * 1;
+    final long n = 100_000_000;
     
     final CountDownLatch latch = new CountDownLatch(actors);
     final ActorSystem system = new ActorSystemConfig() {{
       parallelism = threads;
-      executor = FORK_JOIN_POOL;
+      executor = FIXED_THREAD_POOL;
       activationFactory = ActivationChoice.NODE_QUEUE;
       defaultActorConfig = new ActorConfig() {{
         bias = 10_000;
-        //backlogThrottleCapacity = Integer.MAX_VALUE;
+        backlogThrottleCapacity = Integer.MAX_VALUE;
         backlogThrottleTries = 10;
       }};
     }}
@@ -36,8 +36,9 @@ public final class ThroughputBenchmark {
     final long took = TestSupport.took(() ->
       TestSupport.parallel(actors, latch, i -> {
         final ActorRef to = ActorRef.of(SINK, String.valueOf(i));
+        final Message m = Message.builder().to(to).build();
         for (int j = 0; j < n; j++) {
-          system._fastTell(to);
+          system.send(m);
         }
       })
     );
@@ -49,7 +50,7 @@ public final class ThroughputBenchmark {
   
   public static void main(String[] args) {
     System.out.println("bench started");
-    for (int i = 0; i< 5; i++) {
+    for (int i = 0; i < 7; i++) {
       System.gc();
       Threads.sleep(1000);
       benchmark();

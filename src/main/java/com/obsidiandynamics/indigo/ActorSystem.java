@@ -108,8 +108,8 @@ public final class ActorSystem {
     }
   }
   
-  ActorSystem send(Message m) {
-    while (true) {
+  public ActorSystem send(Message m) {
+    for (;;) {
       final Activation a = activate(m.to());
       if (a._enqueue(m)) {
         return this;
@@ -125,17 +125,6 @@ public final class ActorSystem {
   
   public void tell(ActorRef ref, Object body) {
     send(new Message(null, ref, body, null, false));
-  }
-  
-  public void _fastTell(ActorRef ref) {
-    while (true) {
-      final Activation a = activate(ref);
-      if (a._enqueue(null)) {
-        return;
-      } else {
-        ref.setCachedActivation(null);
-      }
-    }
   }
   
   public <T> CompletableFuture<T> ask(ActorRef ref) {
