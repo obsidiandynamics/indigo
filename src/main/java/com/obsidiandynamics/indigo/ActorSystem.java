@@ -111,14 +111,12 @@ public final class ActorSystem {
   ActorSystem send(Message m) {
     while (true) {
       final Activation a = activate(m.to());
-      try {
-        a.enqueue(m);
-        break;
-      } catch (ActorPassivatedException e) {
+      if (a._enqueue(m)) {
+        return this;
+      } else {
         m.to().setCachedActivation(null);
       }
     }
-    return this;
   }
   
   public void tell(ActorRef ref) {
@@ -173,8 +171,8 @@ public final class ActorSystem {
     return f;
   }
   
-  public void _dispatch(Activation a) {
-    executor.execute(new DispatchTask(a));
+  public void _dispatch(Runnable r) {
+    executor.execute(r);
   }
   
   public void _incBusyActors() {

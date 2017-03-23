@@ -5,6 +5,7 @@ import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class ThroughputBenchmark {
   private static void benchmark() {
@@ -49,6 +50,7 @@ public final class ThroughputBenchmark {
     System.out.println("bench started");
     for (int i = 0; i< 5; i++) {
       System.gc();
+      Threads.sleep(1000);
       benchmark();
     }
   }

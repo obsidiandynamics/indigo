@@ -17,7 +17,53 @@ public final class SyncQueueActivation extends Activation {
   }
   
   @Override
-  public void run() {
+  public boolean _enqueue(Message m) {
+    for (;;) {
+      final boolean noBacklog;
+      final boolean noPending;
+      final boolean awaitPassivation;
+      final boolean throttleBacklog;
+      synchronized (backlog) {
+        noBacklog = message == null && backlog.isEmpty();
+        noPending = pending.isEmpty();
+        
+        awaitPassivation = noBacklog && noPending && passivationScheduled;
+        if (! awaitPassivation) {
+          throttleBacklog = shouldThrottle();
+          if (! throttleBacklog) {
+            backlog.add(m);
+          }
+        } else {
+          throttleBacklog = false;
+        }
+      }
+      
+      if (throttleBacklog) {
+        Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
+        continue;
+      }
+    
+      while (awaitPassivation) {
+        if (passivationComplete) {
+          return false;
+        } else {
+          Threads.sleep(PASSIVATION_AWAIT_DELAY);
+        }
+      }
+      
+      if (noBacklog && noPending) {
+        system._incBusyActors();
+      }
+      
+      if (noBacklog) {
+        system._dispatch(this::run);
+      }
+      
+      return true;
+    }
+  }
+  
+  private void run() {
     final Message[] messages;
     synchronized (backlog) {
       if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
@@ -59,54 +105,7 @@ public final class SyncQueueActivation extends Activation {
         system._decBusyActors();
       }
     } else {
-      system._dispatch(this);
-    }
-  }
-  
-  @Override
-  public void enqueue(Message m) throws ActorPassivatedException {
-    for (;;) {
-      final boolean noBacklog;
-      final boolean noPending;
-      final boolean awaitPassivation;
-      final boolean throttleBacklog;
-      synchronized (backlog) {
-        noBacklog = message == null && backlog.isEmpty();
-        noPending = pending.isEmpty();
-        
-        awaitPassivation = noBacklog && noPending && passivationScheduled;
-        if (! awaitPassivation) {
-          throttleBacklog = shouldThrottle();
-          if (! throttleBacklog) {
-            backlog.add(m);
-          }
-        } else {
-          throttleBacklog = false;
-        }
-      }
-      
-      if (throttleBacklog) {
-        Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
-        continue;
-      }
-    
-      while (awaitPassivation) {
-        if (passivationComplete) {
-          throw new ActorPassivatedException();
-        } else {
-          Threads.sleep(PASSIVATION_AWAIT_DELAY);
-        }
-      }
-      
-      if (noBacklog && noPending) {
-        system._incBusyActors();
-      }
-      
-      if (noBacklog) {
-        system._dispatch(this);
-      }
-      
-      return;
+      system._dispatch(this::run);
     }
   }
   

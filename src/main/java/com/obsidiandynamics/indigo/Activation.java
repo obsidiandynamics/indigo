@@ -33,9 +33,7 @@ public abstract class Activation {
     this.actor = actor;
   }
   
-  public abstract void run();
-  
-  public abstract void enqueue(Message m) throws ActorPassivatedException;
+  public abstract boolean _enqueue(Message m);
   
   public final ActorRef self() {
     return ref;
