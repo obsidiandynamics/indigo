@@ -10,9 +10,9 @@ public final class SyncQueueActivation extends Activation {
   
   private final Queue<Message> backlog = new ArrayDeque<>(1);
   
-  protected boolean passivationScheduled;
+  private boolean passivationScheduled;
   
-  protected volatile boolean passivationComplete;
+  private volatile boolean passivationComplete;
   
   public SyncQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     super(id, ref, system, actorConfig, actor);

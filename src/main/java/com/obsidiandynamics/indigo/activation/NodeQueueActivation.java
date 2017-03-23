@@ -15,19 +15,23 @@ public final class NodeQueueActivation extends Activation {
     
     private final Message m;
     
-    private volatile Node sentinel;
-    
     Node(Message m) { this.m = m; }
   }
   
-  private static final Node SENTINEL_PARKED = new Node(null);
-  private static final Node SENTINEL_PASSIVATING = new Node(null);
+  private final AtomicReference<Node> tail = new AtomicReference<>();
   
-  private final AtomicReference<Node> tail = new AtomicReference<>(SENTINEL_PARKED);
+  private boolean passivationScheduled;
   
-  protected boolean passivationScheduled;
+  private volatile boolean passivationComplete;
   
-  protected volatile boolean passivationComplete;
+  /** Raised by the dispatch thread just prior to the CAS parking attempt when passivation is required. If
+   *  CAS fails, this flag is immediately lowered. */
+  private volatile boolean passivationAttemptStarted;
+  
+  /** Raised by the dispatch thread just after the CAS parking attempt when passivation is required. If both
+   *  the 'attempted' and 'succeeded' flags are true, the queuing threads will back off until passivation
+   *  completes. */
+  private volatile boolean passivationAttemptSucceeded;
   
   private final AtomicInteger backlogSize;
   
@@ -38,44 +42,41 @@ public final class NodeQueueActivation extends Activation {
   
   @Override
   public boolean _enqueue(Message m) {
+    if (isPassivating()) {
+      while (! passivationComplete) {
+        Threads.sleep(PASSIVATION_AWAIT_DELAY);
+      }
+      return false;
+    }
+    
     if (shouldThrottle()) {
       Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
     }
+    
     if (backlogSize != null) backlogSize.incrementAndGet();
     
     final Node t = new Node(m);
     final Node t1 = tail.getAndSet(t);
     
+    if (t1 == null) {
+      if (pending.isEmpty()) {
+        system._incBusyActors();
+      }
+      scheduleRun(t);
+    } else {
+      t1.lazySet(t);
+    }
+    return true;
+  }
+  
+  private boolean isPassivating() {
     for (;;) {
-      if (t1 == SENTINEL_PARKED) {
-        t.sentinel = t1;
-        if (pending.isEmpty()) {
-          system._incBusyActors();
-        }
-        scheduleRun(t);
-        return true;
-      } else if (t1 == SENTINEL_PASSIVATING) {
-        t.sentinel = t1;
-        if (passivationComplete) {
-          return false;
-        } else {
-          Threads.sleep(PASSIVATION_AWAIT_DELAY);
+      if (passivationAttemptStarted) {
+        if (passivationAttemptSucceeded) {
+          return true;
         }
       } else {
-        if (t1.sentinel == SENTINEL_PASSIVATING) {
-          t.sentinel = t1.sentinel;
-          if (passivationComplete) {
-            return false;
-          } else {
-            Threads.sleep(PASSIVATION_AWAIT_DELAY);
-          }
-        } else if (t1.sentinel == SENTINEL_PARKED) {
-          t.sentinel = t1.sentinel;
-          t1.lazySet(t);
-          return true;
-        } else {
-          Thread.yield();
-        }
+        return false;
       }
     }
   }
@@ -93,15 +94,24 @@ public final class NodeQueueActivation extends Activation {
   }
   
   private boolean park(Node n) {
-    final Node sentinel = passivationScheduled ? SENTINEL_PASSIVATING : SENTINEL_PARKED;
-    final boolean parked = tail.compareAndSet(n, sentinel);
-    if (parked && pending.isEmpty()) {
-      if (passivationScheduled) {
-        actor.passivated(this);
-        system._passivate(ref);
-        passivationComplete = true;
+    final boolean noPending = pending.isEmpty();
+    if (noPending && passivationScheduled) {
+      passivationAttemptStarted = true;
+    }
+  
+    final boolean parked = tail.compareAndSet(n, null);
+    if (parked) {
+      if (noPending) {
+        if (passivationScheduled) {
+          passivationAttemptSucceeded = true;
+          actor.passivated(this);
+          system._passivate(ref);
+          passivationComplete = true;
+        }
+        system._decBusyActors();
       }
-      system._decBusyActors();
+    } else if (noPending && passivationScheduled) {
+      passivationAttemptStarted = false;
     }
     return parked;
   }
@@ -116,7 +126,7 @@ public final class NodeQueueActivation extends Activation {
     
     int spins = 0;
     try {
-      while (true) {
+      for (;;) {
         final Node h1 = h.get();
         if (h1 != null) {
           if (cycles < actorConfig.bias) {
