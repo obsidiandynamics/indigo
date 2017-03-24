@@ -100,10 +100,10 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     new ActorSystemConfig() {{
       parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
-      activationFactory = ActivationChoice.NODE_QUEUE;
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
+        activationFactory = ActivationChoice.NODE_QUEUE;
       }};
     }}
     .define()

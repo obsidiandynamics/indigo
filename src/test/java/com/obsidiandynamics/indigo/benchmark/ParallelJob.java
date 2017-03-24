@@ -18,10 +18,11 @@ final class ParallelJob implements Runnable {
     final CyclicBarrier barrier = new CyclicBarrier(threads + 1);
     for (int i = 0; i < threads; i++) {
       final int _i = i;
-      new Thread(() ->  {
+      final Thread t = new Thread(() ->  {
         Threads.await(barrier);
         r.accept(_i); 
-      }).start();
+      });
+      t.start();
     }
     return new ParallelJob(latch, barrier);
   }
@@ -29,6 +30,6 @@ final class ParallelJob implements Runnable {
   @Override
   public void run() {
     Threads.await(barrier);
-    Threads.await(latch);
+    if (latch != null) Threads.await(latch);
   }
 }

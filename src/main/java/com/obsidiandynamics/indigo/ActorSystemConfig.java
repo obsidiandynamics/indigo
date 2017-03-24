@@ -5,25 +5,10 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import com.obsidiandynamics.indigo.activation.*;
-
 public abstract class ActorSystemConfig {
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
    *  be sized dynamically depending on the thread pool used. */
   protected int parallelism = get("indigo.parallelism", Integer::parseInt, 0);
-  
-  public static enum ActivationChoice implements ActivationFactory {
-    SYNC_QUEUE(SyncQueueActivation::new),
-    NODE_QUEUE(NodeQueueActivation::new),;
-    
-    private final ActivationFactory factory;
-    private ActivationChoice(ActivationFactory factory) { this.factory = factory; }
-    @Override public Activation create(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
-      return factory.create(id, ref, system, actorConfig, actor);
-    }
-  }
-  
-  protected ActivationFactory activationFactory = get("indigo.activationFactory", ActivationChoice::valueOf, ActivationChoice.NODE_QUEUE);
   
   /** The default timeout when asking from outside the actor system. */
   protected int defaultAskTimeoutMillis = get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);

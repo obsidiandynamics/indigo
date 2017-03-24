@@ -183,7 +183,7 @@ public final class ActorSystem {
     busyActors.decrement();
   }
   
-  public ActorSystem await() throws InterruptedException {
+  public ActorSystem drain() throws InterruptedException {
     while (busyActors.sum() != 0) {
       synchronized (busyActors) {
         busyActors.wait(10);
@@ -230,13 +230,13 @@ public final class ActorSystem {
     final ActorSetup setup = setupRegistry.get(ref.role());
     if (setup == null) throw new IllegalArgumentException("No setup for actor of role " + ref.role());
     final Actor actor = setup.factory.get();
-    return config.activationFactory.create(nextActivationId++, ref, this, setup.actorConfig, actor);
+    return setup.actorConfig.activationFactory.create(nextActivationId++, ref, this, setup.actorConfig, actor);
   }
 
   public void shutdown() {
     while (true) {
       try {
-        await();
+        drain();
         break;
       } catch (InterruptedException e) {}
     }

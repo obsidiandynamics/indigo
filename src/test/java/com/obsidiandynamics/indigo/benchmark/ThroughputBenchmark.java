@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo.benchmark;
 
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ActivationChoice.*;
+import static com.obsidiandynamics.indigo.ActorConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 
 import java.util.concurrent.*;
@@ -14,17 +14,18 @@ public final class ThroughputBenchmark {
     
     final int threads = Runtime.getRuntime().availableProcessors() * 1;
     final int actors = threads * 1;
-    final long n = 100_000_000;
+    final long n = 10_000_000;
+    final int warmup = (int) (n * .05);
     
     final CountDownLatch latch = new CountDownLatch(actors);
     final ActorSystem system = new ActorSystemConfig() {{
       parallelism = threads;
-      executor = FIXED_THREAD_POOL;
-      activationFactory = NODE_QUEUE;
+      executor = FORK_JOIN_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = 10_000;
         backlogThrottleCapacity = Integer.MAX_VALUE;
         backlogThrottleTries = 10;
+        activationFactory = NODE_QUEUE;
       }};
     }}
     .define()
@@ -34,11 +35,36 @@ public final class ThroughputBenchmark {
       }
     });
     
+    final ActorRef[] refs = new ActorRef[actors];
+    
+    for (int i = 0; i < actors; i++) {
+      refs[i] = ActorRef.of(SINK, String.valueOf(i));
+      system.tell(refs[i]);
+    }
+    
+    ParallelJob.create(actors, null, i -> {
+      final ActorRef to = refs[i];
+      final Message m = Message.builder().to(to).build();
+      for (int j = 0; j < warmup; j++) {
+        system.send(m);
+      }
+    }).run();
+    
+    try {
+      system.drain();
+    } catch (InterruptedException e) {}
+    
+    /*for (int i = 0; i < 5; i++) {
+      System.gc();
+      Threads.sleep(200);
+    }*/
+    
+    final long o = n - warmup;
     final long took = TestSupport.took(
       ParallelJob.create(actors, latch, i -> {
-        final ActorRef to = ActorRef.of(SINK, String.valueOf(i));
+        final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
-        for (int j = 0; j < n; j++) {
+        for (int j = 0; j < o; j++) {
           system.send(m);
         }
       })
@@ -46,12 +72,12 @@ public final class ThroughputBenchmark {
     
     system.shutdown();
     System.out.format("%,d took %,d s, %,d ops/sec\n",
-                      actors * n, took / 1000, actors * n / took * 1000);
+                      actors * o, took / 1000, actors * o / took * 1000);
   }
   
   public static void main(String[] args) {
     System.out.println("bench started");
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 29; i++) {
       System.gc();
       Threads.sleep(1000);
       benchmark();
