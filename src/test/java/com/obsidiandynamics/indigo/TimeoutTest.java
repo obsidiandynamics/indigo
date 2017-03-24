@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -13,7 +14,7 @@ public final class TimeoutTest implements TestSupport {
   
   private static final int MIN_TIMEOUT = 10;
   private static final int MAX_TIMEOUT = 100;
-  private static final int TIMEOUT_TOLERANCE = 10;
+  private static final int TIMEOUT_TOLERANCE = get("indigo.TimeoutTest.timeoutTolerance", Integer::parseInt, 10);
   
   private static final long generateRandomTimeout() {
     final int range = MAX_TIMEOUT - MIN_TIMEOUT;

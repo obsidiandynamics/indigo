@@ -1,11 +1,11 @@
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo;
 
 import java.util.concurrent.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-final class ParallelJob implements Runnable {
+public final class ParallelJob implements Runnable {
   private final CountDownLatch latch;
   private final CyclicBarrier barrier;
   
@@ -13,8 +13,12 @@ final class ParallelJob implements Runnable {
     this.latch = latch;
     this.barrier = barrier;
   }
+  
+  public static ParallelJob create(int threads, Consumer<Integer> r) {
+    return create(threads, null, r);
+  }
 
-  static ParallelJob create(int threads, CountDownLatch latch, Consumer<Integer> r) {
+  public static ParallelJob create(int threads, CountDownLatch latch, Consumer<Integer> r) {
     final CyclicBarrier barrier = new CyclicBarrier(threads + 1);
     for (int i = 0; i < threads; i++) {
       final int _i = i;
