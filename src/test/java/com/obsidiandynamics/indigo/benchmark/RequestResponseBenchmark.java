@@ -56,7 +56,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     }
   }
   
-  private static final class State implements TimedState {
+  private static final class DriverState implements TimedState {
     final ActorRef to;
     
     int rx;
@@ -67,7 +67,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     long started;
     long timeTaken;
     
-    State(Activation a) {
+    DriverState(Activation a) {
       to = ActorRef.of(ECHO, a.self().key());
     }
     
@@ -99,7 +99,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     if (c.seedPairs > c.pairs) 
       throw new IllegalArgumentException("Seed pairs cannot be greater than total number of pairs");
     
-    final Set<State> states = new HashSet<>();
+    final Set<DriverState> states = new HashSet<>();
     final Timings t = new Timings();
     
     if (c.log) c.out.format("Warming up...\n");
@@ -114,7 +114,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }};
     }}
     .define()
-    .when(DRIVER).lambda(State::new, (a, m, s) -> {
+    .when(DRIVER).lambda(DriverState::new, (a, m, s) -> {
       send(a, s.to, s, c, c.seedPairs, t.stats);
     })
     .when(ECHO).lambda((a, m) -> a.reply(m).tell())
@@ -128,7 +128,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     return t;
   }
   
-  private static void send(Activation a, ActorRef to, State s, Config c, int times, Stats stats) {
+  private static void send(Activation a, ActorRef to, DriverState s, Config c, int times, Stats stats) {
     final long startTime = c.stats ? System.nanoTime() : 0;
     final MessageBuilder m = a.to(to).times(times).ask();
     if (c.timeout != 0) {
@@ -138,7 +138,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     s.tx += times;
   }
   
-  private static Consumer<Message> onResponse(Activation a, ActorRef to, State s, Config c, long sendTime, Stats stats) {
+  private static Consumer<Message> onResponse(Activation a, ActorRef to, DriverState s, Config c, long sendTime, Stats stats) {
     return m -> {
       if (c.stats && s.rx >= c.warmupPairs && (s.rx - c.warmupPairs) % c.statsPeriod == 0) {
         final long took = System.nanoTime() - sendTime;
