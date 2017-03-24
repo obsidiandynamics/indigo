@@ -160,17 +160,37 @@ public abstract class Activation {
     return to(m.from());
   }
   
-  public final void reply(Message m) {
-    reply(m, null);
+  public final class ReplyBuilder {
+    private final Message m;
+    
+    ReplyBuilder(Message m) { this.m = m; }
+    
+    public void tell() {
+      tell(null);
+    }
+    
+    public void tell(Object responseBody) {
+      final boolean responding = m.requestId() != null;
+      send(new Message(ref, m.from(), responseBody, m.requestId(), responding));
+    }
   }
   
-  public final void reply(Message m, Object responseBody) {
-    final boolean responding = m.requestId() != null;
-    send(new Message(ref, m.from(), responseBody, m.requestId(), responding));
+  public final ReplyBuilder reply(Message m) {
+    return new ReplyBuilder(m);
   }
   
-  public final void forward(Message m, ActorRef to) {
-    send(new Message(m.from(), to, m.body(), m.requestId(), m.isResponse()));
+  public final class ForwardBuilder {
+    private final Message m;
+    
+    ForwardBuilder(Message m) { this.m = m; }
+    
+    public void to(ActorRef to) {
+      send(new Message(m.from(), to, m.body(), m.requestId(), m.isResponse()));
+    }
+  }
+  
+  public final ForwardBuilder forward(Message m) {
+    return new ForwardBuilder(m);
   }
   
   public final void send(Message message) {

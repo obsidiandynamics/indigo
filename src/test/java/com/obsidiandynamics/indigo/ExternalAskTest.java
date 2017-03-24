@@ -15,7 +15,7 @@ public final class ExternalAskTest implements TestSupport {
     
     final ActorSystem system = new ActorSystemConfig() {}
     .define()
-    .when(ADDER).lambda((a, m) -> a.reply(m, m.<Integer>body() + 1));
+    .when(ADDER).lambda((a, m) -> a.reply(m).tell(m.<Integer>body() + 1));
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     final int resp = f.get();

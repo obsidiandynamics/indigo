@@ -151,14 +151,14 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
             if (sendTime == 0) {
               a.send(s.blank);
             } else {
-              a.reply(m, s.getSendTime(c));
+              a.reply(m).tell(sendTime);
             }
             s.tx++;
           }
           break;
           
         case INGRESS:
-          a.to(ActorRef.of(ECHO, m.body().toString())).times(c.seedMessages).tell(s.getSendTime(c));
+          a.to(ActorRef.of(ECHO, a.self().key())).times(c.seedMessages).tell(s.getSendTime(c));
           s.tx += c.seedMessages;
           break;
           
@@ -178,7 +178,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       a.send(s.blank);
     })
     .when(TIMER).lambda((a, m) -> states.add(m.body()))
-    .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
+    .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .dispose();
 
     assertEquals(c.actors, states.size());

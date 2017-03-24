@@ -57,6 +57,8 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
   }
   
   private static final class State implements TimedState {
+    final ActorRef to;
+    
     int rx;
     int tx;
     
@@ -64,6 +66,10 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     long totalProcessed;
     long started;
     long timeTaken;
+    
+    State(Activation a) {
+      to = ActorRef.of(ECHO, a.self().key());
+    }
     
     @Override
     public long getTotalProcessed() { return totalProcessed; }
@@ -109,12 +115,11 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     }}
     .define()
     .when(DRIVER).lambda(State::new, (a, m, s) -> {
-      final ActorRef to = ActorRef.of(ECHO, m.body().toString());
-      send(a, to, s, c, c.seedPairs, t.stats);
+      send(a, s.to, s, c, c.seedPairs, t.stats);
     })
-    .when(ECHO).lambda((a, m) -> a.reply(m))
+    .when(ECHO).lambda((a, m) -> a.reply(m).tell())
     .when(TIMER).lambda((a, m) -> states.add(m.body()))
-    .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
+    .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .dispose();
 
     assertEquals(c.actors, states.size());
