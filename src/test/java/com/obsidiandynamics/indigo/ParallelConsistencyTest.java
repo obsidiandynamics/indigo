@@ -30,15 +30,15 @@ public final class ParallelConsistencyTest implements TestSupport {
       }};
     }}
     .define()
-    .when(DRIVER).lambda(a -> {
-      final ActorRef target = a.message().body();
+    .when(DRIVER).lambda((a, m) -> {
+      final ActorRef target = m.body();
       for (int j = 1; j <= runs; j++) {
         a.to(target).tell(j);
       }
       a.to(ActorRef.of(DONE_RUNS)).tell();
     })
-    .when(RUN).lambda(IntegerState::new, (a, s) -> {
-      final int msg = a.message().body();
+    .when(RUN).lambda(IntegerState::new, (a, m, s) -> {
+      final int msg = m.body();
       assertEquals(s.value + 1, msg);
       s.value = msg;
 

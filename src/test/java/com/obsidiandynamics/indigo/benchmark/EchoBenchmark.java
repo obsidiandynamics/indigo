@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.benchmark;
 
+import static com.obsidiandynamics.indigo.ActorConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.ActorRef.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
@@ -102,7 +103,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     final Set<State> states = new HashSet<>();
     final Timings t = new Timings();
     
-    if (c.log) System.out.format("Warming up...\n");
+    if (c.log) c.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
       parallelism = c.threads;
@@ -110,43 +111,43 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
-        activationFactory = ActivationChoice.NODE_QUEUE;
+        activationFactory = NODE_QUEUE;
       }};
     }}
     .define()
-    .when(DRIVER).lambda(State::new, (a, s) -> {
-      switch (a.message().from().role()) {
+    .when(DRIVER).lambda(State::new, (a, m, s) -> {
+      switch (m.from().role()) {
         case ECHO:
           s.rx++;
-          if (c.verbose) System.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), a.message().from(), s.rx, s.tx);
+          if (c.verbose) c.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), m.from(), s.rx, s.tx);
           
           if (s.rx == c.warmupMessages) {
             s.txOnStart = s.tx;
-            if (c.log && a.self().key().equals("0")) System.out.format("Starting timed run...\n");
+            if (c.log && a.self().key().equals("0")) c.out.format("Starting timed run...\n");
             s.started = System.nanoTime();
           }
           
           if (s.rx == c.messages / 2 && s.tx == c.messages / 2) {
-            if (c.verbose) System.out.format("Done %s\n", a.self());
+            if (c.verbose) c.out.format("Done %s\n", a.self());
             s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
             s.totalProcessed = c.messages / 2 - c.warmupMessages + c.messages / 2 - s.txOnStart;
             a.to(ActorRef.of(TIMER)).tell(s);
           } else if (s.tx != c.messages / 2) {
-            a.reply(s.getSendTime(c));
+            a.reply(m, s.getSendTime(c));
             s.tx++;
           }
           break;
           
         case INGRESS:
-          a.to(ActorRef.of(ECHO, a.message().body().toString())).times(c.seedMessages).tell(s.getSendTime(c));
+          a.to(ActorRef.of(ECHO, m.body().toString())).times(c.seedMessages).tell(s.getSendTime(c));
           s.tx += c.seedMessages;
           break;
           
-        default: throw new UnsupportedOperationException(a.message().from().role());
+        default: throw new UnsupportedOperationException(m.from().role());
       }
     })
-    .when(ECHO).lambda(a -> {
-      final long sendTime = a.message().body();
+    .when(ECHO).lambda((a, m) -> {
+      final long sendTime = m.body();
       if (sendTime != 0) {
         final long took = System.nanoTime() - sendTime;
         if (c.statsSync) {
@@ -155,9 +156,9 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
           a.<Long>egress(t.stats.samples::addValue).using(t.stats.executor).tell(took);
         }
       }
-      a.reply();
+      a.reply(m);
     })
-    .when(TIMER).lambda(a -> states.add(a.message().body()))
+    .when(TIMER).lambda((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
     .shutdown();
 
@@ -171,9 +172,9 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 4;
-      bias = 1_000;
+      bias = 2_000;
       messages = 50_000_000;
-      seedMessages = 1_000;
+      seedMessages = 2_000;
       warmupFrac = .05f;
       log = true;
       verbose = false;

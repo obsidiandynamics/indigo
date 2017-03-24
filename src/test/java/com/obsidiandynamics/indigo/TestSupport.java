@@ -16,10 +16,10 @@ public interface TestSupport {
     if (LOG) LOG_STREAM.printf(format, args);
   }
   
-  default Consumer<Activation> refCollector(Set<ActorRef> set) {
-    return a -> {
-      log("Finished %s\n", a.message().from());
-      set.add(a.message().from());
+  default BiConsumer<Activation, Message> refCollector(Set<ActorRef> set) {
+    return (a, m) -> {
+      log("Finished %s\n", m.from());
+      set.add(m.from());
     };
   }
   

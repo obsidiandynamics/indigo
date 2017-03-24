@@ -15,7 +15,7 @@ public final class ExternalAskTest implements TestSupport {
     
     final ActorSystem system = new ActorSystemConfig() {}
     .define()
-    .when(ADDER).lambda(a -> a.reply(a.message().<Integer>body() + 1));
+    .when(ADDER).lambda((a, m) -> a.reply(m, m.<Integer>body() + 1));
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     final int resp = f.get();
@@ -28,7 +28,7 @@ public final class ExternalAskTest implements TestSupport {
     
     final ActorSystem system = new ActorSystemConfig() {}
     .define()
-    .when(ADDER).lambda(a -> { /* do nothing, stalling the reply */ });
+    .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     f.get(10, TimeUnit.MILLISECONDS);

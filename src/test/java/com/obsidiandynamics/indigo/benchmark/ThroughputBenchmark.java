@@ -29,7 +29,7 @@ public final class ThroughputBenchmark {
       }};
     }}
     .define()
-    .when(SINK).lambda(IntegerState::new, (a, s) -> {
+    .when(SINK).lambda(IntegerState::new, (a, m, s) -> {
       if (++s.value == n) {
         latch.countDown();
       }

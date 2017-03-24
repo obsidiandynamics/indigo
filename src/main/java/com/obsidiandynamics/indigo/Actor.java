@@ -5,5 +5,5 @@ public interface Actor {
   
   default void passivated(Activation a) {}
   
-  void act(Activation a);
+  void act(Activation a, Message m);
 }

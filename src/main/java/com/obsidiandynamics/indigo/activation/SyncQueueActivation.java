@@ -10,6 +10,8 @@ public final class SyncQueueActivation extends Activation {
   
   private final Queue<Message> backlog = new ArrayDeque<>(1);
   
+  private boolean on;
+  
   private boolean passivationScheduled;
   
   private volatile boolean passivationComplete;
@@ -26,7 +28,7 @@ public final class SyncQueueActivation extends Activation {
       final boolean awaitPassivation;
       final boolean throttleBacklog;
       synchronized (backlog) {
-        noBacklog = message == null && backlog.isEmpty();
+        noBacklog = ! on && backlog.isEmpty();
         noPending = pending.isEmpty();
         
         awaitPassivation = noBacklog && noPending && passivationScheduled;
@@ -68,28 +70,27 @@ public final class SyncQueueActivation extends Activation {
   private void run() {
     final Message[] messages;
     synchronized (backlog) {
-      if (message != null) throw new IllegalStateException("Actor " + ref + " was already entered");
+      if (on) throw new IllegalStateException("Actor " + ref + " was already entered");
 
       messages = new Message[Math.min(actorConfig.bias, backlog.size())];
       for (int i = 0; i < messages.length; i++) {
         messages[i] = backlog.remove();
       }
-      message = messages[0];
+      on = true;
     }
 
     ensureActivated();
 
     for (int i = 0; i < messages.length; i++) {
-      message = messages[i];
       processMessage(messages[i]);
     }
 
     final boolean noBacklog;
     final boolean noPending;
     synchronized (backlog) {
-      if (message == null) throw new IllegalStateException("Actor " + ref + " was already cleared");
+      if (! on) throw new IllegalStateException("Actor " + ref + " was already cleared");
 
-      message = null;
+      on = false;
       noBacklog = backlog.isEmpty();
       noPending = pending.isEmpty();
     }

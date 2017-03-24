@@ -28,7 +28,7 @@ public final class EgressTest implements TestSupport {
       executor = FIXED_THREAD_POOL;
     }}
     .define()
-    .when(DRIVER).lambda(IntegerState::new, (a, s) -> {
+    .when(DRIVER).lambda(IntegerState::new, (a, m, s) -> {
       a.<Integer, Integer>egress(in -> {
         assertEquals(EXTERNAL, Thread.currentThread().getName());
         return in + 1; 
@@ -37,13 +37,13 @@ public final class EgressTest implements TestSupport {
       .ask(s.value).onResponse(r -> {
         assertFalse("Driven by an external thread", Thread.currentThread().getName().equals(EXTERNAL));
         
-        final int res = r.message().body();
+        final int res = r.body();
         if (res == runs) {
           a.to(ActorRef.of(DONE_RUNS)).tell();
         } else {
           assertEquals(s.value + 1, res);
           s.value = res;
-          r.toSelf().tell();
+          a.toSelf().tell();
         }
       });
     })

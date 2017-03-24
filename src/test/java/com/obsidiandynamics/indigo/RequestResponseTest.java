@@ -21,19 +21,19 @@ public final class RequestResponseTest implements TestSupport {
 
     new ActorSystemConfig() {}
     .define()
-    .when(DRIVER).lambda(IntegerState::new, (a, s) -> {
+    .when(DRIVER).lambda(IntegerState::new, (a, m, s) -> {
       a.to(ActorRef.of(ADDER)).ask(s.value).onResponse(r -> {
-        final int res = r.message().body();
+        final int res = r.body();
         if (res == runs) {
-          r.to(ActorRef.of(DONE_RUNS)).tell();
+          a.to(ActorRef.of(DONE_RUNS)).tell();
         } else {
           assertEquals(s.value + 1, res);
           s.value = res;
-          r.toSelf().tell();
+          a.toSelf().tell();
         }
       });
     })
-    .when(ADDER).lambda(a -> a.reply(a.message().<Integer>body() + 1))
+    .when(ADDER).lambda((a, m) -> a.reply(m, m.<Integer>body() + 1))
     .when(DONE_RUNS).lambda(refCollector(doneRuns))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdown();

@@ -95,7 +95,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     final Set<State> states = new HashSet<>();
     final Timings t = new Timings();
     
-    if (c.log) System.out.format("Warming up...\n");
+    if (c.log) c.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
       parallelism = c.threads;
@@ -107,12 +107,12 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }};
     }}
     .define()
-    .when(DRIVER).lambda(State::new, (a, s) -> {
-      final ActorRef to = ActorRef.of(ECHO, a.message().body().toString());
+    .when(DRIVER).lambda(State::new, (a, m, s) -> {
+      final ActorRef to = ActorRef.of(ECHO, m.body().toString());
       send(a, to, s, c, c.seedPairs, t.stats);
     })
-    .when(ECHO).lambda(a -> a.reply())
-    .when(TIMER).lambda(a -> states.add(a.message().body()))
+    .when(ECHO).lambda((a, m) -> a.reply(m))
+    .when(TIMER).lambda((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
     .shutdown();
 
@@ -126,14 +126,14 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     final long startTime = c.stats ? System.nanoTime() : 0;
     final MessageBuilder m = a.to(to).times(times).ask();
     if (c.timeout != 0) {
-      m.await(c.timeout).onTimeout(t -> fail("Timed out waiting for " + to));
+      m.await(c.timeout).onTimeout(() -> fail("Timed out waiting for " + to));
     }
-    m.onResponse(onResponse(to, s, c, startTime, stats));
+    m.onResponse(onResponse(a, to, s, c, startTime, stats));
     s.tx += times;
   }
   
-  private static Consumer<Activation> onResponse(ActorRef to, State s, Config c, long sendTime, Stats stats) {
-    return a -> {
+  private static Consumer<Message> onResponse(Activation a, ActorRef to, State s, Config c, long sendTime, Stats stats) {
+    return m -> {
       if (c.stats && s.rx >= c.warmupPairs && (s.rx - c.warmupPairs) % c.statsPeriod == 0) {
         final long took = System.nanoTime() - sendTime;
         if (c.statsSync) {
@@ -144,16 +144,16 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }
       
       s.rx++;
-      if (c.verbose) System.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), a.message().from(), s.rx, s.tx);
+      if (c.verbose) c.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), m.from(), s.rx, s.tx);
       
       if (s.rx == c.warmupPairs) {
         s.txOnStart = s.tx;
-        if (c.log && a.self().key().equals("0")) System.out.format("Starting timed run...\n");
+        if (c.log && a.self().key().equals("0")) c.out.format("Starting timed run...\n");
         s.started = System.nanoTime();
       }
       
       if (s.rx == c.pairs) {
-        if (c.verbose) System.out.format("Done %s\n", a.self());
+        if (c.verbose) c.out.format("Done %s\n", a.self());
         s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
         s.totalProcessed = (c.pairs - c.warmupPairs + c.pairs - s.txOnStart) / 2;
         a.to(ActorRef.of(TIMER)).tell(s);
@@ -168,7 +168,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 2;
       bias = 1_000;
-      pairs = 10_000_000;
+      pairs = 20_000_000;
       seedPairs = 1_000;
       warmupFrac = .05f;
       timeout = 0;

@@ -21,8 +21,6 @@ public abstract class Activation {
   
   private boolean activated;
   
-  protected Message message;
-  
   protected long requestCounter = Crypto.machineRandom();
   
   protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
@@ -37,10 +35,6 @@ public abstract class Activation {
   
   public final ActorRef self() {
     return ref;
-  }
-  
-  public final Message message() {
-    return message;
   }
   
   public abstract void passivate();
@@ -59,7 +53,7 @@ public abstract class Activation {
     
     private long timeoutMillis;
     
-    private Consumer<Activation> onTimeout;
+    private Runnable onTimeout;
     
     MessageBuilder(MessageTarget target) {
       this.target = target;
@@ -90,12 +84,12 @@ public abstract class Activation {
       return this;
     }
     
-    public MessageBuilder onTimeout(Consumer<Activation> onTimeout) {
+    public MessageBuilder onTimeout(Runnable onTimeout) {
       this.onTimeout = onTimeout;
       return this;
     }
     
-    public void onResponse(Consumer<Activation> onResponse) {
+    public void onResponse(Consumer<Message> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
         throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
       }      
@@ -162,21 +156,21 @@ public abstract class Activation {
     return to(ref);
   }
   
-  public final MessageBuilder toSender() {
-    return to(message.from());
+  public final MessageBuilder toSenderOf(Message m) {
+    return to(m.from());
   }
   
-  public final void reply() {
-    reply(null);
+  public final void reply(Message m) {
+    reply(m, null);
   }
   
-  public final void reply(Object responseBody) {
-    final boolean responding = message.requestId() != null;
-    send(new Message(ref, message.from(), responseBody, message.requestId(), responding));
+  public final void reply(Message m, Object responseBody) {
+    final boolean responding = m.requestId() != null;
+    send(new Message(ref, m.from(), responseBody, m.requestId(), responding));
   }
   
-  public final void forward(ActorRef to) {
-    send(new Message(message.from(), to, message.body(), message.requestId(), message.isResponse()));
+  public final void forward(Message m, ActorRef to) {
+    send(new Message(m.from(), to, m.body(), m.requestId(), m.isResponse()));
   }
   
   private final void send(Message message) {
@@ -191,7 +185,6 @@ public abstract class Activation {
   }
   
   protected final void processMessage(Message message) {
-    this.message = message;
     if (message.isResponse()) {
       final PendingRequest req = pending.remove(message.requestId());
 
@@ -199,7 +192,7 @@ public abstract class Activation {
         if (message.body() instanceof TimeoutSignal) {
           if (req != null && ! req.isComplete()) {
             req.setComplete(true);
-            req.getOnTimeout().accept(this);
+            req.getOnTimeout().run();
           }
         } else {
           throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
@@ -209,15 +202,15 @@ public abstract class Activation {
           system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
         }
         req.setComplete(true);
-        req.getOnResponse().accept(this);
+        req.getOnResponse().accept(message);
       }
     } else {
-      actor.act(this);
+      actor.act(this, message);
     }
   }
 
   @Override
   public final String toString() {
-    return "Activation [ref=" + ref + ", message=" + message + "]";
+    return "Activation [ref=" + ref + "]";
   }
 }

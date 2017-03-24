@@ -29,23 +29,23 @@ public final class TimeoutTest implements TestSupport {
 
     new ActorSystemConfig() {}
     .define()
-    .when(DRIVER).lambda(a -> {
+    .when(DRIVER).lambda((a, m) -> {
       final long startTime = System.currentTimeMillis();
       final long timeout = generateRandomTimeout();
       a.to(ActorRef.of(ECHO)).ask().await(timeout)
-      .onTimeout(t -> {
+      .onTimeout(() -> {
         final long elapsed = System.currentTimeMillis() - startTime;
         final long timeDiff = Math.abs(elapsed - timeout);
         log("Timed out %s, diff=%d, t/o=%d, actual=%d\n", a.self(), timeDiff, timeout, elapsed);
         
-        t.to(ActorRef.of(DONE)).tell(timeDiff);
+        a.to(ActorRef.of(DONE)).tell(timeDiff);
       })
       .onResponse(r -> {
         fail(String.format("Got unexpected response, timeout set to %d", timeout));
       });
     })
-    .when(ECHO).lambda(a -> { /* do nothing, stalling the reply */ })
-    .when(DONE).lambda(a -> done.put(a.message().from(), a.message().body()))
+    .when(ECHO).lambda((a, m) -> { /* do nothing, stalling the reply */ })
+    .when(DONE).lambda((a, m) -> done.put(m.from(), m.body()))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdown();
 

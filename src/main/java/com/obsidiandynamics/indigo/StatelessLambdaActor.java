@@ -3,11 +3,11 @@ package com.obsidiandynamics.indigo;
 import java.util.function.*;
 
 public final class StatelessLambdaActor implements Actor {
-  private final Consumer<Activation> onAct;
+  private final BiConsumer<Activation, Message> onAct;
   private final Consumer<Activation> onActivated;
   private final Consumer<Activation> onPassivated;
   
-  private StatelessLambdaActor(Consumer<Activation> onAct, 
+  private StatelessLambdaActor(BiConsumer<Activation, Message> onAct, 
                                Consumer<Activation> onActivated, 
                                Consumer<Activation> onPassivated) {
     this.onAct = onAct;
@@ -16,8 +16,8 @@ public final class StatelessLambdaActor implements Actor {
   }
 
   @Override
-  public void act(Activation a) {
-    onAct.accept(a);
+  public void act(Activation a, Message m) {
+    onAct.accept(a, m);
   }
   
   @Override
@@ -31,11 +31,11 @@ public final class StatelessLambdaActor implements Actor {
   }
   
   public static final class Builder implements Supplier<Actor> {
-    private Consumer<Activation> onAct;
+    private BiConsumer<Activation, Message> onAct;
     private Consumer<Activation> onActivated;
     private Consumer<Activation> onPassivated;
     
-    public Builder act(Consumer<Activation> onAct) {
+    public Builder act(BiConsumer<Activation, Message> onAct) {
       this.onAct = onAct;
       return this;
     }
@@ -65,7 +65,7 @@ public final class StatelessLambdaActor implements Actor {
     return new Builder();
   }
   
-  public static void agent(Activation a) {
-    a.message().<Consumer<Activation>>body().accept(a);
+  public static void agent(Activation a, Message m) {
+    m.<Consumer<Activation>>body().accept(a);
   }
 }

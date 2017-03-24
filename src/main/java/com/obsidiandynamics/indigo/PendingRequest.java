@@ -3,24 +3,24 @@ package com.obsidiandynamics.indigo;
 import java.util.function.*;
 
 final class PendingRequest {
-  private final Consumer<Activation> onResponse;
+  private final Consumer<Message> onResponse;
   
-  private final Consumer<Activation> onTimeout;
+  private final Runnable onTimeout;
   
   private TimeoutTask timeoutTask;
   
   private volatile boolean complete;
   
-  PendingRequest(Consumer<Activation> onResponse, Consumer<Activation> onTimeout) {
+  PendingRequest(Consumer<Message> onResponse, Runnable onTimeout) {
     this.onResponse = onResponse;
     this.onTimeout = onTimeout;
   }
 
-  Consumer<Activation> getOnResponse() {
+  Consumer<Message> getOnResponse() {
     return onResponse;
   }
 
-  Consumer<Activation> getOnTimeout() {
+  Runnable getOnTimeout() {
     return onTimeout;
   }
 

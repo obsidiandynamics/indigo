@@ -3,12 +3,12 @@ package com.obsidiandynamics.indigo;
 import java.util.function.*;
 
 public final class StatefulLambdaActor<S> implements Actor {
-  private final BiConsumer<Activation, S> onAct;
+  private final TriConsumer<Activation, Message, S> onAct;
   private final Function<Activation, S> onActivated;
   private final BiConsumer<Activation, S> onPassivated;
   private S state;
   
-  StatefulLambdaActor(BiConsumer<Activation, S> onAct, 
+  StatefulLambdaActor(TriConsumer<Activation, Message, S> onAct, 
                       Function<Activation, S> onActivated, 
                       BiConsumer<Activation, S> onPassivated) {
     this.onAct = onAct;
@@ -17,8 +17,8 @@ public final class StatefulLambdaActor<S> implements Actor {
   }
 
   @Override
-  public void act(Activation a) {
-    onAct.accept(a, state);
+  public void act(Activation a, Message m) {
+    onAct.accept(a, m, state);
   }
   
   @Override
@@ -32,11 +32,11 @@ public final class StatefulLambdaActor<S> implements Actor {
   }
   
   public static final class Builder<S> implements Supplier<Actor> {
-    private BiConsumer<Activation, S> onAct;
+    private TriConsumer<Activation, Message, S> onAct;
     private Function<Activation, S> onActivated;
     private BiConsumer<Activation, S> onPassivated;
     
-    public Builder<S> act(BiConsumer<Activation, S> onAct) {
+    public Builder<S> act(TriConsumer<Activation, Message, S> onAct) {
       this.onAct = onAct;
       return this;
     }
@@ -67,7 +67,7 @@ public final class StatefulLambdaActor<S> implements Actor {
     return new Builder<>();
   }
   
-  public static <S> void agent(Activation a, S s) {
-    a.message().<BiConsumer<Activation, S>>body().accept(a, s);
+  public static <S> void agent(Activation a, Message m, S s) {
+    m.<BiConsumer<Activation, S>>body().accept(a, s);
   }
 }

@@ -51,8 +51,8 @@ public final class StatefulPassivationTest implements TestSupport {
     .when(TICK)
     .use(StatelessLambdaActor
          .builder()
-         .act(a -> {
-           final int msg = a.message().body();
+         .act((a, m) -> {
+           final int msg = m.body();
            if (msg == runs) {
              a.to(ActorRef.of(DONE_RUNS)).tell();
            } else {
@@ -65,15 +65,15 @@ public final class StatefulPassivationTest implements TestSupport {
     .when(TOCK)
     .use(StatefulLambdaActor
          .<IntegerState>builder()
-         .act((a, s) -> {
-           final int msg = a.message().body();
+         .act((a, m, s) -> {
+           final int msg = m.body();
            assertEquals(s.value + 1, msg);
            s.value = msg;
            
            if (msg == runs) {
              a.to(ActorRef.of(DONE_RUNS)).tell();
            } else {
-             a.toSender().tell(msg);
+             a.toSenderOf(m).tell(msg);
              a.passivate();
            }
          })

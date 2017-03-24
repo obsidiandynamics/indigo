@@ -82,11 +82,11 @@ public final class ActorSystem {
       return this;
     }
     
-    public ActorSystem lambda(Consumer<Activation> act) {
+    public ActorSystem lambda(BiConsumer<Activation, Message> act) {
       return use(StatelessLambdaActor.builder().act(act)); 
     }
     
-    public <S> ActorSystem lambda(Supplier<S> stateFactory, BiConsumer<Activation, S> act) {
+    public <S> ActorSystem lambda(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
       return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> stateFactory.get()));
     }
     
@@ -165,8 +165,8 @@ public final class ActorSystem {
     final CompletableFuture<T> f = new CompletableFuture<>();
     ingress(a -> 
       a.to(ref).ask(requestBody).await(timeoutMillisUpperBound)
-      .onTimeout(t -> f.completeExceptionally(new TimeoutException()))
-      .onResponse(r -> f.complete(r.message().body()))
+      .onTimeout(() -> f.completeExceptionally(new TimeoutException()))
+      .onResponse(r -> f.complete(r.body()))
     );
     return f;
   }
