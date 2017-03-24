@@ -114,7 +114,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     .when(ECHO).lambda((a, m) -> a.reply(m))
     .when(TIMER).lambda((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
-    .shutdown();
+    .dispose();
 
     assertEquals(c.actors, states.size());
     

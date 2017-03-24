@@ -233,7 +233,7 @@ public final class ActorSystem {
     return setup.actorConfig.activationFactory.create(nextActivationId++, ref, this, setup.actorConfig, actor);
   }
 
-  public void shutdown() {
+  public void dispose() {
     while (true) {
       try {
         drain();

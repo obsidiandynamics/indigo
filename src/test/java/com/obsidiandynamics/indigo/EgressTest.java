@@ -53,7 +53,7 @@ public final class EgressTest implements TestSupport {
         a.to(ActorRef.of(DRIVER, i + "")).tell();
       }
     })
-    .shutdown();
+    .dispose();
 
     assertEquals(actors, doneRuns.size());
   }

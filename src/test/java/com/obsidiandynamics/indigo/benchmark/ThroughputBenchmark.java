@@ -70,7 +70,7 @@ public final class ThroughputBenchmark {
       })
     );
     
-    system.shutdown();
+    system.dispose();
     System.out.format("%,d took %,d s, %,d ops/sec\n",
                       actors * o, took / 1000, actors * o / took * 1000);
   }
