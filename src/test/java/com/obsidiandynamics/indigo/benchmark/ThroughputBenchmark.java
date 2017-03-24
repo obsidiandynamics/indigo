@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.benchmark;
 
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 
 import java.util.concurrent.*;
@@ -19,7 +20,7 @@ public final class ThroughputBenchmark {
     final ActorSystem system = new ActorSystemConfig() {{
       parallelism = threads;
       executor = FIXED_THREAD_POOL;
-      activationFactory = ActivationChoice.NODE_QUEUE;
+      activationFactory = NODE_QUEUE;
       defaultActorConfig = new ActorConfig() {{
         bias = 10_000;
         backlogThrottleCapacity = Integer.MAX_VALUE;
@@ -33,8 +34,8 @@ public final class ThroughputBenchmark {
       }
     });
     
-    final long took = TestSupport.took(() ->
-      TestSupport.parallel(actors, latch, i -> {
+    final long took = TestSupport.took(
+      ParallelJob.create(actors, latch, i -> {
         final ActorRef to = ActorRef.of(SINK, String.valueOf(i));
         final Message m = Message.builder().to(to).build();
         for (int j = 0; j < n; j++) {

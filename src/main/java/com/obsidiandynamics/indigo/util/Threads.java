@@ -41,4 +41,12 @@ public final class Threads {
       throw new RuntimeException(e);
     }
   }
+  
+  public static void await(CyclicBarrier barrier) {
+    try {
+      barrier.await();
+    } catch (InterruptedException | BrokenBarrierException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

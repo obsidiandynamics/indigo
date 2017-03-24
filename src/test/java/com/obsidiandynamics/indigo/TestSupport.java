@@ -2,10 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.function.*;
-
-import com.obsidiandynamics.indigo.util.*;
 
 public interface TestSupport {
   static final boolean LOG = false;
@@ -35,13 +32,5 @@ public interface TestSupport {
     r.run();
     final long took = System.nanoTime() - started;
     return took / 1_000_000l;
-  }
-  
-  static void parallel(int threads, CountDownLatch latch, Consumer<Integer> r) {
-    for (int i = 0; i < threads; i++) {
-      final int _i = i;
-      new Thread(() -> r.accept(_i)).start();
-    }
-    Threads.await(latch);
   }
 }

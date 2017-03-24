@@ -10,11 +10,11 @@ public final class APActorBenchmark {
     final int threads = Runtime.getRuntime().availableProcessors() * 1;
     final int actors = threads * 1;
     final ForkJoinPool executor = (ForkJoinPool) Executors.newWorkStealingPool(threads);
-    final long n = 100_000_000;
+    final long n = 10_000_000;
 
     final CountDownLatch latch = new CountDownLatch(actors);
-    final long took = TestSupport.took(() ->
-      TestSupport.parallel(actors, latch, i -> 
+    final long took = TestSupport.took(
+      ParallelJob.create(actors, latch, i -> 
         send(countingActor(n, executor, latch), n)
       )
     );
