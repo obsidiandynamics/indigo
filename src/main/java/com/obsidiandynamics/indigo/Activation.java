@@ -173,7 +173,7 @@ public abstract class Activation {
     send(new Message(m.from(), to, m.body(), m.requestId(), m.isResponse()));
   }
   
-  private final void send(Message message) {
+  public final void send(Message message) {
     system.send(message);
   }
   
@@ -208,7 +208,7 @@ public abstract class Activation {
       actor.act(this, message);
     }
   }
-
+  
   @Override
   public final String toString() {
     return "Activation [ref=" + ref + "]";

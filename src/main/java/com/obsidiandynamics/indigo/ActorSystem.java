@@ -87,7 +87,11 @@ public final class ActorSystem {
     }
     
     public <S> ActorSystem lambda(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
-      return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> stateFactory.get()));
+      return lambda(a -> stateFactory.get(), act);
+    }
+    
+    public <S> ActorSystem lambda(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
+      return use(StatefulLambdaActor.<S>builder().act(act).activated(stateFactory));
     }
     
     public ActorSystem use(Supplier<Actor> factory) {
@@ -108,13 +112,13 @@ public final class ActorSystem {
     }
   }
   
-  public ActorSystem send(Message m) {
+  public ActorSystem send(Message message) {
     for (;;) {
-      final Activation a = activate(m.to());
-      if (a._enqueue(m)) {
+      final Activation a = activate(message.to());
+      if (a._enqueue(message)) {
         return this;
       } else {
-        m.to().setCachedActivation(null);
+        message.to().setCachedActivation(null);
       }
     }
   }

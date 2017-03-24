@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.benchmark;
 
+import static com.obsidiandynamics.indigo.ActorConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
@@ -103,7 +104,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
-        activationFactory = ActivationChoice.NODE_QUEUE;
+        activationFactory = NODE_QUEUE;
       }};
     }}
     .define()
@@ -170,7 +171,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       bias = 1_000;
       pairs = 20_000_000;
       seedPairs = 1_000;
-      warmupFrac = .05f;
+      warmupFrac = .25f;
       timeout = 0;
       log = true;
       verbose = false;

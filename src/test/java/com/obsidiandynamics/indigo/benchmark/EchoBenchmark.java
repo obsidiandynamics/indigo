@@ -55,7 +55,9 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     }
   }
   
-  private static final class State implements TimedState {
+  private static final class DriverState implements TimedState {
+    final Message blank;
+    
     int rx;
     int tx;
     
@@ -63,6 +65,10 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     int totalProcessed;
     long started;
     long timeTaken;
+    
+    DriverState(Activation a) {
+      blank = Message.builder().to(ActorRef.of(ECHO, a.self().key())).from(a.self()).body(0L).build();
+    }
     
     @Override
     public long getTotalProcessed() { return totalProcessed; }
@@ -75,6 +81,14 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       } else {
         return 0;
       }
+    }
+  }
+  
+  private static final class EchoState {
+    final Message blank;
+    
+    EchoState(Activation a) {
+      blank = Message.builder().to(ActorRef.of(DRIVER, a.self().key())).from(a.self()).body(0L).build();
     }
   }
   
@@ -100,7 +114,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     if (c.seedMessages > c.messages / 2) 
       throw new IllegalArgumentException("Seed messages cannot be greater than half the total number of messages");
     
-    final Set<State> states = new HashSet<>();
+    final Set<DriverState> states = new HashSet<>();
     final Timings t = new Timings();
     
     if (c.log) c.out.format("Warming up...\n");
@@ -115,7 +129,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       }};
     }}
     .define()
-    .when(DRIVER).lambda(State::new, (a, m, s) -> {
+    .when(DRIVER).lambda(DriverState::new, (a, m, s) -> {
       switch (m.from().role()) {
         case ECHO:
           s.rx++;
@@ -133,7 +147,12 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
             s.totalProcessed = c.messages / 2 - c.warmupMessages + c.messages / 2 - s.txOnStart;
             a.to(ActorRef.of(TIMER)).tell(s);
           } else if (s.tx != c.messages / 2) {
-            a.reply(m, s.getSendTime(c));
+            final long sendTime = s.getSendTime(c);
+            if (sendTime == 0) {
+              a.send(s.blank);
+            } else {
+              a.reply(m, s.getSendTime(c));
+            }
             s.tx++;
           }
           break;
@@ -146,7 +165,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
         default: throw new UnsupportedOperationException(m.from().role());
       }
     })
-    .when(ECHO).lambda((a, m) -> {
+    .when(ECHO).lambda(EchoState::new, (a, m, s) -> {
       final long sendTime = m.body();
       if (sendTime != 0) {
         final long took = System.nanoTime() - sendTime;
@@ -156,7 +175,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
           a.<Long>egress(t.stats.samples::addValue).using(t.stats.executor).tell(took);
         }
       }
-      a.reply(m);
+      a.send(s.blank);
     })
     .when(TIMER).lambda((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell(i))
@@ -175,7 +194,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       bias = 2_000;
       messages = 50_000_000;
       seedMessages = 2_000;
-      warmupFrac = .05f;
+      warmupFrac = .25f;
       log = true;
       verbose = false;
       stats = false;
