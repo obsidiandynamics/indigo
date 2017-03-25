@@ -7,14 +7,14 @@ import java.util.concurrent.*;
 
 import org.apache.commons.math3.stat.descriptive.*;
 
-interface BenchmarkSupport {
-  interface TimedState {
+public interface BenchmarkSupport {
+  public interface TimedState {
     long getTotalProcessed();
     
     long getTimeTaken();
   }
   
-  static final class Timings {
+  public static final class Timings {
     long timedTxns = 0;
     long avgTime = 0;
     final Stats stats = new Stats();
@@ -47,7 +47,7 @@ interface BenchmarkSupport {
     }
   }
   
-  static class Stats {
+  public static class Stats {
     final DescriptiveStatistics samples = new DescriptiveStatistics();
     final ExecutorService executor = Executors.newFixedThreadPool(1);
     

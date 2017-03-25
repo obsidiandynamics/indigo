@@ -11,14 +11,13 @@ Copyright 2012-2017 Viktor Klang
    limitations under the License.
  */
 
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo.experimental;
 
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
-public class VKBatchActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
+public class VKActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
   public static interface Effect extends Function<Behavior, Behavior> { }; // An Effect returns a Behavior given a Behavior
   public static interface Behavior extends Function<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
 
@@ -52,7 +51,7 @@ public class VKBatchActor { // Visibility is achieved by volatile-piggybacking o
 
   public static Address create(final Function<Address, Behavior> initial, final Executor e) {
     final Address a = new AtomicRunnableAddress() {
-      private final Queue<Object> mb = new ConcurrentLinkedQueue<>();
+      private final ConcurrentLinkedQueue<Object> mb = new ConcurrentLinkedQueue<Object>();
 
       private Behavior behavior = new Behavior() { 
         @Override public Effect apply(Object msg) { 
@@ -61,7 +60,7 @@ public class VKBatchActor { // Visibility is achieved by volatile-piggybacking o
       };
 
       @Override public final Address tell(Object msg) { 
-        if (mb.add(msg)) {
+        if (mb.offer(msg)) {
           async(); 
         }
         return this; 
@@ -70,13 +69,9 @@ public class VKBatchActor { // Visibility is achieved by volatile-piggybacking o
       @Override public final void run() { 
         if(on.get() == 1) { 
           try {
-            while (true) {
-              final Object m = mb.poll();
-              if(m != null) {
-                behavior = behavior.apply(m).apply(behavior); 
-              } else {
-                break;
-              }
+            final Object m = mb.poll();
+            if(m != null) {
+              behavior = behavior.apply(m).apply(behavior); 
             }
           } finally { 
             on.set(0); 

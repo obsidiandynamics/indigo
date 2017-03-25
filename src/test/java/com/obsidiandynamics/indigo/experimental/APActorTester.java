@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo.experimental;
 
-import static com.obsidiandynamics.indigo.benchmark.APActor.*;
+import static com.obsidiandynamics.indigo.experimental.APActor.*;
 
 import java.util.concurrent.*;
 

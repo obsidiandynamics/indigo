@@ -1,9 +1,10 @@
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo.experimental;
 
 import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.benchmark.APActor.*;
+import com.obsidiandynamics.indigo.benchmark.*;
+import com.obsidiandynamics.indigo.experimental.APActor.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class APActorBenchmark {

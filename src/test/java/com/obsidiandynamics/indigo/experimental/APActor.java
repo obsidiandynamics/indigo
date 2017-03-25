@@ -11,7 +11,7 @@ Copyright 2012-2017 Viktor Klang
    limitations under the License.
 */
 
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo.experimental;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;

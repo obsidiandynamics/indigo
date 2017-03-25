@@ -11,13 +11,14 @@ Copyright 2012-2017 Viktor Klang
    limitations under the License.
  */
 
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo.experimental;
 
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
-public class VKActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
+public class VKBatchActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
   public static interface Effect extends Function<Behavior, Behavior> { }; // An Effect returns a Behavior given a Behavior
   public static interface Behavior extends Function<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
 
@@ -51,7 +52,7 @@ public class VKActor { // Visibility is achieved by volatile-piggybacking of rea
 
   public static Address create(final Function<Address, Behavior> initial, final Executor e) {
     final Address a = new AtomicRunnableAddress() {
-      private final ConcurrentLinkedQueue<Object> mb = new ConcurrentLinkedQueue<Object>();
+      private final Queue<Object> mb = new ConcurrentLinkedQueue<>();
 
       private Behavior behavior = new Behavior() { 
         @Override public Effect apply(Object msg) { 
@@ -60,7 +61,7 @@ public class VKActor { // Visibility is achieved by volatile-piggybacking of rea
       };
 
       @Override public final Address tell(Object msg) { 
-        if (mb.offer(msg)) {
+        if (mb.add(msg)) {
           async(); 
         }
         return this; 
@@ -69,9 +70,13 @@ public class VKActor { // Visibility is achieved by volatile-piggybacking of rea
       @Override public final void run() { 
         if(on.get() == 1) { 
           try {
-            final Object m = mb.poll();
-            if(m != null) {
-              behavior = behavior.apply(m).apply(behavior); 
+            while (true) {
+              final Object m = mb.poll();
+              if(m != null) {
+                behavior = behavior.apply(m).apply(behavior); 
+              } else {
+                break;
+              }
             }
           } finally { 
             on.set(0); 
