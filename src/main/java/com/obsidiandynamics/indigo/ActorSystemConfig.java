@@ -5,6 +5,8 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public abstract class ActorSystemConfig {
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
    *  be sized dynamically depending on the thread pool used. */
@@ -15,7 +17,7 @@ public abstract class ActorSystemConfig {
   
   public static enum ExecutorChoice implements Function<Integer, ExecutorService> {
     FORK_JOIN_POOL(Executors::newWorkStealingPool),
-    FIXED_THREAD_POOL(Executors::newFixedThreadPool);
+    FIXED_THREAD_POOL(Threads::prestartedFixedThreadPool);
     
     private final Function<Integer, ExecutorService> func;
     private ExecutorChoice(Function<Integer, ExecutorService> func) { this.func = func; }

@@ -18,8 +18,12 @@ public final class ExternalAskTest implements TestSupport {
     .when(ADDER).lambda((a, m) -> a.reply(m).tell(m.<Integer>body() + 1));
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
-    final int resp = f.get();
-    assertEquals(42, resp);
+    try {
+      final int resp = f.get();
+      assertEquals(42, resp);
+    } finally {
+      system.dispose();
+    }
   }
 
   @Test(expected=TimeoutException.class)
@@ -30,7 +34,11 @@ public final class ExternalAskTest implements TestSupport {
     .define()
     .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
     
-    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
-    f.get(10, TimeUnit.MILLISECONDS);
+    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 20, 41);
+    try {
+      f.get(10, TimeUnit.MILLISECONDS);
+    } finally {
+      system.dispose();
+    }
   }
 }

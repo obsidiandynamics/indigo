@@ -58,4 +58,12 @@ interface BenchmarkSupport {
       } catch (InterruptedException e) {}
     }
   }
+  
+  static void forceGC() {
+    System.gc();
+    /*for (int i = 0; i < 5; i++) {
+      System.gc();
+      Threads.sleep(200);
+    }*/
+  }
 }

@@ -6,6 +6,9 @@ import java.util.function.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ParallelJob implements Runnable {
+  private static final boolean BLOCKING = true;
+  private static final boolean NON_BLOCKING = false;
+  
   private final CountDownLatch latch;
   private final CyclicBarrier barrier;
   
@@ -14,17 +17,23 @@ public final class ParallelJob implements Runnable {
     this.barrier = barrier;
   }
   
-  public static ParallelJob create(int threads, Consumer<Integer> r) {
-    return create(threads, null, r);
+  public static ParallelJob blocking(int threads, Consumer<Integer> r) {
+    return create(threads, BLOCKING, r);
   }
-
-  public static ParallelJob create(int threads, CountDownLatch latch, Consumer<Integer> r) {
+  
+  public static ParallelJob nonBlocking(int threads, Consumer<Integer> r) {
+    return create(threads, NON_BLOCKING, r);
+  }
+  
+  private static ParallelJob create(int threads, boolean blocking, Consumer<Integer> r) {
+    final CountDownLatch latch = new CountDownLatch(threads);
     final CyclicBarrier barrier = new CyclicBarrier(threads + 1);
     for (int i = 0; i < threads; i++) {
       final int _i = i;
       final Thread t = new Thread(() ->  {
         Threads.await(barrier);
-        r.accept(_i); 
+        r.accept(_i);
+        if (latch != null) latch.countDown();
       });
       t.start();
     }

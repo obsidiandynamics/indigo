@@ -49,4 +49,10 @@ public final class Threads {
       throw new RuntimeException(e);
     }
   }
+  
+  public static ThreadPoolExecutor prestartedFixedThreadPool(int numThreads) {
+    final ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
+    pool.prestartAllCoreThreads();
+    return pool;
+  }
 }

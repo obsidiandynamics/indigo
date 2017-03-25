@@ -238,7 +238,7 @@ public final class ActorSystem {
   }
 
   public void dispose() {
-    while (true) {
+    for (;;) {
       try {
         drain();
         break;

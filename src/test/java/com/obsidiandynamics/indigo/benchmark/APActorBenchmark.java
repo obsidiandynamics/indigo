@@ -4,6 +4,7 @@ import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.benchmark.APActor.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class APActorBenchmark {
   private static void benchmark() {
@@ -14,9 +15,10 @@ public final class APActorBenchmark {
 
     final CountDownLatch latch = new CountDownLatch(actors);
     final long took = TestSupport.took(
-      ParallelJob.create(actors, latch, i -> 
-        send(countingActor(n, executor, latch), n)
-      )
+      ParallelJob.nonBlocking(actors, i -> {
+        send(countingActor(n, executor, latch), n);
+        Threads.await(latch);
+      })
     );
     
     System.out.format("%,d took %,d s, %,d ops/sec\n",
@@ -26,8 +28,8 @@ public final class APActorBenchmark {
   
   public static void main(String[] args) {
     System.out.println("bench started");
-    for (int i = 0; i < 7; i++) {
-      System.gc();
+    for (int i = 0; i < 29; i++) {
+      BenchmarkSupport.forceGC();
       benchmark();
     }
   }

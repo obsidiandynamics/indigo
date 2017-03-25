@@ -20,7 +20,7 @@ public final class ThroughputBenchmark {
     final CountDownLatch latch = new CountDownLatch(actors);
     final ActorSystem system = new ActorSystemConfig() {{
       parallelism = threads;
-      executor = FORK_JOIN_POOL;
+      executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = 10_000;
         backlogThrottleCapacity = Integer.MAX_VALUE;
@@ -42,31 +42,31 @@ public final class ThroughputBenchmark {
       system.tell(refs[i]);
     }
     
-    ParallelJob.create(actors, null, i -> {
-      final ActorRef to = refs[i];
-      final Message m = Message.builder().to(to).build();
-      for (int j = 0; j < warmup; j++) {
-        system.send(m);
-      }
-    }).run();
+    if (warmup != 0) {
+      ParallelJob.blocking(actors, i -> {
+        final ActorRef to = refs[i];
+        final Message m = Message.builder().to(to).build();
+        for (int j = 0; j < warmup; j++) {
+          system.send(m);
+        }
+      }).run();
     
-    try {
-      system.drain();
-    } catch (InterruptedException e) {}
-    
-    /*for (int i = 0; i < 5; i++) {
-      System.gc();
-      Threads.sleep(200);
-    }*/
+      try {
+        system.drain();
+      } catch (InterruptedException e) {}
+      
+      BenchmarkSupport.forceGC();
+    }
     
     final long o = n - warmup;
     final long took = TestSupport.took(
-      ParallelJob.create(actors, latch, i -> {
+      ParallelJob.nonBlocking(actors, i -> {
         final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
         for (int j = 0; j < o; j++) {
           system.send(m);
         }
+        Threads.await(latch);
       })
     );
     
@@ -78,8 +78,7 @@ public final class ThroughputBenchmark {
   public static void main(String[] args) {
     System.out.println("bench started");
     for (int i = 0; i < 29; i++) {
-      System.gc();
-      Threads.sleep(1000);
+      BenchmarkSupport.forceGC();
       benchmark();
     }
   }
