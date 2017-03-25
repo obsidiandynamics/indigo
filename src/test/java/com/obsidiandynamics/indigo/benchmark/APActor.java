@@ -1,8 +1,25 @@
+/*
+Copyright 2012-2017 Viktor Klang
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+       http://www.apache.org/licenses/LICENSE-2.0
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package com.obsidiandynamics.indigo.benchmark;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+/**
+ *  Taken from https://github.com/plokhotnyuk/actors (initial work by Viktor Klang, performance
+ *  enhancements by Andriy Plokhotnyuk) for comparative benchmarking.
+ */
 public class APActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
   public static interface Func<I, O> {
     O apply(I in);
@@ -13,8 +30,6 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
 
   public static interface Address { 
     Address tell(Object msg);
-    
-    long getBacklog();
   }; // An Address is somewhere you can send messages
 
   public final static Effect become(final Behavior behavior) { 
@@ -63,26 +78,17 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
         set(ANCHOR);
       }
       
-//      private Behavior behavior = new Behavior() { 
-//        @Override public Effect apply(Object m) { 
-//          return (m instanceof Address) ? become(initial.apply((Address) m)) : stay; 
-//        } 
-//      };
-      
       private final Behavior behavior = initial.apply(null);
 
       @Override public final Address tell(Object m) {
-        //backlog.increment();
         final Node t = new Node(m);
         final Node t1 = getAndSet(t);
         
-        //synchronized (this) {
-          if (t1 == ANCHOR) {
-            async(t, true);
-          } else {
-            t1.lazySet(t);
-          }
-        //}
+        if (t1 == ANCHOR) {
+          async(t, true);
+        } else {
+          t1.lazySet(t);
+        }
         return this; 
       }
       
@@ -92,64 +98,21 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
           if (x) {
             act(n, false);
           } else if (/*addr.get() != n ||*/ ! cas(n)) {
-            //actOrAsync(n); //<
             act(n, true);
           }
         });
-//        e.execute(new ForkJoinTask<Void>() {
-//          private static final long serialVersionUID = 1L;
-//          @Override public Void getRawResult() { return null; }
-//          @Override protected void setRawResult(Void value) {}
-//          @Override protected boolean exec() {
-//            if (x) {
-//              act(n, false);
-//            } else if (/*addr.get() != n ||*/ ! cas(n)) {
-//              //actOrAsync(n); //<
-//              act(n, true);
-//            }
-//            return false;
-//          }
-//        });
       }
       
       private boolean cas(Node n) {
-        //synchronized (this) {
-          return compareAndSet(n, ANCHOR);
-        //}
+        return compareAndSet(n, ANCHOR);
       }
-      
-      /*private void actOrAsync(Node h) {
-        int attempts = 0;
-        
-        while (true) {
-          final Node h1 = h.get();
-          if (h1 != null) {
-            act(h1, false);
-            return;
-          } else if (attempts != 9) {
-            attempts++;
-          } else {
-            Thread.yield(); //<
-            //async(h, false); //<
-            if (!compareAndSet(h, ANCHOR)) {
-              async(h, false);
-            }
-            return; //<
-          }
-        }
-      }*/
 
       private void act(Node h, boolean skipCurrent) {
-        //int cycles = 0;
         int remaining = batch;
         if (! skipCurrent) behavior.apply(h.m);
         
         int spins = 0;
         while (true) {
-          //behavior = behavior.apply(h.m).apply(behavior);
-          //behavior.apply(h.m); //<
-          //cycles++;
-          
           final Node h1 = h.get();
           if (h1 != null) {
             if (remaining > 0) {
@@ -173,17 +136,9 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
             return; //<
           }
         }
-        //backlog.add(-cycles);
-      }
-      
-      private final LongAdder backlog = new LongAdder();
-
-      @Override
-      public long getBacklog() {
-        return backlog.sum();
       }
     };
-    //return a.tell(a); // Make self-aware
+    //return a.tell(a); //< Make self-aware
     return a;
   }
 }
