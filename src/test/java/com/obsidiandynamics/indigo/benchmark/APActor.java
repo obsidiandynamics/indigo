@@ -18,7 +18,9 @@ import java.util.concurrent.atomic.*;
 
 /**
  *  Taken from https://github.com/plokhotnyuk/actors (initial work by Viktor Klang, performance
- *  enhancements by Andriy Plokhotnyuk) for comparative benchmarking.
+ *  enhancements by Andriy Plokhotnyuk) for comparative benchmarking.<p>
+ *  
+ *  This was back-ported to Java; the original work being in Scala.
  */
 public class APActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
   public static interface Func<I, O> {
