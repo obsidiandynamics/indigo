@@ -37,19 +37,24 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     int warmupMessages;
     int statsPeriod;
     
-    private void init() {
+    void init() {
       warmupMessages = (int) (messages * warmupFrac) / 2;
       statsPeriod = Math.max(1, (messages / 2 - warmupMessages) * actors / statsSamples);
     }
     
+    String describe() {
+      return String.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction", 
+                           threads, actors, messages, seedMessages, warmupFrac * 100);
+    }
+    
+    Timings run() {
+      return new EchoBenchmark().test(this);
+    }
+    
     Timings test() {
       init();
-      if (log) {
-        out.format("Message echo benchmark...\n");
-        out.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction\n", 
-                   threads, actors, messages, seedMessages, warmupFrac * 100);
-      }
-      final Timings t = new EchoBenchmark().test(this);
+      if (log) out.println(describe());
+      final Timings t = run();
       if (log) out.format("%s\n", t);
       return t;
     }
@@ -98,6 +103,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
   
   @Test
   public void test() {
+    System.out.format("Message echo benchmark...\n");
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = 4;

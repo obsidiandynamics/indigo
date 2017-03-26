@@ -31,7 +31,7 @@ public interface BenchmarkSupport {
     @Override
     public String toString() {
       final StringBuilder sb = new StringBuilder();
-      sb.append(format("%,d txns took %,d s, %,d txn/s\n", timedTxns, avgTime / 1000, timedTxns / Math.max(1, avgTime) * 1000));
+      sb.append(format("%,d ops took %,d s, %,d ops/s\n", timedTxns, avgTime / 1000, timedTxns / Math.max(1, avgTime) * 1000));
       if (stats.samples.getN() != 0) {
         sb.append(format("Latency: mean: %,.1f, sd: %,.1f, min: %,.1f, 50%%: %,.1f, 95%%: %,.1f, 99%%: %,.1f, max: %,.1f (µs, N=%,d)\n", 
                          stats.samples.getMean() / 1000, 
