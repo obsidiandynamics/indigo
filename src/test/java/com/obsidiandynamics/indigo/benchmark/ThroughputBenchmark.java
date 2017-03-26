@@ -9,17 +9,46 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ThroughputBenchmark {
-  private static void benchmark() {
+  abstract static class Config implements Spec {
+    long n;
+    int threads;
+    int actors;
+    int bias;
+    float warmupFrac;
+    LogConfig log;
+    
+    /* Derived fields. */
+    long warmup;
+    
+    @Override
+    public void init() {
+      warmup = (long) (n * warmupFrac);
+    }
+
+    @Override
+    public LogConfig getLog() {
+      return log;
+    }
+
+    @Override
+    public String describe() {
+      return String.format("%d threads, %,d actors, %,d messages/actor, %.0f%% warmup fraction", 
+                           threads, actors, n, warmupFrac * 100);
+    }
+
+    @Override
+    public Summary run() {
+      return new ThroughputBenchmark().test(this);
+    }
+  }
+  
+  private Summary test(Config c) {
     final String SINK = "sink";
     
-    final int threads = Runtime.getRuntime().availableProcessors() * 1;
-    final int actors = threads * 1;
-    final long n = 10_000_000;
-    final int warmup = (int) (n * .05);
-    
-    final CountDownLatch latch = new CountDownLatch(actors);
+    final CountDownLatch latch = new CountDownLatch(c.actors);
+    final long n = c.n;
     final ActorSystem system = new ActorSystemConfig() {{
-      parallelism = threads;
+      parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = 10_000;
@@ -35,18 +64,19 @@ public final class ThroughputBenchmark {
       }
     });
     
-    final ActorRef[] refs = new ActorRef[actors];
+    final ActorRef[] refs = new ActorRef[c.actors];
     
-    for (int i = 0; i < actors; i++) {
+    for (int i = 0; i < c.actors; i++) {
       refs[i] = ActorRef.of(SINK, String.valueOf(i));
       system.tell(refs[i]);
     }
     
-    if (warmup != 0) {
-      ParallelJob.blocking(actors, i -> {
+    if (c.warmup != 0) {
+      if (c.log.enabled) c.log.out.format("Warming up...\n");
+      ParallelJob.blocking(c.actors, i -> {
         final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
-        for (int j = 0; j < warmup; j++) {
+        for (int j = 0; j < c.warmup; j++) {
           system.send(m);
         }
       }).run();
@@ -54,13 +84,12 @@ public final class ThroughputBenchmark {
       try {
         system.drain();
       } catch (InterruptedException e) {}
-      
-      BenchmarkSupport.forceGC();
     }
     
-    final long o = n - warmup;
+    if (c.log.enabled) c.log.out.format("Starting timed run...\n");
+    final long o = n - c.warmup;
     final long took = TestSupport.took(
-      ParallelJob.nonBlocking(actors, i -> {
+      ParallelJob.nonBlocking(c.actors, i -> {
         final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
         for (int j = 0; j < o; j++) {
@@ -71,15 +100,25 @@ public final class ThroughputBenchmark {
     );
     
     system.dispose();
-    System.out.format("%,d took %,d s, %,d ops/sec\n",
-                      actors * o, took / 1000, actors * o / took * 1000);
+    
+    final Summary summary = new Summary();
+    summary.timedOps = o * c.actors;
+    summary.avgTime = took;
+    return summary;
   }
   
   public static void main(String[] args) {
-    System.out.println("bench started");
     for (int i = 0; i < 29; i++) {
       BenchmarkSupport.forceGC();
-      benchmark();
+      new Config() {{
+        threads = Runtime.getRuntime().availableProcessors() * 1;
+        actors = threads * 1;
+        n = 10_000_000;
+        warmupFrac = .05f;
+        log = new LogConfig() {{
+          enabled = true;
+        }};
+      }}.test();
     }
   }
 }

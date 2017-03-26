@@ -4,7 +4,6 @@ import static com.obsidiandynamics.indigo.ActorConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -12,6 +11,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.Activation.*;
+import com.obsidiandynamics.indigo.benchmark.Summary.*;
 
 /**
  *  Benchmarks request-response pair throughput.
@@ -19,7 +19,7 @@ import com.obsidiandynamics.indigo.Activation.*;
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
  */
 public final class RequestResponseBenchmark implements TestSupport, BenchmarkSupport {
-  static abstract class Config {
+  abstract static class Config implements Spec {
     int threads;
     int actors;
     int bias;
@@ -27,36 +27,35 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     int seedPairs;
     float warmupFrac;
     long timeout;
-    boolean log;
-    boolean verbose;
+    LogConfig log;
     boolean stats;
     boolean statsSync;
     int statsSamples;
-    PrintStream out = System.out;
     
     /* Derived fields. */
     int warmupPairs;
     int statsPeriod;
     
-    private void init() {
+    @Override public void init() {
       warmupPairs = (int) (pairs * warmupFrac);
       statsPeriod = Math.max(1, (pairs - warmupPairs) * actors / statsSamples);
     }
-    
-    Timings test() {
-      init();
-      if (log) {
-        out.format("Request-response pairs benchmark...\n");
-        out.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction\n", 
-                   threads, actors, pairs, seedPairs, warmupFrac * 100);
-      }
-      final Timings t = new RequestResponseBenchmark().test(this);
-      if (log) out.format("%s\n", t);
-      return t;
+
+    @Override public LogConfig getLog() {
+      return log;
+    }
+
+    @Override public String describe() {
+      return String.format("%d threads, %,d send actors, %,d pairs/actor, %,d seed pairs/actor, %.0f%% warmup fraction", 
+                           threads, actors, pairs, seedPairs, warmupFrac * 100);
+    }
+
+    @Override public Summary run() {
+      return new RequestResponseBenchmark().test(this);
     }
   }
   
-  private static final class DriverState implements TimedState {
+  private static final class DriverState implements Elapsed {
     final ActorRef to;
     
     int rx;
@@ -71,10 +70,8 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       to = ActorRef.of(ECHO, a.self().key());
     }
     
-    @Override
-    public long getTotalProcessed() { return totalProcessed; }
-    @Override
-    public long getTimeTaken() { return timeTaken; }
+    @Override public long getTotalProcessed() { return totalProcessed; }
+    @Override public long getTimeTaken() { return timeTaken; }
   }
   
   private static final String DRIVER = "driver";
@@ -90,19 +87,22 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       pairs = 1_000;
       seedPairs = 100;
       warmupFrac = .05f;
-      log = LOG;
+      log = new LogConfig() {{
+        enabled = LOG;
+      }};
       statsSamples = 1_000;
     }}.test();
   }
   
-  private Timings test(Config c) {
+  private Summary test(Config c) {
     if (c.seedPairs > c.pairs) 
       throw new IllegalArgumentException("Seed pairs cannot be greater than total number of pairs");
-    
+
+    final LogConfig log = c.log;
     final Set<DriverState> states = new HashSet<>();
-    final Timings t = new Timings();
+    final Summary summary = new Summary();
     
-    if (c.log) c.out.format("Warming up...\n");
+    if (log.enabled) log.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
       parallelism = c.threads;
@@ -115,7 +115,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     }}
     .define()
     .when(DRIVER).lambda(DriverState::new, (a, m, s) -> {
-      send(a, s.to, s, c, c.seedPairs, t.stats);
+      send(a, s.to, s, c, c.seedPairs, summary.stats);
     })
     .when(ECHO).lambda((a, m) -> a.reply(m).tell())
     .when(TIMER).lambda((a, m) -> states.add(m.body()))
@@ -124,8 +124,8 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
 
     assertEquals(c.actors, states.size());
     
-    t.compute(states, c.actors);
-    return t;
+    summary.compute(states, c.actors);
+    return summary;
   }
   
   private static void send(Activation a, ActorRef to, DriverState s, Config c, int times, Stats stats) {
@@ -140,6 +140,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
   
   private static Consumer<Message> onResponse(Activation a, ActorRef to, DriverState s, Config c, long sendTime, Stats stats) {
     return m -> {
+      final LogConfig log = c.log;
       if (c.stats && s.rx >= c.warmupPairs && (s.rx - c.warmupPairs) % c.statsPeriod == 0) {
         final long took = System.nanoTime() - sendTime;
         if (c.statsSync) {
@@ -150,16 +151,16 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }
       
       s.rx++;
-      if (c.verbose) c.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), m.from(), s.rx, s.tx);
+      if (log.verbose) log.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), m.from(), s.rx, s.tx);
       
       if (s.rx == c.warmupPairs) {
         s.txOnStart = s.tx;
-        if (c.log && a.self().key().equals("0")) c.out.format("Starting timed run...\n");
+        if (log.enabled && a.self().key().equals("0")) log.out.format("Starting timed run...\n");
         s.started = System.nanoTime();
       }
       
       if (s.rx == c.pairs) {
-        if (c.verbose) c.out.format("Done %s\n", a.self());
+        if (log.verbose) log.out.format("Done %s\n", a.self());
         s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
         s.totalProcessed = (c.pairs - c.warmupPairs + c.pairs - s.txOnStart) / 2;
         a.to(ActorRef.of(TIMER)).tell(s);
@@ -178,8 +179,9 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       seedPairs = 1_000;
       warmupFrac = .25f;
       timeout = 0;
-      log = true;
-      verbose = false;
+      log = new LogConfig() {{
+        enabled = true;
+      }};
       stats = false;
       statsSync = true;
       statsSamples = 1_000;

@@ -5,7 +5,6 @@ import static com.obsidiandynamics.indigo.ActorRef.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
-import java.io.*;
 import java.util.*;
 
 import org.junit.*;
@@ -19,48 +18,42 @@ import com.obsidiandynamics.indigo.*;
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
  */
 public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
-  static abstract class Config {
+  static abstract class Config implements Spec {
     int threads;
     int actors;
     int bias;
     int messages;
     int seedMessages;
     float warmupFrac;
-    boolean log;
-    boolean verbose;
+    LogConfig log;
     boolean stats;
     boolean statsSync;
     int statsSamples;
-    PrintStream out = System.out;
     
     /* Derived fields. */
     int warmupMessages;
     int statsPeriod;
     
-    void init() {
+    @Override public void init() {
       warmupMessages = (int) (messages * warmupFrac) / 2;
       statsPeriod = Math.max(1, (messages / 2 - warmupMessages) * actors / statsSamples);
     }
     
-    String describe() {
+    @Override public LogConfig getLog() {
+      return log;
+    }
+    
+    @Override public String describe() {
       return String.format("%d threads, %,d send actors, %,d messages/actor, %,d seed messages/actor, %.0f%% warmup fraction", 
                            threads, actors, messages, seedMessages, warmupFrac * 100);
     }
     
-    Timings run() {
+    @Override public Summary run() {
       return new EchoBenchmark().test(this);
-    }
-    
-    Timings test() {
-      init();
-      if (log) out.println(describe());
-      final Timings t = run();
-      if (log) out.format("%s\n", t);
-      return t;
     }
   }
   
-  private static final class DriverState implements TimedState {
+  private static final class DriverState implements Elapsed {
     final Message blank;
     
     int rx;
@@ -75,10 +68,8 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       blank = Message.builder().to(ActorRef.of(ECHO, a.self().key())).from(a.self()).body(0L).build();
     }
     
-    @Override
-    public long getTotalProcessed() { return totalProcessed; }
-    @Override
-    public long getTimeTaken() { return timeTaken; }
+    @Override public long getTotalProcessed() { return totalProcessed; }
+    @Override public long getTimeTaken() { return timeTaken; }
     
     long getSendTime(Config c) {
       if (c.stats && tx >= c.warmupMessages && (tx - c.warmupMessages) % c.statsPeriod == 0) {
@@ -103,7 +94,6 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
   
   @Test
   public void test() {
-    System.out.format("Message echo benchmark...\n");
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = 4;
@@ -111,19 +101,22 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       messages = 1_000;
       seedMessages = 100;
       warmupFrac = .05f;
-      log = LOG;
+      log = new LogConfig() {{
+        enabled = LOG;
+      }};
       statsSamples = 1_000;
     }}.test();
   }
   
-  private Timings test(Config c) {
+  private Summary test(Config c) {
     if (c.seedMessages > c.messages / 2) 
       throw new IllegalArgumentException("Seed messages cannot be greater than half the total number of messages");
-    
+
+    final LogConfig log = c.log;
     final Set<DriverState> states = new HashSet<>();
-    final Timings t = new Timings();
+    final Summary summary = new Summary();
     
-    if (c.log) c.out.format("Warming up...\n");
+    if (log.enabled) log.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
       parallelism = c.threads;
@@ -139,16 +132,16 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       switch (m.from().role()) {
         case ECHO:
           s.rx++;
-          if (c.verbose) c.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), m.from(), s.rx, s.tx);
+          if (log.verbose) log.out.format("%s received from %s (rx=%,d, tx=%,d)\n", a.self(), m.from(), s.rx, s.tx);
           
           if (s.rx == c.warmupMessages) {
             s.txOnStart = s.tx;
-            if (c.log && a.self().key().equals("0")) c.out.format("Starting timed run...\n");
+            if (log.enabled && a.self().key().equals("0")) log.out.format("Starting timed run...\n");
             s.started = System.nanoTime();
           }
           
           if (s.rx == c.messages / 2 && s.tx == c.messages / 2) {
-            if (c.verbose) c.out.format("Done %s\n", a.self());
+            if (log.verbose) log.out.format("Done %s\n", a.self());
             s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
             s.totalProcessed = c.messages / 2 - c.warmupMessages + c.messages / 2 - s.txOnStart;
             a.to(ActorRef.of(TIMER)).tell(s);
@@ -176,9 +169,9 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       if (sendTime != 0) {
         final long took = System.nanoTime() - sendTime;
         if (c.statsSync) {
-          t.stats.samples.addValue(took);
+          summary.stats.samples.addValue(took);
         } else {
-          a.<Long>egress(t.stats.samples::addValue).using(t.stats.executor).tell(took);
+          a.<Long>egress(summary.stats.samples::addValue).using(summary.stats.executor).tell(took);
         }
       }
       a.send(s.blank);
@@ -189,8 +182,8 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
 
     assertEquals(c.actors, states.size());
     
-    t.compute(states, c.actors);
-    return t;
+    summary.compute(states, c.actors);
+    return summary;
   }
   
   public static void main(String[] args) {
@@ -201,8 +194,9 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       messages = 50_000_000;
       seedMessages = 2_000;
       warmupFrac = .25f;
-      log = true;
-      verbose = false;
+      log = new LogConfig() {{
+        enabled = true;
+      }};
       stats = false;
       statsSync = true;
       statsSamples = 1_000;

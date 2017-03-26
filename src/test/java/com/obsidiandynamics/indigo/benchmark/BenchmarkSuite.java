@@ -12,8 +12,7 @@ public final class BenchmarkSuite {
       messages = 50_000_000;
       seedMessages = 2_000;
       warmupFrac = .25f;
-      log = true;
-      verbose = false;
+      log = new LogConfig() {};
       stats = false;
       statsSync = true;
       statsSamples = 1_000;
