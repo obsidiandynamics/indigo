@@ -34,7 +34,7 @@ public final class ThroughputBenchmark implements TestSupport {
 
     @Override
     public String describe() {
-      return String.format("%d threads, %,d actors, %,d messages/actor, %.0f%% warmup fraction", 
+      return String.format("%d threads, %,d receive actors, %,d messages/actor, %.0f%% warmup fraction", 
                            threads, actors, n, warmupFrac * 100);
     }
 

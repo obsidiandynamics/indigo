@@ -31,7 +31,6 @@ interface Spec {
     for (int i = 0; i < keep; i++) {
       final Summary summary = run();
       summaries.add(summary);
-      System.out.println(summary);
       BenchmarkSupport.forceGC();
     }
     

@@ -55,7 +55,7 @@ final class Summary {
     return Long.compare(s2.avgTime, s1.avgTime);
   }
   
-  public static int byMedian(Summary s1, Summary s2) {
+  public static int byLatency(Summary s1, Summary s2) {
     return Double.compare(s2.stats.samples.getPercentile(50), s1.stats.samples.getPercentile(50));
   }
 }
