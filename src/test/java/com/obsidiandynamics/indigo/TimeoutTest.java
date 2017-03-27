@@ -48,7 +48,7 @@ public final class TimeoutTest implements TestSupport {
     .when(ECHO).lambda((a, m) -> { /* do nothing, stalling the reply */ })
     .when(DONE).lambda((a, m) -> done.put(m.from(), m.body()))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .dispose();
+    .shutdown();
 
     assertEquals(actors, done.size());
     long totalDiff = 0;

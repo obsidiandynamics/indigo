@@ -6,6 +6,6 @@ public final class HelloWorldSample {
     .define()
     .when("echo").lambda((a, m) -> System.out.println(a.self() + " received " + m.body()))
     .ingress(a -> a.to(ActorRef.of("echo")).tell("hello world"))
-    .dispose();
+    .shutdown();
   }
 }

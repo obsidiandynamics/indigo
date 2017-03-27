@@ -36,7 +36,7 @@ public final class RequestResponseTest implements TestSupport {
     .when(ADDER).lambda((a, m) -> a.reply(m).tell(m.<Integer>body() + 1))
     .when(DONE_RUNS).lambda(refCollector(doneRuns))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .dispose();
+    .shutdown();
 
     assertEquals(actors, doneRuns.size());
   }

@@ -22,7 +22,7 @@ public final class ExternalAskTest implements TestSupport {
       final int resp = f.get();
       assertEquals(42, resp);
     } finally {
-      system.dispose();
+      system.shutdown();
     }
   }
 
@@ -38,7 +38,7 @@ public final class ExternalAskTest implements TestSupport {
     try {
       f.get(10, TimeUnit.MILLISECONDS);
     } finally {
-      system.dispose();
+      system.shutdown();
     }
   }
 }

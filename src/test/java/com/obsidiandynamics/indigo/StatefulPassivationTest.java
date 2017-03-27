@@ -89,7 +89,7 @@ public final class StatefulPassivationTest implements TestSupport {
     .when(DONE_ACTIVATION).lambda(refCollector(doneActivation))
     .when(DONE_PASSIVATION).lambda(refCollector(donePassivation))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(TICK, String.valueOf(i))).tell(0))
-    .dispose();
+    .shutdown();
 
     assertEquals(actors, doneRuns.size());
     assertEquals(actors * 2, doneActivation.size());
