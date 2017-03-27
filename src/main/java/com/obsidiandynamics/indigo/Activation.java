@@ -19,6 +19,8 @@ public abstract class Activation {
   
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
+  private Stash stash;
+  
   private boolean activated;
   
   protected boolean passivationScheduled;
@@ -229,8 +231,25 @@ public abstract class Activation {
         req.getOnResponse().accept(message);
       }
     } else {
-      actor.act(this, message);
+      if (stash != null && stash.filter.test(message)) {
+        stash.messages.add(message);
+      } else {
+        actor.act(this, message);
+      }
     }
+  }
+  
+  public final void stash(Predicate<Message> filter) {
+    if (stash != null) throw new IllegalStateException("Stash already active");
+    stash = new Stash(filter);
+  }
+  
+  public final void unstash() {
+    if (stash == null) throw new IllegalStateException("No active stash");
+    for (Message m : stash.messages) {
+      _enqueue(m);
+    }
+    stash = null;
   }
   
   @Override

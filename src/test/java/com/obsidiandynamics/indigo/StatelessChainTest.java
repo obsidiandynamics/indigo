@@ -21,9 +21,9 @@ public final class StatelessChainTest implements TestSupport {
     new ActorSystemConfig() {}
     .define()
     .when(RUN).lambda((a, m) -> {
-      final int msg = m.body();
-      if (msg < runs) {
-        a.toSelf().tell(msg + 1);
+      final int body = m.body();
+      if (body < runs) {
+        a.toSelf().tell(body + 1);
       } else {
         a.to(ActorRef.of(DONE_RUNS)).tell();
       }

@@ -66,14 +66,14 @@ public final class StatefulPassivationTest implements TestSupport {
     .use(StatefulLambdaActor
          .<IntegerState>builder()
          .act((a, m, s) -> {
-           final int msg = m.body();
-           assertEquals(s.value + 1, msg);
-           s.value = msg;
+           final int body = m.body();
+           assertEquals(s.value + 1, body);
+           s.value = body;
            
-           if (msg == runs) {
+           if (body == runs) {
              a.to(ActorRef.of(DONE_RUNS)).tell();
            } else {
-             a.toSenderOf(m).tell(msg);
+             a.toSenderOf(m).tell(body);
              a.passivate();
            }
          })

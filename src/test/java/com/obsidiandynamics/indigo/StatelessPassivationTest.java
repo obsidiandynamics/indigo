@@ -29,11 +29,11 @@ public final class StatelessPassivationTest implements TestSupport {
     .use(StatelessLambdaActor
          .builder()
          .act((a, m) -> {
-           final int msg = m.body();
-           if (msg == runs) {
+           final int body = m.body();
+           if (body == runs) {
              a.to(ActorRef.of(DONE_RUNS)).tell();
            } else {
-             a.to(ActorRef.of(TOCK, a.self().key())).tell(msg + 1);
+             a.to(ActorRef.of(TOCK, a.self().key())).tell(body + 1);
              a.passivate();
            }
          })
@@ -43,11 +43,11 @@ public final class StatelessPassivationTest implements TestSupport {
     .use(StatelessLambdaActor
          .builder()
          .act((a, m) -> {
-           final int msg = m.body();
-           if (msg == runs) {
+           final int body = m.body();
+           if (body == runs) {
              a.to(ActorRef.of(DONE_RUNS)).tell();
            } else {
-             a.toSenderOf(m).tell(msg);
+             a.toSenderOf(m).tell(body);
              a.passivate();
            }
          })

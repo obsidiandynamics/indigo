@@ -14,6 +14,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
   ParallelConsistencyTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
+  StashTest.class,
   StatelessChainTest.class,
   StatelessPassivationTest.class,
   StatefulPassivationTest.class,
