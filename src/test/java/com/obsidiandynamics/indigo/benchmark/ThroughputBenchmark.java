@@ -5,10 +5,12 @@ import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 
 import java.util.concurrent.*;
 
+import org.junit.*;
+
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public final class ThroughputBenchmark {
+public final class ThroughputBenchmark implements TestSupport {
   abstract static class Config implements Spec {
     long n;
     int threads;
@@ -40,6 +42,20 @@ public final class ThroughputBenchmark {
     public Summary run() {
       return new ThroughputBenchmark().test(this);
     }
+  }  
+  
+  @Test
+  public void test() {
+    new Config() {{
+      threads = Runtime.getRuntime().availableProcessors();
+      actors = 4;
+      bias = 1_000;
+      n = 1_000;
+      warmupFrac = .05f;
+      log = new LogConfig() {{
+        summary = stages = LOG;
+      }};
+    }}.test();
   }
   
   private Summary test(Config c) {
@@ -51,7 +67,7 @@ public final class ThroughputBenchmark {
       parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
-        bias = 10_000;
+        bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
         backlogThrottleTries = 10;
         activationFactory = NODE_QUEUE;
@@ -72,7 +88,7 @@ public final class ThroughputBenchmark {
     }
     
     if (c.warmup != 0) {
-      if (c.log.enabled) c.log.out.format("Warming up...\n");
+      if (c.log.stages) c.log.out.format("Warming up...\n");
       ParallelJob.blocking(c.actors, i -> {
         final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
@@ -86,7 +102,7 @@ public final class ThroughputBenchmark {
       } catch (InterruptedException e) {}
     }
     
-    if (c.log.enabled) c.log.out.format("Starting timed run...\n");
+    if (c.log.stages) c.log.out.format("Starting timed run...\n");
     final long o = n - c.warmup;
     final long took = TestSupport.took(
       ParallelJob.nonBlocking(c.actors, i -> {
@@ -108,17 +124,15 @@ public final class ThroughputBenchmark {
   }
   
   public static void main(String[] args) {
-    for (int i = 0; i < 29; i++) {
-      BenchmarkSupport.forceGC();
-      new Config() {{
-        threads = Runtime.getRuntime().availableProcessors() * 1;
-        actors = threads * 1;
-        n = 10_000_000;
-        warmupFrac = .05f;
-        log = new LogConfig() {{
-          enabled = true;
-        }};
-      }}.test();
-    }
+    new Config() {{
+      threads = Runtime.getRuntime().availableProcessors() * 1;
+      actors = threads * 1;
+      n = 10_000_000;
+      warmupFrac = .05f;
+      bias = 10_000;
+      log = new LogConfig() {{
+        summary = true;
+      }};
+    }}.testPercentile(9, 11, 50, Summary::byThroughput);
   }
 }

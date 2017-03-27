@@ -88,7 +88,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       seedPairs = 100;
       warmupFrac = .05f;
       log = new LogConfig() {{
-        enabled = LOG;
+        summary = stages = LOG;
       }};
       statsSamples = 1_000;
     }}.test();
@@ -102,7 +102,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     final Set<DriverState> states = new HashSet<>();
     final Summary summary = new Summary();
     
-    if (log.enabled) log.out.format("Warming up...\n");
+    if (log.stages) log.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
       parallelism = c.threads;
@@ -155,7 +155,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       
       if (s.rx == c.warmupPairs) {
         s.txOnStart = s.tx;
-        if (log.enabled && a.self().key().equals("0")) log.out.format("Starting timed run...\n");
+        if (log.stages && a.self().key().equals("0")) log.out.format("Starting timed run...\n");
         s.started = System.nanoTime();
       }
       
@@ -180,7 +180,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       warmupFrac = .25f;
       timeout = 0;
       log = new LogConfig() {{
-        enabled = true;
+        summary = stages = true;
       }};
       stats = false;
       statsSync = true;

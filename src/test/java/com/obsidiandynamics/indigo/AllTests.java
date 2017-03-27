@@ -17,6 +17,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
   StatelessChainTest.class,
   StatelessPassivationTest.class,
   StatefulPassivationTest.class,
+  ThroughputBenchmark.class,
   TimeoutTest.class
 })         
 public class AllTests {}

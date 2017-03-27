@@ -36,9 +36,9 @@ final class Summary {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(format("%,d ops took %,d s, %,d ops/s\n", timedOps, avgTime / 1000, timedOps / Math.max(1, avgTime) * 1000));
+    sb.append(format("%,d ops took %,d s, %,d ops/s", timedOps, avgTime / 1000, timedOps / Math.max(1, avgTime) * 1000));
     if (stats.samples.getN() != 0) {
-      sb.append(format("Latency: mean: %,.1f, sd: %,.1f, min: %,.1f, 50%%: %,.1f, 95%%: %,.1f, 99%%: %,.1f, max: %,.1f (µs, N=%,d)\n", 
+      sb.append(format("\nLatency: mean: %,.1f, sd: %,.1f, min: %,.1f, 50%%: %,.1f, 95%%: %,.1f, 99%%: %,.1f, max: %,.1f (µs, N=%,d)", 
                        stats.samples.getMean() / 1000, 
                        stats.samples.getStandardDeviation() / 1000,
                        stats.samples.getMin() / 1000,
@@ -49,5 +49,13 @@ final class Summary {
                        stats.samples.getN()));
     }
     return sb.toString();
+  }
+  
+  public static int byThroughput(Summary s1, Summary s2) {
+    return Long.compare(s2.avgTime, s1.avgTime);
+  }
+  
+  public static int byMedian(Summary s1, Summary s2) {
+    return Double.compare(s2.stats.samples.getPercentile(50), s1.stats.samples.getPercentile(50));
   }
 }

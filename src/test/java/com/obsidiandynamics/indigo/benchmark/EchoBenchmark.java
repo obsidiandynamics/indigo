@@ -102,7 +102,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       seedMessages = 100;
       warmupFrac = .05f;
       log = new LogConfig() {{
-        enabled = LOG;
+        summary = stages = LOG;
       }};
       statsSamples = 1_000;
     }}.test();
@@ -116,7 +116,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     final Set<DriverState> states = new HashSet<>();
     final Summary summary = new Summary();
     
-    if (log.enabled) log.out.format("Warming up...\n");
+    if (log.stages) log.out.format("Warming up...\n");
     
     new ActorSystemConfig() {{
       parallelism = c.threads;
@@ -136,7 +136,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
           
           if (s.rx == c.warmupMessages) {
             s.txOnStart = s.tx;
-            if (log.enabled && a.self().key().equals("0")) log.out.format("Starting timed run...\n");
+            if (log.stages && a.self().key().equals("0")) log.out.format("Starting timed run...\n");
             s.started = System.nanoTime();
           }
           
@@ -195,7 +195,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       seedMessages = 2_000;
       warmupFrac = .25f;
       log = new LogConfig() {{
-        enabled = true;
+        summary = stages = true;
       }};
       stats = false;
       statsSync = true;
