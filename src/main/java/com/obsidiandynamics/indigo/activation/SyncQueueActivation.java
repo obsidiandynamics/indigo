@@ -112,9 +112,4 @@ public final class SyncQueueActivation extends Activation {
   private boolean shouldThrottle() {
     return backlog.size() >= actorConfig.backlogThrottleCapacity;
   }
-  
-  @Override
-  public void passivate() {
-    passivationScheduled = true;
-  }
 }

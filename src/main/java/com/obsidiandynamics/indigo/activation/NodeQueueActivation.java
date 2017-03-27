@@ -20,8 +20,6 @@ public final class NodeQueueActivation extends Activation {
   
   private final AtomicReference<Node> tail = new AtomicReference<>();
   
-  private boolean passivationScheduled;
-  
   private volatile boolean passivationComplete;
   
   /** Raised by the dispatch thread just prior to the CAS parking attempt when passivation is required. If
@@ -155,10 +153,5 @@ public final class NodeQueueActivation extends Activation {
   
   private boolean shouldThrottle() {
     return backlogSize != null && backlogSize.get() >= actorConfig.backlogThrottleCapacity;
-  }
-  
-  @Override
-  public void passivate() {
-    passivationScheduled = true;
   }
 }
