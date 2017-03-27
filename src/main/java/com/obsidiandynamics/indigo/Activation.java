@@ -237,19 +237,30 @@ public abstract class Activation {
         actor.act(this, message);
       }
     }
+    
+    if (stash != null && stash.unstashing) {
+      for (Iterator<Message> it = stash.messages.iterator(); it.hasNext(); ) {
+        actor.act(this, it.next());
+        it.remove();
+        
+        if (! stash.unstashing) return;
+      }
+      stash = null;
+    }
   }
   
   public final void stash(Predicate<Message> filter) {
-    if (stash != null) throw new IllegalStateException("Stash already active");
-    stash = new Stash(filter);
+    if (stash != null) {
+      stash.unstashing = false;
+    } else {
+      stash = new Stash();
+    }
+    stash.filter = filter;
   }
   
   public final void unstash() {
-    if (stash == null) throw new IllegalStateException("No active stash");
-    for (Message m : stash.messages) {
-      _enqueue(m);
-    }
-    stash = null;
+    if (stash == null) return;
+    stash.unstashing = true;
   }
   
   @Override
