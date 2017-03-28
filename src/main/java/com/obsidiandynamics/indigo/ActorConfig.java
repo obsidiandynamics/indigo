@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static com.obsidiandynamics.indigo.ActorConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
@@ -35,5 +36,5 @@ public abstract class ActorConfig {
   
   public ActivationFactory activationFactory = get("indigo.activationFactory", ActivationChoice::valueOf, NODE_QUEUE);
   
-  public BiConsumer<ActorSystem, Throwable> exceptionHandler = ActorSystemConfig.ExceptionHandlerChoice.SYSTEM;
+  public BiConsumer<ActorSystem, Throwable> exceptionHandler = SYSTEM;
 }
