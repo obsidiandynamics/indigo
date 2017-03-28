@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -18,16 +19,20 @@ public final class LongActivationTest implements TestSupport {
     final List<Integer> sequence = new ArrayList<>();
     final AtomicBoolean activated = new AtomicBoolean();
     
-    new ActorSystemConfig() {}
+    new ActorSystemConfig() {{
+      exceptionHandler = DRAIN;
+    }}
     .define()
     .when(TARGET)
     .use(StatelessLambdaActor
          .builder()
          .activated(a -> {
-           a.stash(c -> true);
+           // ask once and wait for a response
            a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
-             activated.set(true);
-             a.unstash();
+             // ask a second time... for good measure
+             a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
+               activated.set(true);
+             });
            });
          })
          .act((a, m) -> {

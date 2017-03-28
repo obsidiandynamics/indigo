@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.Activation.State.*;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -7,7 +9,7 @@ import java.util.function.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class Activation {
-  private static enum State {
+  protected static enum State {
     ACTIVATING, ACTIVATED, PASSIVATING, PASSIVATED
   }
   
@@ -23,9 +25,9 @@ public abstract class Activation {
   
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
-  private Stash stash;
+  protected State state = PASSIVATED;
   
-  private boolean activated;
+  private Stash stash;
   
   protected boolean passivationScheduled;
   
@@ -102,8 +104,8 @@ public abstract class Activation {
     public void onResponse(Consumer<Message> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
         throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
-      }      
-
+      }
+      
       for (int i = copies; --i >= 0;) {
         final UUID requestId = new UUID(id, requestCounter++);
         final PendingRequest req = new PendingRequest(onResponse, onTimeout);
@@ -204,13 +206,38 @@ public abstract class Activation {
   }
   
   public final void send(Message message) {
+    if (message.requestId() != null) {
+      switch (state) {
+        case ACTIVATING:
+        case PASSIVATING:
+          stash(c -> true);
+          break;
+          
+        default:
+          break;
+      }
+    }
     system.send(message);
   }
   
   protected final void ensureActivated() {
-    if (! activated) {
-      actor.activated(this);
-      activated = true;
+    switch (state) {
+      case ACTIVATED:
+      case ACTIVATING:
+        break;
+        
+      default:
+        state = ACTIVATING;
+        try {
+          actor.activated(this);
+        } catch (Throwable t) {
+          actorConfig.exceptionHandler.accept(system, t);
+        }
+        
+        if (pending.isEmpty()) {
+          state = ACTIVATED;
+        }
+        break;
     }
   }
   
@@ -222,7 +249,11 @@ public abstract class Activation {
         if (message.body() instanceof TimeoutSignal) {
           if (req != null && ! req.isComplete()) {
             req.setComplete(true);
-            req.getOnTimeout().run();
+            try {
+              req.getOnTimeout().run();
+            } catch (Throwable t) {
+              actorConfig.exceptionHandler.accept(system, t);
+            }
           }
         } else {
           throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
@@ -232,19 +263,43 @@ public abstract class Activation {
           system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
         }
         req.setComplete(true);
-        req.getOnResponse().accept(message);
+        try {
+          req.getOnResponse().accept(message);
+        } catch (Throwable t) {
+          actorConfig.exceptionHandler.accept(system, t);
+        }
+      }
+      
+      if (pending.isEmpty()) {
+        switch (state) {
+          case ACTIVATING:
+            unstash();
+            state = ACTIVATED;
+            break;
+            
+          default:
+            break;
+        }
       }
     } else {
       if (stash != null && stash.filter.test(message)) {
         stash.messages.add(message);
       } else {
-        actor.act(this, message);
+        try {
+          actor.act(this, message);
+        } catch (Throwable t) {
+          actorConfig.exceptionHandler.accept(system, t);
+        }
       }
     }
     
     if (stash != null && stash.unstashing) {
       for (Iterator<Message> it = stash.messages.iterator(); it.hasNext(); ) {
-        actor.act(this, it.next());
+        try {
+          actor.act(this, it.next());
+        } catch (Throwable t) {
+          actorConfig.exceptionHandler.accept(system, t);
+        }
         it.remove();
         
         if (! stash.unstashing) return;

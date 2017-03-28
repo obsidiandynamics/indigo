@@ -24,6 +24,8 @@ public final class ActorSystem {
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
+  private final List<Throwable> errors = new CopyOnWriteArrayList<>();
+  
   private long nextActivationId = Crypto.machineRandom();
   
   private static final class ActorSetup {
@@ -41,6 +43,10 @@ public final class ActorSystem {
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
+  }
+  
+  public ActorSystemConfig getConfig() {
+    return config;
   }
   
   public ActorSystem ingress(Consumer<Activation> act) {
@@ -187,10 +193,18 @@ public final class ActorSystem {
     busyActors.decrement();
   }
   
+  void addError(Throwable t) {
+    errors.add(t);
+  }
+  
   public ActorSystem drain() throws InterruptedException {
     while (busyActors.sum() != 0) {
       synchronized (busyActors) {
         busyActors.wait(10);
+      }
+      
+      if (! errors.isEmpty()) {
+        throw new UnhandledMultiException(errors.toArray(new Throwable[errors.size()]));
       }
     }
     return this;

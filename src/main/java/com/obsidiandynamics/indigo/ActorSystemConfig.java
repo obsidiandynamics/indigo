@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
 import java.util.concurrent.*;
@@ -10,10 +12,10 @@ import com.obsidiandynamics.indigo.util.*;
 public abstract class ActorSystemConfig {
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
    *  be sized dynamically depending on the thread pool used. */
-  protected int parallelism = get("indigo.parallelism", Integer::parseInt, 0);
+  public int parallelism = get("indigo.parallelism", Integer::parseInt, 0);
   
   /** The default timeout when asking from outside the actor system. */
-  protected int defaultAskTimeoutMillis = get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);
+  public int defaultAskTimeoutMillis = get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);
   
   public static enum ExecutorChoice implements Function<Integer, ExecutorService> {
     FORK_JOIN_POOL(Executors::newWorkStealingPool),
@@ -25,9 +27,21 @@ public abstract class ActorSystemConfig {
   }
   
   /** Maps a given parallelism value to an appropriately sized thread pool. */
-  protected Function<Integer, ExecutorService> executor = get("indigo.executor", ExecutorChoice::valueOf, ExecutorChoice.FORK_JOIN_POOL);
+  public Function<Integer, ExecutorService> executor = get("indigo.executor", ExecutorChoice::valueOf, FORK_JOIN_POOL);
   
-  protected ActorConfig defaultActorConfig = new ActorConfig() {};
+  public static enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
+    SYSTEM((sys, t) -> sys.getConfig().exceptionHandler.accept(sys, t)),
+    CONSOLE((sys, t) -> t.printStackTrace()),
+    DRAIN((sys, t) -> sys.addError(t));
+    
+    private final BiConsumer<ActorSystem, Throwable> handler;
+    private ExceptionHandlerChoice(BiConsumer<ActorSystem, Throwable> handler) { this.handler = handler; }
+    @Override public void accept(ActorSystem sys, Throwable t) { handler.accept(sys, t); }
+  }
+  
+  public BiConsumer<ActorSystem, Throwable> exceptionHandler = get("indigo.exceptionHandler", ExceptionHandlerChoice::valueOf, CONSOLE);
+  
+  public ActorConfig defaultActorConfig = new ActorConfig() {};
   
   public final ActorSystem define() {
     return new ActorSystem(this);
