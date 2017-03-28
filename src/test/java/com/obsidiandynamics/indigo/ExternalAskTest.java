@@ -13,7 +13,7 @@ public final class ExternalAskTest implements TestSupport {
   public void testResponse() throws InterruptedException, ExecutionException, TimeoutException {
     logTestName();
     
-    final ActorSystem system = new ActorSystemConfig() {}
+    final ActorSystem system = new TestActorSystemConfig() {}
     .define()
     .when(ADDER).lambda((a, m) -> a.reply(m).tell(m.<Integer>body() + 1));
     
@@ -30,7 +30,7 @@ public final class ExternalAskTest implements TestSupport {
   public void testTimeout() throws InterruptedException, ExecutionException, TimeoutException {
     logTestName();
     
-    final ActorSystem system = new ActorSystemConfig() {}
+    final ActorSystem system = new TestActorSystemConfig() {}
     .define()
     .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
     

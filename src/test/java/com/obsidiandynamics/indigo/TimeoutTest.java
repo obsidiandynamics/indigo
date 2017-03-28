@@ -28,7 +28,7 @@ public final class TimeoutTest implements TestSupport {
     final int actors = 100;
     final Map<ActorRef, Long> done = new HashMap<>();
 
-    new ActorSystemConfig() {}
+    new TestActorSystemConfig() {}
     .define()
     .when(DRIVER).lambda((a, m) -> {
       final long startTime = System.currentTimeMillis();

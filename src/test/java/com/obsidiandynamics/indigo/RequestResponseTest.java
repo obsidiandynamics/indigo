@@ -19,7 +19,7 @@ public final class RequestResponseTest implements TestSupport {
     final int runs = 10;
     final Set<ActorRef> doneRuns = new HashSet<>();
 
-    new ActorSystemConfig() {}
+    new TestActorSystemConfig() {}
     .define()
     .when(DRIVER).lambda(IntegerState::new, (a, m, s) -> {
       a.to(ActorRef.of(ADDER)).ask(s.value).onResponse(r -> {

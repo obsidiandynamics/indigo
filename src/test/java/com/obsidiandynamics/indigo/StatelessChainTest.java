@@ -18,7 +18,7 @@ public final class StatelessChainTest implements TestSupport {
     final int runs = 10;
     final Set<ActorRef> doneRuns = new HashSet<>();
 
-    new ActorSystemConfig() {}
+    new TestActorSystemConfig() {}
     .define()
     .when(RUN).lambda((a, m) -> {
       final int body = m.body();

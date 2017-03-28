@@ -12,10 +12,10 @@ import com.obsidiandynamics.indigo.util.*;
 public abstract class ActorSystemConfig {
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
    *  be sized dynamically depending on the thread pool used. */
-  public int parallelism = get("indigo.parallelism", Integer::parseInt, 0);
+  public int parallelism = get("indigo.system.parallelism", Integer::parseInt, 0);
   
   /** The default timeout when asking from outside the actor system. */
-  public int defaultAskTimeoutMillis = get("indigo.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_1000);
+  public int defaultAskTimeoutMillis = get("indigo.system.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_000);
   
   public static enum ExecutorChoice implements Function<Integer, ExecutorService> {
     FORK_JOIN_POOL(Executors::newWorkStealingPool),
@@ -27,11 +27,14 @@ public abstract class ActorSystemConfig {
   }
   
   /** Maps a given parallelism value to an appropriately sized thread pool. */
-  public Function<Integer, ExecutorService> executor = get("indigo.executor", ExecutorChoice::valueOf, FORK_JOIN_POOL);
+  public Function<Integer, ExecutorService> executor = get("indigo.system.executor", ExecutorChoice::valueOf, FORK_JOIN_POOL);
   
   public static enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
+    /** Forwards the exception to the system-level handler. Can only be used within the actor config. */
     SYSTEM((sys, t) -> sys.getConfig().exceptionHandler.accept(sys, t)),
+    /** Prints the stack trace to the console. */
     CONSOLE((sys, t) -> t.printStackTrace()),
+    /** Accumulates exceptions internally, throwing them from the <code>drain()</code> method. */
     DRAIN((sys, t) -> sys.addError(t));
     
     private final BiConsumer<ActorSystem, Throwable> handler;
@@ -39,8 +42,11 @@ public abstract class ActorSystemConfig {
     @Override public void accept(ActorSystem sys, Throwable t) { handler.accept(sys, t); }
   }
   
-  public BiConsumer<ActorSystem, Throwable> exceptionHandler = get("indigo.exceptionHandler", ExceptionHandlerChoice::valueOf, CONSOLE);
+  /** Handles uncaught exceptions thrown from within an actor, where those exceptions aren't handled by the actor's
+   *  own uncaught exception handler. */
+  public BiConsumer<ActorSystem, Throwable> exceptionHandler = get("indigo.system.exceptionHandler", ExceptionHandlerChoice::valueOf, CONSOLE);
   
+  /** The default actor configuration. */
   public ActorConfig defaultActorConfig = new ActorConfig() {};
   
   public final ActorSystem define() {

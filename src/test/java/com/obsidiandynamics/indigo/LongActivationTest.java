@@ -1,6 +1,5 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -19,9 +18,7 @@ public final class LongActivationTest implements TestSupport {
     final List<Integer> sequence = new ArrayList<>();
     final AtomicBoolean activated = new AtomicBoolean();
     
-    new ActorSystemConfig() {{
-      exceptionHandler = DRAIN;
-    }}
+    new TestActorSystemConfig() {}
     .define()
     .when(TARGET)
     .use(StatelessLambdaActor

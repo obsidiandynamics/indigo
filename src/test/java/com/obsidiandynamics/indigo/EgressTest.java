@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -23,7 +23,7 @@ public final class EgressTest implements TestSupport {
     
     final Executor external = r -> new Thread(r, EXTERNAL).start();
 
-    new ActorSystemConfig() {{
+    new TestActorSystemConfig() {{
       parallelism = 1;
       executor = FIXED_THREAD_POOL;
     }}

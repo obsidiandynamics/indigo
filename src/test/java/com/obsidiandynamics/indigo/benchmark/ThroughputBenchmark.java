@@ -63,7 +63,7 @@ public final class ThroughputBenchmark implements TestSupport {
     
     final CountDownLatch latch = new CountDownLatch(c.actors);
     final long n = c.n;
-    final ActorSystem system = new ActorSystemConfig() {{
+    final ActorSystem system = new TestActorSystemConfig() {{
       parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{

@@ -118,7 +118,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     
     if (log.stages) log.out.format("Warming up...\n");
     
-    new ActorSystemConfig() {{
+    new TestActorSystemConfig() {{
       parallelism = c.threads;
       executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{

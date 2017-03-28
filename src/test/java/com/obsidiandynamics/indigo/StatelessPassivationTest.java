@@ -23,7 +23,7 @@ public final class StatelessPassivationTest implements TestSupport {
     final Set<ActorRef> doneActivation = new HashSet<>();
     final Set<ActorRef> donePassivation = new HashSet<>();
     
-    new ActorSystemConfig() {}
+    new TestActorSystemConfig() {}
     .define()
     .when(TICK)
     .use(StatelessLambdaActor

@@ -46,7 +46,7 @@ public final class StatefulPassivationTest implements TestSupport {
     
     final MockDB db = new MockDB();
     
-    new ActorSystemConfig() {}
+    new TestActorSystemConfig() {}
     .define()
     .when(TICK)
     .use(StatelessLambdaActor

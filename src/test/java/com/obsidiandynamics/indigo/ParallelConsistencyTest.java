@@ -24,7 +24,7 @@ public final class ParallelConsistencyTest implements TestSupport {
     
     final Set<ActorRef> doneRuns = new HashSet<>();
 
-    new ActorSystemConfig() {{ 
+    new TestActorSystemConfig() {{ 
       defaultActorConfig = new ActorConfig() {{
         bias = 100;
       }};
