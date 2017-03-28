@@ -17,7 +17,7 @@ public final class BenchmarkSuite {
       warmupFrac = .05f;
       bias = 10_000;
       log = LOG;
-    }}.testPercentile(5, 11, 50, Summary::byThroughput);
+    }}.testPercentile(9, 11, 50, Summary::byThroughput);
 
     System.out.println("_\nMessage echo - low latency (one hop measured)");
     new EchoBenchmark.Config() {{
@@ -47,7 +47,7 @@ public final class BenchmarkSuite {
       statsSamples = 1_000;
     }}.testPercentile(1, 3, 50, Summary::byThroughput);
     
-    System.out.println("_\nMessage pairs - low latency (end-to-end measured)");
+    System.out.println("_\nMessage pairs - low latency (round-trip measured)");
     new RequestResponseBenchmark.Config() {{
       threads = 1;
       actors = 1;
