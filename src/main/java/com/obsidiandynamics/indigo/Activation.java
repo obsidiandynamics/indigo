@@ -7,6 +7,10 @@ import java.util.function.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class Activation {
+  private static enum State {
+    ACTIVATING, ACTIVATED, PASSIVATING, PASSIVATED
+  }
+  
   protected final long id;
   
   protected final ActorRef ref;
