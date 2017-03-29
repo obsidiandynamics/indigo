@@ -191,7 +191,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 4;
       bias = 2_000;
-      messages = 50_000_000;
+      messages = 20_000_000;
       seedMessages = 2_000;
       warmupFrac = .25f;
       log = new LogConfig() {{

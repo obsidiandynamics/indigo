@@ -127,12 +127,12 @@ public final class ThroughputBenchmark implements TestSupport {
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 1;
-      n = 1_000_000;
+      n = 4_000_000;
       warmupFrac = .05f;
       bias = 10_000;
       log = new LogConfig() {{
         summary = true;
       }};
-    }}.testPercentile(9, 11, 50, Summary::byThroughput);
+    }}.testPercentile(9, 21, 50, Summary::byThroughput);
   }
 }

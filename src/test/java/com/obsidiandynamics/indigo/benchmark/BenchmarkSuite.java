@@ -13,11 +13,11 @@ public final class BenchmarkSuite {
     new ThroughputBenchmark.Config() {{
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 1;
-      n = 10_000_000;
+      n = 4_000_000;
       warmupFrac = .05f;
       bias = 10_000;
       log = LOG;
-    }}.testPercentile(9, 11, 50, Summary::byThroughput);
+    }}.testPercentile(9, 21, 50, Summary::byThroughput);
 
     System.out.println("_\nMessage echo - low latency (one hop measured)");
     new EchoBenchmark.Config() {{
