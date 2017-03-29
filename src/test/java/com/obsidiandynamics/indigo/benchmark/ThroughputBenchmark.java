@@ -127,7 +127,7 @@ public final class ThroughputBenchmark implements TestSupport {
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 1;
-      n = 10_000_000;
+      n = 1_000_000;
       warmupFrac = .05f;
       bias = 10_000;
       log = new LogConfig() {{
