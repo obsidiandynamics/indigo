@@ -1,20 +1,18 @@
 package com.obsidiandynamics.indigo.activation;
 
+import static com.obsidiandynamics.indigo.ActivationState.*;
+
 import java.util.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class SyncQueueActivation extends Activation {
-  private static final long PASSIVATION_AWAIT_DELAY = 10;
-  
   private final Queue<Message> backlog = new ArrayDeque<>(1);
   
   private boolean on;
   
-  private boolean passivationScheduled;
-  
-  private volatile boolean passivationComplete;
+  private boolean disposed;
   
   public SyncQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     super(id, ref, system, actorConfig, actor);
@@ -25,20 +23,18 @@ public final class SyncQueueActivation extends Activation {
     for (;;) {
       final boolean noBacklog;
       final boolean noPending;
-      final boolean awaitPassivation;
       final boolean throttleBacklog;
       synchronized (backlog) {
+        if (disposed) {
+          return false;
+        }
+        
         noBacklog = ! on && backlog.isEmpty();
         noPending = pending.isEmpty();
         
-        awaitPassivation = noBacklog && noPending && passivationScheduled;
-        if (! awaitPassivation) {
-          throttleBacklog = shouldThrottle();
-          if (! throttleBacklog) {
-            backlog.add(m);
-          }
-        } else {
-          throttleBacklog = false;
+        throttleBacklog = shouldThrottle();
+        if (! throttleBacklog) {
+          backlog.add(m);
         }
       }
       
@@ -47,14 +43,6 @@ public final class SyncQueueActivation extends Activation {
         continue;
       }
     
-      while (awaitPassivation) {
-        if (passivationComplete) {
-          return false;
-        } else {
-          Threads.sleep(PASSIVATION_AWAIT_DELAY);
-        }
-      }
-      
       if (noBacklog && noPending) {
         system._incBusyActors();
       }
@@ -84,6 +72,8 @@ public final class SyncQueueActivation extends Activation {
     for (int i = 0; i < messages.length; i++) {
       processMessage(messages[i]);
     }
+    
+    passivateIfScheduled();
 
     final boolean noBacklog;
     final boolean noPending;
@@ -93,15 +83,15 @@ public final class SyncQueueActivation extends Activation {
       on = false;
       noBacklog = backlog.isEmpty();
       noPending = pending.isEmpty();
+      
+      if (state == PASSIVATED) {
+        system._dispose(ref);
+        disposed = true;
+      }
     }
 
     if (noBacklog) {
       if (noPending) {
-        if (passivationScheduled) {
-          actor.passivated(this);
-          system._passivate(ref);
-          passivationComplete = true;
-        }
         system._decBusyActors();
       }
     } else {

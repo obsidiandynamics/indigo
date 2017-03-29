@@ -1,13 +1,13 @@
 package com.obsidiandynamics.indigo.activation;
 
+import static com.obsidiandynamics.indigo.ActivationState.*;
+
 import java.util.concurrent.atomic.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class NodeQueueActivation extends Activation {
-  private static final long PASSIVATION_AWAIT_DELAY = 10;
-  
   private static final int MAX_SPINS = 10;
   
   private static final class Node extends AtomicReference<Node> {
@@ -20,16 +20,16 @@ public final class NodeQueueActivation extends Activation {
   
   private final AtomicReference<Node> tail = new AtomicReference<>();
   
-  private volatile boolean passivationComplete;
+  private volatile boolean disposalComplete;
   
-  /** Raised by the dispatch thread just prior to the CAS parking attempt when passivation is required. If
+  /** Raised by the dispatch thread just prior to the CAS parking attempt when disposal is required. If
    *  CAS fails, this flag is immediately lowered. */
-  private volatile boolean passivationAttemptStarted;
+  private volatile boolean disposalAttemptProposed;
   
-  /** Raised by the dispatch thread just after the CAS parking attempt when passivation is required. If both
-   *  the 'attempted' and 'succeeded' flags are true, the queuing threads will back off until passivation
+  /** Raised by the dispatch thread just after the CAS parking attempt when disposal is required. If both
+   *  the 'attempted' and 'succeeded' flags are true, the queuing threads will back off until disposal
    *  completes. */
-  private volatile boolean passivationAttemptSucceeded;
+  private volatile boolean disposalAttemptAccepted;
   
   private final AtomicInteger backlogSize;
   
@@ -40,9 +40,9 @@ public final class NodeQueueActivation extends Activation {
   
   @Override
   public boolean _enqueue(Message m) {
-    if (isPassivating()) {
-      while (! passivationComplete) {
-        Threads.sleep(PASSIVATION_AWAIT_DELAY);
+    if (isDisposing()) {
+      while (! disposalComplete) {
+        Thread.yield();
       }
       return false;
     }
@@ -67,12 +67,13 @@ public final class NodeQueueActivation extends Activation {
     return true;
   }
   
-  private boolean isPassivating() {
+  private boolean isDisposing() {
     for (;;) {
-      if (passivationAttemptStarted) {
-        if (passivationAttemptSucceeded) {
+      if (disposalAttemptProposed) {
+        if (disposalAttemptAccepted) {
           return true;
         }
+        Thread.yield();
       } else {
         return false;
       }
@@ -93,23 +94,23 @@ public final class NodeQueueActivation extends Activation {
   
   private boolean park(Node n) {
     final boolean noPending = pending.isEmpty();
-    if (noPending && passivationScheduled) {
-      passivationAttemptStarted = true;
+    final boolean disposing = state == PASSIVATED;
+    if (disposing) {
+      disposalAttemptProposed = true;
     }
   
     final boolean parked = tail.compareAndSet(n, null);
     if (parked) {
       if (noPending) {
-        if (passivationScheduled) {
-          passivationAttemptSucceeded = true;
-          actor.passivated(this);
-          system._passivate(ref);
-          passivationComplete = true;
+        if (disposing) {
+          disposalAttemptAccepted = true;
+          system._dispose(ref);
+          disposalComplete = true;
         }
         system._decBusyActors();
       }
     } else if (noPending && passivationScheduled) {
-      passivationAttemptStarted = false;
+      disposalAttemptProposed = false;
     }
     return parked;
   }
@@ -140,6 +141,7 @@ public final class NodeQueueActivation extends Activation {
           spins++;
         } else {
           Thread.yield();
+          passivateIfScheduled();
           if (! park(h)) {
             schedulePark(h);
           }

@@ -236,7 +236,7 @@ public final class ActorSystem {
     }
   }
   
-  public void _passivate(ActorRef ref) {
+  public void _dispose(ActorRef ref) {
     activations.remove(ref);
   }
   

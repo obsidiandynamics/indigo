@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.Activation.State.*;
+import static com.obsidiandynamics.indigo.ActivationState.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -9,10 +9,6 @@ import java.util.function.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class Activation {
-  protected static enum State {
-    ACTIVATING, ACTIVATED, PASSIVATING, PASSIVATED
-  }
-  
   protected final long id;
   
   protected final ActorRef ref;
@@ -25,7 +21,7 @@ public abstract class Activation {
   
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
-  protected State state = PASSIVATED;
+  protected ActivationState state = PASSIVATED;
   
   private Stash stash;
   
@@ -222,11 +218,7 @@ public abstract class Activation {
   
   protected final void ensureActivated() {
     switch (state) {
-      case ACTIVATED:
-      case ACTIVATING:
-        break;
-        
-      default:
+      case PASSIVATED:
         state = ACTIVATING;
         try {
           actor.activated(this);
@@ -238,6 +230,25 @@ public abstract class Activation {
           state = ACTIVATED;
         }
         break;
+        
+      default:
+        break;
+    }
+  }
+  
+  protected final void passivateIfScheduled() {
+    if (passivationScheduled && state == ACTIVATED && pending.isEmpty()) {
+      state = PASSIVATING;
+      try {
+        actor.passivated(this);
+      } catch (Throwable t) {
+        actorConfig.exceptionHandler.accept(system, t);
+      }
+      
+      if (pending.isEmpty()) {
+        passivationScheduled = false;
+        state = PASSIVATED;
+      }
     }
   }
   
@@ -275,6 +286,12 @@ public abstract class Activation {
           case ACTIVATING:
             unstash();
             state = ACTIVATED;
+            break;
+            
+          case PASSIVATING:
+            unstash();
+            passivationScheduled = false;
+            state = PASSIVATED;
             break;
             
           default:
