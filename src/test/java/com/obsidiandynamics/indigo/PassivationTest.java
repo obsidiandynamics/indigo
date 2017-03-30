@@ -12,88 +12,155 @@ public final class PassivationTest implements TestSupport {
   private static final String ECHO = "echo";
 
 //  @Test
-//  public void testShort() {
-//    logTestName();
-//    
-//    final List<Integer> sequence = new ArrayList<>();
-//    final AtomicBoolean activated = new AtomicBoolean();
-//    
-//    new TestActorSystemConfig() {}
-//    .define()
-//    .when(TARGET)
-//    .use(StatelessLambdaActor
-//         .builder()
-//         .passivated(a -> activated.set(true))
-//         .act((a, m) -> {
-//           assertTrue(activated.get());
-//           sequence.add(m.body());
-//         }))
-//    .when(ECHO).lambda((a, m) -> a.reply(m).tell())
-//    .ingress().times(4).act((a, i) -> a.to(ActorRef.of(TARGET)).tell(i))
-//    .shutdown();
-//
-//    assertEquals(Arrays.asList(0, 1, 2, 3), sequence);
+//  public void testShortUnbiased() {
+//    test(false, 1_000, 1);
 //  }
 
   @Test
-  public void testLong() {
+  public void testShortBiased() {
+    test(false, 1_000, 10);
+  }
+
+//  @Test
+//  public void testLongUnbiased() {
+//    test(true, 1_000, 1);
+//  }
+//
+//  @Test
+//  public void testLongBiased() {
+//    test(true, 1_000, 10);
+//  }
+  
+  private void test(boolean reqRes, int n, int actorBias) {
     logTestName();
     
-    final List<Integer> sequence = new ArrayList<>();
+    final List<Integer> received = new ArrayList<>();
     
-    final AtomicInteger received = new AtomicInteger();
+    final AtomicBoolean activating = new AtomicBoolean();
     final AtomicBoolean activated = new AtomicBoolean();
     final AtomicBoolean passivating = new AtomicBoolean();
-    final AtomicBoolean passivated = new AtomicBoolean();
+    final AtomicBoolean passivated = new AtomicBoolean(true);
     
-    new TestActorSystemConfig() {}
+    final AtomicInteger activationCount = new AtomicInteger();
+    final AtomicInteger actCount = new AtomicInteger();
+    final AtomicInteger passivationCount = new AtomicInteger();
+    
+    new TestActorSystemConfig() {{
+      parallelism = Runtime.getRuntime().availableProcessors();
+      defaultActorConfig = new ActorConfig() {{
+        bias = actorBias;
+        backlogThrottleCapacity = 10;
+      }};
+    }}
     .define()
     .when(TARGET)
     .use(StatelessLambdaActor
          .builder()
          .activated(a -> {
-           System.out.println("activation");
+           log("activating\n");
+           assertFalse(activating.get());
            assertFalse(activated.get());
            assertFalse(passivating.get());
-           activated.set(true);
+           assertTrue(passivated.get());
+           activating.set(true);
            passivated.set(false);
+           
+           if (reqRes) {
+             a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
+               // ask a second time... for good measure
+               a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
+                 log("activated\n");
+                 assertTrue(activating.get());
+                 assertFalse(activated.get());
+                 assertFalse(passivating.get());
+                 assertFalse(passivated.get());
+                 activating.set(false);
+                 activated.set(true);
+                 passivated.set(false);
+                 activationCount.incrementAndGet();
+               });
+             });
+           } else {
+             log("activated\n");
+             assertTrue(activating.get());
+             assertFalse(activated.get());
+             assertFalse(passivating.get());
+             assertFalse(passivated.get());
+             activating.set(false);
+             activated.set(true);
+             passivated.set(false);
+             activationCount.incrementAndGet();
+           }
          })
          .act((a, m) -> {
-           System.out.println("act " + m.body());
+           log("act %d\n", m.<Integer>body());
+           assertFalse(activating.get());
            assertTrue(activated.get());
+           assertFalse(passivating.get());
            assertFalse(passivated.get());
-           received.incrementAndGet();
            a.passivate();
-           sequence.add(m.body());
+           received.add(m.body());
+           actCount.incrementAndGet();
          })
          .passivated(a -> {
-           System.out.println("passivation");
+           log("passivating\n");
+           assertFalse(activating.get());
            assertTrue(activated.get());
+           assertFalse(passivating.get());
            assertFalse(passivated.get());
            activated.set(false);
            passivating.set(true);
-//           passivating.set(false);
-//           passivated.set(true);
-           // ask once and wait for a response
-           a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
-             // ask a second time... for good measure
-             a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
-               passivating.set(false);
-               passivated.set(true);
+
+           if (reqRes) {
+             // ask once and wait for a response
+             a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
+               // ask a second time... for good measure
+               a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
+                 log("passivated\n");
+                 assertFalse(activating.get());
+                 assertFalse(activated.get());
+                 assertTrue(passivating.get());
+                 assertFalse(passivated.get());
+                 passivating.set(false);
+                 passivated.set(true);
+                 passivationCount.incrementAndGet();
+               });
              });
-           });
+           } else {
+             log("passivated\n");
+             assertFalse(activating.get());
+             assertFalse(activated.get());
+             assertTrue(passivating.get());
+             assertFalse(passivated.get());
+             passivating.set(false);
+             passivated.set(true);
+             passivationCount.incrementAndGet();
+           }
          }))
     .when(ECHO).lambda((a, m) -> a.reply(m).tell())
-    .ingress().act(a -> {
-      for (int i = 0; i < 40000; i++) {
-        a.to(ActorRef.of(TARGET)).tell(i);
-      }
-    })
+    .ingress().times(n).act((a, i) -> a.to(ActorRef.of(TARGET)).tell(i))
     .shutdown();
 
-    //assertEquals(Arrays.asList(0, 1, 2, 3), sequence);
+    assertEquals(sequenceTo(n), received);
+    assertFalse(activating.get());
     assertFalse(activated.get());
     assertFalse(passivating.get());
     assertTrue(passivated.get());
+    
+    assertTrue(activationCount.get() == passivationCount.get());
+    assertTrue(activationCount.get() >= 1);
+    assertTrue(activationCount.get() <= n);
+    assertEquals(n, actCount.get());
+    assertTrue(passivationCount.get() >= 1);
+    
+    log("passivations: %d\n", passivationCount.get());
+  }
+  
+  private static List<Integer> sequenceTo(int n) {
+    final List<Integer> sequence = new ArrayList<>(n);
+    for (int i = 0; i < n; i++) {
+      sequence.add(i);
+    }
+    return sequence;
   }
 }

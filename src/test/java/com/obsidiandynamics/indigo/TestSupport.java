@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.function.*;
 
 public interface TestSupport {
-  static final boolean LOG = false;
+  static final boolean LOG = true;
   static final PrintStream LOG_STREAM = System.out;
   
   default void logTestName() {

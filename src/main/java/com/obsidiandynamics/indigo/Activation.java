@@ -227,6 +227,7 @@ public abstract class Activation {
         }
         
         if (pending.isEmpty()) {
+          System.out.println("ensureActivated(): activated");
           state = ACTIVATED;
         }
         break;
@@ -253,6 +254,8 @@ public abstract class Activation {
   }
   
   protected final void processMessage(Message message) {
+    ensureActivated();
+    
     if (message.isResponse()) {
       final PendingRequest req = pending.remove(message.requestId());
 
@@ -299,30 +302,34 @@ public abstract class Activation {
         }
       }
     } else {
-      if (stash != null && stash.filter.test(message)) {
-        stash.messages.add(message);
-      } else {
-        try {
-          actor.act(this, message);
-        } catch (Throwable t) {
-          actorConfig.exceptionHandler.accept(system, t);
-        }
-      }
+      processUnsolicited(message);
     }
     
     if (stash != null && stash.unstashing) {
-      for (Iterator<Message> it = stash.messages.iterator(); it.hasNext(); ) {
+      if (! stash.messages.isEmpty()) {
         ensureActivated();
-        try {
-          actor.act(this, it.next());
-        } catch (Throwable t) {
-          actorConfig.exceptionHandler.accept(system, t);
-        }
-        it.remove();
         
-        if (! stash.unstashing) return;
+        while (stash.unstashing && ! stash.messages.isEmpty()) {
+          final Message stashed = stash.messages.remove(0);
+          processUnsolicited(stashed);
+        }
       }
-      stash = null;
+      
+      if (stash.messages.isEmpty()) {
+        stash = null;
+      }
+    }
+  }
+  
+  private void processUnsolicited(Message message) {
+    if (stash != null && ! stash.unstashing && stash.filter.test(message)) {
+      stash.messages.add(message);
+    } else {
+      try {
+        actor.act(this, message);
+      } catch (Throwable t) {
+        actorConfig.exceptionHandler.accept(system, t);
+      }
     }
   }
   

@@ -33,6 +33,8 @@ public final class NodeQueueActivation extends Activation {
   
   private final AtomicInteger backlogSize;
   
+  private volatile int barrier;
+  
   public NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     super(id, ref, system, actorConfig, actor);
     backlogSize = actorConfig.backlogThrottleCapacity != Integer.MAX_VALUE ? new AtomicInteger() : null;
@@ -116,10 +118,10 @@ public final class NodeQueueActivation extends Activation {
   }
   
   private void run(Node h, boolean skipCurrent) {
+    barrier++;
     int cycles = 0;
     if (! skipCurrent) {
       cycles++;
-      ensureActivated();
       processMessage(h.m);
     }
     
@@ -134,6 +136,7 @@ public final class NodeQueueActivation extends Activation {
             processMessage(h.m);
             spins = 0;
           } else {
+            barrier++;
             scheduleRun(h1);
             return;
           }
@@ -143,7 +146,10 @@ public final class NodeQueueActivation extends Activation {
           Thread.yield();
           passivateIfScheduled();
           if (! park(h)) {
+            barrier++;
             schedulePark(h);
+          } else {
+            barrier++;
           }
           return;
         }
