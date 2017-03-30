@@ -7,12 +7,37 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
-public final class LongActivationTest implements TestSupport {
+public final class ActivationTest implements TestSupport {
   private static final String TARGET = "target";
   private static final String ECHO = "echo";
 
   @Test
-  public void test() {
+  public void testShort() {
+    logTestName();
+    
+    final List<Integer> sequence = new ArrayList<>();
+    final AtomicBoolean activated = new AtomicBoolean();
+    
+    new TestActorSystemConfig() {}
+    .define()
+    .when(TARGET)
+    .use(StatelessLambdaActor
+         .builder()
+         .activated(a -> activated.set(true))
+         .act((a, m) -> {
+           assertTrue(activated.get());
+           sequence.add(m.body());
+         }))
+    .when(ECHO).lambda((a, m) -> a.reply(m).tell())
+    .ingress().times(4).act((a, i) -> a.to(ActorRef.of(TARGET)).tell(i))
+    .shutdown();
+
+    assertEquals(Arrays.asList(0, 1, 2, 3), sequence);
+    assertTrue(activated.get());
+  }
+
+  @Test
+  public void testLong() {
     logTestName();
     
     final List<Integer> sequence = new ArrayList<>();
@@ -41,5 +66,6 @@ public final class LongActivationTest implements TestSupport {
     .shutdown();
 
     assertEquals(Arrays.asList(0, 1, 2, 3), sequence);
+    assertTrue(activated.get());
   }
 }

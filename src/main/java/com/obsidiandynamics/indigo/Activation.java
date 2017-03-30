@@ -237,7 +237,7 @@ public abstract class Activation {
   }
   
   protected final void passivateIfScheduled() {
-    if (passivationScheduled && state == ACTIVATED && pending.isEmpty()) {
+    if (passivationScheduled && state == ACTIVATED && pending.isEmpty() && (stash == null || stash.messages.isEmpty())) {
       state = PASSIVATING;
       try {
         actor.passivated(this);
@@ -312,6 +312,7 @@ public abstract class Activation {
     
     if (stash != null && stash.unstashing) {
       for (Iterator<Message> it = stash.messages.iterator(); it.hasNext(); ) {
+        ensureActivated();
         try {
           actor.act(this, it.next());
         } catch (Throwable t) {

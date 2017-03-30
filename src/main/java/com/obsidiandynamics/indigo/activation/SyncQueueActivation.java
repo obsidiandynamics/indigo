@@ -84,7 +84,7 @@ public final class SyncQueueActivation extends Activation {
       noBacklog = backlog.isEmpty();
       noPending = pending.isEmpty();
       
-      if (state == PASSIVATED) {
+      if (noBacklog && state == PASSIVATED) {
         system._dispose(ref);
         disposed = true;
       }

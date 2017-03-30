@@ -66,6 +66,10 @@ public final class ActorSystem {
       return this;
     }
     
+    public ActorSystem act(Consumer<Activation> act) {
+      return act((a, i) -> act.accept(a));
+    }
+    
     public ActorSystem act(BiConsumer<Activation, Integer> act) {
       for (int i = 0; i < iterations; i++) {
         final int _i = i;

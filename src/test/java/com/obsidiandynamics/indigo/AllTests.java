@@ -11,14 +11,15 @@ import com.obsidiandynamics.indigo.benchmark.*;
   EchoBenchmark.class,
   EgressTest.class,
   ExternalAskTest.class,
-  LongActivationTest.class,
+  ActivationTest.class,
   ParallelConsistencyTest.class,
+  PassivationTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
   StashTest.class,
   StatelessChainTest.class,
-  StatelessPassivationTest.class,
-  StatefulPassivationTest.class,
+  StatelessLifeCycleTest.class,
+  StatefulLifeCycleTest.class,
   ThroughputBenchmark.class,
   TimeoutTest.class
 })         
