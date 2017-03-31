@@ -36,7 +36,7 @@ public abstract class ActorConfig {
   }
   
   /** Factory for creating activations. */
-  public ActivationFactory activationFactory = get("indigo.actor.activationFactory", ActivationChoice::valueOf, NODE_QUEUE);
+  public ActivationFactory activationFactory = get("indigo.actor.activationFactory", ActivationChoice::valueOf, SYNC_QUEUE);
   
   /** Handles uncaught exceptions thrown from within an actor. */
   public BiConsumer<ActorSystem, Throwable> exceptionHandler = get("indigo.actor.exceptionHandler", ExceptionHandlerChoice::valueOf, SYSTEM);

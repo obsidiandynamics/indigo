@@ -34,10 +34,11 @@ public final class ExternalAskTest implements TestSupport {
     .define()
     .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
     
-    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 20, 41);
+    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 1_000, 41);
     try {
       f.get(10, TimeUnit.MILLISECONDS);
     } finally {
+      system.forceTimeout();
       system.shutdown();
     }
   }

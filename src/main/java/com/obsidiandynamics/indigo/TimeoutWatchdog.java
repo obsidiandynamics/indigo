@@ -24,6 +24,8 @@ final class TimeoutWatchdog extends Thread {
   
   private volatile boolean running = true;
   
+  private volatile boolean forceTimeout;
+  
   TimeoutWatchdog(ActorSystem system) {
     super("TimeoutWatchdog");
     this.system = system;
@@ -74,7 +76,7 @@ final class TimeoutWatchdog extends Thread {
   private void delay(long until) {
     synchronized (sleepLock) {
       nextWake = until;
-      while (running) {
+      while (running && ! forceTimeout) {
         final long timeDiff = Math.min(MAX_SLEEP_NANOS, nextWake - System.nanoTime() - ADJ_NANOS);
         try {
           if (timeDiff >= MIN_SLEEP_NANOS) {
@@ -89,11 +91,18 @@ final class TimeoutWatchdog extends Thread {
     }
   }
   
+  void forceTimeout() {
+    forceTimeout = true;
+    synchronized (sleepLock) {
+      sleepLock.notify();
+    }
+  }
+  
   private void cycle() {
     if (! timeouts.isEmpty()) {
       try {
         final TimeoutTask first = timeouts.first();
-        if (System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
+        if (forceTimeout || System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
           timeouts.remove(first);
           if (! first.getRequest().isComplete()) {
             system.send(new Message(null, first.getActivation().self(), new TimeoutSignal(), first.getRequestId(), true));

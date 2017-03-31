@@ -5,7 +5,7 @@ import org.junit.runner.notification.*;
 
 public final class AllTestsLoop {
   public static void main(String[] args) {
-    final int n = 200;
+    final int n = 20000;
     final int threads = Runtime.getRuntime().availableProcessors() * 4;
     final boolean logFinished = false;
     final boolean logRuns = true;

@@ -201,6 +201,10 @@ public final class ActorSystem {
     errors.add(t);
   }
   
+  public void forceTimeout() {
+    timeoutWatchdog.forceTimeout();
+  }
+  
   public ActorSystem drain() throws InterruptedException {
     while (busyActors.sum() != 0) {
       synchronized (busyActors) {
