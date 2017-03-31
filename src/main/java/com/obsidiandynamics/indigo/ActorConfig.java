@@ -46,7 +46,7 @@ public abstract class ActorConfig {
   }
   
   /** Factory for creating activations. */
-  public ActivationFactory activationFactory = get(ACTIVATION_FACTORY, ActivationChoice::valueOf, SYNC_QUEUE);
+  public ActivationFactory activationFactory = get(ACTIVATION_FACTORY, ActivationChoice::valueOf, NODE_QUEUE);
   
   /** Handles uncaught exceptions thrown from within an actor. */
   public BiConsumer<ActorSystem, Throwable> exceptionHandler = get(EXCEPTION_HANDLER, ExceptionHandlerChoice::valueOf, SYSTEM);
