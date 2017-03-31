@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.*;
 import org.junit.*;
 
 public final class StatelessLifeCycleTest implements TestSupport {
-  private static final int SCALE = 10;
+  private static final int SCALE = 1;
   
   private static final String TARGET = "target";
   private static final String ECHO = "echo";
