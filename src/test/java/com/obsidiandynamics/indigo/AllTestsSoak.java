@@ -7,10 +7,10 @@ import org.junit.runner.notification.*;
 
 public final class AllTestsSoak {
   public static void main(String[] args) {
-    final int n = 100;
-    
-    test(n, ActorConfig.ActivationChoice.NODE_QUEUE);
+    final int n = 10;
+
     test(n, ActorConfig.ActivationChoice.SYNC_QUEUE);
+    test(n, ActorConfig.ActivationChoice.NODE_QUEUE);
   }
   
   private static void test(int n, ActorConfig.ActivationChoice activationChoice) {

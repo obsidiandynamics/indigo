@@ -1,15 +1,16 @@
 package com.obsidiandynamics.indigo;
 
+import java.util.concurrent.*;
 import java.util.function.*;
 
 public final class StatefulLambdaActor<S> implements Actor {
   private final TriConsumer<Activation, Message, S> onAct;
-  private final Function<Activation, S> onActivated;
+  private final Function<Activation, CompletableFuture<S>> onActivated;
   private final BiConsumer<Activation, S> onPassivated;
   private S state;
   
   StatefulLambdaActor(TriConsumer<Activation, Message, S> onAct, 
-                      Function<Activation, S> onActivated, 
+                      Function<Activation, CompletableFuture<S>> onActivated, 
                       BiConsumer<Activation, S> onPassivated) {
     this.onAct = onAct;
     this.onActivated = onActivated;
@@ -23,7 +24,9 @@ public final class StatefulLambdaActor<S> implements Actor {
   
   @Override
   public void activated(Activation a) {
-    state = onActivated.apply(a);
+    onActivated.apply(a).thenAccept(s -> {
+      state = s;
+    });
   }
   
   @Override
@@ -33,7 +36,7 @@ public final class StatefulLambdaActor<S> implements Actor {
   
   public static final class Builder<S> implements Supplier<Actor> {
     private TriConsumer<Activation, Message, S> onAct;
-    private Function<Activation, S> onActivated;
+    private Function<Activation, CompletableFuture<S>> onActivated;
     private BiConsumer<Activation, S> onPassivated;
     
     public Builder<S> act(TriConsumer<Activation, Message, S> onAct) {
@@ -41,7 +44,7 @@ public final class StatefulLambdaActor<S> implements Actor {
       return this;
     }
     
-    public Builder<S> activated(Function<Activation, S> onActivated) {
+    public Builder<S> activated(Function<Activation, CompletableFuture<S>> onActivated) {
       this.onActivated = onActivated;
       return this;
     }

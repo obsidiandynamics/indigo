@@ -72,7 +72,7 @@ public final class ThroughputBenchmark implements TestSupport {
       }};
     }}
     .define()
-    .when(SINK).lambda(IntegerState::new, (a, m, s) -> {
+    .when(SINK).lambdaAsync(IntegerState::blank, (a, m, s) -> {
       if (++s.value == n) {
         latch.countDown();
       }

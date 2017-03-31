@@ -28,7 +28,7 @@ public final class EgressTest implements TestSupport {
       executor = FIXED_THREAD_POOL;
     }}
     .define()
-    .when(DRIVER).lambda(IntegerState::new, (a, m, s) -> {
+    .when(DRIVER).lambdaAsync(IntegerState::blank, (a, m, s) -> {
       a.<Integer, Integer>egress(in -> {
         assertEquals(EXTERNAL, Thread.currentThread().getName());
         return in + 1; 

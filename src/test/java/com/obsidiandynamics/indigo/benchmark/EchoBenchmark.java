@@ -5,6 +5,7 @@ import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import org.junit.*;
 
@@ -63,7 +64,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     long started;
     long timeTaken;
     
-    DriverState(Activation a) {
+    private DriverState(Activation a) {
       blank = Message.builder().to(ActorRef.of(ECHO, a.self().key())).from(a.self()).body(0L).build();
     }
     
@@ -77,13 +78,21 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
         return 0;
       }
     }
+    
+    static CompletableFuture<DriverState> blank(Activation a) {
+      return CompletableFuture.completedFuture(new DriverState(a));
+    }
   }
   
   private static final class EchoState {
     final Message blank;
     
-    EchoState(Activation a) {
+    private EchoState(Activation a) {
       blank = Message.builder().to(ActorRef.of(DRIVER, a.self().key())).from(a.self()).body(0L).build();
+    }
+    
+    static CompletableFuture<EchoState> blank(Activation a) {
+      return CompletableFuture.completedFuture(new EchoState(a));
     }
   }
   
@@ -126,7 +135,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       }};
     }}
     .define()
-    .when(DRIVER).lambda(DriverState::new, (a, m, s) -> {
+    .when(DRIVER).lambdaAsync(DriverState::blank, (a, m, s) -> {
       switch (m.from().role()) {
         case ECHO:
           s.rx++;
@@ -162,7 +171,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
         default: throw new UnsupportedOperationException(m.from().role());
       }
     })
-    .when(ECHO).lambda(EchoState::new, (a, m, s) -> {
+    .when(ECHO).lambdaAsync(EchoState::blank, (a, m, s) -> {
       final long sendTime = m.body();
       if (sendTime != 0) {
         final long took = System.nanoTime() - sendTime;

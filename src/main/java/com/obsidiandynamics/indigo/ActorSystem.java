@@ -96,11 +96,19 @@ public final class ActorSystem {
       return use(StatelessLambdaActor.builder().act(act)); 
     }
     
-    public <S> ActorSystem lambda(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
-      return lambda(a -> stateFactory.get(), act);
+    public <S> ActorSystem lambdaSync(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
+      return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.get())));
     }
     
-    public <S> ActorSystem lambda(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
+    public <S> ActorSystem lambdaSync(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
+      return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.apply(a))));
+    }
+    
+    public <S> ActorSystem lambdaAsync(Supplier<CompletableFuture<S>> stateFactory, TriConsumer<Activation, Message, S> act) {
+      return lambdaAsync(a -> stateFactory.get(), act);
+    }
+    
+    public <S> ActorSystem lambdaAsync(Function<Activation, CompletableFuture<S>> stateFactory, TriConsumer<Activation, Message, S> act) {
       return use(StatefulLambdaActor.<S>builder().act(act).activated(stateFactory));
     }
     

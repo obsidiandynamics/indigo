@@ -4,6 +4,7 @@ import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.*;
 
 import org.junit.*;
@@ -65,12 +66,16 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     long started;
     long timeTaken;
     
-    DriverState(Activation a) {
+    private DriverState(Activation a) {
       to = ActorRef.of(ECHO, a.self().key());
     }
     
     @Override public long getTotalProcessed() { return totalProcessed; }
     @Override public long getTimeTaken() { return timeTaken; }
+    
+    static CompletableFuture<DriverState> blank(Activation a) {
+      return CompletableFuture.completedFuture(new DriverState(a));
+    }
   }
   
   private static final String DRIVER = "driver";
@@ -112,7 +117,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }};
     }}
     .define()
-    .when(DRIVER).lambda(DriverState::new, (a, m, s) -> {
+    .when(DRIVER).lambdaAsync(DriverState::blank, (a, m, s) -> {
       send(a, s.to, s, c, c.seedPairs, summary.stats);
     })
     .when(ECHO).lambda((a, m) -> a.reply(m).tell())

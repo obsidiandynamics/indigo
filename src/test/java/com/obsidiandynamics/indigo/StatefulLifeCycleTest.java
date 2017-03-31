@@ -87,8 +87,8 @@ public final class StatefulLifeCycleTest implements TestSupport {
            activating.set(true);
            passivated.set(false);
            
+           final CompletableFuture<IntegerState> f = new CompletableFuture<>();
            if (async) {
-             final IntegerState s = new IntegerState();
              a.egress(() -> db.get(a.self()))
              .using(external)
              .ask()
@@ -103,9 +103,8 @@ public final class StatefulLifeCycleTest implements TestSupport {
                activated.set(true);
                passivated.set(false);
                activationCount.incrementAndGet();
-               s.value = saved.value;
+               f.complete(saved);
              });
-             return s;
            } else {
              final IntegerState saved = db.get(a.self());
              log("activated %s\n", saved);
@@ -117,8 +116,9 @@ public final class StatefulLifeCycleTest implements TestSupport {
              activated.set(true);
              passivated.set(false);
              activationCount.incrementAndGet();
-             return saved;
+             f.complete(saved);
            }
+           return f;
          })
          .act((a, m, s) -> {
            log("act\n");
