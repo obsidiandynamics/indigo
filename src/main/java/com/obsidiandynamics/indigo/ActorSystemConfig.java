@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
 import java.util.concurrent.*;
@@ -10,12 +11,19 @@ import java.util.function.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class ActorSystemConfig {
+  public static final class Key {
+    public static final String PARALLELISM = "indigo.system.parallelism";
+    public static final String DEFAULT_ASK_TIMEOUT_MILLIS = "indigo.system.defaultAskTimeoutMillis";
+    public static final String EXECUTOR = "indigo.system.executor";
+    public static final String EXCEPTION_HANDLER = "indigo.system.exceptionHandler";
+  }
+  
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
    *  be sized dynamically depending on the thread pool used. */
-  public int parallelism = get("indigo.system.parallelism", Integer::parseInt, 0);
+  public int parallelism = get(PARALLELISM, Integer::parseInt, 0);
   
   /** The default timeout when asking from outside the actor system. */
-  public int defaultAskTimeoutMillis = get("indigo.system.defaultAskTimeoutMillis", Integer::parseInt, 10 * 60_000);
+  public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 10 * 60_000);
   
   public static enum ExecutorChoice implements Function<Integer, ExecutorService> {
     FORK_JOIN_POOL(Executors::newWorkStealingPool),
@@ -27,7 +35,7 @@ public abstract class ActorSystemConfig {
   }
   
   /** Maps a given parallelism value to an appropriately sized thread pool. */
-  public Function<Integer, ExecutorService> executor = get("indigo.system.executor", ExecutorChoice::valueOf, FORK_JOIN_POOL);
+  public Function<Integer, ExecutorService> executor = get(EXECUTOR, ExecutorChoice::valueOf, FORK_JOIN_POOL);
   
   public static enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
     /** Forwards the exception to the system-level handler. Can only be used within the actor config. */
@@ -44,7 +52,7 @@ public abstract class ActorSystemConfig {
   
   /** Handles uncaught exceptions thrown from within an actor, where those exceptions aren't handled by the actor's
    *  own uncaught exception handler. */
-  public BiConsumer<ActorSystem, Throwable> exceptionHandler = get("indigo.system.exceptionHandler", ExceptionHandlerChoice::valueOf, CONSOLE);
+  public BiConsumer<ActorSystem, Throwable> exceptionHandler = get(EXCEPTION_HANDLER, ExceptionHandlerChoice::valueOf, CONSOLE);
   
   /** The default actor configuration. */
   public ActorConfig defaultActorConfig = new ActorConfig() {};
