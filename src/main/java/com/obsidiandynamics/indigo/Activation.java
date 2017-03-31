@@ -284,50 +284,7 @@ public abstract class Activation {
     ensureActivated();
     
     if (message.isResponse()) {
-      final PendingRequest req = pending.remove(message.requestId());
-
-      if (message.body() instanceof Signal) {
-        if (message.body() instanceof TimeoutSignal) {
-          if (req != null && ! req.isComplete()) {
-            req.setComplete(true);
-            try {
-              req.getOnTimeout().run();
-            } catch (Throwable t) {
-              actorConfig.exceptionHandler.accept(system, t);
-            }
-          }
-        } else {
-          throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
-        }
-      } else if (req != null) {
-        if (req.getTimeoutTask() != null) {
-          system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
-        }
-        req.setComplete(true);
-        try {
-          req.getOnResponse().accept(message);
-        } catch (Throwable t) {
-          actorConfig.exceptionHandler.accept(system, t);
-        }
-      }
-      
-      if (pending.isEmpty()) {
-        switch (state) {
-          case ACTIVATING:
-            unstash();
-            state = ACTIVATED;
-            break;
-            
-          case PASSIVATING:
-            unstash();
-            passivationScheduled = false;
-            state = PASSIVATED;
-            break;
-            
-          default:
-            break;
-        }
-      }
+      processSolicited(message);
     } else {
       processUnsolicited(message);
     }
@@ -344,6 +301,53 @@ public abstract class Activation {
       
       if (stash.messages.isEmpty()) {
         stash = null;
+      }
+    }
+  }
+  
+  private void processSolicited(Message message) {
+    final PendingRequest req = pending.remove(message.requestId());
+
+    if (message.body() instanceof Signal) {
+      if (message.body() instanceof TimeoutSignal) {
+        if (req != null && ! req.isComplete()) {
+          req.setComplete(true);
+          try {
+            req.getOnTimeout().run();
+          } catch (Throwable t) {
+            actorConfig.exceptionHandler.accept(system, t);
+          }
+        }
+      } else {
+        throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
+      }
+    } else if (req != null) {
+      if (req.getTimeoutTask() != null) {
+        system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
+      }
+      req.setComplete(true);
+      try {
+        req.getOnResponse().accept(message);
+      } catch (Throwable t) {
+        actorConfig.exceptionHandler.accept(system, t);
+      }
+    }
+    
+    if (pending.isEmpty()) {
+      switch (state) {
+        case ACTIVATING:
+          unstash();
+          state = ACTIVATED;
+          break;
+          
+        case PASSIVATING:
+          unstash();
+          passivationScheduled = false;
+          state = PASSIVATED;
+          break;
+          
+        default:
+          break;
       }
     }
   }
