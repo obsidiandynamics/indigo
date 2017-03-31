@@ -8,30 +8,32 @@ import java.util.concurrent.atomic.*;
 import org.junit.*;
 
 public final class PassivationTest implements TestSupport {
+  private static final int SCALE = 1;
+  
   private static final String TARGET = "target";
   private static final String ECHO = "echo";
 
-//  @Test
-//  public void testShortUnbiased() {
-//    test(false, 1_000, 1);
-//  }
+  @Test
+  public void testShortUnbiased() {
+    test(false, 1_000 * SCALE, 1);
+  }
 
   @Test
   public void testShortBiased() {
-    test(false, 1_000, 10);
+    test(false, 1_000 * SCALE, 10);
   }
 
-//  @Test
-//  public void testLongUnbiased() {
-//    test(true, 1_000, 1);
-//  }
-//
-//  @Test
-//  public void testLongBiased() {
-//    test(true, 1_000, 10);
-//  }
+  @Test
+  public void testLongUnbiased() {
+    test(true, 1_000 * SCALE, 1);
+  }
+
+  @Test
+  public void testLongBiased() {
+    test(true, 1_000 * SCALE, 10);
+  }
   
-  private void test(boolean reqRes, int n, int actorBias) {
+  private void test(boolean async, int n, int actorBias) {
     logTestName();
     
     final List<Integer> received = new ArrayList<>();
@@ -65,7 +67,7 @@ public final class PassivationTest implements TestSupport {
            activating.set(true);
            passivated.set(false);
            
-           if (reqRes) {
+           if (async) {
              a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
                // ask a second time... for good measure
                a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
@@ -111,7 +113,7 @@ public final class PassivationTest implements TestSupport {
            activated.set(false);
            passivating.set(true);
 
-           if (reqRes) {
+           if (async) {
              // ask once and wait for a response
              a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
                // ask a second time... for good measure
@@ -138,7 +140,11 @@ public final class PassivationTest implements TestSupport {
            }
          }))
     .when(ECHO).lambda((a, m) -> a.reply(m).tell())
-    .ingress().times(n).act((a, i) -> a.to(ActorRef.of(TARGET)).tell(i))
+    .ingress().act(a -> {
+      for (int i = 0; i < n; i++) {
+        a.to(ActorRef.of(TARGET)).tell(i);
+      }
+    })
     .shutdown();
 
     assertEquals(sequenceTo(n), received);

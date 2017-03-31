@@ -1,6 +1,5 @@
 package com.obsidiandynamics.indigo.benchmark;
 
-import static com.obsidiandynamics.indigo.ActorConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 
 import java.util.concurrent.*;
@@ -70,7 +69,6 @@ public final class ThroughputBenchmark implements TestSupport {
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
         backlogThrottleTries = 10;
-        activationFactory = NODE_QUEUE;
       }};
     }}
     .define()

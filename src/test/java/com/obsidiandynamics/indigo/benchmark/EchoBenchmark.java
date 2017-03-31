@@ -1,6 +1,5 @@
 package com.obsidiandynamics.indigo.benchmark;
 
-import static com.obsidiandynamics.indigo.ActorConfig.ActivationChoice.*;
 import static com.obsidiandynamics.indigo.ActorRef.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
@@ -124,7 +123,6 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
-        activationFactory = NODE_QUEUE;
       }};
     }}
     .define()

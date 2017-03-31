@@ -33,8 +33,6 @@ public final class NodeQueueActivation extends Activation {
   
   private final AtomicInteger backlogSize;
   
-  private volatile int barrier;
-  
   public NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     super(id, ref, system, actorConfig, actor);
     backlogSize = actorConfig.backlogThrottleCapacity != Integer.MAX_VALUE ? new AtomicInteger() : null;
@@ -42,13 +40,6 @@ public final class NodeQueueActivation extends Activation {
   
   @Override
   public boolean _enqueue(Message m) {
-    if (isDisposing()) {
-      while (! disposalComplete) {
-        Thread.yield();
-      }
-      return false;
-    }
-    
     if (shouldThrottle()) {
       Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
     }
@@ -58,9 +49,24 @@ public final class NodeQueueActivation extends Activation {
     final Node t = new Node(m);
     final Node t1 = tail.getAndSet(t);
     
+    if (isDisposing()) {
+      while (! disposalComplete) {
+        Thread.yield();
+      }
+      if (backlogSize != null) backlogSize.incrementAndGet();
+      return false;
+    }
+    
     if (t1 == null) {
       if (pending.isEmpty()) {
         system._incBusyActors();
+      }
+      
+      if (isDisposing()) {
+        while (! disposalComplete) {
+          Thread.yield();
+        }
+        return false;
       }
       scheduleRun(t);
     } else {
@@ -111,14 +117,13 @@ public final class NodeQueueActivation extends Activation {
         }
         system._decBusyActors();
       }
-    } else if (noPending && passivationScheduled) {
+    } else if (noPending && disposing) {
       disposalAttemptProposed = false;
     }
     return parked;
   }
   
   private void run(Node h, boolean skipCurrent) {
-    barrier++;
     int cycles = 0;
     if (! skipCurrent) {
       cycles++;
@@ -136,7 +141,6 @@ public final class NodeQueueActivation extends Activation {
             processMessage(h.m);
             spins = 0;
           } else {
-            barrier++;
             scheduleRun(h1);
             return;
           }
@@ -146,10 +150,8 @@ public final class NodeQueueActivation extends Activation {
           Thread.yield();
           passivateIfScheduled();
           if (! park(h)) {
-            barrier++;
             schedulePark(h);
           } else {
-            barrier++;
           }
           return;
         }

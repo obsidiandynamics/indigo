@@ -227,7 +227,6 @@ public abstract class Activation {
         }
         
         if (pending.isEmpty()) {
-          System.out.println("ensureActivated(): activated");
           state = ACTIVATED;
         }
         break;
