@@ -4,15 +4,15 @@ import static junit.framework.TestCase.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
 public final class StatefulLifeCycleTest implements TestSupport {
-  private static final String TICK = "tick";
-  private static final String TOCK = "tock";
-  private static final String DONE_RUNS = "done_runs";
-  private static final String DONE_ACTIVATION = "done_activation";
-  private static final String DONE_PASSIVATION = "done_passivation";
+  private static final int SCALE = 1;
+  
+  private static final String TARGET = "target";
+  private static final String EXTERNAL = "external";
   
   private static class MockDB {
     private final Map<ActorRef, IntegerState> states = new ConcurrentHashMap<>();
@@ -30,70 +30,165 @@ public final class StatefulLifeCycleTest implements TestSupport {
     void put(ActorRef ref, IntegerState state) {
       states.put(ref, state);
     }
-    
-    int size() { return states.size(); }
   }
 
   @Test
-  public void test() {
+  public void testSyncUnbiased() {
+    test(false, 1_000 * SCALE, 1);
+  }
+
+  @Test
+  public void testSyncBiased() {
+    test(false, 1_000 * SCALE, 10);
+  }
+
+  @Test
+  public void testAsyncUnbiased() {
+    test(true, 1_000 * SCALE, 1);
+  }
+
+  @Test
+  public void testAsyncBiased() {
+    test(true, 1_000 * SCALE, 10);
+  }
+
+  private void test(boolean async, int n, int actorBias) {
     logTestName();
     
-    final int actors = 5;
-    final int runs = 10;
-    final Set<ActorRef> doneRuns = new HashSet<>();
-    final Set<ActorRef> doneActivation = new HashSet<>();
-    final Set<ActorRef> donePassivation = new HashSet<>();
+    final AtomicBoolean activating = new AtomicBoolean();
+    final AtomicBoolean activated = new AtomicBoolean();
+    final AtomicBoolean passivating = new AtomicBoolean();
+    final AtomicBoolean passivated = new AtomicBoolean(true);
+    
+    final AtomicInteger activationCount = new AtomicInteger();
+    final AtomicInteger actCount = new AtomicInteger();
+    final AtomicInteger passivationCount = new AtomicInteger();
     
     final MockDB db = new MockDB();
+    final Executor external = r -> new Thread(r, EXTERNAL).start();
     
-    new TestActorSystemConfig() {}
+    new TestActorSystemConfig() {{
+      parallelism = Runtime.getRuntime().availableProcessors();
+      defaultActorConfig = new ActorConfig() {{
+        bias = actorBias;
+        backlogThrottleCapacity = 10;
+      }};
+    }}
     .define()
-    .when(TICK)
-    .use(StatelessLambdaActor
-         .builder()
-         .act((a, m) -> {
-           final int msg = m.body();
-           if (msg == runs) {
-             a.to(ActorRef.of(DONE_RUNS)).tell();
-           } else {
-             a.to(ActorRef.of(TOCK, a.self().key())).tell(msg + 1);
-             a.passivate();
-           }
-         })
-         .activated(tell(DONE_ACTIVATION))
-         .passivated(tell(DONE_PASSIVATION)))
-    .when(TOCK)
+    .when(TARGET)
     .use(StatefulLambdaActor
          .<IntegerState>builder()
+         .activated(a -> {
+           log("activating\n");
+           assertFalse(activating.get());
+           assertFalse(activated.get());
+           assertFalse(passivating.get());
+           assertTrue(passivated.get());
+           activating.set(true);
+           passivated.set(false);
+           
+           if (async) {
+             final IntegerState s = new IntegerState();
+             a.egress(() -> db.get(a.self()))
+             .using(external)
+             .ask()
+             .onResponse(r -> {
+               final IntegerState saved = r.body();
+               log("activated %s\n", saved);
+               assertTrue(activating.get());
+               assertFalse(activated.get());
+               assertFalse(passivating.get());
+               assertFalse(passivated.get());
+               activating.set(false);
+               activated.set(true);
+               passivated.set(false);
+               activationCount.incrementAndGet();
+               s.value = saved.value;
+             });
+             return s;
+           } else {
+             final IntegerState saved = db.get(a.self());
+             log("activated %s\n", saved);
+             assertTrue(activating.get());
+             assertFalse(activated.get());
+             assertFalse(passivating.get());
+             assertFalse(passivated.get());
+             activating.set(false);
+             activated.set(true);
+             passivated.set(false);
+             activationCount.incrementAndGet();
+             return saved;
+           }
+         })
          .act((a, m, s) -> {
+           log("act\n");
+           assertFalse(activating.get());
+           assertTrue(activated.get());
+           assertFalse(passivating.get());
+           assertFalse(passivated.get());
+           actCount.incrementAndGet();
+           
            final int body = m.body();
            assertEquals(s.value + 1, body);
            s.value = body;
-           
-           if (body == runs) {
-             a.to(ActorRef.of(DONE_RUNS)).tell();
-           } else {
-             a.toSenderOf(m).tell(body);
-             a.passivate();
-           }
-         })
-         .activated(a -> {
-           a.to(ActorRef.of(DONE_ACTIVATION)).tell();
-           return db.get(a.self());
+
+           a.passivate();
          })
          .passivated((a, s) -> {
-           db.put(a.self(), s);
-           a.to(ActorRef.of(DONE_PASSIVATION)).tell();
+           log("passivating %s\n", s);
+           assertFalse(activating.get());
+           assertTrue(activated.get());
+           assertFalse(passivating.get());
+           assertFalse(passivated.get());
+           activated.set(false);
+           passivating.set(true);
+           
+           if (async) {
+             a.egress(() -> db.put(a.self(), s))
+             .using(external)
+             .ask()
+             .onResponse(r -> {
+               log("passivated\n");
+               assertFalse(activating.get());
+               assertFalse(activated.get());
+               assertTrue(passivating.get());
+               assertFalse(passivated.get());
+               passivating.set(false);
+               passivated.set(true);
+               passivationCount.incrementAndGet();
+             });
+           } else {
+             log("passivated\n");
+             assertFalse(activating.get());
+             assertFalse(activated.get());
+             assertTrue(passivating.get());
+             assertFalse(passivated.get());
+             passivating.set(false);
+             passivated.set(true);
+             passivationCount.incrementAndGet();
+             db.put(a.self(), s);
+           }
          }))
-    .when(DONE_RUNS).lambda(refCollector(doneRuns))
-    .when(DONE_ACTIVATION).lambda(refCollector(doneActivation))
-    .when(DONE_PASSIVATION).lambda(refCollector(donePassivation))
-    .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(TICK, String.valueOf(i))).tell(0))
+    .ingress().act(a -> {
+      for (int i = 1; i <= n; i++) {
+        a.to(ActorRef.of(TARGET)).tell(i);
+      }
+    })
     .shutdown();
 
-    assertEquals(actors, doneRuns.size());
-    assertEquals(actors * 2, doneActivation.size());
-    assertEquals(actors * 2, donePassivation.size());
-    assertEquals(actors, db.size());
+    assertEquals(n, db.get(ActorRef.of(TARGET)).value);
+
+    assertFalse(activating.get());
+    assertFalse(activated.get());
+    assertFalse(passivating.get());
+    assertTrue(passivated.get());
+    
+    assertTrue(activationCount.get() == passivationCount.get());
+    assertTrue(activationCount.get() >= 1);
+    assertTrue(activationCount.get() <= n);
+    assertEquals(n, actCount.get());
+    assertTrue(passivationCount.get() >= 1);
+    
+    log("passivations: %d\n", passivationCount.get());
   }
 }

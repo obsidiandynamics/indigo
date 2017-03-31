@@ -138,8 +138,15 @@ public abstract class Activation {
     @SuppressWarnings("unchecked")
     public MessageBuilder using(Executor executor) {
       return new MessageBuilder((body, requestId) -> {
+        stashIfTransitioning();
         executor.execute(() -> {
-          final O out = func.apply((I) body);
+          final O out;
+          try {
+            out = func.apply((I) body);
+          } catch (Throwable t) {
+            actorConfig.exceptionHandler.accept(system, t);
+            return;
+          }
           if (requestId != null) {
             final Message resp = new Message(null, ref, out, requestId, true);
             system.send(resp);
@@ -157,6 +164,23 @@ public abstract class Activation {
     return new EgressBuilder<>(in -> {
       consumer.accept(in);
       return null;
+    });
+  }
+  
+  public final <I> EgressBuilder<I, Void> egress(Runnable runnable) {
+    return new EgressBuilder<>(in -> {
+      if (in != null) throw new IllegalArgumentException("Cannot pass a value to this egress lambda");
+      
+      runnable.run();
+      return null;
+    });
+  }
+  
+  public final <O> EgressBuilder<Object, O> egress(Supplier<O> supplier) {
+    return new EgressBuilder<>(in -> {
+      if (in != null) throw new IllegalArgumentException("Cannot pass a value to this egress lambda");
+      
+      return supplier.get();
     });
   }
   
@@ -203,17 +227,21 @@ public abstract class Activation {
   
   public final void send(Message message) {
     if (message.requestId() != null) {
-      switch (state) {
-        case ACTIVATING:
-        case PASSIVATING:
-          stash(c -> true);
-          break;
-          
-        default:
-          break;
-      }
+      stashIfTransitioning();
     }
     system.send(message);
+  }
+  
+  private void stashIfTransitioning() {
+    switch (state) {
+      case ACTIVATING:
+      case PASSIVATING:
+        stash(c -> true);
+        break;
+        
+      default:
+        break;
+    }
   }
   
   protected final void ensureActivated() {
