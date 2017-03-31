@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.*;
 import org.junit.runner.*;
 import org.junit.runner.notification.*;
 
-public final class AllTestsLoop {
+public final class AllTestsSoak {
   public static void main(String[] args) {
     final int n = 100;
     
