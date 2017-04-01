@@ -309,7 +309,7 @@ public abstract class Activation {
     final PendingRequest req = pending.remove(message.requestId());
 
     if (message.body() instanceof Signal) {
-      if (message.body() instanceof TimeoutSignal) {
+      if (message.body() instanceof Timeout) {
         if (req != null && ! req.isComplete()) {
           req.setComplete(true);
           try {
