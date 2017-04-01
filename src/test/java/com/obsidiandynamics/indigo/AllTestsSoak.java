@@ -17,7 +17,7 @@ public final class AllTestsSoak {
     System.out.format("_\nTesting with %s\n", activationChoice);
     System.setProperty(ActorConfig.Key.ACTIVATION_FACTORY, activationChoice.name());
     
-    final int threads = Runtime.getRuntime().availableProcessors() * 4;
+    final int threads = Runtime.getRuntime().availableProcessors() * 1;
     final boolean logFinished = false;
     final boolean logRuns = true;
     
