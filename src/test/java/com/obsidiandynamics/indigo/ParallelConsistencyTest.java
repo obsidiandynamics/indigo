@@ -37,7 +37,7 @@ public final class ParallelConsistencyTest implements TestSupport {
       }
       a.to(ActorRef.of(DONE_RUNS)).tell();
     })
-    .when(RUN).lambdaAsync(IntegerState::blank, (a, m, s) -> {
+    .when(RUN).lambdaSync(IntegerState::new, (a, m, s) -> {
       final int msg = m.body();
       assertEquals(s.value + 1, msg);
       s.value = msg;

@@ -21,7 +21,7 @@ public final class RequestResponseTest implements TestSupport {
 
     new TestActorSystemConfig() {}
     .define()
-    .when(DRIVER).lambdaAsync(IntegerState::blank, (a, m, s) -> {
+    .when(DRIVER).lambdaSync(IntegerState::new, (a, m, s) -> {
       a.to(ActorRef.of(ADDER)).ask(s.value).onResponse(r -> {
         final int res = r.body();
         if (res == runs) {
