@@ -9,7 +9,7 @@ import java.util.function.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class Activation {
-  protected final long id;
+  private final long id;
   
   protected final ActorRef ref;
   
@@ -17,7 +17,7 @@ public abstract class Activation {
   
   protected final ActorConfig actorConfig;
   
-  protected final Actor actor;
+  private final Actor actor;
   
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
@@ -25,9 +25,9 @@ public abstract class Activation {
   
   private Stash stash;
   
-  protected boolean passivationScheduled;
+  private boolean passivationScheduled;
   
-  protected long requestCounter = Crypto.machineRandom();
+  private long requestCounter = Crypto.machineRandom();
   
   protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     this.id = id;
@@ -37,7 +37,7 @@ public abstract class Activation {
     this.actor = actor;
   }
   
-  public abstract boolean _enqueue(Message m);
+  public abstract boolean enqueue(Message m);
   
   public final ActorRef self() {
     return ref;
@@ -244,7 +244,7 @@ public abstract class Activation {
     }
   }
   
-  protected final void ensureActivated() {
+  private final void ensureActivated() {
     switch (state) {
       case PASSIVATED:
         state = ACTIVATING;

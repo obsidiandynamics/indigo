@@ -39,7 +39,7 @@ public final class NodeQueueActivation extends Activation {
   }
   
   @Override
-  public boolean _enqueue(Message m) {
+  public boolean enqueue(Message m) {
     if (shouldThrottle()) {
       Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
     }

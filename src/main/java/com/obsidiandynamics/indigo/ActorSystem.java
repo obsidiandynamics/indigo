@@ -133,7 +133,7 @@ public final class ActorSystem {
   public ActorSystem send(Message message) {
     for (;;) {
       final Activation a = activate(message.to());
-      if (a._enqueue(message)) {
+      if (a.enqueue(message)) {
         return this;
       } else {
         message.to().setCachedActivation(null);

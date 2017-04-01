@@ -19,7 +19,7 @@ public final class SyncQueueActivation extends Activation {
   }
   
   @Override
-  public boolean _enqueue(Message m) {
+  public boolean enqueue(Message m) {
     for (;;) {
       final boolean noBacklog;
       final boolean noPending;
