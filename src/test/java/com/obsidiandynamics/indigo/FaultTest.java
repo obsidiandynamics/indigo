@@ -11,6 +11,7 @@ public final class FaultTest implements TestSupport {
   private static final int SCALE = 1;
   
   private static final String SINK = "sink";
+  private static final String ECHO = "echo";
   
   private static final class TestException extends RuntimeException {
     private static final long serialVersionUID = 1L;
@@ -198,5 +199,39 @@ public final class FaultTest implements TestSupport {
     assertTrue(activationAttempts.get() >= failedActivations.get());
     assertTrue(received.get() + failedActivations.get() == n);
     assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
+  }
+  
+  @Test
+  public void testRequestResponse() {
+    logTestName();
+    
+    final int n = 100 * SCALE;
+    
+    final AtomicInteger faults = new AtomicInteger();
+    
+    system()
+    .define()
+    .when(SINK).lambda((a, m) -> {
+      a.to(ActorRef.of(ECHO)).ask()
+      .await(1_000).onTimeout(() -> {
+        log("echo timed out\n");
+        fail("echo timed out");
+      })
+      .onFault(f -> {
+        log("echo faulted\n");
+        faults.getAndIncrement();
+      })
+      .onResponse(r -> {
+        log("echo responded\n");
+        fail("echo responded");
+      });
+    })
+    .when(ECHO).lambda((a, m) -> {
+      a.fault("Some error");
+    })
+    .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i))
+    .shutdown();
+    
+    assertEquals(n, faults.get());
   }
 }
