@@ -15,7 +15,7 @@ public final class StashTest implements TestSupport {
     
     final List<Integer> sequence = new ArrayList<>();
 
-    new ActorSystemConfig() {}
+    new TestActorSystemConfig() {}
     .define()
     .when(SINK).lambda((a, m) -> {
       final int body = m.body();

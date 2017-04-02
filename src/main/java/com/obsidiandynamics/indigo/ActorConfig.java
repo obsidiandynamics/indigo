@@ -34,7 +34,7 @@ public abstract class ActorConfig {
    *  will be enqueued even if the backlog is over capacity. */
   public int backlogThrottleTries = get(BACKLOG_THROTTLE_TRIES, Integer::parseInt, 10);
 
-  public static enum ActivationChoice implements ActivationFactory {
+  public enum ActivationChoice implements ActivationFactory {
     SYNC_QUEUE(SyncQueueActivation::new),
     NODE_QUEUE(NodeQueueActivation::new);
     

@@ -11,6 +11,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
   EchoBenchmark.class,
   EgressTest.class,
   ExternalAskTest.class,
+  FaultTest.class,
   ParallelConsistencyTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,

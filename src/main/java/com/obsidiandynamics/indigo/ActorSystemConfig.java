@@ -23,9 +23,9 @@ public abstract class ActorSystemConfig {
   public int parallelism = get(PARALLELISM, Integer::parseInt, 0);
   
   /** The default timeout when asking from outside the actor system. */
-  public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 10 * 60_000);
+  public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 1 * 60_000);
   
-  public static enum ExecutorChoice implements Function<Integer, ExecutorService> {
+  public enum ExecutorChoice implements Function<Integer, ExecutorService> {
     FORK_JOIN_POOL(Executors::newWorkStealingPool),
     FIXED_THREAD_POOL(Threads::prestartedFixedThreadPool);
     
@@ -37,7 +37,7 @@ public abstract class ActorSystemConfig {
   /** Maps a given parallelism value to an appropriately sized thread pool. */
   public Function<Integer, ExecutorService> executor = get(EXECUTOR, ExecutorChoice::valueOf, FORK_JOIN_POOL);
   
-  public static enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
+  public enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
     /** Forwards the exception to the system-level handler. Can only be used within the actor config. */
     SYSTEM((sys, t) -> sys.getConfig().exceptionHandler.accept(sys, t)),
     /** Prints the stack trace to the console. */

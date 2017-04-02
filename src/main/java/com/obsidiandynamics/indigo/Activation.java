@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActivationState.*;
+import static com.obsidiandynamics.indigo.FaultType.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -29,6 +30,8 @@ public abstract class Activation {
   
   private long requestCounter = Crypto.machineRandom();
   
+  private Object faultReason;
+  
   protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     this.id = id;
     this.ref = ref;
@@ -47,6 +50,10 @@ public abstract class Activation {
     passivationScheduled = true;
   }
   
+  public final void fault(Object reason) {
+    faultReason = reason;
+  }
+  
   @FunctionalInterface
   private interface MessageTarget {
     void send(Object body, UUID requestId);
@@ -62,6 +69,8 @@ public abstract class Activation {
     private long timeoutMillis;
     
     private Runnable onTimeout;
+    
+    private Consumer<Fault> onFault;
     
     MessageBuilder(MessageTarget target) {
       this.target = target;
@@ -97,6 +106,11 @@ public abstract class Activation {
       return this;
     }
     
+    public MessageBuilder onTimeout(Consumer<Fault> onFault) {
+      this.onFault = onFault;
+      return this;
+    }
+    
     public void onResponse(Consumer<Message> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
         throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
@@ -104,7 +118,7 @@ public abstract class Activation {
       
       for (int i = copies; --i >= 0;) {
         final UUID requestId = new UUID(id, requestCounter++);
-        final PendingRequest req = new PendingRequest(onResponse, onTimeout);
+        final PendingRequest req = new PendingRequest(onResponse, onTimeout, onFault);
         pending.put(requestId, req);
         target.send(requestBody, requestId);
         
@@ -236,7 +250,7 @@ public abstract class Activation {
     switch (state) {
       case ACTIVATING:
       case PASSIVATING:
-        stash(c -> true);
+        stash(Functions::alwaysTrue);
         break;
         
       default:
@@ -244,96 +258,183 @@ public abstract class Activation {
     }
   }
   
-  private final void ensureActivated() {
+  private void cancelTimeout(PendingRequest req) {
+    if (req.getTimeoutTask() != null) {
+      system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
+    }
+  }
+  
+  private void clearPending() {
+    for (PendingRequest req : pending.values()) {
+      req.setComplete(true);
+      cancelTimeout(req);
+    }
+    pending.clear();
+  }
+  
+  private void raiseFault(FaultType type, Message originalMessage) {
+    //TODO send to DLQ
+    faultReason = null;
+  }
+  
+  private boolean checkAndRaiseFault(FaultType type, Message originalMessage) {
+    if (faultReason != null) {
+      raiseFault(type, originalMessage);
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  private boolean ensureActivated(Message message) {
     switch (state) {
       case PASSIVATED:
         state = ACTIVATING;
         try {
           actor.activated(this);
         } catch (Throwable t) {
+          fault(t);
           actorConfig.exceptionHandler.accept(system, t);
         }
         
-        if (pending.isEmpty()) {
+        if (faultReason != null) {
+          clearPending();
+          raiseFault(ON_ACTIVATION, message);
+          state = PASSIVATED;
+          return false;
+        } else if (pending.isEmpty()) {
           state = ACTIVATED;
+          return true;
+        } else {
+          return true;
         }
-        break;
         
       default:
-        break;
+        return true;
     }
   }
   
   protected final void passivateIfScheduled() {
     if (passivationScheduled && state == ACTIVATED && pending.isEmpty() && (stash == null || stash.messages.isEmpty())) {
+      passivationScheduled = false;
       state = PASSIVATING;
       try {
         actor.passivated(this);
       } catch (Throwable t) {
+        fault(t);
         actorConfig.exceptionHandler.accept(system, t);
       }
       
-      if (pending.isEmpty()) {
-        passivationScheduled = false;
+      if (faultReason != null) {
+        clearPending();
+        raiseFault(ON_PASSIVATION, null);
+        state = ACTIVATED;
+      } else if (pending.isEmpty()) {
         state = PASSIVATED;
       }
     }
   }
   
   protected final void processMessage(Message message) {
-    ensureActivated();
-    
     if (message.isResponse()) {
       processSolicited(message);
     } else {
+      if (! ensureActivated(message)) {
+        return;
+      }
       processUnsolicited(message);
     }
     
     if (stash != null && stash.unstashing) {
-      if (! stash.messages.isEmpty()) {
-        ensureActivated();
-        
-        while (stash.unstashing && ! stash.messages.isEmpty()) {
-          final Message stashed = stash.messages.remove(0);
-          processUnsolicited(stashed);
+      try {
+        if (! stash.messages.isEmpty()) {
+          if (! ensureActivated(stash.messages.get(0))) {
+            stash.messages.remove(0);
+            return;
+          }
+          
+          while (stash.unstashing && ! stash.messages.isEmpty()) {
+            final Message stashed = stash.messages.remove(0);
+            processUnsolicited(stashed);
+          }
         }
-      }
-      
-      if (stash.messages.isEmpty()) {
-        stash = null;
+      } finally {
+        if (stash.messages.isEmpty()) {
+          stash = null;
+        }
       }
     }
   }
   
   private void processSolicited(Message message) {
     final PendingRequest req = pending.remove(message.requestId());
-
-    if (message.body() instanceof Signal) {
-      if (message.body() instanceof Timeout) {
+    final Object body = message.body();
+    boolean fault = false;
+    if (body instanceof Signal) {
+      if (body instanceof Timeout) {
         if (req != null && ! req.isComplete()) {
           req.setComplete(true);
           try {
             req.getOnTimeout().run();
           } catch (Throwable t) {
+            fault(t);
             actorConfig.exceptionHandler.accept(system, t);
+          } finally {
+            fault = checkAndRaiseFault(ON_TIMEOUT, message);
+          }
+        }
+      } else if (body instanceof Fault) {
+        if (req != null && ! req.isComplete()) {
+          cancelTimeout(req);
+          req.setComplete(true);
+          if (req.getOnFault() != null) {
+            try {
+              req.getOnFault().accept((Fault) body);
+            } catch (Throwable t) {
+              fault(t);
+              actorConfig.exceptionHandler.accept(system, t);
+            } finally {
+              fault = checkAndRaiseFault(ON_FAULT, message);
+            }
           }
         }
       } else {
-        throw new UnsupportedOperationException("Unsupported signal of type " + message.body().getClass().getName());
+        throw new UnsupportedOperationException("Unsupported signal of type " + body.getClass().getName());
       }
     } else if (req != null) {
-      if (req.getTimeoutTask() != null) {
-        system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
-      }
+      cancelTimeout(req);
       req.setComplete(true);
       try {
         req.getOnResponse().accept(message);
       } catch (Throwable t) {
+        fault(t);
         actorConfig.exceptionHandler.accept(system, t);
+      } finally {
+        fault = checkAndRaiseFault(ON_RESPONSE, message);
       }
     }
     
-    if (pending.isEmpty()) {
+    if (fault) {
+      switch (state) {
+        case ACTIVATING:
+          clearPending();
+          unstash();
+          if (stash != null && ! stash.messages.isEmpty()) {
+            stash.messages.remove(0);
+          }
+          state = PASSIVATED;
+          break;
+          
+        case PASSIVATING:
+          clearPending();
+          unstash();
+          state = ACTIVATED;
+          break;
+          
+        default:
+          break;
+      }      
+    } else if (pending.isEmpty()) {
       switch (state) {
         case ACTIVATING:
           unstash();
@@ -342,7 +443,6 @@ public abstract class Activation {
           
         case PASSIVATING:
           unstash();
-          passivationScheduled = false;
           state = PASSIVATED;
           break;
           
@@ -359,7 +459,10 @@ public abstract class Activation {
       try {
         actor.act(this, message);
       } catch (Throwable t) {
+        fault(t);
         actorConfig.exceptionHandler.accept(system, t);
+      } finally {
+        checkAndRaiseFault(ON_ACT, message);
       }
     }
   }

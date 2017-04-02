@@ -23,7 +23,7 @@ public final class AllTestsSoak {
     
     System.setProperty("indigo.TimeoutTest.timeoutTolerance", String.valueOf(50));
     
-    System.out.format("Running %d parallel runs using %d threads\n", n * threads, threads);
+    System.out.format("%d parallel runs using %d threads\n", n * threads, threads);
     final AtomicLong totalTests = new AtomicLong();
     final long took = TestSupport.took(() -> {
       for (int i = 1; i <= n; i++) {
