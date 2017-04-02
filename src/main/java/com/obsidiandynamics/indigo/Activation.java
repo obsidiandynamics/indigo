@@ -106,7 +106,7 @@ public abstract class Activation {
       return this;
     }
     
-    public MessageBuilder onTimeout(Consumer<Fault> onFault) {
+    public MessageBuilder onFault(Consumer<Fault> onFault) {
       this.onFault = onFault;
       return this;
     }

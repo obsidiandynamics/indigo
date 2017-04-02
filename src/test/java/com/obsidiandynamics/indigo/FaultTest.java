@@ -80,7 +80,6 @@ public final class FaultTest implements TestSupport {
                    log("egress responded\n");
                    fail("egress responded");
                  });
-                 
                  Thread.yield();
                } else {
                  log("activated\n");
@@ -168,7 +167,6 @@ public final class FaultTest implements TestSupport {
                log("egress responded\n");
                fail("egress responded");
              });
-             
              Thread.yield();
              throw new TestException("Boom");
            } else {
