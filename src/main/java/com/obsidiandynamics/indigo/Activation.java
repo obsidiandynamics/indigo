@@ -299,6 +299,7 @@ public abstract class Activation {
         
         if (faultReason != null) {
           clearPending();
+          unstash();
           raiseFault(ON_ACTIVATION, message);
           state = PASSIVATED;
           return false;
@@ -327,6 +328,7 @@ public abstract class Activation {
       
       if (faultReason != null) {
         clearPending();
+        unstash();
         raiseFault(ON_PASSIVATION, null);
         state = ACTIVATED;
       } else if (pending.isEmpty()) {

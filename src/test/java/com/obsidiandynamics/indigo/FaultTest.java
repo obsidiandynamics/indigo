@@ -5,9 +5,7 @@ import static junit.framework.TestCase.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import org.junit.Test;
-
-import junit.framework.*;
+import org.junit.*;
 
 public final class FaultTest implements TestSupport {
   private static final int SCALE = 1;
@@ -32,10 +30,6 @@ public final class FaultTest implements TestSupport {
         backlogThrottleCapacity = 1;
       }};
     }};
-  }
-  
-  private static void fail(Message m) {
-    TestCase.fail();
   }
   
   @Test
@@ -66,7 +60,10 @@ public final class FaultTest implements TestSupport {
            if (async) {
              a.egress(() -> null)
              .using(external)
-             .await(1_000).onTimeout(TestCase::fail)
+             .await(1_000).onTimeout(() -> {
+               log("egress timed out\n");
+               fail("egress timed out");
+             })
              .onResponse(r -> {
                if (activationAttempts.getAndIncrement() % 2 == 0) {
                  log("fault\n");
@@ -75,8 +72,16 @@ public final class FaultTest implements TestSupport {
                  
                  a.egress(() -> null)
                  .using(external)
-                 .await(1_000).onTimeout(TestCase::fail)
-                 .onResponse(FaultTest::fail);
+                 .await(1_000).onTimeout(() -> {
+                   log("egress timed out\n");
+                   fail("egress timed out");
+                 })
+                 .onResponse(r2 -> {
+                   log("egress responded\n");
+                   fail("egress responded");
+                 });
+                 
+                 Thread.yield();
                } else {
                  log("activated\n");
                }
@@ -89,8 +94,15 @@ public final class FaultTest implements TestSupport {
                
                a.egress(() -> null)
                .using(external)
-               .await(1_000).onTimeout(TestCase::fail)
-               .onResponse(FaultTest::fail);
+               .await(1_000).onTimeout(() -> {
+                 log("egress timed out\n");
+                 fail("egress timed out");
+               })
+               .onResponse(r -> {
+                 log("egress responded\n");
+                 fail("egress responded");
+               });
+               Thread.yield();
              } else {
                log("activated\n");
              }
@@ -141,14 +153,23 @@ public final class FaultTest implements TestSupport {
     .when(SINK)
     .use(StatelessLambdaActor.builder()
          .activated(a -> {
+           log("activating\n");
            if (activationAttempts.getAndIncrement() % 2 == 0) {
              log("fault\n");
+             failedActivations.incrementAndGet();
+             
              a.egress(() -> null)
              .using(external)
-             .await(1_000).onTimeout(TestCase::fail)
-             .onResponse(FaultTest::fail);
+             .await(1_000).onTimeout(() -> {
+               log("egress timed out\n");
+               fail("egress timed out");
+             })
+             .onResponse(r -> {
+               log("egress responded\n");
+               fail("egress responded");
+             });
              
-             failedActivations.incrementAndGet();
+             Thread.yield();
              throw new TestException("Boom");
            } else {
              log("activated\n");
@@ -165,7 +186,7 @@ public final class FaultTest implements TestSupport {
          })
     )
     .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i));
-    
+
     try {
       system.drain();
       external.shutdown();
