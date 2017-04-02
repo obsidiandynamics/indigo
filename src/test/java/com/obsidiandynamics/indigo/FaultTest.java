@@ -19,7 +19,7 @@ public final class FaultTest implements TestSupport {
     TestException(String m) { super(m); }
   }
   
-  private static ActorSystemConfig system() {
+  private static ActorSystemConfig system(int actorBias) {
     return new TestActorSystemConfig() {{
       exceptionHandler = (sys, t) -> {
         if (! (t instanceof TestException)) {
@@ -28,22 +28,33 @@ public final class FaultTest implements TestSupport {
         }
       };
       defaultActorConfig = new ActorConfig() {{
-        backlogThrottleCapacity = 1;
+        bias = actorBias;
+        backlogThrottleCapacity = 10;
       }};
     }};
   }
   
   @Test
-  public void testOnSyncActivation() {
-    testOnActivation(false, 100 * SCALE);
+  public void testOnSyncActivationUnbiased() {
+    testOnActivation(false, 100 * SCALE, 1);
+  }
+  
+  @Test
+  public void testOnSyncActivationBiased() {
+    testOnActivation(false, 100 * SCALE, 10);
   }
 
   @Test
-  public void testOnAsyncActivation() {
-    testOnActivation(true, 100 * SCALE);
+  public void testOnAsyncActivationUnbiased() {
+    testOnActivation(true, 100 * SCALE, 1);
+  }
+
+  @Test
+  public void testOnAsyncActivationBiased() {
+    testOnActivation(true, 100 * SCALE, 10);
   }
   
-  private void testOnActivation(boolean async, int n) {
+  private void testOnActivation(boolean async, int n, int actorBias) {
     logTestName();
     
     final AtomicInteger activationAttempts = new AtomicInteger();
@@ -53,11 +64,12 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
-    final ActorSystem system = system()
+    final ActorSystem system = system(actorBias)
     .define()
     .when(SINK)
     .use(StatelessLambdaActor.builder()
          .activated(a -> {
+           log("activating\n");
            if (async) {
              a.egress(() -> null)
              .using(external)
@@ -136,10 +148,17 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnActivationException() {
+  public void testOnActivationExceptionUnbiased() {
+    testOnActivationException(100 * SCALE, 1);
+  }
+  
+  @Test
+  public void testOnActivationExceptionBiased() {
+    testOnActivationException(100 * SCALE, 10);
+  }
+  
+  private void testOnActivationException(int n, int actorBias) {
     logTestName();
-    
-    final int n = 100 * SCALE;
     
     final AtomicInteger activationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
@@ -148,7 +167,7 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
-    final ActorSystem system = system()
+    final ActorSystem system = system(actorBias)
     .define()
     .when(SINK)
     .use(StatelessLambdaActor.builder()
@@ -202,16 +221,24 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testRequestResponse() {
+  public void testRequestResponseUnbiased() {
+    testRequestResponse(100 * SCALE, 1);
+  }
+  
+  @Test
+  public void testRequestResponseBiased() {
+    testRequestResponse(100 * SCALE, 10);
+  }
+  
+  private void testRequestResponse(int n, int actorBias) {
     logTestName();
-    
-    final int n = 100 * SCALE;
     
     final AtomicInteger faults = new AtomicInteger();
     
-    system()
+    system(actorBias)
     .define()
     .when(SINK).lambda((a, m) -> {
+      log("sink asking\n");
       a.to(ActorRef.of(ECHO)).ask()
       .await(1_000).onTimeout(() -> {
         log("echo timed out\n");

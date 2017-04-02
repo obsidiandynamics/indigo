@@ -36,6 +36,10 @@ public final class Message {
   public boolean isResponse() {
     return response;
   }
+  
+  boolean isFault() {
+    return body instanceof Fault;
+  }
 
   @SuppressWarnings("unchecked")
   public <T> T body() {

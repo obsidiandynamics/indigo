@@ -240,7 +240,7 @@ public abstract class Activation {
   }
   
   public final void send(Message message) {
-    if (message.requestId() != null) {
+    if (message.requestId() != null && ! message.isFault()) {
       stashIfTransitioning();
     }
     system.send(message);
@@ -273,6 +273,10 @@ public abstract class Activation {
   }
   
   private void raiseFault(FaultType type, Message originalMessage) {
+    if (originalMessage.requestId() != null && originalMessage.from() != null) {
+      final Fault fault = new Fault(type, originalMessage, faultReason);
+      send(new Message(ref, originalMessage.from(), fault, originalMessage.requestId(), true));
+    }
     //TODO send to DLQ
     faultReason = null;
   }
