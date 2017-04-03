@@ -5,6 +5,7 @@ import static junit.framework.TestCase.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.*;
 
 import org.junit.*;
 
@@ -88,25 +89,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
            passivated.set(false);
            
            final CompletableFuture<IntegerState> f = new CompletableFuture<>();
-           if (async) {
-             a.egress(() -> db.get(a.self()))
-             .using(external)
-             .ask()
-             .onResponse(r -> {
-               final IntegerState saved = r.body();
-               log("activated %s\n", saved);
-               assertTrue(activating.get());
-               assertFalse(activated.get());
-               assertFalse(passivating.get());
-               assertFalse(passivated.get());
-               activating.set(false);
-               activated.set(true);
-               passivated.set(false);
-               activationCount.incrementAndGet();
-               f.complete(saved);
-             });
-           } else {
-             final IntegerState saved = db.get(a.self());
+           final Consumer<IntegerState> activator = saved -> {
              log("activated %s\n", saved);
              assertTrue(activating.get());
              assertFalse(activated.get());
@@ -117,6 +100,15 @@ public final class StatefulLifeCycleTest implements TestSupport {
              passivated.set(false);
              activationCount.incrementAndGet();
              f.complete(saved);
+           };
+           
+           if (async) {
+             a.egress(() -> db.get(a.self()))
+             .using(external)
+             .ask()
+             .onResponse(r -> activator.accept(r.body()));
+           } else {
+             activator.accept(db.get(a.self()));
            }
            return f;
          })
@@ -143,21 +135,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
            activated.set(false);
            passivating.set(true);
            
-           if (async) {
-             a.egress(() -> db.put(a.self(), s))
-             .using(external)
-             .ask()
-             .onResponse(r -> {
-               log("passivated\n");
-               assertFalse(activating.get());
-               assertFalse(activated.get());
-               assertTrue(passivating.get());
-               assertFalse(passivated.get());
-               passivating.set(false);
-               passivated.set(true);
-               passivationCount.incrementAndGet();
-             });
-           } else {
+           final Runnable passivator = () -> {
              log("passivated\n");
              assertFalse(activating.get());
              assertFalse(activated.get());
@@ -166,6 +144,15 @@ public final class StatefulLifeCycleTest implements TestSupport {
              passivating.set(false);
              passivated.set(true);
              passivationCount.incrementAndGet();
+           };
+           
+           if (async) {
+             a.egress(() -> db.put(a.self(), s))
+             .using(external)
+             .ask()
+             .onResponse(r -> passivator.run());
+           } else {
+             passivator.run();
              db.put(a.self(), s);
            }
          }))

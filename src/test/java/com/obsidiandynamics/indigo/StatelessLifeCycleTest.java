@@ -67,22 +67,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
            activating.set(true);
            passivated.set(false);
            
-           if (async) {
-             a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
-               // ask a second time... for good measure
-               a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
-                 log("activated\n");
-                 assertTrue(activating.get());
-                 assertFalse(activated.get());
-                 assertFalse(passivating.get());
-                 assertFalse(passivated.get());
-                 activating.set(false);
-                 activated.set(true);
-                 passivated.set(false);
-                 activationCount.incrementAndGet();
-               });
-             });
-           } else {
+           syncOrAsync(a, async, () -> {
              log("activated\n");
              assertTrue(activating.get());
              assertFalse(activated.get());
@@ -92,7 +77,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
              activated.set(true);
              passivated.set(false);
              activationCount.incrementAndGet();
-           }
+           });
          })
          .act((a, m) -> {
            log("act %d\n", m.<Integer>body());
@@ -113,22 +98,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
            activated.set(false);
            passivating.set(true);
 
-           if (async) {
-             // ask once and wait for a response
-             a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
-               // ask a second time... for good measure
-               a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
-                 log("passivated\n");
-                 assertFalse(activating.get());
-                 assertFalse(activated.get());
-                 assertTrue(passivating.get());
-                 assertFalse(passivated.get());
-                 passivating.set(false);
-                 passivated.set(true);
-                 passivationCount.incrementAndGet();
-               });
-             });
-           } else {
+           syncOrAsync(a, async, () -> {
              log("passivated\n");
              assertFalse(activating.get());
              assertFalse(activated.get());
@@ -137,7 +107,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
              passivating.set(false);
              passivated.set(true);
              passivationCount.incrementAndGet();
-           }
+           });
          }))
     .when(ECHO).lambda((a, m) -> a.reply(m).tell())
     .ingress().act(a -> {
@@ -160,6 +130,20 @@ public final class StatelessLifeCycleTest implements TestSupport {
     assertTrue(passivationCount.get() >= 1);
     
     log("passivations: %d\n", passivationCount.get());
+  }
+  
+  private void syncOrAsync(Activation a, boolean async, Runnable run) {
+    if (async) {
+      // ask once and wait for a response
+      a.to(ActorRef.of(ECHO)).ask().onResponse(r -> {
+        // ask a second time... for good measure
+        a.to(ActorRef.of(ECHO)).ask().onResponse(r2 -> {
+          run.run();
+        });
+      });
+    } else {
+      run.run();
+    }
   }
   
   private static List<Integer> sequenceTo(int n) {

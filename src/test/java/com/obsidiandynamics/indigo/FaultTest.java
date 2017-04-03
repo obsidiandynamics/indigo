@@ -72,35 +72,7 @@ public final class FaultTest implements TestSupport {
     .use(StatelessLambdaActor.builder()
          .activated(a -> {
            log("activating\n");
-           if (async) {
-             a.egress(() -> null)
-             .using(external)
-             .await(1_000).onTimeout(() -> {
-               log("egress timed out\n");
-               fail("egress timed out");
-             })
-             .onResponse(r -> {
-               if (activationAttempts.getAndIncrement() % 2 == 0) {
-                 log("fault\n");
-                 a.fault("boom");
-                 failedActivations.incrementAndGet();
-                 
-                 a.egress(() -> null)
-                 .using(external)
-                 .await(1_000).onTimeout(() -> {
-                   log("egress timed out\n");
-                   fail("egress timed out");
-                 })
-                 .onResponse(r2 -> {
-                   log("egress responded\n");
-                   fail("egress responded");
-                 });
-                 Thread.yield();
-               } else {
-                 log("activated\n");
-               }
-             });
-           } else {
+           syncOrAsync(a, external, async, () -> {
              if (activationAttempts.getAndIncrement() % 2 == 0) {
                log("fault\n");
                a.fault("boom");
@@ -120,7 +92,7 @@ public final class FaultTest implements TestSupport {
              } else {
                log("activated\n");
              }
-           }
+           });
          })
          .act((a, m) -> {
            log("act %d\n", m.<Integer>body());
@@ -283,5 +255,114 @@ public final class FaultTest implements TestSupport {
     log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
     assertTrue(activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
+  }
+  
+  @Test
+  public void testOnPassivationSyncUnbiased() {
+    testOnPassivation(false, 100 * SCALE, 1);
+  }
+  
+  @Test
+  public void testOnPassivationSyncBiased() {
+    testOnPassivation(false, 100 * SCALE, 10);
+  }
+  
+  @Test
+  public void testOnPassivationAsyncUnbiased() {
+    testOnPassivation(true, 100 * SCALE, 1);
+  }
+  
+  @Test
+  public void testOnPassivationAsyncBiased() {
+    testOnPassivation(true, 100 * SCALE, 10);
+  }
+  
+  private void testOnPassivation(boolean async, int n, int actorBias) {
+    logTestName();
+    
+    final AtomicInteger passivationAttempts = new AtomicInteger();
+    final AtomicInteger received = new AtomicInteger();
+    final AtomicInteger failedPassivations = new AtomicInteger();
+    final AtomicBoolean passivationFailed = new AtomicBoolean();
+    final AtomicInteger passivated = new AtomicInteger();
+    
+    final ExecutorService external = Executors.newSingleThreadExecutor();
+
+    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    .define()
+    .when(SINK)
+    .use(StatelessLambdaActor.builder()
+         .activated(a -> {
+           log("activated\n");
+           assertFalse(passivationFailed.get());
+         })
+         .act((a, m) -> {
+           log("act %d\n", m.<Integer>body());
+           passivationFailed.set(false);
+           received.getAndIncrement();
+           a.passivate();
+         })
+         .passivated(a -> {
+           log("passivating\n");
+           syncOrAsync(a, external, async, () -> {
+             if (passivationAttempts.getAndIncrement() % 2 == 0) {
+               log("fault\n");
+               a.fault("boom");
+               failedPassivations.incrementAndGet();
+               passivationFailed.set(true);
+               
+               a.egress(() -> null)
+               .using(external)
+               .await(1_000).onTimeout(() -> {
+                 log("egress timed out\n");
+                 fail("egress timed out");
+               })
+               .onResponse(r -> {
+                 log("egress responded\n");
+                 fail("egress responded");
+               });
+               Thread.yield();
+             } else {
+               passivated.incrementAndGet();
+               log("passivated\n");
+             }
+           });
+         })
+    )
+    .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i));
+    
+    try {
+      system.drain();
+      external.shutdown();
+      external.awaitTermination(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) { throw new RuntimeException(e); }
+    system.shutdown();
+    
+    log("passivationAttempts: %s, failedPassivations: %s, received: %s, passivated: %s\n",
+        passivationAttempts, failedPassivations, received, passivated);
+    assertTrue(failedPassivations.get() >= 1);
+    assertTrue(passivationAttempts.get() >= failedPassivations.get());
+    assertTrue(received.get() == n);
+    assertTrue(passivated.get() == passivationAttempts.get() - failedPassivations.get());
+  }
+  
+  private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {
+    if (async) {
+      a.egress(() -> null)
+      .using(external)
+      .await(1_000).onTimeout(() -> {
+        log("egress timed out\n");
+        fail("egress timed out");
+      })
+      .onFault(f -> {
+        log("egress faulted\n");
+        fail("egress faulted");
+      })
+      .onResponse(r -> {
+        run.run();
+      });
+    } else {
+      run.run();
+    }
   }
 }
