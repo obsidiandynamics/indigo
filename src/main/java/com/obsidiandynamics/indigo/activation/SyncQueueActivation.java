@@ -103,6 +103,8 @@ public final class SyncQueueActivation extends Activation {
   }
   
   private boolean shouldThrottle() {
-    return backlog.size() >= actorConfig.backlogThrottleCapacity;
+    synchronized (backlog) {
+      return backlog.size() >= actorConfig.backlogThrottleCapacity;
+    }
   }
 }
