@@ -11,7 +11,7 @@ public final class AllTestsSoak {
     final int n = 10;
 
     for (int c = 1; c <= cycles; c++) {
-      System.out.format("Cycle %d/%d\n", c, cycles);
+      System.out.format("_\nCycle %d/%d\n", c, cycles);
       test(n, ActorConfig.ActivationChoice.SYNC_QUEUE);
       test(n, ActorConfig.ActivationChoice.NODE_QUEUE);
     }

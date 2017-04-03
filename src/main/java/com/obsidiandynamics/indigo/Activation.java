@@ -250,7 +250,7 @@ public abstract class Activation {
     switch (state) {
       case ACTIVATING:
       case PASSIVATING:
-        stash(Functions::alwaysTrue);
+        _stash(Functions::alwaysTrue);
         break;
         
       default:
@@ -303,7 +303,7 @@ public abstract class Activation {
         
         if (faultReason != null) {
           clearPending();
-          unstash();
+          _unstash();
           raiseFault(ON_ACTIVATION, message);
           state = PASSIVATED;
           return false;
@@ -332,7 +332,7 @@ public abstract class Activation {
       
       if (faultReason != null) {
         clearPending();
-        unstash();
+        _unstash();
         raiseFault(ON_PASSIVATION, null);
         state = ACTIVATED;
       } else if (pending.isEmpty()) {
@@ -424,7 +424,7 @@ public abstract class Activation {
       switch (state) {
         case ACTIVATING:
           clearPending();
-          unstash();
+          _unstash();
           if (stash != null && ! stash.messages.isEmpty()) {
             stash.messages.remove(0);
           }
@@ -433,7 +433,7 @@ public abstract class Activation {
           
         case PASSIVATING:
           clearPending();
-          unstash();
+          _unstash();
           state = ACTIVATED;
           break;
           
@@ -443,12 +443,12 @@ public abstract class Activation {
     } else if (pending.isEmpty()) {
       switch (state) {
         case ACTIVATING:
-          unstash();
+          _unstash();
           state = ACTIVATED;
           break;
           
         case PASSIVATING:
-          unstash();
+          _unstash();
           state = PASSIVATED;
           break;
           
@@ -472,8 +472,52 @@ public abstract class Activation {
       }
     }
   }
-  
+
+  /**
+   *  Stashes all unsolicited messages that test <code>true</code> to the given filter.<p>
+   *  
+   *  This method can only be called from the act method (or lambda); it cannot be called during
+   *  activation or passivation. (Stashing is implicit during a state transition.)<p>
+   *  
+   *  This method is idempotent; calling it twice with the same filter has no further affect.
+   *  Calling it with a different filter will replace the acting filter while preserving the 
+   *  existing stash.
+   *  
+   *  @param filter The filter.
+   */
   public final void stash(Predicate<Message> filter) {
+    switch (state) {
+      case ACTIVATING:
+      case PASSIVATING:
+        throw new IllegalStateException("Cannot stash during a life-cycle transition");
+        
+      default:
+        _stash(filter);
+        break;
+    }
+  }
+  
+  /**
+   *  Unstashes all previously stashed messages.<p>
+   *  
+   *  This method can only be called from the act method (or lambda); it cannot be called during
+   *  activation or passivation. (Stashing is implicit during a state transition.)<p>
+   *  
+   *  This method is idempotent; calling it twice has no further affect.
+   */
+  public final void unstash() {
+    switch (state) {
+      case ACTIVATING:
+      case PASSIVATING:
+        throw new IllegalStateException("Cannot unstash during a life-cycle transition");
+        
+      default:
+        _unstash();
+        break;
+    }
+  }
+  
+  private void _stash(Predicate<Message> filter) {
     if (stash != null) {
       stash.unstashing = false;
     } else {
@@ -482,7 +526,7 @@ public abstract class Activation {
     stash.filter = filter;
   }
   
-  public final void unstash() {
+  private void _unstash() {
     if (stash == null) return;
     stash.unstashing = true;
   }
