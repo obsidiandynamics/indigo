@@ -273,8 +273,9 @@ public abstract class Activation {
   }
   
   private void raiseFault(FaultType type, Message originalMessage) {
-    if (originalMessage.requestId() != null && originalMessage.from() != null) {
-      final Fault fault = new Fault(type, originalMessage, faultReason);
+    final Fault fault = new Fault(type, originalMessage, faultReason);
+    if (originalMessage != null && originalMessage.requestId() != null && 
+        ! originalMessage.isResponse() && originalMessage.from() != null) {
       send(new Message(ref, originalMessage.from(), fault, originalMessage.requestId(), true));
     }
     //TODO send to DLQ
