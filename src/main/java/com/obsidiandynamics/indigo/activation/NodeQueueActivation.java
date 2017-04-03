@@ -151,7 +151,6 @@ public final class NodeQueueActivation extends Activation {
           passivateIfScheduled();
           if (! park(h)) {
             schedulePark(h);
-          } else {
           }
           return;
         }
