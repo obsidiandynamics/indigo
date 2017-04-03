@@ -28,16 +28,21 @@ public final class ParallelJob implements Runnable {
   private static ParallelJob create(int threads, boolean blocking, Consumer<Integer> r) {
     final CountDownLatch latch = new CountDownLatch(threads);
     final CyclicBarrier barrier = new CyclicBarrier(threads + 1);
+    final String threadNameFormat = "ParRunner-%0" + numDigits(threads) + "d";
     for (int i = 0; i < threads; i++) {
       final int _i = i;
       final Thread t = new Thread(() ->  {
         Threads.await(barrier);
         r.accept(_i);
         if (latch != null) latch.countDown();
-      });
+      }, String.format(threadNameFormat, i));
       t.start();
     }
     return new ParallelJob(latch, barrier);
+  }
+  
+  private static int numDigits(int num) {
+    return String.valueOf(num).length();
   }
   
   @Override
