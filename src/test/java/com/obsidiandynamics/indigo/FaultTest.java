@@ -192,6 +192,7 @@ public final class FaultTest implements TestSupport {
     assertTrue(activationAttempts.get() >= failedActivations.get());
     assertTrue(received.get() + failedActivations.get() == n);
     assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
+    assertTrue(failedActivations.get() == system.getDeadLetterQueue().size());
   }
   
   @Test
@@ -210,7 +211,7 @@ public final class FaultTest implements TestSupport {
     final AtomicInteger faults = new AtomicInteger();
     final AtomicInteger activationAttempts = new AtomicInteger();
     
-    system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
     .define()
     .when(SINK).lambda((a, m) -> {
       log("sink asking\n");
@@ -249,12 +250,13 @@ public final class FaultTest implements TestSupport {
     .ingress().times(n).act((a, i) -> {
       log("telling sink %d\n", i);
       a.to(ActorRef.of(SINK)).tell(i);
-    })
-    .shutdown();
+    });
+    system.shutdown();
 
     log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
     assertTrue(activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
+    assertTrue(faults.get() == system.getDeadLetterQueue().size());
   }
   
   @Test
@@ -342,8 +344,9 @@ public final class FaultTest implements TestSupport {
         passivationAttempts, failedPassivations, received, passivated);
     assertTrue(failedPassivations.get() >= 1);
     assertTrue(passivationAttempts.get() >= failedPassivations.get());
-    assertTrue(received.get() == n);
+    assertEquals(n, received.get());
     assertTrue(passivated.get() == passivationAttempts.get() - failedPassivations.get());
+    assertTrue(failedPassivations.get() == system.getDeadLetterQueue().size());
   }
   
   @Test
@@ -386,6 +389,7 @@ public final class FaultTest implements TestSupport {
     system.shutdown();
     
     assertEquals(n, faults.get());
+    assertEquals(n, system.getDeadLetterQueue().size());
   }
   
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {

@@ -26,6 +26,8 @@ public final class ActorSystem {
   
   private final List<Throwable> errors = new CopyOnWriteArrayList<>();
   
+  private final BlockingQueue<Fault> deadLetterQueue = new LinkedBlockingQueue<>();
+  
   private long nextActivationId = Crypto.machineRandom();
   
   private static final class ActorSetup {
@@ -187,6 +189,16 @@ public final class ActorSystem {
       .onResponse(r -> f.complete(r.body()))
     );
     return f;
+  }
+  
+  void addToDeadLetterQueue(Fault fault) {
+    try {
+      deadLetterQueue.put(fault);
+    } catch (InterruptedException e) { throw new RuntimeException(e); }
+  }
+  
+  public Queue<Fault> getDeadLetterQueue() {
+    return deadLetterQueue;
   }
   
   public void _dispatch(Runnable r) {

@@ -160,7 +160,7 @@ public abstract class Activation {
           } catch (Throwable t) {
             actorConfig.exceptionHandler.accept(system, t);
             final Fault fault = new Fault(ON_EGRESS, null, t);
-            addToDLQ(fault);
+            addToDeadLetterQueue(fault);
             if (requestId != null) {
               final Message resp = new Message(null, ref, fault, requestId, true);
               system.send(resp);
@@ -285,12 +285,12 @@ public abstract class Activation {
         ! originalMessage.isResponse() && originalMessage.from() != null) {
       send(new Message(ref, originalMessage.from(), fault, originalMessage.requestId(), true));
     }
-    addToDLQ(fault);
+    addToDeadLetterQueue(fault);
     faultReason = null;
   }
   
-  private void addToDLQ(Fault fault) {
-    //TODO
+  private void addToDeadLetterQueue(Fault fault) {
+    system.addToDeadLetterQueue(fault);
   }
   
   private boolean checkAndRaiseFault(FaultType type, Message originalMessage) {
