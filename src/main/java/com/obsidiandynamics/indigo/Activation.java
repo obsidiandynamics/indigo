@@ -452,6 +452,7 @@ public abstract class Activation {
           state = PASSIVATED;
           fault(fault.getReason());
           raiseFault(ON_ACTIVATION, activatingMessage);
+          activatingMessage = null;
           break;
           
         case PASSIVATING:
