@@ -195,6 +195,10 @@ public final class ActorSystem {
     try {
       deadLetterQueue.put(fault);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
+    
+    while (deadLetterQueue.size() > config.deadLetterQueueSize) {
+      deadLetterQueue.poll();
+    }
   }
   
   public Queue<Fault> getDeadLetterQueue() {
