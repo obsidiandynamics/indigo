@@ -123,6 +123,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
+        backlogThrottleTries = 1;
       }};
     }}
     .define()

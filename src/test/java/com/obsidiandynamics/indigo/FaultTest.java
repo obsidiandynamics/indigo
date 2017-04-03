@@ -1,7 +1,9 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.FaultType.*;
 import static junit.framework.TestCase.*;
 
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
@@ -9,8 +11,6 @@ import org.junit.*;
 
 public final class FaultTest implements TestSupport {
   private static final int SCALE = 1;
-  
-  private static final int DEF_BACKLOG_THROTTLE_CAPACITY = 10;
   
   private static final String SINK = "sink";
   private static final String ECHO = "echo";
@@ -21,7 +21,7 @@ public final class FaultTest implements TestSupport {
     TestException(String m) { super(m); }
   }
   
-  private static ActorSystemConfig system(int actorBias, int actorBacklogThrottleCapacity) {
+  private static ActorSystemConfig system(int actorBias) {
     return new TestActorSystemConfig() {{
       exceptionHandler = (sys, t) -> {
         if (! (t instanceof TestException)) {
@@ -31,7 +31,7 @@ public final class FaultTest implements TestSupport {
       };
       defaultActorConfig = new ActorConfig() {{
         bias = actorBias;
-        backlogThrottleCapacity = actorBacklogThrottleCapacity;
+        backlogThrottleCapacity = 10;
       }};
     }};
   }
@@ -66,7 +66,7 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
-    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    final ActorSystem system = system(actorBias)
     .define()
     .when(SINK)
     .use(StatelessLambdaActor.builder()
@@ -119,6 +119,14 @@ public final class FaultTest implements TestSupport {
     assertTrue(activationAttempts.get() >= failedActivations.get());
     assertTrue(received.get() + failedActivations.get() == n);
     assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
+    if (async) {
+      assertTrue(failedActivations.get() * 2 == system.getDeadLetterQueue().size());
+      assertTrue(failedActivations.get() == count(ON_ACTIVATION, system.getDeadLetterQueue()));
+      assertTrue(failedActivations.get() == count(ON_RESPONSE, system.getDeadLetterQueue()));
+    } else {
+      assertTrue(failedActivations.get() == system.getDeadLetterQueue().size());
+      assertTrue(failedActivations.get() == count(ON_ACTIVATION, system.getDeadLetterQueue()));
+    }
   }
   
   @Test
@@ -141,7 +149,7 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
-    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    final ActorSystem system = system(actorBias)
     .define()
     .when(SINK)
     .use(StatelessLambdaActor.builder()
@@ -193,6 +201,7 @@ public final class FaultTest implements TestSupport {
     assertTrue(received.get() + failedActivations.get() == n);
     assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
     assertTrue(failedActivations.get() == system.getDeadLetterQueue().size());
+    assertTrue(failedActivations.get() == count(ON_ACTIVATION, system.getDeadLetterQueue()));
   }
   
   @Test
@@ -211,7 +220,7 @@ public final class FaultTest implements TestSupport {
     final AtomicInteger faults = new AtomicInteger();
     final AtomicInteger activationAttempts = new AtomicInteger();
     
-    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    final ActorSystem system = system(actorBias)
     .define()
     .when(SINK).lambda((a, m) -> {
       log("sink asking\n");
@@ -230,10 +239,7 @@ public final class FaultTest implements TestSupport {
         fail("echo responded");
       });
     })
-    .when(ECHO).configure(new ActorConfig() {{
-      // don't exert backpressure on the sink
-      backlogThrottleCapacity = Integer.MAX_VALUE;
-    }})
+    .when(ECHO)
     .use(StatelessLambdaActor.builder()
          .activated(a -> {
            log("echo activating\n");
@@ -257,6 +263,7 @@ public final class FaultTest implements TestSupport {
     assertTrue(activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
     assertTrue(faults.get() == system.getDeadLetterQueue().size());
+    assertTrue(count(ON_ACTIVATION, system.getDeadLetterQueue()) + count(ON_ACT, system.getDeadLetterQueue()) == faults.get());
   }
   
   @Test
@@ -290,7 +297,7 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
-    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    final ActorSystem system = system(actorBias)
     .define()
     .when(SINK)
     .use(StatelessLambdaActor.builder()
@@ -346,7 +353,14 @@ public final class FaultTest implements TestSupport {
     assertTrue(passivationAttempts.get() >= failedPassivations.get());
     assertEquals(n, received.get());
     assertTrue(passivated.get() == passivationAttempts.get() - failedPassivations.get());
-    assertTrue(failedPassivations.get() == system.getDeadLetterQueue().size());
+    if (async) {
+      assertTrue(failedPassivations.get() * 2 == system.getDeadLetterQueue().size());
+      assertEquals(failedPassivations.get(), count(ON_PASSIVATION, system.getDeadLetterQueue()));
+      assertEquals(failedPassivations.get(), count(ON_RESPONSE, system.getDeadLetterQueue()));
+    } else {
+      assertTrue(failedPassivations.get() == system.getDeadLetterQueue().size());
+      assertEquals(failedPassivations.get(), count(ON_PASSIVATION, system.getDeadLetterQueue()));
+    }
   }
   
   @Test
@@ -361,7 +375,7 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
     
-    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    final ActorSystem system = system(actorBias)
     .define()
     .ingress().times(n).act((a, i) -> {
       a.egress(() -> {
@@ -390,6 +404,84 @@ public final class FaultTest implements TestSupport {
     
     assertEquals(n, faults.get());
     assertEquals(n, system.getDeadLetterQueue().size());
+    assertEquals(n, count(ON_EGRESS, system.getDeadLetterQueue()));
+  }
+  
+  @Test
+  public void testOnFault() {
+    testOnFault(100 * SCALE, 10);
+  }
+  
+  private void testOnFault(int n, int actorBias) {
+    logTestName();
+    
+    final ActorSystem system = system(actorBias)
+    .define()
+    .when(SINK).lambda((a, m) -> {
+      log("sink act %d\n", m.<Integer>body());
+      a.fault("fault in act");
+    })
+    .ingress().times(n).act((a, i) -> {
+      log("asking sink %d\n", i);
+      a.to(ActorRef.of(SINK)).ask(i)
+      .await(1_000).onTimeout(() -> {
+        log("sink timed out\n");
+        fail("sink timed out");
+      })
+      .onFault(f -> {
+        a.fault("fault in onFault");
+      })
+      .onResponse(r -> {
+        log("sink responded\n");
+        fail("sink responded");
+      });
+    });
+    
+    system.shutdown();
+    assertEquals(n * 2, system.getDeadLetterQueue().size());
+    assertEquals(n, count(ON_ACT, system.getDeadLetterQueue()));
+    assertEquals(n, count(ON_FAULT, system.getDeadLetterQueue()));
+  }
+  
+  @Test
+  public void testOnTimeout() {
+    testOnTimeout(100 * SCALE, 10);
+  }
+  
+  private void testOnTimeout(int n, int actorBias) {
+    logTestName();
+    
+    final ActorSystem system = system(actorBias)
+    .define()
+    .when(SINK).lambda((a, m) -> { /* stall the response */ })
+    .ingress().times(n).act((a, i) -> {
+      a.to(ActorRef.of(SINK)).ask()
+      .await(1).onTimeout(() -> {
+        a.fault("fault in onTimeout");
+      })
+      .onFault(f -> {
+        log("sink faulted\n");
+        fail("sink faulted");
+      })
+      .onResponse(r -> {
+        log("sink responded\n");
+        fail("sink responded");
+      });
+    });
+    
+    system.shutdown();
+    assertEquals(n, system.getDeadLetterQueue().size());
+    assertEquals(n, count(ON_TIMEOUT, system.getDeadLetterQueue()));
+  }
+  
+  private static int count(FaultType type, Queue<Fault> deadLetterQueue) {
+    int count = 0;
+    for (Fault fault : deadLetterQueue) {
+      if (fault.getType() == type) {
+        count++;
+      }
+    }
+    return count;
   }
   
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {

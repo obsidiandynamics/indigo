@@ -32,6 +32,8 @@ public abstract class Activation {
   
   private Object faultReason;
   
+  private Message activatingMessage;
+  
   protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
     this.id = id;
     this.ref = ref;
@@ -279,7 +281,7 @@ public abstract class Activation {
     pending.clear();
   }
   
-  private void raiseFault(FaultType type, Message originalMessage) {
+  private Fault raiseFault(FaultType type, Message originalMessage) {
     final Fault fault = new Fault(type, originalMessage, faultReason);
     if (originalMessage != null && originalMessage.requestId() != null && 
         ! originalMessage.isResponse() && originalMessage.from() != null) {
@@ -287,18 +289,18 @@ public abstract class Activation {
     }
     addToDeadLetterQueue(fault);
     faultReason = null;
+    return fault;
   }
   
   private void addToDeadLetterQueue(Fault fault) {
     system.addToDeadLetterQueue(fault);
   }
   
-  private boolean checkAndRaiseFault(FaultType type, Message originalMessage) {
+  private Fault checkAndRaiseFault(FaultType type, Message originalMessage) {
     if (faultReason != null) {
-      raiseFault(type, originalMessage);
-      return true;
+      return raiseFault(type, originalMessage);
     } else {
-      return false;
+      return null;
     }
   }
   
@@ -323,6 +325,7 @@ public abstract class Activation {
           state = ACTIVATED;
           return true;
         } else {
+          activatingMessage = message;
           return true;
         }
         
@@ -387,7 +390,7 @@ public abstract class Activation {
   private void processSolicited(Message message) {
     final PendingRequest req = pending.remove(message.requestId());
     final Object body = message.body();
-    boolean fault = false;
+    Fault fault = null;
     if (body instanceof Signal) {
       if (body instanceof Timeout) {
         if (req != null && ! req.isComplete()) {
@@ -432,7 +435,7 @@ public abstract class Activation {
       }
     }
     
-    if (fault) {
+    if (fault != null) {
       switch (state) {
         case ACTIVATING:
           clearPending();
@@ -441,12 +444,16 @@ public abstract class Activation {
             stash.messages.remove(0);
           }
           state = PASSIVATED;
+          fault(fault.getReason());
+          raiseFault(ON_ACTIVATION, activatingMessage);
           break;
           
         case PASSIVATING:
           clearPending();
           _unstash();
           state = ACTIVATED;
+          fault(fault.getReason());
+          raiseFault(ON_PASSIVATION, null);
           break;
           
         default:
@@ -456,6 +463,7 @@ public abstract class Activation {
       switch (state) {
         case ACTIVATING:
           _unstash();
+          activatingMessage = null;
           state = ACTIVATED;
           break;
           

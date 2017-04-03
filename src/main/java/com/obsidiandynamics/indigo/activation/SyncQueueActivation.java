@@ -32,7 +32,7 @@ public final class SyncQueueActivation extends Activation {
         noBacklog = ! on && backlog.isEmpty();
         noPending = pending.isEmpty();
         
-        throttleBacklog = shouldThrottle();
+        throttleBacklog = ! m.isResponse() && shouldThrottle();
         if (! throttleBacklog) {
           backlog.add(m);
         }
