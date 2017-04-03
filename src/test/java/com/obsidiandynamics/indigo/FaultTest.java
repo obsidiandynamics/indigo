@@ -9,6 +9,8 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class FaultTest implements TestSupport {
   private static final int SCALE = 1;
   
@@ -365,11 +367,17 @@ public final class FaultTest implements TestSupport {
   
   @Test
   public void testOnEgressBiased() {
-    testOnEgress(100 * SCALE, 10);
+    int mod = 100;
+    ParallelJob.blocking(1, t -> {
+      for (int i = 0; i < 10000; i++) {
+        testOnEgress(100 * SCALE, 10);
+        if (i % mod == 0) System.out.println("running " + (i / mod));
+      }
+    }).run();
   }
   
   private void testOnEgress(int n, int actorBias) {
-    logTestName();
+    //logTestName();
     
     final AtomicInteger faults = new AtomicInteger();
     
@@ -393,6 +401,8 @@ public final class FaultTest implements TestSupport {
         log("egress responded\n");
         fail("egress responded");
       });
+      Thread.yield();//TODO remove
+      //Threads.sleep(1);
     });
     
     try {
