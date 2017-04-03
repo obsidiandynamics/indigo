@@ -113,6 +113,8 @@ public abstract class Activation {
       return this;
     }
     
+    private TimeoutTask timeoutTask;
+    
     public void onResponse(Consumer<Message> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
         throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
@@ -125,14 +127,18 @@ public abstract class Activation {
         target.send(requestBody, requestId);
         
         if (timeoutMillis != 0) {
-          final TimeoutTask timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
-                                                          requestId,
-                                                          Activation.this,
-                                                          req);
+          timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
+                                        requestId,
+                                        Activation.this,
+                                        req);
           req.setTimeoutTask(timeoutTask);
           system.getTimeoutWatchdog().enqueue(timeoutTask);
         }
       }
+    }
+    
+    TimeoutTask getTimeoutTask() {
+      return timeoutTask;
     }
     
     public void tell() {

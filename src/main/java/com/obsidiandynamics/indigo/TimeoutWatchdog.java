@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 final class TimeoutWatchdog extends Thread {
+  private static final Timeout TIMEOUT_SIGNAL = new Timeout();
+  
   /** Maximum sleep time. If the expiry time is longer, the sleep will be performed in a loop.
    *  This is also the default time that the timer sleeps for if it has no timeout tasks. */
   private static final long MAX_SLEEP_NANOS = 1_000_000_000l;
@@ -105,10 +107,15 @@ final class TimeoutWatchdog extends Thread {
         if (forceTimeout || System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
           timeouts.remove(first);
           if (! first.getRequest().isComplete()) {
-            system.send(new Message(null, first.getActivation().self(), new Timeout(), first.getRequestId(), true));
+            system.send(new Message(null, first.getActivation().self(), TIMEOUT_SIGNAL, first.getRequestId(), true));
           }
         }
       } catch (NoSuchElementException e) {} // in case the task was dequeued in the meantime
     }
+  }
+  
+  void timeout(TimeoutTask timeoutTask) {
+    dequeue(timeoutTask);
+    system.send(new Message(null, timeoutTask.getActivation().self(), TIMEOUT_SIGNAL, timeoutTask.getRequestId(), true));
   }
 }

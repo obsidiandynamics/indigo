@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
+import com.obsidiandynamics.indigo.Activation.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ActorSystem {
@@ -183,11 +184,26 @@ public final class ActorSystem {
    */
   public <T> CompletableFuture<T> ask(ActorRef ref, long timeoutMillisUpperBound, Object requestBody) {
     final CompletableFuture<T> f = new CompletableFuture<>();
-    ingress(a -> 
-      a.to(ref).ask(requestBody).await(timeoutMillisUpperBound)
-      .onTimeout(() -> f.completeExceptionally(new TimeoutException()))
-      .onResponse(r -> f.complete(r.body()))
-    );
+    
+    final AtomicReference<TimeoutTask> timeoutTaskHolder = new AtomicReference<>();
+    ingress(a -> {
+      if (! f.isCancelled()) {
+        final MessageBuilder mb = a.to(ref);
+        mb.ask(requestBody).await(timeoutMillisUpperBound)
+        .onTimeout(() -> f.completeExceptionally(new TimeoutException()))
+        .onResponse(r -> f.complete(r.body()));
+        timeoutTaskHolder.set(mb.getTimeoutTask());
+      }
+    });
+    
+    f.whenComplete((t, x) -> {
+      if (f.isCancelled()) {
+        final TimeoutTask timeoutTask = timeoutTaskHolder.get();
+        if (timeoutTask != null) {
+          timeoutWatchdog.timeout(timeoutTaskHolder.get());
+        }
+      }
+    });
     return f;
   }
   

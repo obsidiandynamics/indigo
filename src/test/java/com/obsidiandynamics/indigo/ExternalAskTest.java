@@ -38,7 +38,7 @@ public final class ExternalAskTest implements TestSupport {
     try {
       f.get(10, TimeUnit.MILLISECONDS);
     } finally {
-      system.forceTimeout();
+      f.cancel(false);
       system.shutdown();
     }
   }
