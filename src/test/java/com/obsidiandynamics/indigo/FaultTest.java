@@ -346,6 +346,48 @@ public final class FaultTest implements TestSupport {
     assertTrue(passivated.get() == passivationAttempts.get() - failedPassivations.get());
   }
   
+  @Test
+  public void testOnEgressBiased() {
+    testOnEgress(100 * SCALE, 10);
+  }
+  
+  private void testOnEgress(int n, int actorBias) {
+    logTestName();
+    
+    final AtomicInteger faults = new AtomicInteger();
+    
+    final ExecutorService external = Executors.newSingleThreadExecutor();
+    
+    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
+    .define()
+    .ingress().times(n).act((a, i) -> {
+      a.egress(() -> {
+        throw new TestException("Fault in egress");
+      })
+      .using(external)
+      .await(1_000).onTimeout(() -> {
+        log("egress timed out\n");
+        fail("egress timed out");
+      })
+      .onFault(f -> {
+        faults.incrementAndGet();
+      })
+      .onResponse(r -> {
+        log("egress responded\n");
+        fail("egress responded");
+      });
+    });
+    
+    try {
+      system.drain();
+      external.shutdown();
+      external.awaitTermination(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) { throw new RuntimeException(e); }
+    system.shutdown();
+    
+    assertEquals(n, faults.get());
+  }
+  
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {
     if (async) {
       a.egress(() -> null)

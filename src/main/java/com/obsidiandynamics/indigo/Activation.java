@@ -159,8 +159,15 @@ public abstract class Activation {
             out = func.apply((I) body);
           } catch (Throwable t) {
             actorConfig.exceptionHandler.accept(system, t);
+            final Fault fault = new Fault(ON_EGRESS, null, t);
+            addToDLQ(fault);
+            if (requestId != null) {
+              final Message resp = new Message(null, ref, fault, requestId, true);
+              system.send(resp);
+            }
             return;
           }
+          
           if (requestId != null) {
             final Message resp = new Message(null, ref, out, requestId, true);
             system.send(resp);
@@ -278,8 +285,12 @@ public abstract class Activation {
         ! originalMessage.isResponse() && originalMessage.from() != null) {
       send(new Message(ref, originalMessage.from(), fault, originalMessage.requestId(), true));
     }
-    //TODO send to DLQ
+    addToDLQ(fault);
     faultReason = null;
+  }
+  
+  private void addToDLQ(Fault fault) {
+    //TODO
   }
   
   private boolean checkAndRaiseFault(FaultType type, Message originalMessage) {
