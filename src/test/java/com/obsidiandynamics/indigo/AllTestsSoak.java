@@ -9,19 +9,19 @@ public final class AllTestsSoak {
   public static void main(String[] args) {
     final int cycles = 4;
     final int n = 10;
+    final int threads = Runtime.getRuntime().availableProcessors() * 4;
 
     for (int c = 1; c <= cycles; c++) {
       System.out.format("_\nCycle %d/%d\n", c, cycles);
-      test(n, ActorConfig.ActivationChoice.SYNC_QUEUE);
-      test(n, ActorConfig.ActivationChoice.NODE_QUEUE);
+      test(n, threads, ActorConfig.ActivationChoice.SYNC_QUEUE);
+      test(n, threads, ActorConfig.ActivationChoice.NODE_QUEUE);
     }
   }
   
-  private static void test(int n, ActorConfig.ActivationChoice activationChoice) {
+  private static void test(int n, int threads, ActorConfig.ActivationChoice activationChoice) {
     System.out.format("_\nTesting with %s\n", activationChoice);
     System.setProperty(ActorConfig.Key.ACTIVATION_FACTORY, activationChoice.name());
     
-    final int threads = Runtime.getRuntime().availableProcessors() * 1;
     final boolean logFinished = false;
     final boolean logRuns = true;
     
