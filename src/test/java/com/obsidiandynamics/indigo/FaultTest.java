@@ -10,6 +10,8 @@ import org.junit.*;
 public final class FaultTest implements TestSupport {
   private static final int SCALE = 1;
   
+  private static final int DEF_BACKLOG_THROTTLE_CAPACITY = 10;
+  
   private static final String SINK = "sink";
   private static final String ECHO = "echo";
   
@@ -19,7 +21,7 @@ public final class FaultTest implements TestSupport {
     TestException(String m) { super(m); }
   }
   
-  private static ActorSystemConfig system(int actorBias) {
+  private static ActorSystemConfig system(int actorBias, int actorBacklogThrottleCapacity) {
     return new TestActorSystemConfig() {{
       exceptionHandler = (sys, t) -> {
         if (! (t instanceof TestException)) {
@@ -29,7 +31,7 @@ public final class FaultTest implements TestSupport {
       };
       defaultActorConfig = new ActorConfig() {{
         bias = actorBias;
-        backlogThrottleCapacity = 10;
+        backlogThrottleCapacity = actorBacklogThrottleCapacity;
       }};
     }};
   }
@@ -64,7 +66,7 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
-    final ActorSystem system = system(actorBias)
+    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
     .define()
     .when(SINK)
     .use(StatelessLambdaActor.builder()
@@ -167,7 +169,7 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
-    final ActorSystem system = system(actorBias)
+    final ActorSystem system = system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
     .define()
     .when(SINK)
     .use(StatelessLambdaActor.builder()
@@ -234,18 +236,20 @@ public final class FaultTest implements TestSupport {
     logTestName();
     
     final AtomicInteger faults = new AtomicInteger();
+    final AtomicInteger activationAttempts = new AtomicInteger();
     
-    system(actorBias)
+    system(actorBias, DEF_BACKLOG_THROTTLE_CAPACITY)
     .define()
     .when(SINK).lambda((a, m) -> {
       log("sink asking\n");
+
       a.to(ActorRef.of(ECHO)).ask()
       .await(1_000).onTimeout(() -> {
         log("echo timed out\n");
         fail("echo timed out");
       })
       .onFault(f -> {
-        log("echo faulted\n");
+        log("echo faulted: %s\n", f.getReason());
         faults.getAndIncrement();
       })
       .onResponse(r -> {
@@ -253,12 +257,31 @@ public final class FaultTest implements TestSupport {
         fail("echo responded");
       });
     })
-    .when(ECHO).lambda((a, m) -> {
-      a.fault("Some error");
+    .when(ECHO).configure(new ActorConfig() {{
+      // don't exert backpressure on the sink
+      backlogThrottleCapacity = Integer.MAX_VALUE;
+    }})
+    .use(StatelessLambdaActor.builder()
+         .activated(a -> {
+           log("echo activating\n");
+           if (activationAttempts.getAndIncrement() % 2 == 0) {
+             a.fault("Error in activation");
+           }
+         })
+         .act((a, m) -> {
+           log("echo act\n");
+           a.fault("Error in act");
+           a.passivate();
+         })
+    )
+    .ingress().times(n).act((a, i) -> {
+      log("telling sink %d\n", i);
+      a.to(ActorRef.of(SINK)).tell(i);
     })
-    .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i))
     .shutdown();
-    
+
+    log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
+    assertTrue(activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
   }
 }
