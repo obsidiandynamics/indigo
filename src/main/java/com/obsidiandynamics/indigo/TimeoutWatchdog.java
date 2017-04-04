@@ -49,7 +49,9 @@ final class TimeoutWatchdog extends Thread {
     while (running) {
       synchronized (sleepLock) {
         if (! timeouts.isEmpty()) {
-          delay(timeouts.first().getExpiresAt());
+          try {
+            delay(timeouts.first().getExpiresAt());
+          } catch (NoSuchElementException e) {}
         } else {
           delay(System.nanoTime() + MAX_SLEEP_NANOS);
         }
