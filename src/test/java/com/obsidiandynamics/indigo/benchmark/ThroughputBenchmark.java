@@ -96,7 +96,7 @@ public final class ThroughputBenchmark implements TestSupport {
       }).run();
     
       try {
-        system.drain();
+        system.drain(0);
       } catch (InterruptedException e) {}
     }
     

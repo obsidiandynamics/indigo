@@ -31,6 +31,11 @@ public final class FaultTest implements TestSupport {
           t.printStackTrace();
         }
       };
+      
+      diagnostics = new Diagnostics() {{
+        traceEnabled = true;
+      }};
+      
       defaultActorConfig = new ActorConfig() {{
         bias = actorBias;
         backlogThrottleCapacity = 10;
@@ -109,7 +114,7 @@ public final class FaultTest implements TestSupport {
     .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i));
     
     try {
-      system.drain();
+      system.drain(0);
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
@@ -190,7 +195,7 @@ public final class FaultTest implements TestSupport {
     .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i));
 
     try {
-      system.drain();
+      system.drain(0);
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
@@ -343,7 +348,7 @@ public final class FaultTest implements TestSupport {
     .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i));
     
     try {
-      system.drain();
+      system.drain(0);
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
@@ -368,12 +373,12 @@ public final class FaultTest implements TestSupport {
   @Test
   public void testOnEgressBiased() {
     int mod = 100;
-    ParallelJob.blocking(1, t -> {
-      for (int i = 0; i < 10000; i++) {
+//    ParallelJob.blocking(1, t -> {
+      for (int i = 0; i < 100000; i++) {
         testOnEgress(100 * SCALE, 10);
         if (i % mod == 0) System.out.println("running " + (i / mod));
       }
-    }).run();
+//    }).run();
   }
   
   private void testOnEgress(int n, int actorBias) {
@@ -386,15 +391,20 @@ public final class FaultTest implements TestSupport {
     final ActorSystem system = system(actorBias)
     .define()
     .ingress().times(n).act((a, i) -> {
+      final Diagnostics d = a.diagnostics();
+      d.trace("act %d", i);
       a.egress(() -> {
+        //Thread.yield();//TODO remove
+        d.trace("egress %d", i);
         throw new TestException("Fault in egress");
       })
       .using(external)
-      .await(1_000).onTimeout(() -> {
-        log("egress timed out\n");
-        fail("egress timed out");
-      })
+//      .await(1_000).onTimeout(() -> {
+//        log("egress timed out\n");
+//        fail("egress timed out");
+//      })
       .onFault(f -> {
+        d.trace("fault %d", i);
         faults.incrementAndGet();
       })
       .onResponse(r -> {
@@ -405,8 +415,17 @@ public final class FaultTest implements TestSupport {
       //Threads.sleep(1);
     });
     
+    boolean error = false;
     try {
-      system.drain();
+      long left;
+      while ((left = system.drain(10000)) != 0) {
+        if (! error) {
+          error = true;
+          log("draining... faults: %s, left: %d\n", faults, left);
+          system.getConfig().diagnostics.print(LOG_STREAM);
+          //fail("drain did not complete");
+        }
+      }
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }

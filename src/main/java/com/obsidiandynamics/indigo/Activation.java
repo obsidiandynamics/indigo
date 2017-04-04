@@ -311,10 +311,13 @@ public abstract class Activation {
   }
   
   private boolean ensureActivated(Message message) {
+    final Diagnostics d = diagnostics();
+    
     switch (state) {
       case PASSIVATED:
         state = ACTIVATING;
         try {
+          if (d.traceEnabled) d.trace("activating m=%s", message);
           actor.activated(this);
         } catch (Throwable t) {
           fault(t);
@@ -363,12 +366,16 @@ public abstract class Activation {
   }
   
   protected final void processMessage(Message message) {
+    final Diagnostics d = diagnostics();
+    
     if (message.isResponse()) {
+      if (d.traceEnabled) d.trace("processing solicited m=%s", message);
       processSolicited(message);
     } else {
       if (! ensureActivated(message)) {
         return;
       }
+      if (d.traceEnabled) d.trace("processing unsolicited m=%s", message);
       processUnsolicited(message);
     }
     
@@ -556,6 +563,10 @@ public abstract class Activation {
   private void _unstash() {
     if (stash == null) return;
     stash.unstashing = true;
+  }
+  
+  public final Diagnostics diagnostics() {
+    return system.getConfig().diagnostics;
   }
   
   @Override

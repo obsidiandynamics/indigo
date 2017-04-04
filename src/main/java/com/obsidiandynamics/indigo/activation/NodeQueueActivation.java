@@ -38,41 +38,58 @@ public final class NodeQueueActivation extends Activation {
     backlogSize = actorConfig.backlogThrottleCapacity != Integer.MAX_VALUE ? new AtomicInteger() : null;
   }
   
+  int busyCount; //TODO
+  
   @Override
   public boolean enqueue(Message m) {
-    if (! m.isResponse() && shouldThrottle()) {
-      Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
-    }
-    
-    if (backlogSize != null) backlogSize.incrementAndGet();
-    
-    final Node t = new Node(m);
-    final Node t1 = tail.getAndSet(t);
-    
-    if (isDisposing()) {
-      while (! disposalComplete) {
-        Thread.yield();
-      }
-      if (backlogSize != null) backlogSize.incrementAndGet();
-      return false;
-    }
-    
-    if (t1 == null) {
-      if (pending.isEmpty()) {
-        system._incBusyActors();
+    try {
+      final Diagnostics d = diagnostics();
+      final boolean traceEnabled = d.traceEnabled;
+      if (traceEnabled) d.trace("enqueuing m=%s", m);
+      
+      if (! m.isResponse() && shouldThrottle()) {
+        if (traceEnabled) d.trace("throttling m=%s, t=%s", m, Thread.currentThread());
+        Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
       }
       
+      if (backlogSize != null) backlogSize.incrementAndGet();
+      
+      final Node t = new Node(m);
+      final Node t1 = tail.getAndSet(t);
+      
       if (isDisposing()) {
+        if (traceEnabled) d.trace("awaiting disposal m=%s", m);
         while (! disposalComplete) {
           Thread.yield();
         }
+        if (backlogSize != null) backlogSize.incrementAndGet();
         return false;
       }
-      scheduleRun(t);
-    } else {
-      t1.lazySet(t);
+      
+      if (t1 == null) {
+        if (pending.isEmpty()) {
+          busyCount++;
+          system._incBusyActors();
+        }
+        
+        if (isDisposing()) {
+          if (traceEnabled) d.trace("awaiting disposal m=%s", m);
+          while (! disposalComplete) {
+            Thread.yield();
+          }
+          return false;
+        }
+        if (traceEnabled) d.trace("scheduling m=%s", m);
+        scheduleRun(t);
+      } else {
+        t1.lazySet(t);
+      }
+      return true;
+    } catch (RuntimeException e) {
+      System.err.println("Exception in NQA.enqueue()");
+      e.printStackTrace();
+      throw e;
     }
-    return true;
   }
   
   private boolean isDisposing() {
@@ -101,6 +118,8 @@ public final class NodeQueueActivation extends Activation {
   }
   
   private boolean park(Node n) {
+    final Diagnostics d = diagnostics();
+    if (d.traceEnabled) d.trace("parking ref=%s, pending=%d", ref, pending.size());
     final boolean noPending = pending.isEmpty();
     final boolean disposing = state == PASSIVATED;
     if (disposing) {
@@ -109,12 +128,15 @@ public final class NodeQueueActivation extends Activation {
   
     final boolean parked = tail.compareAndSet(n, null);
     if (parked) {
+      if (d.traceEnabled) d.trace("parked ref=%s, busyCount=%d", ref, busyCount);
       if (noPending) {
         if (disposing) {
+          if (d.traceEnabled) d.trace("disposed ref=%s", ref);
           disposalAttemptAccepted = true;
           system._dispose(ref);
           disposalComplete = true;
         }
+        busyCount--;
         system._decBusyActors();
       }
     } else if (noPending && disposing) {
@@ -124,39 +146,47 @@ public final class NodeQueueActivation extends Activation {
   }
   
   private void run(Node h, boolean skipCurrent) {
-    int cycles = 0;
-    if (! skipCurrent) {
-      cycles++;
-      processMessage(h.m);
-    }
-    
-    int spins = 0;
     try {
-      for (;;) {
-        final Node h1 = h.get();
-        if (h1 != null) {
-          if (cycles < actorConfig.bias) {
-            h = h1;
-            cycles++;
-            processMessage(h.m);
-            spins = 0;
+      final Diagnostics d = diagnostics();
+      if (d.traceEnabled) d.trace("run h.m=%s, skipCurrent=%b", h.m, skipCurrent);
+        
+      int cycles = 0;
+      if (! skipCurrent) {
+        cycles++;
+        processMessage(h.m);
+      }
+      
+      int spins = 0;
+      try {
+        for (;;) {
+          final Node h1 = h.get();
+          if (h1 != null) {
+            if (cycles < actorConfig.bias) {
+              h = h1;
+              cycles++;
+              processMessage(h.m);
+              spins = 0;
+            } else {
+              scheduleRun(h1);
+              return;
+            }
+          } else if (spins != MAX_SPINS) {
+            spins++;
           } else {
-            scheduleRun(h1);
+            Thread.yield();
+            passivateIfScheduled();
+            if (! park(h)) {
+              schedulePark(h);
+            }
             return;
           }
-        } else if (spins != MAX_SPINS) {
-          spins++;
-        } else {
-          Thread.yield();
-          passivateIfScheduled();
-          if (! park(h)) {
-            schedulePark(h);
-          }
-          return;
         }
+      } finally {
+        if (backlogSize != null) backlogSize.addAndGet(-cycles);
       }
-    } finally {
-      if (backlogSize != null) backlogSize.addAndGet(-cycles);
+    } catch (Throwable e) {
+      System.err.println("Exception in NQA.run()");
+      e.printStackTrace();
     }
   }
   

@@ -222,6 +222,27 @@ public final class ActorSystem {
   }
   
   public void _dispatch(Runnable r) {
+//    if (executor instanceof ForkJoinPool) {
+//      final ForkJoinPool fjp = (ForkJoinPool) executor;
+//      fjp.submit(new ForkJoinTask<Void>() {
+//        private static final long serialVersionUID = 1L;
+//
+//        @Override
+//        public Void getRawResult() {
+//          return null;
+//        }
+//
+//        @Override
+//        protected void setRawResult(Void value) {
+//        }
+//
+//        @Override
+//        protected boolean exec() {
+//          r.run();
+//          return true;
+//        }
+//      });
+//    }
     executor.execute(r);
   }
   
@@ -241,17 +262,30 @@ public final class ActorSystem {
     timeoutWatchdog.forceTimeout();
   }
   
-  public ActorSystem drain() throws InterruptedException {
+  /**
+   *  Waits until all actors have completely drained their mailbox backlog.
+   *  
+   *  @param timeoutMillis The maximum amount of time to wait, or 0 for indefinite.
+   *  @return The number of backlogged actors remaining.
+   *  @throws InterruptedException
+   */
+  public long drain(long timeoutMillis) throws InterruptedException {
+    final long deadline = timeoutMillis != 0 ? System.currentTimeMillis() + timeoutMillis : 0;
     while (busyActors.sum() != 0) {
       synchronized (busyActors) {
         busyActors.wait(10);
+      }
+      
+      if (deadline != 0 && System.currentTimeMillis() > deadline) {
+        System.out.format("ActorSystem.drain(): executor=%s\n", executor.toString());
+        return busyActors.sum();
       }
       
       if (! errors.isEmpty()) {
         throw new UnhandledMultiException(errors.toArray(new Throwable[errors.size()]));
       }
     }
-    return this;
+    return 0;
   }
   
   private Activation activate(ActorRef ref) {
@@ -298,7 +332,7 @@ public final class ActorSystem {
   public void shutdown() {
     for (;;) {
       try {
-        drain();
+        drain(0);
         break;
       } catch (InterruptedException e) { throw new RuntimeException(e); }
     }

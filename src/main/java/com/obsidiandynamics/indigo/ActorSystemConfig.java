@@ -58,6 +58,10 @@ public abstract class ActorSystemConfig {
   /** Upper bound on the size of the DQL. Beyond this, truncation from the head (least recent) occurs. */
   public int deadLetterQueueSize = get(DEAD_LETTER_QUEUE_SIZE, Integer::parseInt, 10_000);
   
+  public Diagnostics diagnostics = new Diagnostics() {{
+    traceEnabled = false;
+  }};
+  
   /** The default actor configuration. */
   public ActorConfig defaultActorConfig = new ActorConfig() {};
   
