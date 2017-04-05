@@ -13,13 +13,16 @@ public final class AllTestsSoak {
 
     for (int c = 1; c <= cycles; c++) {
       System.out.format("_\nCycle %d/%d\n", c, cycles);
-      test(n, threads, ActorConfig.ActivationChoice.SYNC_QUEUE);
-      test(n, threads, ActorConfig.ActivationChoice.NODE_QUEUE);
+      test(n, threads, ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL, ActorConfig.ActivationChoice.SYNC_QUEUE);
+      test(n, threads, ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL, ActorConfig.ActivationChoice.NODE_QUEUE);
+      test(n, threads, ActorSystemConfig.ExecutorChoice.FORK_JOIN_POOL, ActorConfig.ActivationChoice.SYNC_QUEUE);
+      test(n, threads, ActorSystemConfig.ExecutorChoice.FORK_JOIN_POOL, ActorConfig.ActivationChoice.NODE_QUEUE);
     }
   }
   
-  private static void test(int n, int threads, ActorConfig.ActivationChoice activationChoice) {
-    System.out.format("_\nTesting with %s\n", activationChoice);
+  private static void test(int n, int threads, ActorSystemConfig.ExecutorChoice executorChoice, ActorConfig.ActivationChoice activationChoice) {
+    System.out.format("_\nTesting with [%s, %s]\n", executorChoice, activationChoice);
+    System.setProperty(ActorSystemConfig.Key.EXECUTOR, executorChoice.name());
     System.setProperty(ActorConfig.Key.ACTIVATION_FACTORY, activationChoice.name());
     
     final boolean logFinished = false;
