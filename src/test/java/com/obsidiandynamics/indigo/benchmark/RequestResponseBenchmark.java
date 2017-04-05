@@ -1,6 +1,5 @@
 package com.obsidiandynamics.indigo.benchmark;
 
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -10,6 +9,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.Activation.*;
+import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.benchmark.Summary.*;
 
 /**
@@ -19,6 +19,7 @@ import com.obsidiandynamics.indigo.benchmark.Summary.*;
  */
 public final class RequestResponseBenchmark implements TestSupport, BenchmarkSupport {
   abstract static class Config implements Spec {
+    ExecutorChoice executorChoice = null;
     int threads;
     int actors;
     int bias;
@@ -104,8 +105,10 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     if (log.stages) log.out.format("Warming up...\n");
     
     new TestActorSystemConfig() {{
+      if (c.executorChoice != null) {
+        executor = c.executorChoice;
+      }
       parallelism = c.threads;
-      executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
@@ -170,6 +173,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
   
   public static void main(String[] args) {
     new Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 2;
       bias = 1_000;

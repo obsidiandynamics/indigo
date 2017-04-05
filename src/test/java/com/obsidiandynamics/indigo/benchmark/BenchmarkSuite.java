@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo.benchmark;
 
+import com.obsidiandynamics.indigo.*;
+
 /**
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
  */
@@ -11,6 +13,7 @@ public final class BenchmarkSuite {
     
     System.out.println("_\nExternal messages - high throughput");
     new ThroughputBenchmark.Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 1;
       n = 4_000_000;
@@ -21,6 +24,7 @@ public final class BenchmarkSuite {
 
     System.out.println("_\nMessage echo - low latency (one hop measured)");
     new EchoBenchmark.Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = 1;
       actors = 1;
       bias = 1;
@@ -35,6 +39,7 @@ public final class BenchmarkSuite {
     
     System.out.println("_\nMessage echo - high throughput");
     new EchoBenchmark.Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 4;
       bias = 2_000;
@@ -49,6 +54,7 @@ public final class BenchmarkSuite {
     
     System.out.println("_\nMessage pairs - low latency (round-trip measured)");
     new RequestResponseBenchmark.Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = 1;
       actors = 1;
       bias = 1;
@@ -64,6 +70,7 @@ public final class BenchmarkSuite {
     
     System.out.println("_\nMessage pairs - high throughput");
     new RequestResponseBenchmark.Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 2;
       bias = 1_000;

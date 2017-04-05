@@ -1,7 +1,6 @@
 package com.obsidiandynamics.indigo.benchmark;
 
 import static com.obsidiandynamics.indigo.ActorRef.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -9,6 +8,7 @@ import java.util.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 
 /**
  *  Benchmarks raw message throughput. Nearly identical to 
@@ -18,6 +18,7 @@ import com.obsidiandynamics.indigo.*;
  */
 public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
   static abstract class Config implements Spec {
+    ExecutorChoice executorChoice = null;
     int threads;
     int actors;
     int bias;
@@ -118,8 +119,10 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     if (log.stages) log.out.format("Warming up...\n");
     
     new TestActorSystemConfig() {{
+      if (c.executorChoice != null) {
+        executor = c.executorChoice;
+      }
       parallelism = c.threads;
-      executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
@@ -187,6 +190,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
   
   public static void main(String[] args) {
     new Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors();
       actors = threads * 4;
       bias = 2_000;

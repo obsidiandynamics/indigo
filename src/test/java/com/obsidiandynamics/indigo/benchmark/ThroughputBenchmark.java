@@ -1,16 +1,16 @@
 package com.obsidiandynamics.indigo.benchmark;
 
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
-
 import java.util.concurrent.*;
 
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ThroughputBenchmark implements TestSupport {
   abstract static class Config implements Spec {
+    ExecutorChoice executorChoice = null;
     long n;
     int threads;
     int actors;
@@ -63,8 +63,10 @@ public final class ThroughputBenchmark implements TestSupport {
     final CountDownLatch latch = new CountDownLatch(c.actors);
     final long n = c.n;
     final ActorSystem system = new TestActorSystemConfig() {{
+      if (c.executorChoice != null) {
+        executor = c.executorChoice;
+      }
       parallelism = c.threads;
-      executor = FIXED_THREAD_POOL;
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
@@ -123,6 +125,7 @@ public final class ThroughputBenchmark implements TestSupport {
   
   public static void main(String[] args) {
     new Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 1;
       n = 4_000_000;
