@@ -222,28 +222,6 @@ public final class ActorSystem {
   }
   
   public void _dispatch(Runnable r) {
-    //TODO
-//    if (executor instanceof ForkJoinPool) {
-//      final ForkJoinPool fjp = (ForkJoinPool) executor;
-//      fjp.submit(new ForkJoinTask<Void>() {
-//        private static final long serialVersionUID = 1L;
-//
-//        @Override
-//        public Void getRawResult() {
-//          return null;
-//        }
-//
-//        @Override
-//        protected void setRawResult(Void value) {
-//        }
-//
-//        @Override
-//        protected boolean exec() {
-//          r.run();
-//          return true;
-//        }
-//      });
-//    }
     executor.execute(r);
   }
   
