@@ -17,6 +17,7 @@ public abstract class ActorSystemConfig {
     public static final String EXECUTOR = "indigo.system.executor";
     public static final String EXCEPTION_HANDLER = "indigo.system.exceptionHandler";
     public static final String DEAD_LETTER_QUEUE_SIZE = "indigo.system.deadLetterQueueSize";
+    public static final String DIAGNOSTICS_TRACE_ENABLED = "indigo.system.diagnostics.traceEnabled";
   }
   
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
@@ -58,8 +59,9 @@ public abstract class ActorSystemConfig {
   /** Upper bound on the size of the DQL. Beyond this, truncation from the head (least recent) occurs. */
   public int deadLetterQueueSize = get(DEAD_LETTER_QUEUE_SIZE, Integer::parseInt, 10_000);
   
+  /** In-memory diagnostics. */
   public Diagnostics diagnostics = new Diagnostics() {{
-    traceEnabled = false;
+    traceEnabled = get(DIAGNOSTICS_TRACE_ENABLED, Boolean::parseBoolean, false);
   }};
   
   /** The default actor configuration. */

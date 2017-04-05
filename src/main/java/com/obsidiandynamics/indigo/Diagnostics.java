@@ -1,7 +1,6 @@
 package com.obsidiandynamics.indigo;
 
 import java.io.*;
-import java.util.*;
 import java.util.concurrent.*;
 
 public abstract class Diagnostics {
@@ -21,7 +20,7 @@ public abstract class Diagnostics {
     }
   }
   
-  private final List<LogEntry> log = new CopyOnWriteArrayList<>();
+  private final BlockingQueue<LogEntry> log = new LinkedBlockingQueue<>();
   
   public void trace(String format, Object ... args) {
     if (traceEnabled) {
@@ -29,8 +28,8 @@ public abstract class Diagnostics {
     }
   }
   
-  public List<LogEntry> getLog() {
-    return Collections.unmodifiableList(log);
+  public LogEntry[] getLog() {
+    return log.toArray(new LogEntry[log.size()]);
   }
   
   public void print(PrintStream out) {

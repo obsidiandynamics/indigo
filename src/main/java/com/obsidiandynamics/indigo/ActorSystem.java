@@ -222,6 +222,7 @@ public final class ActorSystem {
   }
   
   public void _dispatch(Runnable r) {
+    //TODO
 //    if (executor instanceof ForkJoinPool) {
 //      final ForkJoinPool fjp = (ForkJoinPool) executor;
 //      fjp.submit(new ForkJoinTask<Void>() {
@@ -277,8 +278,11 @@ public final class ActorSystem {
       }
       
       if (deadline != 0 && System.currentTimeMillis() > deadline) {
-        System.out.format("ActorSystem.drain(): executor=%s\n", executor.toString());
-        return busyActors.sum();
+        final long remaining = busyActors.sum();
+        if (remaining >= 0 && config.diagnostics.traceEnabled) {
+          config.diagnostics.trace("AS.drain: executor=%s\n", executor);
+        }
+        return remaining;
       }
       
       if (! errors.isEmpty()) {

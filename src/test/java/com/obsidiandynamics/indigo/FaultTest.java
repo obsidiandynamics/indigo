@@ -9,8 +9,6 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.util.*;
-
 public final class FaultTest implements TestSupport {
   private static final int SCALE = 1;
   
@@ -372,17 +370,11 @@ public final class FaultTest implements TestSupport {
   
   @Test
   public void testOnEgressBiased() {
-    int mod = 100;
-//    ParallelJob.blocking(1, t -> {
-      for (int i = 0; i < 100000; i++) {
-        testOnEgress(100 * SCALE, 10);
-        if (i % mod == 0) System.out.println("running " + (i / mod));
-      }
-//    }).run();
+    testOnEgress(100 * SCALE, 10);
   }
   
   private void testOnEgress(int n, int actorBias) {
-    //logTestName();
+    logTestName();
     
     final AtomicInteger faults = new AtomicInteger();
     
@@ -394,15 +386,14 @@ public final class FaultTest implements TestSupport {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
       a.egress(() -> {
-        //Thread.yield();//TODO remove
         d.trace("egress %d", i);
         throw new TestException("Fault in egress");
       })
       .using(external)
-//      .await(1_000).onTimeout(() -> {
-//        log("egress timed out\n");
-//        fail("egress timed out");
-//      })
+      .await(1_000).onTimeout(() -> {
+        log("egress timed out\n");
+        fail("egress timed out");
+      })
       .onFault(f -> {
         d.trace("fault %d", i);
         faults.incrementAndGet();
@@ -411,20 +402,13 @@ public final class FaultTest implements TestSupport {
         log("egress responded\n");
         fail("egress responded");
       });
-      Thread.yield();//TODO remove
-      //Threads.sleep(1);
     });
     
-    boolean error = false;
     try {
-      long left;
-      while ((left = system.drain(10000)) != 0) {
-        if (! error) {
-          error = true;
-          log("draining... faults: %s, left: %d\n", faults, left);
-          system.getConfig().diagnostics.print(LOG_STREAM);
-          //fail("drain did not complete");
-        }
+      for (long left; (left = system.drain(10_000)) != 0; ) {
+        log("draining... faults: %s, actors left: %d\n", faults, left);
+        system.getConfig().diagnostics.print(LOG_STREAM);
+        fail("drain did not complete");
       }
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);

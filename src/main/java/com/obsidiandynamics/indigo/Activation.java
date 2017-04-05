@@ -310,14 +310,14 @@ public abstract class Activation {
     }
   }
   
-  private boolean ensureActivated(Message message) {
+  private boolean ensureActivated(Message m) {
     final Diagnostics d = diagnostics();
     
     switch (state) {
       case PASSIVATED:
         state = ACTIVATING;
         try {
-          if (d.traceEnabled) d.trace("activating m=%s", message);
+          if (d.traceEnabled) d.trace("A:ensureActivated: m=%s", m);
           actor.activated(this);
         } catch (Throwable t) {
           fault(t);
@@ -327,14 +327,14 @@ public abstract class Activation {
         if (faultReason != null) {
           clearPending();
           _unstash();
-          raiseFault(ON_ACTIVATION, message);
+          raiseFault(ON_ACTIVATION, m);
           state = PASSIVATED;
           return false;
         } else if (pending.isEmpty()) {
           state = ACTIVATED;
           return true;
         } else {
-          activatingMessage = message;
+          activatingMessage = m;
           return true;
         }
         
@@ -365,21 +365,22 @@ public abstract class Activation {
     }
   }
   
-  protected final void processMessage(Message message) {
+  protected final void processMessage(Message m) {
     final Diagnostics d = diagnostics();
     
-    if (message.isResponse()) {
-      if (d.traceEnabled) d.trace("processing solicited m=%s", message);
-      processSolicited(message);
+    if (m.isResponse()) {
+      if (d.traceEnabled) d.trace("A.processMessage: solicited m=%s", m);
+      processSolicited(m);
     } else {
-      if (! ensureActivated(message)) {
+      if (! ensureActivated(m)) {
         return;
       }
-      if (d.traceEnabled) d.trace("processing unsolicited m=%s", message);
-      processUnsolicited(message);
+      if (d.traceEnabled) d.trace("A.processMessage: unsolicited m=%s", m);
+      processUnsolicited(m);
     }
     
     if (stash != null && stash.unstashing) {
+      if (d.traceEnabled) d.trace("A.processMessage: unstashing");
       try {
         if (! stash.messages.isEmpty()) {
           if (! ensureActivated(stash.messages.get(0))) {
@@ -400,9 +401,9 @@ public abstract class Activation {
     }
   }
   
-  private void processSolicited(Message message) {
-    final PendingRequest req = pending.remove(message.requestId());
-    final Object body = message.body();
+  private void processSolicited(Message m) {
+    final PendingRequest req = pending.remove(m.requestId());
+    final Object body = m.body();
     Fault fault = null;
     if (body instanceof Signal) {
       if (body instanceof Timeout) {
@@ -414,7 +415,7 @@ public abstract class Activation {
             fault(t);
             actorConfig.exceptionHandler.accept(system, t);
           } finally {
-            fault = checkAndRaiseFault(ON_TIMEOUT, message);
+            fault = checkAndRaiseFault(ON_TIMEOUT, m);
           }
         }
       } else if (body instanceof Fault) {
@@ -428,7 +429,7 @@ public abstract class Activation {
               fault(t);
               actorConfig.exceptionHandler.accept(system, t);
             } finally {
-              fault = checkAndRaiseFault(ON_FAULT, message);
+              fault = checkAndRaiseFault(ON_FAULT, m);
             }
           }
         }
@@ -439,12 +440,12 @@ public abstract class Activation {
       cancelTimeout(req);
       req.setComplete(true);
       try {
-        req.getOnResponse().accept(message);
+        req.getOnResponse().accept(m);
       } catch (Throwable t) {
         fault(t);
         actorConfig.exceptionHandler.accept(system, t);
       } finally {
-        fault = checkAndRaiseFault(ON_RESPONSE, message);
+        fault = checkAndRaiseFault(ON_RESPONSE, m);
       }
     }
     
@@ -492,17 +493,17 @@ public abstract class Activation {
     }
   }
   
-  private void processUnsolicited(Message message) {
-    if (stash != null && ! stash.unstashing && stash.filter.test(message)) {
-      stash.messages.add(message);
+  private void processUnsolicited(Message m) {
+    if (stash != null && ! stash.unstashing && stash.filter.test(m)) {
+      stash.messages.add(m);
     } else {
       try {
-        actor.act(this, message);
+        actor.act(this, m);
       } catch (Throwable t) {
         fault(t);
         actorConfig.exceptionHandler.accept(system, t);
       } finally {
-        checkAndRaiseFault(ON_ACT, message);
+        checkAndRaiseFault(ON_ACT, m);
       }
     }
   }
@@ -552,6 +553,9 @@ public abstract class Activation {
   }
   
   private void _stash(Predicate<Message> filter) {
+    final Diagnostics d = diagnostics();
+    if (d.traceEnabled) d.trace("A._stash: stashing");
+    
     if (stash != null) {
       stash.unstashing = false;
     } else {
@@ -561,6 +565,9 @@ public abstract class Activation {
   }
   
   private void _unstash() {
+    final Diagnostics d = diagnostics();
+    if (d.traceEnabled) d.trace("A._stash: unstashing");
+    
     if (stash == null) return;
     stash.unstashing = true;
   }
