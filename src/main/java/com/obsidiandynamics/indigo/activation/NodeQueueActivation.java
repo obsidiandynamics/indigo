@@ -155,6 +155,7 @@ public final class NodeQueueActivation extends Activation {
             processMessage(h.m);
             spins = 0;
           } else {
+            if (d.traceEnabled) d.trace("NQA.run: scheduling ref=%s", ref);
             scheduleRun(h1);
             return;
           }

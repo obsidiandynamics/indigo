@@ -20,6 +20,9 @@ public final class SyncQueueActivation extends Activation {
   
   @Override
   public boolean enqueue(Message m) {
+    final Diagnostics d = diagnostics();
+    if (d.traceEnabled) d.trace("SQA.enqueue: m=%s", m);
+    
     for (boolean throttledOnce = false;;) {
       final boolean noBacklog;
       final boolean noPending;
@@ -39,6 +42,7 @@ public final class SyncQueueActivation extends Activation {
       }
       
       if (throttleBacklog) {
+        if (d.traceEnabled) d.trace("SQA.enqueue: throttling m=%s", m);
         throttledOnce = true;
         Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
         continue;
@@ -49,6 +53,7 @@ public final class SyncQueueActivation extends Activation {
       }
       
       if (noBacklog) {
+        if (d.traceEnabled) d.trace("SQA.enqueue: scheduling m=%s", m);
         system._dispatch(this::run);
       }
       
@@ -57,6 +62,8 @@ public final class SyncQueueActivation extends Activation {
   }
   
   private void run() {
+    final Diagnostics d = diagnostics();
+    if (d.traceEnabled) d.trace("SQA.run: ref=%s", ref);
     final Message[] messages;
     final int backlogSize;
     synchronized (backlog) {
@@ -89,6 +96,7 @@ public final class SyncQueueActivation extends Activation {
       noPending = pending.isEmpty();
       
       if (noBacklog && state == PASSIVATED) {
+        if (d.traceEnabled) d.trace("SQA.run: disposing ref=%s", ref);
         system._dispose(ref);
         disposed = true;
       }
@@ -99,6 +107,7 @@ public final class SyncQueueActivation extends Activation {
         system._decBusyActors();
       }
     } else {
+      if (d.traceEnabled) d.trace("SQA.run: scheduling, ref=%s", ref);
       system._dispatch(this::run);
     }
   }

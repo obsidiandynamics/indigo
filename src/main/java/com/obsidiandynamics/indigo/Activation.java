@@ -345,6 +345,9 @@ public abstract class Activation {
   
   protected final void passivateIfScheduled() {
     if (passivationScheduled && state == ACTIVATED && pending.isEmpty() && (stash == null || stash.messages.isEmpty())) {
+      final Diagnostics d = diagnostics();
+      if (d.traceEnabled) d.trace("A.passivateIfScheduled: passivating ref=%s", ref);
+      
       passivationScheduled = false;
       state = PASSIVATING;
       try {
@@ -554,7 +557,7 @@ public abstract class Activation {
   
   private void _stash(Predicate<Message> filter) {
     final Diagnostics d = diagnostics();
-    if (d.traceEnabled) d.trace("A._stash: stashing");
+    if (d.traceEnabled) d.trace("A._stash: ref=%s", ref);
     
     if (stash != null) {
       stash.unstashing = false;
@@ -566,7 +569,7 @@ public abstract class Activation {
   
   private void _unstash() {
     final Diagnostics d = diagnostics();
-    if (d.traceEnabled) d.trace("A._stash: unstashing");
+    if (d.traceEnabled) d.trace("A._unstash: ref=%s", ref);
     
     if (stash == null) return;
     stash.unstashing = true;
