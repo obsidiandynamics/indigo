@@ -20,7 +20,7 @@ public final class SyncQueueActivation extends Activation {
   
   @Override
   public boolean enqueue(Message m) {
-    for (;;) {
+    for (boolean throttledOnce = false;;) {
       final boolean noBacklog;
       final boolean noPending;
       final boolean throttleBacklog;
@@ -32,13 +32,14 @@ public final class SyncQueueActivation extends Activation {
         noBacklog = ! on && backlog.isEmpty();
         noPending = pending.isEmpty();
         
-        throttleBacklog = ! m.isResponse() && shouldThrottle();
+        throttleBacklog = ! throttledOnce && ! m.isResponse() && shouldThrottle();
         if (! throttleBacklog) {
           backlog.add(m);
         }
       }
       
       if (throttleBacklog) {
+        throttledOnce = true;
         Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
         continue;
       }
