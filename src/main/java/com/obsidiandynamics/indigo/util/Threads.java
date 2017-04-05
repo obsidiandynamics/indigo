@@ -28,15 +28,6 @@ public final class Threads {
     } catch (InterruptedException e) {}
   }
   
-  //TODO
-//  private static void xblock(ManagedBlocker blocker) throws InterruptedException {
-//    while (! blocker.isReleasable()) {
-//      if (blocker.block()) {
-//        return;
-//      }
-//    }
-//  }
-  
   public static void sleep(long millis) {
     try {
       Thread.sleep(millis);
