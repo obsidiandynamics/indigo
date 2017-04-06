@@ -24,6 +24,7 @@ public final class AllTestsSoak {
     System.out.format("_\nTesting with [%s, %s]\n", executorChoice, activationChoice);
     System.setProperty(ActorSystemConfig.Key.EXECUTOR, executorChoice.name());
     System.setProperty(ActorConfig.Key.ACTIVATION_FACTORY, activationChoice.name());
+    System.setProperty(FaultTest.KEY_TRACE_ENABLED, Boolean.toString(false));
     
     final boolean logFinished = false;
     final boolean logRuns = true;

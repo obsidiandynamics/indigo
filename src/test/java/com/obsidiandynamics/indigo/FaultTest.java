@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.FaultType.*;
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
@@ -10,6 +11,8 @@ import java.util.concurrent.atomic.*;
 import org.junit.*;
 
 public final class FaultTest implements TestSupport {
+  public static final String KEY_TRACE_ENABLED = "indigo.FaultTest.traceEnabled";
+  
   private static final int SCALE = 1;
   
   private static final String SINK = "sink";
@@ -31,7 +34,7 @@ public final class FaultTest implements TestSupport {
       };
       
       diagnostics = new Diagnostics() {{
-        traceEnabled = true;
+        traceEnabled = get(KEY_TRACE_ENABLED, Boolean::parseBoolean, true);
       }};
       
       defaultActorConfig = new ActorConfig() {{
