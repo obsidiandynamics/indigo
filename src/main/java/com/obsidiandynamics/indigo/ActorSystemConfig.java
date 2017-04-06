@@ -75,6 +75,10 @@ public abstract class ActorSystemConfig {
     return parallelism > 0 ? parallelism : getNumProcessors() - parallelism;
   }
   
+  final void init() {
+    diagnostics.init();
+  }
+  
   private static int getNumProcessors() {
     return Math.max(1, Runtime.getRuntime().availableProcessors());
   }

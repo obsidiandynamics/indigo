@@ -311,13 +311,11 @@ public abstract class Activation {
   }
   
   private boolean ensureActivated(Message m) {
-    final Diagnostics d = diagnostics();
-    
     switch (state) {
       case PASSIVATED:
         state = ACTIVATING;
         try {
-          if (d.traceEnabled) d.trace("A:ensureActivated: m=%s", m);
+          assert diagnostics().traceMacro("A.ensureActivated: m=%s", m);
           actor.activated(this);
         } catch (Throwable t) {
           fault(t);
@@ -345,8 +343,7 @@ public abstract class Activation {
   
   protected final void passivateIfScheduled() {
     if (passivationScheduled && state == ACTIVATED && pending.isEmpty() && (stash == null || stash.messages.isEmpty())) {
-      final Diagnostics d = diagnostics();
-      if (d.traceEnabled) d.trace("A.passivateIfScheduled: passivating ref=%s", ref);
+      assert diagnostics().traceMacro("A.passivateIfScheduled: passivating ref=%s", ref);
       
       passivationScheduled = false;
       state = PASSIVATING;
@@ -369,21 +366,19 @@ public abstract class Activation {
   }
   
   protected final void processMessage(Message m) {
-    final Diagnostics d = diagnostics();
-    
     if (m.isResponse()) {
-      if (d.traceEnabled) d.trace("A.processMessage: solicited m=%s", m);
+      assert diagnostics().traceMacro("A.processMessage: solicited m=%s", m);
       processSolicited(m);
     } else {
       if (! ensureActivated(m)) {
         return;
       }
-      if (d.traceEnabled) d.trace("A.processMessage: unsolicited m=%s", m);
+      assert diagnostics().traceMacro("A.processMessage: unsolicited m=%s", m);
       processUnsolicited(m);
     }
     
     if (stash != null && stash.unstashing) {
-      if (d.traceEnabled) d.trace("A.processMessage: unstashing");
+      assert diagnostics().traceMacro("A.processMessage: unstashing");
       try {
         if (! stash.messages.isEmpty()) {
           if (! ensureActivated(stash.messages.get(0))) {
@@ -556,8 +551,7 @@ public abstract class Activation {
   }
   
   private void _stash(Predicate<Message> filter) {
-    final Diagnostics d = diagnostics();
-    if (d.traceEnabled) d.trace("A._stash: ref=%s", ref);
+    assert diagnostics().traceMacro("A._stash: ref=%s", ref);
     
     if (stash != null) {
       stash.unstashing = false;
@@ -568,8 +562,7 @@ public abstract class Activation {
   }
   
   private void _unstash() {
-    final Diagnostics d = diagnostics();
-    if (d.traceEnabled) d.trace("A._unstash: ref=%s", ref);
+    assert diagnostics().traceMacro("A._unstash: ref=%s", ref);
     
     if (stash == null) return;
     stash.unstashing = true;

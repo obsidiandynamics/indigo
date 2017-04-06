@@ -40,11 +40,10 @@ public final class NodeQueueActivation extends Activation {
 
   @Override
   public boolean enqueue(Message m) {
-    final Diagnostics d = diagnostics();
-    if (d.traceEnabled) d.trace("NQA.enqueue: m=%s", m);
+    assert diagnostics().traceMacro("NQA.enqueue: m=%s", m);
 
     if (! m.isResponse() && shouldThrottle()) {
-      if (d.traceEnabled) d.trace("NQA.enqueue: throttling m=%s, t=%s", m, Thread.currentThread());
+      assert diagnostics().traceMacro("NQA.enqueue: throttling m=%s, t=%s", m, Thread.currentThread());
       Threads.throttle(this::shouldThrottle, actorConfig.backlogThrottleTries, actorConfig.backlogThrottleMillis);
     }
 
@@ -54,7 +53,7 @@ public final class NodeQueueActivation extends Activation {
     final Node t1 = tail.getAndSet(t);
 
     if (isDisposing()) {
-      if (d.traceEnabled) d.trace("NQA.enqueue: awaiting disposal m=%s", m);
+      assert diagnostics().traceMacro("NQA.enqueue: awaiting disposal m=%s", m);
       while (! disposalComplete) {
         Thread.yield();
       }
@@ -68,13 +67,13 @@ public final class NodeQueueActivation extends Activation {
       }
 
       if (isDisposing()) {
-        if (d.traceEnabled) d.trace("NQA.enqueue: awaiting disposal m=%s", m);
+        assert diagnostics().traceMacro("NQA.enqueue: awaiting disposal m=%s", m);
         while (! disposalComplete) {
           Thread.yield();
         }
         return false;
       }
-      if (d.traceEnabled) d.trace("NQA.enqueue: scheduling m=%s", m);
+      assert diagnostics().traceMacro("NQA.enqueue: scheduling m=%s", m);
       scheduleRun(t);
     } else {
       t1.lazySet(t);
@@ -108,8 +107,7 @@ public final class NodeQueueActivation extends Activation {
   }
 
   private boolean park(Node n) {
-    final Diagnostics d = diagnostics();
-    if (d.traceEnabled) d.trace("NQA.park: ref=%s, pending=%d", ref, pending.size());
+    assert diagnostics().traceMacro("NQA.park: ref=%s, pending=%d", ref, pending.size());
     final boolean noPending = pending.isEmpty();
     final boolean disposing = state == PASSIVATED;
     if (disposing) {
@@ -118,10 +116,10 @@ public final class NodeQueueActivation extends Activation {
 
     final boolean parked = tail.compareAndSet(n, null);
     if (parked) {
-      if (d.traceEnabled) d.trace("NQA.park: parked ref=%s", ref);
+      assert diagnostics().traceMacro("NQA.park: parked ref=%s", ref);
       if (noPending) {
         if (disposing) {
-          if (d.traceEnabled) d.trace("NQA.park: disposed ref=%s", ref);
+          assert diagnostics().traceMacro("NQA.park: disposed ref=%s", ref);
           disposalAttemptAccepted = true;
           system._dispose(ref);
           disposalComplete = true;
@@ -135,8 +133,7 @@ public final class NodeQueueActivation extends Activation {
   }
 
   private void run(Node h, boolean skipCurrent) {
-    final Diagnostics d = diagnostics();
-    if (d.traceEnabled) d.trace("NQA.run: h.m=%s, skipCurrent=%b", h.m, skipCurrent);
+    assert diagnostics().traceMacro("NQA.run: h.m=%s, skipCurrent=%b", h.m, skipCurrent);
 
     int cycles = 0;
     if (! skipCurrent) {
@@ -155,7 +152,7 @@ public final class NodeQueueActivation extends Activation {
             processMessage(h.m);
             spins = 0;
           } else {
-            if (d.traceEnabled) d.trace("NQA.run: scheduling ref=%s", ref);
+            assert diagnostics().traceMacro("NQA.run: scheduling ref=%s", ref);
             scheduleRun(h1);
             return;
           }

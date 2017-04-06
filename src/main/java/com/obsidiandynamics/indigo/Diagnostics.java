@@ -6,6 +6,20 @@ import java.util.concurrent.*;
 public abstract class Diagnostics {
   public boolean traceEnabled;
   
+  final void init() {
+    if (traceEnabled) {
+      boolean caught = false;
+      try {
+        assert false;
+      } catch (AssertionError e) {
+        caught = true;
+      }
+      if (! caught) {
+        throw new AssertionError("Assertions need to be enabled for tracing, run JVM with -ea flag");
+      }
+    }
+  }
+  
   public final class LogEntry {
     private final String format;
     private final Object[] args;
@@ -21,6 +35,11 @@ public abstract class Diagnostics {
   }
   
   private final BlockingQueue<LogEntry> log = new LinkedBlockingQueue<>();
+
+  public boolean traceMacro(String format, Object ... args) {
+    trace(format, args);
+    return true;
+  }
   
   public void trace(String format, Object ... args) {
     if (traceEnabled) {
