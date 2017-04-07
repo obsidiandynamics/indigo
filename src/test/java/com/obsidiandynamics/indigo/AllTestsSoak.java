@@ -29,7 +29,7 @@ public final class AllTestsSoak {
     final boolean logFinished = false;
     final boolean logRuns = true;
     
-    System.setProperty("indigo.TimeoutTest.timeoutTolerance", String.valueOf(50));
+    System.setProperty(FaultTest.KEY_TRACE_ENABLED, String.valueOf(50));
     
     System.out.format("%d parallel runs using %d threads\n", n * threads, threads);
     final AtomicLong totalTests = new AtomicLong();

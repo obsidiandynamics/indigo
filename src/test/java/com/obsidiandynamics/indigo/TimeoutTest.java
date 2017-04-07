@@ -8,13 +8,13 @@ import java.util.*;
 import org.junit.*;
 
 public final class TimeoutTest implements TestSupport {
+  public static final String KEY_TIMEOUT_TOLERANCE = "indigo.TimeoutTest.timeoutTolerance";
   private static final String DRIVER = "driver";
   private static final String ECHO = "echo";
   private static final String DONE = "done";
   
   private static final int MIN_TIMEOUT = 10;
   private static final int MAX_TIMEOUT = 100;
-  private static final int TIMEOUT_TOLERANCE = get("indigo.TimeoutTest.timeoutTolerance", Integer::parseInt, 10);
   
   private static final long generateRandomTimeout() {
     final int range = MAX_TIMEOUT - MIN_TIMEOUT;
@@ -56,8 +56,10 @@ public final class TimeoutTest implements TestSupport {
       totalDiff += diff; 
     }
     final double avgDiff = (double) totalDiff / actors;
+    
+    final int timeoutTolerance = get(KEY_TIMEOUT_TOLERANCE, Integer::parseInt, 10);
     log("Average diff: %.1f\n", avgDiff);
     assertTrue(String.format("Average timeout threshold above tolerance: %.1f", avgDiff), 
-               avgDiff <= TIMEOUT_TOLERANCE);
+               avgDiff <= timeoutTolerance);
   }
 }
