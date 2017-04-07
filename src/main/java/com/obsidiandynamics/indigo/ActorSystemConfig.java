@@ -28,7 +28,7 @@ public abstract class ActorSystemConfig {
   public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 1 * 60_000);
   
   public enum ExecutorChoice implements Function<Integer, ExecutorService> {
-    FORK_JOIN_POOL(Executors::newWorkStealingPool),
+    FORK_JOIN_POOL(Threads::cappedForkJoinPool),
     FIXED_THREAD_POOL(Threads::prestartedFixedThreadPool);
     
     private final Function<Integer, ExecutorService> func;
