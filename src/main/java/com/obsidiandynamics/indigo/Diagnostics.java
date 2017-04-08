@@ -1,10 +1,21 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
+
 import java.io.*;
 import java.util.concurrent.*;
 
 public abstract class Diagnostics {
-  public boolean traceEnabled;
+  public static final class Key {
+    public static final String TRACE_ENABLED = "indigo.diagnostics.traceEnabled";
+    public static final String LOG_SIZE = "indigo.diagnostics.logSize";
+  }
+  
+  /** Whether tracing should be enabled. */
+  public boolean traceEnabled = get(Key.TRACE_ENABLED, Boolean::parseBoolean, false);
+  
+  /** The upper bound on the size of the trace log. Beyond this, truncation from the head (least recent) occurs. */
+  public int logSize = get(Key.LOG_SIZE, Integer::parseInt, 100_000);
   
   final void init() {
     if (traceEnabled) {
@@ -44,6 +55,9 @@ public abstract class Diagnostics {
   public void trace(String format, Object ... args) {
     if (traceEnabled) {
       log.add(new LogEntry(format, args));
+      if (log.size() > logSize) {
+        log.poll();
+      }
     }
   }
   
