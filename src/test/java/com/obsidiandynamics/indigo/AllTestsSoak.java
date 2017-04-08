@@ -9,7 +9,7 @@ public final class AllTestsSoak {
   public static void main(String[] args) {
     final int cycles = 4;
     final int n = 10;
-    final int threads = Runtime.getRuntime().availableProcessors() * 4;
+    final int threads = Runtime.getRuntime().availableProcessors() * 2;
 
     for (int c = 1; c <= cycles; c++) {
       System.out.format("_\nCycle %d/%d\n", c, cycles);

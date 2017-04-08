@@ -31,7 +31,6 @@ public final class ParallelConsistencyTest implements TestSupport {
   public void testFanInBiased() {
     test(1, 10, 10, 1_000);
     test(10, 100, 100, 1_000);
-    test(100, 1_000, 100, 1_000);
     test(10, 10_000, 10, 1_000);
   }
 
