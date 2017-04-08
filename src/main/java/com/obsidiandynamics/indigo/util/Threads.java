@@ -57,10 +57,6 @@ public final class Threads {
   }
   
   public static ForkJoinPool cappedForkJoinPool(int parallelism) {
-    return cappedForkJoinPool(parallelism, parallelism * 2);
-  }
-  
-  public static ForkJoinPool cappedForkJoinPool(int parallelism, int threadCap) {
-    return new CappedForkJoinPool(parallelism, null, threadCap, true);
+    return new CappedForkJoinPool(parallelism, null, true);
   }
 }
