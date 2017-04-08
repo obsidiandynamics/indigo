@@ -25,11 +25,10 @@ public final class AllTestsSoak {
     System.setProperty(ActorSystemConfig.Key.EXECUTOR, executorChoice.name());
     System.setProperty(ActorConfig.Key.ACTIVATION_FACTORY, activationChoice.name());
     System.setProperty(FaultTest.KEY_TRACE_ENABLED, Boolean.toString(false));
+    System.setProperty(TimeoutTest.KEY_TIMEOUT_TOLERANCE, String.valueOf(50));
     
     final boolean logFinished = false;
     final boolean logRuns = true;
-    
-    System.setProperty(FaultTest.KEY_TRACE_ENABLED, String.valueOf(50));
     
     System.out.format("%d parallel runs using %d threads\n", n * threads, threads);
     final AtomicLong totalTests = new AtomicLong();
