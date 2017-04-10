@@ -405,7 +405,7 @@ public abstract class Activation {
     Fault fault = null;
     if (body instanceof Signal) {
       if (body instanceof Timeout) {
-        if (req != null && ! req.isComplete()) {
+        if (req != null) {
           req.setComplete(true);
           try {
             req.getOnTimeout().run();
@@ -417,7 +417,7 @@ public abstract class Activation {
           }
         }
       } else if (body instanceof Fault) {
-        if (req != null && ! req.isComplete()) {
+        if (req != null) {
           cancelTimeout(req);
           req.setComplete(true);
           if (req.getOnFault() != null) {
