@@ -1,14 +1,14 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
-import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
-
 import java.util.concurrent.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.util.*;
+
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
 public abstract class ActorSystemConfig {
   public static final class Key {
