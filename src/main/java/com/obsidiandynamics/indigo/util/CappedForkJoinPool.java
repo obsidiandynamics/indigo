@@ -12,7 +12,7 @@ public final class CappedForkJoinPool extends ForkJoinPool {
   private static final int SCALE = get("indigo.fjp.scale", Integer::parseInt, 10);
   
   /** An absolute cap on the number of threads in the pool. */
-  private static final int MAX_THREADS = get("indigo.fjp.maxThrads", Integer::parseInt, 1024);
+  private static final int MAX_THREADS = get("indigo.fjp.maxThreads", Integer::parseInt, 1024);
   
   public CappedForkJoinPool(int parallelism,
                             UncaughtExceptionHandler handler,
