@@ -314,7 +314,7 @@ public final class ActorSystem {
       try {
         drain(0);
         break;
-      } catch (InterruptedException e) { throw new RuntimeException(e); }
+      } catch (InterruptedException e) {}
     }
     timeoutWatchdog.terminate();
     executor.shutdown();
