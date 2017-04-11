@@ -27,7 +27,7 @@ public final class ExternalAskTest implements TestSupport {
   }
 
   @Test(expected=TimeoutException.class)
-  public void testTimeout() throws InterruptedException, ExecutionException, TimeoutException {
+  public void testTimeoutWithCancel() throws InterruptedException, ExecutionException, TimeoutException {
     logTestName();
     
     final ActorSystem system = new TestActorSystemConfig() {}
@@ -39,6 +39,23 @@ public final class ExternalAskTest implements TestSupport {
       f.get(10, TimeUnit.MILLISECONDS);
     } finally {
       f.cancel(false);
+      system.shutdown();
+    }
+  }
+
+  @Test(expected=TimeoutException.class)
+  public void testTimeoutWithForce() throws InterruptedException, ExecutionException, TimeoutException {
+    logTestName();
+    
+    final ActorSystem system = new TestActorSystemConfig() {}
+    .define()
+    .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
+    
+    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 1_000, 41);
+    try {
+      f.get(10, TimeUnit.MILLISECONDS);
+    } finally {
+      system.forceTimeout();
       system.shutdown();
     }
   }
