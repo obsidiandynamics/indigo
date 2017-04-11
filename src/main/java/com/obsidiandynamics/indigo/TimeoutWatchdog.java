@@ -39,9 +39,12 @@ final class TimeoutWatchdog extends Thread {
     synchronized (sleepLock) {
       sleepLock.notify();
     }
-    try {
-      join();
-    } catch (InterruptedException e) {}
+    for (;;) {
+      try {
+        join();
+        break;
+      } catch (InterruptedException e) {}
+    }
   }  
   
   @Override
