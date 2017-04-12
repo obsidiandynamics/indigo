@@ -5,7 +5,7 @@ import java.util.concurrent.ForkJoinPool.*;
 import java.util.function.*;
 
 public final class Threads {
-  private Threads() {};
+  private Threads() {}
   
   public static void throttle(BooleanSupplier test, int tries, long penaltyMillis) {
     try {
