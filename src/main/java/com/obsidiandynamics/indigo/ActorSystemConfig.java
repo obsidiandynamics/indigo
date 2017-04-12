@@ -12,6 +12,7 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
 public abstract class ActorSystemConfig {
   public static final class Key {
+    private Key() {}
     public static final String PARALLELISM = "indigo.system.parallelism";
     public static final String DEFAULT_ASK_TIMEOUT_MILLIS = "indigo.system.defaultAskTimeoutMillis";
     public static final String EXECUTOR = "indigo.system.executor";

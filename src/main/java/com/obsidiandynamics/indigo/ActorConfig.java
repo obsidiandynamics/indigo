@@ -12,6 +12,7 @@ import com.obsidiandynamics.indigo.activation.*;
 
 public abstract class ActorConfig {
   public static final class Key {
+    private Key() {}
     public static final String BIAS = "indigo.actor.bias";
     public static final String BACKLOG_THROTTLE_CAPACITY = "indigo.actor.backlogThrottleCapacity";
     public static final String BACKLOG_THROTTLE_MILLIS = "indigo.actor.backlogThrottleMillis";
