@@ -308,15 +308,38 @@ public final class ActorSystem {
     final Actor actor = setup.factory.get();
     return setup.actorConfig.activationFactory.create(nextActivationId++, ref, this, setup.actorConfig, actor);
   }
+  
+  /**
+   *  Drains the actor system of any pending tasks and terminates it.<p>
+   *  
+   *  This method will not return immediately on an interrupt, but will re-assert the
+   *  interrupt prior to eventually returning.
+   */
+  public void shutdownQuietly() {
+    try {
+      shutdown();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
 
-  public void shutdown() {
+  public void shutdown() throws InterruptedException {
+    boolean interrupted = false;
+    
     for (;;) {
       try {
         drain(0);
         break;
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {
+        interrupted = true;
+      }
     }
+    timeoutWatchdog.forceTimeout();
     timeoutWatchdog.terminate();
     executor.shutdown();
+    
+    if (interrupted || Thread.interrupted()) {
+      throw new InterruptedException();
+    }
   }
 }

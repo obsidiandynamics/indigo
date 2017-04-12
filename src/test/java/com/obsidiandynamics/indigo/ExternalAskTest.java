@@ -22,7 +22,7 @@ public final class ExternalAskTest implements TestSupport {
       final int resp = f.get();
       assertEquals(42, resp);
     } finally {
-      system.shutdown();
+      system.shutdownQuietly();
     }
   }
 
@@ -39,7 +39,7 @@ public final class ExternalAskTest implements TestSupport {
       f.get(10, TimeUnit.MILLISECONDS);
     } finally {
       f.cancel(false);
-      system.shutdown();
+      system.shutdownQuietly();
     }
   }
 
@@ -56,7 +56,7 @@ public final class ExternalAskTest implements TestSupport {
       f.get(10, TimeUnit.MILLISECONDS);
     } finally {
       system.forceTimeout();
-      system.shutdown();
+      system.shutdownQuietly();
     }
   }
 }

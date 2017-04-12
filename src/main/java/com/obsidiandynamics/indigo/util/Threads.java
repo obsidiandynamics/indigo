@@ -25,14 +25,16 @@ public final class Threads {
           return triesLeft <= 0 || ! test.getAsBoolean();
         }
       });
-    } catch (InterruptedException e) {}
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
   
   public static void sleep(long millis) {
     try {
       Thread.sleep(millis);
     } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+      Thread.currentThread().interrupt();
     }
   }  
   
@@ -40,15 +42,17 @@ public final class Threads {
     try {
       latch.await();
     } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+      Thread.currentThread().interrupt();
     }
   }
   
   public static void await(CyclicBarrier barrier) {
     try {
       barrier.await();
-    } catch (InterruptedException | BrokenBarrierException e) {
-      throw new RuntimeException(e);
+    } catch (BrokenBarrierException e) {
+      throw new IllegalStateException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
   

@@ -76,7 +76,7 @@ public final class ParallelConsistencyTest implements TestSupport {
     })
     .when(DONE).lambda(refCollector(doneRuns))
     .ingress().times(actors * fanIn).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .shutdown();
+    .shutdownQuietly();
 
     assertEquals(actors * (fanIn + 1), doneRuns.size());
   }

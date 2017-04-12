@@ -119,7 +119,7 @@ public final class FaultTest implements TestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdown();
+    system.shutdownQuietly();
     
     log("activationAttempts: %s, failedActivations: %s, received: %s, passivated: %s\n",
         activationAttempts, failedActivations, received, passivated);
@@ -200,7 +200,7 @@ public final class FaultTest implements TestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdown();
+    system.shutdownQuietly();
     
     log("activationAttempts: %s, failedActivations: %s, received: %s, passivated: %s\n",
         activationAttempts, failedActivations, received, passivated);
@@ -265,7 +265,7 @@ public final class FaultTest implements TestSupport {
       log("telling sink %d\n", i);
       a.to(ActorRef.of(SINK)).tell(i);
     });
-    system.shutdown();
+    system.shutdownQuietly();
 
     log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
     assertTrue(activationAttempts.get() >= 1);
@@ -353,7 +353,7 @@ public final class FaultTest implements TestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdown();
+    system.shutdownQuietly();
     
     log("passivationAttempts: %s, failedPassivations: %s, received: %s, passivated: %s\n",
         passivationAttempts, failedPassivations, received, passivated);
@@ -416,7 +416,7 @@ public final class FaultTest implements TestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdown();
+    system.shutdownQuietly();
     
     assertEquals(n, faults.get());
     assertEquals(n, system.getDeadLetterQueue().size());
@@ -453,7 +453,7 @@ public final class FaultTest implements TestSupport {
       });
     });
     
-    system.shutdown();
+    system.shutdownQuietly();
     assertEquals(n * 2, system.getDeadLetterQueue().size());
     assertEquals(n, count(ON_ACT, system.getDeadLetterQueue()));
     assertEquals(n, count(ON_FAULT, system.getDeadLetterQueue()));
@@ -485,7 +485,7 @@ public final class FaultTest implements TestSupport {
       });
     });
     
-    system.shutdown();
+    system.shutdownQuietly();
     assertEquals(n, system.getDeadLetterQueue().size());
     assertEquals(n, count(ON_TIMEOUT, system.getDeadLetterQueue()));
   }

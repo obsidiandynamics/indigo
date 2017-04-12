@@ -34,16 +34,28 @@ final class TimeoutWatchdog extends Thread {
     setDaemon(true);
   }
   
+  /**
+   *  Terminates the watchdog and blocks until the underlying thread joins.<p>
+   *  
+   *  This method will not return immediately on an interrupt, but will re-assert the
+   *  interrupt prior to eventually returning.
+   */
   void terminate() {
     running = false;
     synchronized (sleepLock) {
       sleepLock.notify();
     }
-    for (;;) {
+    for (boolean interrupted = false;;) {
       try {
         join();
-        break;
-      } catch (InterruptedException e) {}
+        if (interrupted) {
+          Thread.currentThread().interrupt();
+        } else {
+          return;
+        }
+      } catch (InterruptedException e) {
+        interrupted = true;
+      }
     }
   }  
   
@@ -81,6 +93,8 @@ final class TimeoutWatchdog extends Thread {
   }
   
   private void delay(long until) {
+    boolean interrupted = false;
+    
     synchronized (sleepLock) {
       nextWake = until;
       while (running && ! forceTimeout) {
@@ -93,8 +107,14 @@ final class TimeoutWatchdog extends Thread {
           } else {
             break;
           }
-        } catch (InterruptedException e) {}
+        } catch (InterruptedException e) {
+          interrupted = true;
+        }
       }
+    }
+    
+    if (interrupted) {
+      Thread.currentThread().interrupt();
     }
   }
   

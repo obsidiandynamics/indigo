@@ -115,7 +115,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
         a.to(ActorRef.of(TARGET)).tell(i);
       }
     })
-    .shutdown();
+    .shutdownQuietly();
 
     assertEquals(sequenceTo(n), received);
     assertFalse(activating.get());

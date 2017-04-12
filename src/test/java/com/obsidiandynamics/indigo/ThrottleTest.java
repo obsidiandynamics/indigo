@@ -53,6 +53,6 @@ public final class ThrottleTest implements TestSupport {
       }
     } catch (InterruptedException e) { throw new RuntimeException(e); }
     
-    system.shutdown();
+    system.shutdownQuietly();
   }
 }

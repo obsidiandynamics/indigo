@@ -30,7 +30,7 @@ public final class StashTest implements TestSupport {
       sequence.add(body);
     })
     .ingress().times(9).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i))
-    .shutdown();
+    .shutdownQuietly();
 
     assertEquals(Arrays.asList(0, 4, 8, 1, 2, 3, 5, 6, 7), sequence);
   }
@@ -75,7 +75,7 @@ public final class StashTest implements TestSupport {
          })
     )
     .ingress(a -> a.to(ActorRef.of(SINK)).tell())
-    .shutdown();
+    .shutdownQuietly();
     
     assertTrue(activated.get());
     assertTrue(passivated.get());

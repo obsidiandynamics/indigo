@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 public final class HelloWorldSample {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     new ActorSystemConfig() {}
     .define()
     .when("echo").lambda((a, m) -> System.out.println(a.self() + " received " + m.body()))

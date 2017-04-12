@@ -180,7 +180,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     })
     .when(TIMER).lambda((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .shutdown();
+    .shutdownQuietly();
 
     assertEquals(c.actors, states.size());
     
