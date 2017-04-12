@@ -116,18 +116,18 @@ public final class ActorSystem {
       register(role, factory, actorConfig);
       return ActorSystem.this;
     }
+    
+    private void register(String role, Supplier<Actor> factory, ActorConfig actorConfig) {
+      final ActorSetup existing = setupRegistry.put(role, new ActorSetup(factory, actorConfig));
+      if (existing != null) {
+        setupRegistry.put(role, existing);
+        throw new IllegalStateException("Factory for actor of role " + role + " has already been registered");
+      }
+    }
   }
   
   public ActorBuilder when(String role) {
     return new ActorBuilder(role);
-  }
-  
-  private void register(String role, Supplier<Actor> factory, ActorConfig actorConfig) {
-    final ActorSetup existing = setupRegistry.put(role, new ActorSetup(factory, actorConfig));
-    if (existing != null) {
-      setupRegistry.put(role, existing);
-      throw new IllegalStateException("Factory for actor of role " + role + " has already been registered");
-    }
   }
   
   public ActorSystem send(Message message) {
