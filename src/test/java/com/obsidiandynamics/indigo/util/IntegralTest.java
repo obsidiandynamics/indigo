@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo;
+package com.obsidiandynamics.indigo.util;
 
 import static junit.framework.TestCase.*;
 
@@ -7,7 +7,7 @@ import java.util.function.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.indigo.*;
 
 public final class IntegralTest implements TestSupport {
   public static final class FaultyIntegral extends LongAdder implements LongIntegral {

@@ -5,6 +5,7 @@ import org.junit.runners.*;
 import org.junit.runners.Suite.*;
 
 import com.obsidiandynamics.indigo.benchmark.*;
+import com.obsidiandynamics.indigo.util.*;
 
 @RunWith(Suite.class)
 @SuiteClasses({
