@@ -105,7 +105,7 @@ public final class ThroughputBenchmark implements TestSupport {
     if (c.log.stages) c.log.out.format("Starting timed run...\n");
     final long o = n - c.warmup;
     final long took = TestSupport.took(
-      ParallelJob.nonBlocking(c.actors, i -> {
+      ParallelJob.blocking(c.actors, i -> {
         final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
         for (int j = 0; j < o; j++) {
@@ -115,7 +115,7 @@ public final class ThroughputBenchmark implements TestSupport {
       })
     );
     
-    system.shutdownQuietly();
+    system.shutdown();
     
     final Summary summary = new Summary();
     summary.timedOps = o * c.actors;

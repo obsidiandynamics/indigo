@@ -16,7 +16,7 @@ public final class APActorBenchmark {
 
     final CountDownLatch latch = new CountDownLatch(actors);
     final long took = TestSupport.took(
-      ParallelJob.nonBlocking(actors, i -> {
+      ParallelJob.blocking(actors, i -> {
         send(countingActor(n, executor, latch), n);
         Threads.await(latch);
       })

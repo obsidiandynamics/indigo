@@ -15,7 +15,7 @@ public final class VKActorBenchmark {
 
     final CountDownLatch latch = new CountDownLatch(threads);
     final long took = TestSupport.took(() -> {
-      ParallelJob.nonBlocking(threads, i -> {
+      ParallelJob.blocking(threads, i -> {
         send(countingActor(n, executor, latch), n);
         Threads.await(latch);
       }).run();
