@@ -84,7 +84,7 @@ public final class AdderTest implements TestSupport {
   
   @Test
   public void test() {
-    test(4, 100, 10_000_000, new AtomicLongAdder());
+    test(4, 10_000, 10_000, new JucLongAdder());
   }
   
   private void test(int baseThreads, int rotations, long runs, UncertainAdder adder) {
