@@ -75,16 +75,26 @@ public final class AdderTest implements TestSupport {
 
     @Override
     public void sum(UncertainSum sum) {
-      final long started = intents.sum();
+      final long intentsBefore = intents.sum();
+      final long completesBefore = completes.sum();
       sum.value = value.sum();
-      final long ended = completes.sum();
-      sum.certain = started == ended;
+      if (intentsBefore == completesBefore) {
+        final long completesAfter = completes.sum();
+        sum.certain = completesBefore == completesAfter;
+      } else {
+        sum.certain = false;
+      }
     }
   }
   
+  private static final boolean BIG_TEST = false;
+  
   @Test
   public void test() {
-    test(4, 10_000, 10_000, new JucLongAdder());
+    test(4, 1_000, 1_000, new VersionedLongAdder());
+    if (BIG_TEST) {
+      test(4, 100_000, 1_000, new VersionedLongAdder());
+    }
   }
   
   private void test(int baseThreads, int rotations, long runs, UncertainAdder adder) {
