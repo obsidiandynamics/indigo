@@ -26,7 +26,7 @@ public final class ParallelJob implements Runnable {
   }
   
   private static ParallelJob create(int threads, boolean blocking, Consumer<Integer> r) {
-    final CountDownLatch latch = new CountDownLatch(threads);
+    final CountDownLatch latch = blocking ? new CountDownLatch(threads) : null;
     final CyclicBarrier barrier = new CyclicBarrier(threads + 1);
     final String threadNameFormat = "ParRunner-%0" + numDigits(threads) + "d";
     for (int i = 0; i < threads; i++) {
