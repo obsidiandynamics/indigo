@@ -8,12 +8,12 @@ import com.obsidiandynamics.indigo.benchmark.*;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-  AdderTest.class,
   DrainTest.class,
   EchoBenchmark.class,
   EgressTest.class,
   ExternalAskTest.class,
   FaultTest.class,
+  IntegralTest.class,
   ParallelConsistencyTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
