@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.*;
 import org.junit.runner.*;
 import org.junit.runner.notification.*;
 
-public final class AllTestsSoak {
+public final class PrimaryTestsSoak {
   public static void main(String[] args) {
     final int cycles = 4;
     final int n = 10;
@@ -25,7 +25,7 @@ public final class AllTestsSoak {
     System.setProperty(ActorSystemConfig.Key.EXECUTOR, executorChoice.name());
     System.setProperty(ActorConfig.Key.ACTIVATION_FACTORY, activationChoice.name());
     System.setProperty(FaultTest.KEY_TRACE_ENABLED, Boolean.toString(false));
-    System.setProperty(TimeoutTest.KEY_TIMEOUT_TOLERANCE, String.valueOf(50));
+    System.setProperty(TimeoutTest.KEY_TIMEOUT_TOLERANCE, String.valueOf(1_000));
     
     final boolean logFinished = false;
     final boolean logRuns = true;
@@ -47,7 +47,7 @@ public final class AllTestsSoak {
               System.err.println("Failed: " + failure);
             }
           });
-          core.run(computer, AllTests.class);
+          core.run(computer, PrimaryTests.class);
         }).run();
         
         if (logRuns) {

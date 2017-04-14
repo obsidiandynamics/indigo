@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo.util;
 
 import static junit.framework.TestCase.*;
+import static com.obsidiandynamics.indigo.util.LongIntegral.*;
 
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
@@ -10,7 +11,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 
 public final class IntegralTest implements TestSupport {
-  public static final class FaultyIntegral extends LongAdder implements LongIntegral {
+  static final class FaultyIntegral extends LongAdder implements LongIntegral {
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -23,15 +24,15 @@ public final class IntegralTest implements TestSupport {
   
   @Test
   public void testTripleStriped() {
-    final Supplier<LongIntegral> integralFactory = LongIntegral.TripleStriped::new;
+    final Supplier<LongIntegral> integralFactory = TripleStriped::new;
     
     test(4, 1_000, 100, integralFactory.get());
     if (BIG_TEST) {
-      test(4, 20_000_000, 1_000, integralFactory.get());
+      test(4, 1_000_000, 1_000, integralFactory.get());
     }
   }
   
-  private void test(int baseThreads, int rotations, long runs, LongIntegral adder) {
+  private void test(int baseThreads, int rotations, long runs, LongIntegral integral) {
     logTestName();
     
     final AtomicInteger workers = new AtomicInteger(baseThreads);
@@ -40,8 +41,8 @@ public final class IntegralTest implements TestSupport {
       for (int rotation = 0; rotation < rotations; rotation++) {
         ParallelJob.blocking(baseThreads, j -> {
           for (long k = 0; k < runs; k++) {
-            adder.add(1);
-            adder.add(-1);
+            integral.add(1);
+            integral.add(-1);
           }
         }).run();
       }
@@ -51,7 +52,7 @@ public final class IntegralTest implements TestSupport {
 
     while (workers.get() != 0) {
       for (int i = 0; i < 1_000; i++) {
-        final long sum = adder.sumCertain();
+        final long sum = integral.sumCertain();
         if (LOG) log("sum is %d\n", sum);
         assertTrue("sum is " + sum, sum >= 0);
       }

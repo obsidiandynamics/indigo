@@ -5,7 +5,6 @@ import org.junit.runners.*;
 import org.junit.runners.Suite.*;
 
 import com.obsidiandynamics.indigo.benchmark.*;
-import com.obsidiandynamics.indigo.util.*;
 
 @RunWith(Suite.class)
 @SuiteClasses({
@@ -14,7 +13,6 @@ import com.obsidiandynamics.indigo.util.*;
   EgressTest.class,
   ExternalAskTest.class,
   FaultTest.class,
-  IntegralTest.class,
   ParallelConsistencyTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
@@ -26,4 +24,4 @@ import com.obsidiandynamics.indigo.util.*;
   ThroughputBenchmark.class,
   TimeoutTest.class
 })         
-public class AllTests {}
+public class PrimaryTests {}

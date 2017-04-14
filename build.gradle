@@ -11,7 +11,8 @@ dependencies {
 }
 
 test {
-  exclude 'com/obsidiandynamics/indigo/AllTests.class'
+  exclude 'com/obsidiandynamics/indigo/PrimaryTests.class'
+  exclude 'com/obsidiandynamics/indigo/SecondaryTests.class'
 }
 
 task testJar (type: Jar) {

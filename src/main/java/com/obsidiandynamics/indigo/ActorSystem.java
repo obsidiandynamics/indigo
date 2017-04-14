@@ -11,6 +11,12 @@ import com.obsidiandynamics.indigo.Activation.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ActorSystem {
+  /** When draining, the maximum number of yields before putting the thread to sleep. */ 
+  private static final int DRAIN_MAX_YIELDS = 10_000;
+  
+  /** When draining, the number of milliseconds to sleep between checks. */
+  private static final long DRAIN_SLEEP_MILLIS = 1;
+  
   private final ActorSystemConfig config;
   
   private final ExecutorService executor;
@@ -19,7 +25,7 @@ public final class ActorSystem {
   
   private final Map<String, ActorSetup> setupRegistry = new HashMap<>();
   
-  private final LongAdder busyActors = new LongAdder();
+  private final LongIntegral busyActors = new LongIntegral.TripleStriped();
   
   private final ActorRef ingressRef = ActorRef.of(INGRESS);
   
@@ -224,11 +230,11 @@ public final class ActorSystem {
   }
   
   public void _incBusyActors() {
-    busyActors.increment();
+    busyActors.add(1);
   }
   
   public void _decBusyActors() {
-    busyActors.decrement();
+    busyActors.add(-1);
   }
   
   void addError(Throwable t) {
@@ -248,24 +254,29 @@ public final class ActorSystem {
    */
   public long drain(long timeoutMillis) throws InterruptedException {
     final long deadline = timeoutMillis != 0 ? System.currentTimeMillis() + timeoutMillis : 0;
-    while (busyActors.sum() != 0) {
-      synchronized (busyActors) {
-        busyActors.wait(10);
+    final LongIntegral.Sum sum = new LongIntegral.Sum();
+    int yields = DRAIN_MAX_YIELDS;
+    for (;;) {
+      busyActors.sum(sum);
+      if (sum.isCertain() && sum.get() == 0) {
+        return 0;
+      } else if (yields > 0) {
+        Thread.yield();
+        yields--;
+      } else {
+        Thread.sleep(DRAIN_SLEEP_MILLIS);
       }
       
       if (deadline != 0 && System.currentTimeMillis() > deadline) {
-        final long remaining = busyActors.sum();
-        if (remaining >= 0 && config.diagnostics.traceEnabled) {
-          config.diagnostics.trace("AS.drain: executor=%s\n", executor);
-        }
-        return remaining;
+        busyActors.sum(sum);
+        assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, executor);
+        return sum.isCertain() ? sum.get() : Math.max(1, sum.get());
       }
       
       if (! errors.isEmpty()) {
         throw new UnhandledMultiException(errors.toArray(new Throwable[errors.size()]));
       }
     }
-    return 0;
   }
   
   private Activation activate(ActorRef ref) {
@@ -338,7 +349,7 @@ public final class ActorSystem {
     timeoutWatchdog.terminate();
     executor.shutdown();
     
-    if (interrupted || Thread.interrupted()) {
+    if (Thread.interrupted() || interrupted) {
       throw new InterruptedException();
     }
   }

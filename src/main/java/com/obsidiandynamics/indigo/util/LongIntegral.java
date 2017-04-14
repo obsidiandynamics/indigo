@@ -9,11 +9,11 @@ public interface LongIntegral {
     
     public Sum() {}
     
-    public long getValue() {
+    public long get() {
       return value;
     }
     
-    public void setValue(long value) {
+    public void set(long value) {
       this.value = value;
     }
     
@@ -52,6 +52,8 @@ public interface LongIntegral {
       sum(sum);
       if (sum.certain) {
         return sum;
+      } else {
+        Thread.yield();
       }
     }
   }
@@ -76,7 +78,7 @@ public interface LongIntegral {
     public Sum sum(Sum sum) {
       final long intentsBefore = intents.sum();
       final long completesBefore = completes.sum();
-      sum.setValue(value.sum());
+      sum.set(value.sum());
       if (intentsBefore == completesBefore) {
         final long intentsAfter = intents.sum();
         sum.setCertain(intentsBefore == intentsAfter);
