@@ -99,7 +99,9 @@ public final class ThroughputBenchmark implements TestSupport {
     
       try {
         system.drain(0);
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
     }
     
     if (c.log.stages) c.log.out.format("Starting timed run...\n");
