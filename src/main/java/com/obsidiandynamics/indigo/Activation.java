@@ -25,11 +25,6 @@ public abstract class Activation {
   /** Current state of the activation. */
   private ActivationState state = PASSIVATED;
   
-  /** Optimisation: boosts throughput by an average of ~5% when the <code>state</code> variable is supplemented
-   *  by a boolean flag, such that <code>ensureActivated()</code> first checks the flag and only if 
-   *  <code>! activated</code> branches on the <code>state</code> variable. */
-  private boolean activated;
-  
   private Stash stash;
   
   private boolean passivationScheduled;
@@ -268,14 +263,8 @@ public abstract class Activation {
   }
   
   private void stashIfTransitioning() {
-    switch (state) {
-      case ACTIVATING:
-      case PASSIVATING:
-        _stash(Functions::alwaysTrue);
-        break;
-        
-      default:
-        break;
+    if (state == ACTIVATING || state == PASSIVATING) {
+      _stash(Functions::alwaysTrue);
     }
   }
   
@@ -317,34 +306,28 @@ public abstract class Activation {
   }
   
   private boolean ensureActivated(Message m) {
-    if (! activated) {
-      switch (state) {
-        case PASSIVATED:
-          setState(ACTIVATING);
-          try {
-            assert diagnostics().traceMacro("A.ensureActivated: m=%s", m);
-            actor.activated(this);
-          } catch (Throwable t) {
-            fault(t);
-            actorConfig.exceptionHandler.accept(system, t);
-          }
-          
-          if (faultReason != null) {
-            clearPending();
-            _unstash();
-            raiseFault(ON_ACTIVATION, m);
-            setState(PASSIVATED);
-            return false;
-          } else if (pending.isEmpty()) {
-            setState(ACTIVATED);
-            return true;
-          } else {
-            activatingMessage = m;
-            return true;
-          }
-          
-        default:
-          return true;
+    if (state == PASSIVATED) {
+      setState(ACTIVATING);
+      try {
+        assert diagnostics().traceMacro("A.ensureActivated: m=%s", m);
+        actor.activated(this);
+      } catch (Throwable t) {
+        fault(t);
+        actorConfig.exceptionHandler.accept(system, t);
+      }
+      
+      if (faultReason != null) {
+        clearPending();
+        _unstash();
+        raiseFault(ON_ACTIVATION, m);
+        setState(PASSIVATED);
+        return false;
+      } else if (pending.isEmpty()) {
+        setState(ACTIVATED);
+        return true;
+      } else {
+        activatingMessage = m;
+        return true;
       }
     } else {
       return true;
@@ -357,7 +340,6 @@ public abstract class Activation {
   
   private void setState(ActivationState state) {
     this.state = state;
-    activated = state == ACTIVATED;
   }
   
   protected final void passivateIfScheduled() {
