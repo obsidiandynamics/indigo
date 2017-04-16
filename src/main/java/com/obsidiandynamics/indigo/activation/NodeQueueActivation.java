@@ -109,7 +109,7 @@ public final class NodeQueueActivation extends Activation {
   private boolean park(Node n) {
     assert diagnostics().traceMacro("NQA.park: ref=%s, pending=%d", ref, pending.size());
     final boolean noPending = pending.isEmpty();
-    final boolean disposing = state == PASSIVATED;
+    final boolean disposing = getState() == PASSIVATED;
     if (disposing) {
       disposalAttemptProposed = true;
     }

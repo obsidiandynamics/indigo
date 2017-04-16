@@ -93,7 +93,7 @@ public final class SyncQueueActivation extends Activation {
       noBacklog = backlog.isEmpty();
       noPending = pending.isEmpty();
       
-      if (noBacklog && state == PASSIVATED) {
+      if (noBacklog && getState() == PASSIVATED) {
         assert diagnostics().traceMacro("SQA.run: disposing ref=%s", ref);
         system._dispose(ref);
         disposed = true;

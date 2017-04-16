@@ -22,7 +22,13 @@ public abstract class Activation {
   
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
-  protected ActivationState state = PASSIVATED;
+  /** Current state of the activation. */
+  private ActivationState state = PASSIVATED;
+  
+  /** Optimisation: boosts throughput by an average of ~5% when the <code>state</code> variable is supplemented
+   *  by a boolean flag, such that <code>ensureActivated()</code> first checks the flag and only if 
+   *  <code>! activated</code> branches on the <code>state</code> variable. */
+  private boolean activated;
   
   private Stash stash;
   
@@ -311,34 +317,47 @@ public abstract class Activation {
   }
   
   private boolean ensureActivated(Message m) {
-    switch (state) {
-      case PASSIVATED:
-        state = ACTIVATING;
-        try {
-          assert diagnostics().traceMacro("A.ensureActivated: m=%s", m);
-          actor.activated(this);
-        } catch (Throwable t) {
-          fault(t);
-          actorConfig.exceptionHandler.accept(system, t);
-        }
-        
-        if (faultReason != null) {
-          clearPending();
-          _unstash();
-          raiseFault(ON_ACTIVATION, m);
-          state = PASSIVATED;
-          return false;
-        } else if (pending.isEmpty()) {
-          state = ACTIVATED;
+    if (! activated) {
+      switch (state) {
+        case PASSIVATED:
+          setState(ACTIVATING);
+          try {
+            assert diagnostics().traceMacro("A.ensureActivated: m=%s", m);
+            actor.activated(this);
+          } catch (Throwable t) {
+            fault(t);
+            actorConfig.exceptionHandler.accept(system, t);
+          }
+          
+          if (faultReason != null) {
+            clearPending();
+            _unstash();
+            raiseFault(ON_ACTIVATION, m);
+            setState(PASSIVATED);
+            return false;
+          } else if (pending.isEmpty()) {
+            setState(ACTIVATED);
+            return true;
+          } else {
+            activatingMessage = m;
+            return true;
+          }
+          
+        default:
           return true;
-        } else {
-          activatingMessage = m;
-          return true;
-        }
-        
-      default:
-        return true;
+      }
+    } else {
+      return true;
     }
+  }
+  
+  protected ActivationState getState() {
+    return state;
+  }
+  
+  private void setState(ActivationState state) {
+    this.state = state;
+    activated = state == ACTIVATED;
   }
   
   protected final void passivateIfScheduled() {
@@ -346,7 +365,7 @@ public abstract class Activation {
       assert diagnostics().traceMacro("A.passivateIfScheduled: passivating ref=%s", ref);
       
       passivationScheduled = false;
-      state = PASSIVATING;
+      setState(PASSIVATING);
       try {
         actor.passivated(this);
       } catch (Throwable t) {
@@ -358,9 +377,9 @@ public abstract class Activation {
         clearPending();
         _unstash();
         raiseFault(ON_PASSIVATION, null);
-        state = ACTIVATED;
+        setState(ACTIVATED);
       } else if (pending.isEmpty()) {
-        state = PASSIVATED;
+        setState(PASSIVATED);
       }
     }
   }
@@ -455,7 +474,7 @@ public abstract class Activation {
           if (stash != null && ! stash.messages.isEmpty()) {
             stash.messages.remove(0);
           }
-          state = PASSIVATED;
+          setState(PASSIVATED);
           fault(fault.getReason());
           raiseFault(ON_ACTIVATION, activatingMessage);
           activatingMessage = null;
@@ -464,7 +483,7 @@ public abstract class Activation {
         case PASSIVATING:
           clearPending();
           _unstash();
-          state = ACTIVATED;
+          setState(ACTIVATED);
           fault(fault.getReason());
           raiseFault(ON_PASSIVATION, null);
           break;
@@ -477,12 +496,12 @@ public abstract class Activation {
         case ACTIVATING:
           _unstash();
           activatingMessage = null;
-          state = ACTIVATED;
+          setState(ACTIVATED);
           break;
           
         case PASSIVATING:
           _unstash();
-          state = PASSIVATED;
+          setState(PASSIVATED);
           break;
           
         default:

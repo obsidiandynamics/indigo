@@ -130,7 +130,7 @@ public final class ThroughputBenchmark implements TestSupport {
       executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 1;
-      n = 4_000_000;
+      n = 10_000_000;
       warmupFrac = .05f;
       bias = 10_000;
       log = new LogConfig() {{
