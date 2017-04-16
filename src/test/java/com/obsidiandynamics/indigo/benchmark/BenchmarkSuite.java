@@ -11,7 +11,7 @@ public final class BenchmarkSuite {
       summary = true;
     }};
     
-    System.out.println("_\nExternal messages - high throughput");
+    System.out.println("_\nExternal messages - burst throughput");
     new ThroughputBenchmark.Config() {{
       executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors() * 1;
@@ -28,16 +28,16 @@ public final class BenchmarkSuite {
       threads = 1;
       actors = 1;
       bias = 1;
-      messages = 1_000_000;
+      messages = 10_000_000;
       seedMessages = 1;
       warmupFrac = .25f;
       log = LOG;
       stats = true;
       statsSync = true;
       statsSamples = 1_000;
-    }}.testPercentile(1, 3, 50, Summary::byLatency);
+    }}.testPercentile(3, 5, 50, Summary::byLatency);
     
-    System.out.println("_\nMessage echo - high throughput");
+    System.out.println("_\nMessage echo - sustained throughput");
     new EchoBenchmark.Config() {{
       executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors();
@@ -58,7 +58,7 @@ public final class BenchmarkSuite {
       threads = 1;
       actors = 1;
       bias = 1;
-      pairs = 1_000_000;
+      pairs = 10_000_000;
       seedPairs = 1;
       warmupFrac = .25f;
       timeout = 0;
@@ -66,9 +66,9 @@ public final class BenchmarkSuite {
       stats = true;
       statsSync = true;
       statsSamples = 1_000;
-    }}.testPercentile(1, 3, 50, Summary::byLatency);
+    }}.testPercentile(3, 5, 50, Summary::byLatency);
     
-    System.out.println("_\nMessage pairs - high throughput");
+    System.out.println("_\nMessage pairs - burst throughput");
     new RequestResponseBenchmark.Config() {{
       executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors();

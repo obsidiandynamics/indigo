@@ -173,21 +173,20 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
   
   public static void main(String[] args) {
     new Config() {{
-      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
-      threads = Runtime.getRuntime().availableProcessors();
+      threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 2;
       bias = 1_000;
-      pairs = 20_000_000;
+      pairs = 10_000_000;
       seedPairs = 1_000;
       warmupFrac = .25f;
       timeout = 0;
       log = new LogConfig() {{
-        summary = stages = true;
+        summary = true;
       }};
       stats = false;
       statsSync = true;
       statsSamples = 1_000;
-    }}.test();
+    }}.testPercentile(3, 5, 50, Summary::byThroughput);
   }
 }
 

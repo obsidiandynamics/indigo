@@ -29,14 +29,16 @@ final class Summary {
       executor.shutdown();
       try {
         executor.awaitTermination(1, TimeUnit.MINUTES);
-      } catch (InterruptedException e) {}
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append(format("%,d ops took %,d ms, %,d ops/s", timedOps, avgTime, timedOps / Math.max(1, avgTime) * 1000));
+    sb.append(format("%,d ops took %,d ms, %,d op/s", timedOps, avgTime, timedOps / Math.max(1, avgTime) * 1000));
     if (stats.samples.getN() != 0) {
       sb.append(format("\nLatency: mean: %,.1f, sd: %,.1f, min: %,.1f, 50%%: %,.1f, 95%%: %,.1f, 99%%: %,.1f, max: %,.1f (µs, N=%,d)", 
                        stats.samples.getMean() / 1000, 
