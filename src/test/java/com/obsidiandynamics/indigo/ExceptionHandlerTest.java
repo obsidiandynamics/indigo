@@ -45,41 +45,49 @@ public final class ExceptionHandlerTest implements TestSupport {
   }
   
   private void testConsole(Supplier<ActorSystemConfig> actorSystemConfigSupplier, Supplier<ActorConfig> actorConfigSupplier) throws IOException {
-    logTestName();
-    
-    final PrintStream standardErr = System.err;
-    try (ByteArrayOutputStream out = new ByteArrayOutputStream(); PrintStream customErr = new PrintStream(out)) {
-      System.setErr(customErr);
+    synchronized (ExceptionHandlerTest.class) {
+      // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
+      logTestName();
       
-      assertEquals(0, out.size());
-      
-      actorSystemConfigSupplier.get().define()
-      .when(SINK).configure(actorConfigSupplier.get()).lambda((a, m) -> {
-        throw new HandlerTestException();
-      })
-      .ingress(a -> a.to(ActorRef.of(SINK)).tell())
-      .shutdownQuietly();
-      
-      final String output = new String(out.toByteArray());
-      log("output is %s\n", output);
-      
-      final String exceptionFullName = HandlerTestException.class.getName();
-      assertTrue(output.startsWith(exceptionFullName));
-    } finally {
-      System.setErr(standardErr);
+      final PrintStream standardErr = System.err;
+      try (ByteArrayOutputStream out = new ByteArrayOutputStream(); PrintStream customErr = new PrintStream(out)) {
+        System.setErr(customErr);
+        
+        assertEquals(0, out.size());
+        
+        actorSystemConfigSupplier.get().define()
+        .when(SINK).configure(actorConfigSupplier.get()).lambda((a, m) -> {
+          throw new HandlerTestException();
+        })
+        .ingress(a -> a.to(ActorRef.of(SINK)).tell())
+        .shutdownQuietly();
+        
+        final String output = new String(out.toByteArray());
+        log("output is %s\n", output);
+        
+        final String exceptionFullName = HandlerTestException.class.getName();
+        assertTrue(output.startsWith(exceptionFullName));
+      } finally {
+        System.setErr(standardErr);
+      }
     }
   }
   
   @Test(expected=UnhandledMultiException.class)
-  public void testDrain() {
-    new TestActorSystemConfig() {{
+  public void testDrain() throws InterruptedException {
+    final ActorSystem system = new TestActorSystemConfig() {{
       exceptionHandler = DRAIN;
     }}
     .define()
     .when(SINK).lambda((a, m) -> {
       throw new HandlerTestException();
     })
-    .ingress(a -> a.to(ActorRef.of(SINK)).tell())
-    .shutdownQuietly();
+    .ingress(a -> a.to(ActorRef.of(SINK)).tell());
+    
+    try {
+      system.drain(0);
+    } finally {
+      system.shutdownQuietly();
+    }
   }
 }
