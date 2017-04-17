@@ -42,7 +42,7 @@ public abstract class ActorSystemConfig {
   public enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
     /** Forwards the exception to the system-level handler. Can only be used within the actor config. */
     SYSTEM((sys, t) -> sys.getConfig().exceptionHandler.accept(sys, t)),
-    /** Prints the stack trace to the console. */
+    /** Prints the stack trace to <code>System.err</code>. */
     CONSOLE((sys, t) -> t.printStackTrace()),
     /** Accumulates exceptions internally, throwing them from the <code>drain()</code> method. */
     DRAIN((sys, t) -> sys.addError(t));
@@ -74,6 +74,10 @@ public abstract class ActorSystemConfig {
   }
   
   final void init() {
+    if (exceptionHandler == ExceptionHandlerChoice.SYSTEM) {
+      throw new IllegalArgumentException(String.format("Cannot use %s.%s as a top level exception handler", 
+                                                       ExceptionHandlerChoice.class.getSimpleName(), ExceptionHandlerChoice.SYSTEM));
+    }
     diagnostics.init();
   }
   

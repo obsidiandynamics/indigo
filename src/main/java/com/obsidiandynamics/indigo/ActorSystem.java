@@ -241,6 +241,10 @@ public final class ActorSystem {
     errors.add(t);
   }
   
+  /**
+   *  Forces the timeout of any in-flight request-response style messages, as well as any future
+   *  messages enqueued after this call.
+   */
   public void forceTimeout() {
     timeoutWatchdog.forceTimeout();
   }
