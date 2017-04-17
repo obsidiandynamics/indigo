@@ -263,6 +263,7 @@ public abstract class Activation {
   }
   
   private void stashIfTransitioning() {
+    final ActivationState state = this.state;
     if (state == ACTIVATING || state == PASSIVATING) {
       _stash(Functions::alwaysTrue);
     }
