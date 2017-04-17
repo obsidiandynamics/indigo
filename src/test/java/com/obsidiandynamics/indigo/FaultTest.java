@@ -1,10 +1,10 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.FaultType.*;
+import static com.obsidiandynamics.indigo.TestSupport.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import static junit.framework.TestCase.*;
 
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
@@ -129,11 +129,11 @@ public final class FaultTest implements TestSupport {
     assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
     if (async) {
       assertTrue(failedActivations.get() * 2 == system.getDeadLetterQueue().size());
-      assertTrue(failedActivations.get() == count(ON_ACTIVATION, system.getDeadLetterQueue()));
-      assertTrue(failedActivations.get() == count(ON_RESPONSE, system.getDeadLetterQueue()));
+      assertTrue(failedActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
+      assertTrue(failedActivations.get() == countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
     } else {
       assertTrue(failedActivations.get() == system.getDeadLetterQueue().size());
-      assertTrue(failedActivations.get() == count(ON_ACTIVATION, system.getDeadLetterQueue()));
+      assertTrue(failedActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
     }
   }
   
@@ -209,7 +209,7 @@ public final class FaultTest implements TestSupport {
     assertTrue(received.get() + failedActivations.get() == n);
     assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
     assertTrue(failedActivations.get() == system.getDeadLetterQueue().size());
-    assertTrue(failedActivations.get() == count(ON_ACTIVATION, system.getDeadLetterQueue()));
+    assertTrue(failedActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
   }
   
   @Test
@@ -271,7 +271,7 @@ public final class FaultTest implements TestSupport {
     assertTrue(activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
     assertTrue(faults.get() == system.getDeadLetterQueue().size());
-    assertTrue(count(ON_ACTIVATION, system.getDeadLetterQueue()) + count(ON_ACT, system.getDeadLetterQueue()) == faults.get());
+    assertTrue(countFaults(ON_ACTIVATION, system.getDeadLetterQueue()) + countFaults(ON_ACT, system.getDeadLetterQueue()) == faults.get());
   }
   
   @Test
@@ -363,11 +363,11 @@ public final class FaultTest implements TestSupport {
     assertTrue(passivated.get() == passivationAttempts.get() - failedPassivations.get());
     if (async) {
       assertTrue(failedPassivations.get() * 2 == system.getDeadLetterQueue().size());
-      assertEquals(failedPassivations.get(), count(ON_PASSIVATION, system.getDeadLetterQueue()));
-      assertEquals(failedPassivations.get(), count(ON_RESPONSE, system.getDeadLetterQueue()));
+      assertEquals(failedPassivations.get(), countFaults(ON_PASSIVATION, system.getDeadLetterQueue()));
+      assertEquals(failedPassivations.get(), countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
     } else {
       assertTrue(failedPassivations.get() == system.getDeadLetterQueue().size());
-      assertEquals(failedPassivations.get(), count(ON_PASSIVATION, system.getDeadLetterQueue()));
+      assertEquals(failedPassivations.get(), countFaults(ON_PASSIVATION, system.getDeadLetterQueue()));
     }
   }
   
@@ -420,7 +420,7 @@ public final class FaultTest implements TestSupport {
     
     assertEquals(n, faults.get());
     assertEquals(n, system.getDeadLetterQueue().size());
-    assertEquals(n, count(ON_EGRESS, system.getDeadLetterQueue()));
+    assertEquals(n, countFaults(ON_EGRESS, system.getDeadLetterQueue()));
   }
   
   @Test
@@ -455,8 +455,8 @@ public final class FaultTest implements TestSupport {
     
     system.shutdownQuietly();
     assertEquals(n * 2, system.getDeadLetterQueue().size());
-    assertEquals(n, count(ON_ACT, system.getDeadLetterQueue()));
-    assertEquals(n, count(ON_FAULT, system.getDeadLetterQueue()));
+    assertEquals(n, countFaults(ON_ACT, system.getDeadLetterQueue()));
+    assertEquals(n, countFaults(ON_FAULT, system.getDeadLetterQueue()));
   }
   
   @Test
@@ -487,17 +487,7 @@ public final class FaultTest implements TestSupport {
     
     system.shutdownQuietly();
     assertEquals(n, system.getDeadLetterQueue().size());
-    assertEquals(n, count(ON_TIMEOUT, system.getDeadLetterQueue()));
-  }
-  
-  private static int count(FaultType type, Queue<Fault> deadLetterQueue) {
-    int count = 0;
-    for (Fault fault : deadLetterQueue) {
-      if (fault.getType() == type) {
-        count++;
-      }
-    }
-    return count;
+    assertEquals(n, countFaults(ON_TIMEOUT, system.getDeadLetterQueue()));
   }
   
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {

@@ -33,4 +33,14 @@ public interface TestSupport {
     final long took = System.nanoTime() - started;
     return took / 1_000_000l;
   }
+  
+  static int countFaults(FaultType type, Queue<Fault> deadLetterQueue) {
+    int count = 0;
+    for (Fault fault : deadLetterQueue) {
+      if (fault.getType() == type) {
+        count++;
+      }
+    }
+    return count;
+  }
 }

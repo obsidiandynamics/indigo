@@ -8,6 +8,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
 
 @RunWith(Suite.class)
 @SuiteClasses({
+  DLQTest.class,
   DrainTest.class,
   EchoBenchmark.class,
   EgressTest.class,
