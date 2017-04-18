@@ -7,9 +7,9 @@ import java.util.concurrent.*;
 
 public abstract class Diagnostics {
   public static final class Key {
-    private Key() {}
     public static final String TRACE_ENABLED = "indigo.diagnostics.traceEnabled";
     public static final String LOG_SIZE = "indigo.diagnostics.logSize";
+    private Key() {}
   }
   
   /** Whether tracing should be enabled. */
@@ -17,6 +17,8 @@ public abstract class Diagnostics {
   
   /** The upper bound on the size of the trace log. Beyond this, truncation from the head (least recent) occurs. */
   public int logSize = get(Key.LOG_SIZE, Integer::parseInt, 100_000);
+  
+  private final BlockingQueue<LogEntry> log = new LinkedBlockingQueue<>();
   
   final void init() {
     if (traceEnabled) {
@@ -45,8 +47,6 @@ public abstract class Diagnostics {
       return String.format(format, args);
     }
   }
-  
-  private final BlockingQueue<LogEntry> log = new LinkedBlockingQueue<>();
 
   public boolean traceMacro(String format, Object ... args) {
     trace(format, args);

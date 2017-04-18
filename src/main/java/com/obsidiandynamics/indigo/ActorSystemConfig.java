@@ -12,12 +12,12 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
 public abstract class ActorSystemConfig {
   public static final class Key {
-    private Key() {}
     public static final String PARALLELISM = "indigo.system.parallelism";
     public static final String DEFAULT_ASK_TIMEOUT_MILLIS = "indigo.system.defaultAskTimeoutMillis";
     public static final String EXECUTOR = "indigo.system.executor";
     public static final String EXCEPTION_HANDLER = "indigo.system.exceptionHandler";
     public static final String DEAD_LETTER_QUEUE_SIZE = "indigo.system.deadLetterQueueSize";
+    private Key() {}
   }
   
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may

@@ -18,11 +18,9 @@ public final class CappedForkJoinPool extends ForkJoinPool {
                             UncaughtExceptionHandler handler,
                             boolean asyncMode) {
     super(min(parallelism, MAX_THREADS), 
-          pool -> {
-            return pool.getPoolSize() < min(parallelism * SCALE, MAX_THREADS) 
-                ? defaultForkJoinWorkerThreadFactory.newThread(pool) 
-                : null;
-          }, 
+          pool -> pool.getPoolSize() < min(parallelism * SCALE, MAX_THREADS) 
+              ? defaultForkJoinWorkerThreadFactory.newThread(pool) 
+              : null, 
           handler, 
           asyncMode);
   }

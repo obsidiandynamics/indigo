@@ -12,13 +12,13 @@ import com.obsidiandynamics.indigo.activation.*;
 
 public abstract class ActorConfig {
   public static final class Key {
-    private Key() {}
     public static final String BIAS = "indigo.actor.bias";
     public static final String BACKLOG_THROTTLE_CAPACITY = "indigo.actor.backlogThrottleCapacity";
     public static final String BACKLOG_THROTTLE_MILLIS = "indigo.actor.backlogThrottleMillis";
     public static final String BACKLOG_THROTTLE_TRIES = "indigo.actor.backlogThrottleTries";
     public static final String ACTIVATION_FACTORY = "indigo.actor.activationFactory";
     public static final String EXCEPTION_HANDLER = "indigo.actor.exceptionHandler";
+    private Key() {}
   }
   
   /** The number of consecutive turns an actor is accorded before releasing its thread. */

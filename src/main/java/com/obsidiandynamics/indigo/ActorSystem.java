@@ -339,8 +339,8 @@ public final class ActorSystem {
   /**
    *  Drains the actor system of any pending tasks and terminates it.<p>
    *  
-   *  This method will not return immediately on an interrupt, but will re-assert the
-   *  interrupt prior to eventually returning.
+   *  This method will not return immediately on an interrupt and will strive to run to conclusion, but 
+   *  will re-assert the interrupt prior to eventually returning.
    */
   public void shutdownQuietly() {
     try {
@@ -349,7 +349,13 @@ public final class ActorSystem {
       Thread.currentThread().interrupt();
     }
   }
-
+  
+  /**
+   *  Drains the actor system of any pending tasks and terminates it.<p>
+   *  
+   *  This method will not return immediately on an interrupt and will strive to run to conclusion, but 
+   *  will re-throw <code>InterruptedException</code> prior to eventually returning.
+   */
   public void shutdown() throws InterruptedException {
     boolean interrupted = false;
     

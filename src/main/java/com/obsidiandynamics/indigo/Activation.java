@@ -75,6 +75,8 @@ public abstract class Activation {
     
     private Consumer<Fault> onFault;
     
+    private TimeoutTask timeoutTask;
+    
     MessageBuilder(MessageTarget target) {
       this.target = target;
     }
@@ -113,8 +115,6 @@ public abstract class Activation {
       this.onFault = onFault;
       return this;
     }
-    
-    private TimeoutTask timeoutTask;
     
     public void onResponse(Consumer<Message> onResponse) {
       if (timeoutMillis != 0 ^ onTimeout != null) {
@@ -263,8 +263,8 @@ public abstract class Activation {
   }
   
   private void stashIfTransitioning() {
-    final ActivationState state = this.state;
-    if (state == ACTIVATING || state == PASSIVATING) {
+    final ActivationState stateCache = state;
+    if (stateCache == ACTIVATING || stateCache == PASSIVATING) {
       _stash(Functions::alwaysTrue);
     }
   }
