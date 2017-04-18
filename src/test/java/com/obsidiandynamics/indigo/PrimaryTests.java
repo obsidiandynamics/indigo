@@ -6,7 +6,7 @@ import org.junit.runners.Suite.*;
 
 import com.obsidiandynamics.indigo.benchmark.*;
 
-@RunWith(Suite.class)
+@RunWith(CycleSuite.class)
 @SuiteClasses({
   DLQTest.class,
   DrainTest.class,
