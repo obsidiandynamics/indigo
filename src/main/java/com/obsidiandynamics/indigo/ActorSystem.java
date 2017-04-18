@@ -31,7 +31,7 @@ public final class ActorSystem {
   
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
-  private final List<Throwable> errors = new CopyOnWriteArrayList<>();
+  private final BlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
   
   private final BlockingQueue<Fault> deadLetterQueue = new LinkedBlockingQueue<>();
   
@@ -255,30 +255,42 @@ public final class ActorSystem {
    *  @param timeoutMillis The maximum amount of time to wait, or 0 for indefinite.
    *  @return The number of backlogged actors remaining.
    *  @throws InterruptedException
+   *  @throws UnhandledMultiException If any unhandled exceptions were accumulated.
    */
   public long drain(long timeoutMillis) throws InterruptedException {
     final long deadline = timeoutMillis != 0 ? System.currentTimeMillis() + timeoutMillis : 0;
     final LongIntegral.Sum sum = new LongIntegral.Sum();
     int yields = DRAIN_MAX_YIELDS;
     for (;;) {
-      busyActors.sum(sum);
-      if (sum.isCertain() && sum.get() == 0) {
-        return 0;
-      } else if (yields > 0) {
-        Thread.yield();
-        yields--;
-      } else {
-        Thread.sleep(DRAIN_SLEEP_MILLIS);
-      }
-      
-      if (deadline != 0 && System.currentTimeMillis() > deadline) {
+      try {
         busyActors.sum(sum);
-        assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, executor);
-        return sum.isCertain() ? sum.get() : Math.max(1, sum.get());
-      }
-      
-      if (! errors.isEmpty()) {
-        throw new UnhandledMultiException(errors.toArray(new Throwable[errors.size()]));
+        if (sum.isCertain() && sum.get() == 0) {
+          return 0;
+        } else if (yields > 0) {
+          Thread.yield();
+          yields--;
+        } else {
+          Thread.sleep(DRAIN_SLEEP_MILLIS);
+        }
+        
+        if (deadline != 0 && System.currentTimeMillis() > deadline) {
+          busyActors.sum(sum);
+          assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, executor);
+          return sum.isCertain() ? sum.get() : Math.max(1, sum.get());
+        }
+      } finally {
+        if (! errors.isEmpty()) {
+          final List<Throwable> errorsReturn = new ArrayList<>(errors.size());
+          while (! errors.isEmpty()) {
+            final Throwable error = errors.poll();
+            if (error != null) {
+              errorsReturn.add(error);
+            } else {
+              break;
+            }
+          }
+          throw new UnhandledMultiException(errorsReturn.toArray(new Throwable[errorsReturn.size()]));
+        }
       }
     }
   }

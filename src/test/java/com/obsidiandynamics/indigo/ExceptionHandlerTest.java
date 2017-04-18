@@ -62,6 +62,7 @@ public final class ExceptionHandlerTest implements TestSupport {
         .ingress(a -> a.to(ActorRef.of(SINK)).tell())
         .shutdownQuietly();
         
+        customErr.flush();
         final String output = new String(out.toByteArray());
         log("output is %s\n", output);
         
