@@ -339,8 +339,8 @@ public final class ActorSystem {
   /**
    *  Drains the actor system of any pending tasks and terminates it.<p>
    *  
-   *  This method will not return immediately on an interrupt and will strive to run to conclusion, but 
-   *  will re-assert the interrupt prior to eventually returning.
+   *  This method suppresses an <code>InterruptedException</code> and will re-assert the interrupt 
+   *  prior to returning.
    */
   public void shutdownQuietly() {
     try {
@@ -351,27 +351,18 @@ public final class ActorSystem {
   }
   
   /**
-   *  Drains the actor system of any pending tasks and terminates it.<p>
-   *  
-   *  This method will not return immediately on an interrupt and will strive to run to conclusion, but 
-   *  will re-throw <code>InterruptedException</code> prior to eventually returning.
+   *  Drains the actor system of any pending tasks and terminates it.
    */
   public void shutdown() throws InterruptedException {
-    boolean interrupted = false;
-    
     for (;;) {
-      try {
-        drain(0);
-        break;
-      } catch (InterruptedException e) {
-        interrupted = true;
-      }
+      drain(0);
+      break;
     }
     timeoutWatchdog.forceTimeout();
     timeoutWatchdog.terminate();
     executor.shutdown();
     
-    if (Thread.interrupted() || interrupted) {
+    if (Thread.interrupted()) {
       throw new InterruptedException();
     }
   }
