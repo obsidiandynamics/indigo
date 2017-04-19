@@ -7,6 +7,7 @@ import static junit.framework.TestCase.*;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.*;
 
 import org.junit.*;
 
@@ -48,113 +49,41 @@ public final class FaultTest implements TestSupport {
   
   @Test
   public void testOnSyncActivationUnbiased() {
-    testOnActivation(false, 100 * SCALE, 1);
+    testOnActivation(attempts -> false, 100 * SCALE, 1);
   }
   
   @Test
   public void testOnSyncActivationBiased() {
-    testOnActivation(false, 100 * SCALE, 10);
+    testOnActivation(attempts -> false, 100 * SCALE, 10);
   }
 
   @Test
   public void testOnAsyncActivationUnbiased() {
-    testOnActivation(true, 100 * SCALE, 1);
+    testOnActivation(attempts -> true, 100 * SCALE, 1);
   }
 
   @Test
   public void testOnAsyncActivationBiased() {
-    testOnActivation(true, 100 * SCALE, 10);
-  }
-  
-  private void testOnActivation(boolean async, int n, int actorBias) {
-    logTestName();
-    
-    final AtomicInteger activationAttempts = new AtomicInteger();
-    final AtomicInteger received = new AtomicInteger();
-    final AtomicInteger failedActivations = new AtomicInteger();
-    final AtomicInteger passivated = new AtomicInteger();
-    
-    final ExecutorService external = Executors.newSingleThreadExecutor();
-
-    final ActorSystem system = system(actorBias)
-    .define()
-    .when(SINK)
-    .use(StatelessLambdaActor.builder()
-         .activated(a -> {
-           log("activating\n");
-           syncOrAsync(a, external, async, () -> {
-             if (activationAttempts.getAndIncrement() % 2 == 0) {
-               log("fault\n");
-               a.fault("boom");
-               failedActivations.incrementAndGet();
-               
-               a.egress(() -> null)
-               .using(external)
-               .await(1_000).onTimeout(() -> {
-                 log("egress timed out\n");
-                 fail("egress timed out");
-               })
-               .onResponse(r -> {
-                 log("egress responded\n");
-                 fail("egress responded");
-               });
-               Thread.yield();
-             } else {
-               log("activated\n");
-             }
-           });
-         })
-         .act((a, m) -> {
-           log("act %d\n", m.<Integer>body());
-           received.getAndIncrement();
-           a.passivate();
-         })
-         .passivated(a -> {
-           log("passivated\n");
-           passivated.getAndIncrement();
-         })
-    )
-    .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i));
-    
-    try {
-      system.drain(0);
-      external.shutdown();
-      external.awaitTermination(10, TimeUnit.SECONDS);
-    } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdownQuietly();
-    
-    log("activationAttempts: %s, failedActivations: %s, received: %s, passivated: %s\n",
-        activationAttempts, failedActivations, received, passivated);
-    assertTrue(failedActivations.get() >= 1);
-    assertTrue(activationAttempts.get() >= failedActivations.get());
-    assertTrue(received.get() + failedActivations.get() == n);
-    assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
-    if (async) {
-      assertTrue(failedActivations.get() * 2 == system.getDeadLetterQueue().size());
-      assertTrue(failedActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
-      assertTrue(failedActivations.get() == countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
-    } else {
-      assertTrue(failedActivations.get() == system.getDeadLetterQueue().size());
-      assertTrue(failedActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
-    }
+    testOnActivation(attempts -> true, 100 * SCALE, 10);
   }
   
   @Test
   public void testOnMixedActivationUnbiased() {
-    testOnMixedActivation(100 * SCALE, 1);
+    testOnActivation(attempts -> attempts % 2 == 0, 100 * SCALE, 1);
   }
   
   @Test
   public void testOnMixedActivationBiased() {
-    testOnMixedActivation(100 * SCALE, 10);
+    testOnActivation(attempts -> attempts % 2 == 0, 100 * SCALE, 10);
   }
-
-  private void testOnMixedActivation(int n, int actorBias) {
+  
+  private void testOnActivation(Function<Integer, Boolean> asyncTest, int n, int actorBias) {
     logTestName();
     
     final AtomicInteger activationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
-    final AtomicInteger failedActivations = new AtomicInteger();
+    final AtomicInteger failedAsyncActivations = new AtomicInteger();
+    final AtomicInteger failedSyncActivations = new AtomicInteger();
     final AtomicInteger passivated = new AtomicInteger();
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
@@ -165,11 +94,16 @@ public final class FaultTest implements TestSupport {
     .use(StatelessLambdaActor.builder()
          .activated(a -> {
            log("activating\n");
-           syncOrAsync(a, external, activationAttempts.get() % 2 == 0, () -> {
+           final boolean async = asyncTest.apply(activationAttempts.get());
+           syncOrAsync(a, external, async, () -> {
              if (activationAttempts.getAndIncrement() % 10 != 0) {
                log("fault\n");
                a.fault("boom");
-               failedActivations.incrementAndGet();
+               if (async) {
+                 failedAsyncActivations.incrementAndGet();
+               } else {
+                 failedSyncActivations.incrementAndGet();
+               }
                
                a.egress(() -> null)
                .using(external)
@@ -206,15 +140,16 @@ public final class FaultTest implements TestSupport {
     } catch (InterruptedException e) { throw new RuntimeException(e); }
     system.shutdownQuietly();
     
-    log("activationAttempts: %s, failedActivations: %s, received: %s, passivated: %s\n",
-        activationAttempts, failedActivations, received, passivated);
-    assertTrue(failedActivations.get() >= 1);
-    assertTrue(activationAttempts.get() >= failedActivations.get());
-    assertTrue(received.get() + failedActivations.get() == n);
-    assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
-    assertTrue(system.getDeadLetterQueue().size() > 0);
-    assertTrue(countFaults(ON_ACTIVATION, system.getDeadLetterQueue()) > 0);
-    assertTrue(countFaults(ON_RESPONSE, system.getDeadLetterQueue()) > 0);
+    final int failedActivations = failedAsyncActivations.get() + failedSyncActivations.get();
+    log("activationAttempts: %s, failedAsyncActivations: %s, failedSyncActivations: %s, received: %s, passivated: %s\n",
+        activationAttempts, failedAsyncActivations, failedSyncActivations, received, passivated);
+    assertTrue(failedActivations >= 1);
+    assertTrue(activationAttempts.get() >= failedActivations);
+    assertTrue(received.get() + failedActivations == n);
+    assertTrue(passivated.get() == activationAttempts.get() - failedActivations);
+    assertTrue(failedAsyncActivations.get() * 2 + failedSyncActivations.get() == system.getDeadLetterQueue().size());
+    assertTrue(failedAsyncActivations.get() + failedSyncActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
+    assertTrue(failedAsyncActivations.get() == countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
   }
   
   @Test
