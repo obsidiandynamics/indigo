@@ -90,20 +90,11 @@ public final class CycleSuite extends Suite {
       for (Runner child : children) {
         try {
           final Runner r = new BlockJUnit4ClassRunner(((BlockJUnit4ClassRunner) child).getTestClass().getJavaClass()) {
-            private final Map<FrameworkMethod, Description> descriptionCache = new IdentityHashMap<>();
-            
             @Override protected Description describeChild(FrameworkMethod method) {
-              final Description cached = descriptionCache.get(method);
-              if (cached == null) {
-                final Description s = super.describeChild(method);
-                final Description derived = Description.createTestDescription(s.getClassName(), 
-                                                                              s.getMethodName() + paramsToString(params), 
-                                                                              s.getAnnotations().toArray(new Annotation[0]));
-                descriptionCache.put(method, derived);
-                return derived;
-              } else {
-                return cached;
-              }
+              final Description s = super.describeChild(method);
+              return Description.createTestDescription(s.getClassName(), 
+                                                       s.getMethodName() + paramsToString(params), 
+                                                       s.getAnnotations().toArray(new Annotation[0]));
             }
 
             private String paramsToString(Parameter[] params) {
