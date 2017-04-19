@@ -89,8 +89,8 @@ final class TimeoutWatchdog extends Thread {
     }
   }
   
-  void dequeue(TimeoutTask task) {
-    timeouts.remove(task);
+  boolean dequeue(TimeoutTask task) {
+    return timeouts.remove(task);
   }
   
   private void delay(long until) {
@@ -141,7 +141,8 @@ final class TimeoutWatchdog extends Thread {
   }
   
   void timeout(TimeoutTask timeoutTask) {
-    dequeue(timeoutTask);
-    system.send(new Message(null, timeoutTask.getActivation().self(), TIMEOUT_SIGNAL, timeoutTask.getRequestId(), true));
+    if (dequeue(timeoutTask)) {
+      system.send(new Message(null, timeoutTask.getActivation().self(), TIMEOUT_SIGNAL, timeoutTask.getRequestId(), true));
+    }
   }
 }

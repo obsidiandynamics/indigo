@@ -17,6 +17,9 @@ public final class ActorSystem {
   /** When draining, the number of milliseconds to sleep between checks. */
   private static final long DRAIN_SLEEP_MILLIS = 1;
   
+  /** A symbol for a task that's been cancelled. */
+  private static final TimeoutTask CANCELLED = new TimeoutTask(0, null, null, null);
+  
   private final ActorSystemConfig config;
   
   private final ExecutorService executor;
@@ -192,22 +195,39 @@ public final class ActorSystem {
   public <T> CompletableFuture<T> ask(ActorRef ref, long timeoutMillisUpperBound, Object requestBody) {
     final CompletableFuture<T> f = new CompletableFuture<>();
     
+    final AtomicBoolean taskRegion = new AtomicBoolean();
     final AtomicReference<TimeoutTask> timeoutTaskHolder = new AtomicReference<>();
     ingress(a -> {
-      if (! f.isCancelled()) {
-        final MessageBuilder mb = a.to(ref);
-        mb.ask(requestBody).await(timeoutMillisUpperBound)
-        .onTimeout(() -> f.completeExceptionally(new TimeoutException()))
-        .onResponse(r -> f.complete(r.body()));
-        timeoutTaskHolder.set(mb.getTimeoutTask());
+      if (taskRegion.compareAndSet(false, true)) {
+        if (! f.isCancelled()) {
+          final MessageBuilder mb = a.to(ref);
+          mb.ask(requestBody).await(timeoutMillisUpperBound)
+          .onTimeout(() -> f.completeExceptionally(new TimeoutException()))
+          .onResponse(r -> f.complete(r.body()));
+          timeoutTaskHolder.set(mb.getTimeoutTask());
+        } else {
+          timeoutTaskHolder.set(CANCELLED);
+        }
       }
     });
     
     f.whenComplete((t, x) -> {
       if (f.isCancelled()) {
-        final TimeoutTask timeoutTask = timeoutTaskHolder.get();
-        if (timeoutTask != null) {
-          timeoutWatchdog.timeout(timeoutTaskHolder.get());
+        if (! taskRegion.compareAndSet(false, true)) {
+          TimeoutTask task;
+          for (;;) {
+            task = timeoutTaskHolder.get();
+            if (task == CANCELLED) {
+              return;
+            } else if (task != null) {
+              timeoutWatchdog.timeout(task);
+              return;
+            } else {
+              Thread.yield();
+            }
+          }
+        } else {
+          timeoutTaskHolder.set(CANCELLED);
         }
       }
     });
