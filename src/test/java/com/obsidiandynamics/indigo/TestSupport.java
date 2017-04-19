@@ -34,6 +34,14 @@ public interface TestSupport {
     return took / 1_000_000l;
   }
   
+  static void sleep(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }  
+  
   static int countFaults(FaultType type, Queue<Fault> deadLetterQueue) {
     int count = 0;
     for (Fault fault : deadLetterQueue) {
