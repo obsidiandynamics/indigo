@@ -57,21 +57,12 @@ public final class NodeQueueActivation extends Activation {
       while (! disposalComplete) {
         Thread.yield();
       }
-      if (backlogSize != null) backlogSize.incrementAndGet();
       return false;
     }
 
     if (t1 == null) {
       if (pending.isEmpty()) {
         system._incBusyActors();
-      }
-
-      if (isDisposing()) {
-        assert diagnostics().traceMacro("NQA.enqueue: awaiting disposal m=%s", m);
-        while (! disposalComplete) {
-          Thread.yield();
-        }
-        return false;
       }
       assert diagnostics().traceMacro("NQA.enqueue: scheduling m=%s", m);
       scheduleRun(t);
