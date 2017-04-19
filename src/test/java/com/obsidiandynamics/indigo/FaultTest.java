@@ -33,6 +33,8 @@ public final class FaultTest implements TestSupport {
         }
       };
       
+      deadLetterQueueSize = Integer.MAX_VALUE;
+      
       diagnostics = new Diagnostics() {{
         traceEnabled = get(KEY_TRACE_ENABLED, Boolean::parseBoolean, true);
       }};
