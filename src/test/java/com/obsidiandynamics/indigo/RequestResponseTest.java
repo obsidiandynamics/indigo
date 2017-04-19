@@ -56,7 +56,7 @@ public final class RequestResponseTest implements TestSupport {
       }
     })
     .when(SINK).lambda((a, m) -> {
-      a.to(ActorRef.of(DRIVER)).tell();
+      a.toSenderOf(m).tell();
     })
     .ingress(a -> a.to(ActorRef.of(DRIVER)).tell())
     .shutdownQuietly();
