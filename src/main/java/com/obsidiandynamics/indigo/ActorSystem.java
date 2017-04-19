@@ -272,7 +272,6 @@ public final class ActorSystem {
           Thread.yield();
           yields--;
         } else {
-          System.out.println("sleeping");
           Thread.sleep(DRAIN_SLEEP_MILLIS);
         }
         
