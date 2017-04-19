@@ -2,12 +2,16 @@ package com.obsidiandynamics.indigo;
 
 import static junit.framework.TestCase.*;
 
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class DrainTest implements TestSupport {
   private static final String STAGE = "stage-";
+  private static final String SINK = "sink";
 
   @Test
   public void testOneStage() throws InterruptedException {
@@ -88,6 +92,29 @@ public final class DrainTest implements TestSupport {
     Thread.currentThread().interrupt();
     system.shutdownQuietly();
     assertTrue(Thread.interrupted());
+    system.shutdownQuietly();
+  }
+  
+  @Test
+  public void testRemainingOnDrain() throws InterruptedException {
+    final int actors = 1;
+    final CyclicBarrier exit = new CyclicBarrier(actors + 1);
+    
+    final ActorSystem system = new TestActorSystemConfig() {{
+      parallelism = actors + 1;
+    }}
+    .define()
+    .when(SINK).lambda((a, m) -> {
+      Threads.await(exit);
+    })
+    .ingress().times(actors).act((a, i) -> {
+      a.to(ActorRef.of(SINK, String.valueOf(i))).tell();
+    });
+
+    final long remaining = system.drain(1);
+    assertTrue("remaining=" + remaining, remaining >= 1);
+    
+    Threads.await(exit);
     system.shutdownQuietly();
   }
 }
