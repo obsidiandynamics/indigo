@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import java.lang.annotation.*;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.*;
 
@@ -85,29 +86,57 @@ public final class CycleSuite extends Suite {
   @Override
   protected List<Runner> getChildren() {
     final List<Runner> children = super.getChildren();
-    final List<Runner> runners = new ArrayList<>(children.size() * matrix.length);
+    final List<Runner> wrapped = new ArrayList<>(children.size() * matrix.length);
     for (Parameter[] params : matrix) {
       for (Runner child : children) {
-        try {
-          final Runner r = new BlockJUnit4ClassRunner(((BlockJUnit4ClassRunner) child).getTestClass().getJavaClass()) {
-            @Override protected Description describeChild(FrameworkMethod method) {
-              final Description s = super.describeChild(method);
-              return Description.createTestDescription(s.getClassName(), 
-                                                       s.getMethodName() + paramsToString(params), 
-                                                       s.getAnnotations().toArray(new Annotation[0]));
-            }
-
-            private String paramsToString(Parameter[] params) {
-              return Arrays.asList(params).stream().map(p -> p.value).collect(Collectors.toList()).toString();
-            }
-          };
-          runners.add(new ParametrisedRunner(r, params));
-        } catch (InitializationError e) {
-          e.printStackTrace();
-        } 
+        wrapRunner(child, params, wrapped);
       }
     }
-    return runners;
+    return wrapped;
+  }
+  
+  private static void wrapRunner(Runner runner, Parameter[] params, List<Runner> wrapped) {
+    if (runner instanceof BlockJUnit4ClassRunner) {
+      wrapped.add(wrapBlockRunner((BlockJUnit4ClassRunner) runner, params));
+    } else if (runner instanceof Suite) {
+      wrapSuite((Suite) runner, params, wrapped);
+    } else {
+      throw new IllegalArgumentException("Cannot wrap runners of type " + runner.getClass().getName());
+    }
+  }
+  
+  private static void wrapSuite(Suite suite, Parameter[] params, List<Runner> wrapped) {
+    try {
+      final Method method = suite.getClass().getDeclaredMethod("getChildren");
+      method.setAccessible(true);
+      @SuppressWarnings("unchecked")
+      final List<Runner> children = (List<Runner>) method.invoke(suite);
+      for (Runner child : children) {
+        wrapRunner(child, params, wrapped);
+      }
+    } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+  
+  private static ParametrisedRunner wrapBlockRunner(BlockJUnit4ClassRunner blockRunner, Parameter[] params) {
+    try {
+      final Runner r = new BlockJUnit4ClassRunner(blockRunner.getTestClass().getJavaClass()) {
+        @Override protected Description describeChild(FrameworkMethod method) {
+          final Description s = super.describeChild(method);
+          return Description.createTestDescription(s.getClassName(), 
+                                                   s.getMethodName() + paramsToString(params), 
+                                                   s.getAnnotations().toArray(new Annotation[0]));
+        }
+
+        private String paramsToString(Parameter[] params) {
+          return Arrays.asList(params).stream().map(p -> p.value).collect(Collectors.toList()).toString();
+        }
+      };
+      return new ParametrisedRunner(r, params);
+    } catch (InitializationError e) {
+      throw new IllegalStateException("Failed to initialise runner", e);
+    } 
   }
   
   @Override

@@ -10,4 +10,4 @@ import com.obsidiandynamics.indigo.util.*;
 @SuiteClasses({
   Integral64Test.class
 })         
-public class SecondaryTests {}
+public class SupportingTests {}

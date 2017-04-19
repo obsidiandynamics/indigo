@@ -11,8 +11,8 @@ dependencies {
 }
 
 test {
-  include 'com/obsidiandynamics/indigo/PrimaryTests.class'
-  include 'com/obsidiandynamics/indigo/SecondaryTests.class'
+  include 'com/obsidiandynamics/indigo/CycledPrimaryTests.class'
+  include 'com/obsidiandynamics/indigo/SupportingTests.class'
 }
 
 task testJar (type: Jar) {
