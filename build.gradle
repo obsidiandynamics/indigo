@@ -11,8 +11,8 @@ dependencies {
 }
 
 test {
-  exclude 'com/obsidiandynamics/indigo/PrimaryTests.class'
-  exclude 'com/obsidiandynamics/indigo/SecondaryTests.class'
+  include 'com/obsidiandynamics/indigo/PrimaryTests.class'
+  include 'com/obsidiandynamics/indigo/SecondaryTests.class'
 }
 
 task testJar (type: Jar) {
@@ -32,12 +32,13 @@ task testJar (type: Jar) {
 
 jar {
   archiveName 'indigo.jar'
+  finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
   dependsOn test
   reports {
-    xml.enabled true
+    xml.enabled false
     html.enabled true
   }
 }
