@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo.util;
 
 import static junit.framework.TestCase.*;
-import static com.obsidiandynamics.indigo.util.LongIntegral.*;
+import static com.obsidiandynamics.indigo.util.Integral64.*;
 
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
@@ -10,8 +10,8 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
 
-public final class IntegralTest implements TestSupport {
-  static final class FaultyIntegral extends LongAdder implements LongIntegral {
+public final class Integral64Test implements TestSupport {
+  static final class FaultyIntegral extends LongAdder implements Integral64 {
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -24,7 +24,7 @@ public final class IntegralTest implements TestSupport {
   
   @Test
   public void testTripleStriped() {
-    final Supplier<LongIntegral> integralFactory = TripleStriped::new;
+    final Supplier<Integral64> integralFactory = TripleStriped::new;
     
     test(4, 1_000, 100, integralFactory.get());
     if (BIG_TEST) {
@@ -32,7 +32,14 @@ public final class IntegralTest implements TestSupport {
     }
   }
   
-  private void test(int baseThreads, int rotations, long runs, LongIntegral integral) {
+  @Test
+  public void testAtomic() {
+    final Supplier<Integral64> integralFactory = Atomic::new;
+    
+    test(4, 100, 100, integralFactory.get());
+  }
+  
+  private void test(int baseThreads, int rotations, long runs, Integral64 integral) {
     logTestName();
     
     final AtomicInteger workers = new AtomicInteger(baseThreads);

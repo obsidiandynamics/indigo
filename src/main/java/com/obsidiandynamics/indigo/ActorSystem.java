@@ -25,7 +25,7 @@ public final class ActorSystem {
   
   private final Map<String, ActorSetup> setupRegistry = new HashMap<>();
   
-  private final LongIntegral busyActors = new LongIntegral.TripleStriped();
+  private final Integral64 busyActors = new Integral64.TripleStriped();
   
   private final ActorRef ingressRef = ActorRef.of(INGRESS);
   
@@ -259,7 +259,7 @@ public final class ActorSystem {
    */
   public long drain(long timeoutMillis) throws InterruptedException {
     final long deadline = timeoutMillis != 0 ? System.currentTimeMillis() + timeoutMillis : 0;
-    final LongIntegral.Sum sum = new LongIntegral.Sum();
+    final Integral64.Sum sum = new Integral64.Sum();
     int yields = DRAIN_MAX_YIELDS;
     for (;;) {
       try {

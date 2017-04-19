@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.util;
 
 import java.util.concurrent.atomic.*;
 
-public interface LongIntegral {
+public interface Integral64 {
   static final class Sum {
     private long value;
     private boolean certain;
@@ -13,7 +13,7 @@ public interface LongIntegral {
       return value;
     }
     
-    public void set(long value) {
+    void set(long value) {
       this.value = value;
     }
     
@@ -21,17 +21,17 @@ public interface LongIntegral {
       return certain;
     }
     
-    public void setCertain(boolean certain) {
+    void setCertain(boolean certain) {
       this.certain = certain;
     }
     
-    public Sum certain(long value) {
+    Sum certain(long value) {
       this.value = value;
       certain = true;
       return this;
     }
     
-    public Sum uncertain(long value) {
+    Sum uncertain(long value) {
       this.value = value;
       certain = false;
       return this;
@@ -62,7 +62,7 @@ public interface LongIntegral {
     return sumCertain(new Sum()).value;
   }
   
-  static final class TripleStriped implements LongIntegral {
+  static final class TripleStriped implements Integral64 {
     private final LongAdder intents = new LongAdder();
     private final LongAdder completes = new LongAdder();
     private final LongAdder value = new LongAdder();
@@ -89,7 +89,7 @@ public interface LongIntegral {
     }
   }
   
-  static final class Atomic implements LongIntegral {
+  static final class Atomic implements Integral64 {
     private final AtomicLong value = new AtomicLong();
 
     @Override
