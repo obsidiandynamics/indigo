@@ -270,10 +270,11 @@ public final class ActorSystem {
   }
   
   /**
-   *  Waits until all actors have completely drained their mailbox backlog.
+   *  Waits until all actors have completely drained their mailbox backlog, returning an approximation
+   *  of the number of backlogged actors.
    *  
    *  @param timeoutMillis The maximum amount of time to wait, or 0 for indefinite.
-   *  @return The number of backlogged actors remaining.
+   *  @return The approximate number of backlogged actors remaining, in the range of 0 to the number of activated actors.
    *  @throws InterruptedException
    *  @throws UnhandledMultiException If any unhandled exceptions were accumulated.
    */
@@ -298,7 +299,7 @@ public final class ActorSystem {
         if (deadline != 0 && System.currentTimeMillis() > deadline) {
           busyActors.sum(sum);
           assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, executor);
-          return sum.isCertain() ? sum.get() : Math.max(1, sum.get());
+          return sum.isCertain() ? sum.get() : Math.min(Math.max(1, sum.get()), activations.size());
         }
       } finally {
         if (! errors.isEmpty()) {
@@ -374,6 +375,8 @@ public final class ActorSystem {
   
   /**
    *  Drains the actor system of any pending tasks and terminates it.
+   *  
+   *  @throws InterruptedException
    */
   public void shutdown() throws InterruptedException {
     for (;;) {
