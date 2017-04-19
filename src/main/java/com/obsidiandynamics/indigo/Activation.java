@@ -381,22 +381,17 @@ public abstract class Activation {
     
     if (stash != null && stash.unstashing) {
       assert diagnostics().traceMacro("A.processMessage: unstashing");
-      try {
-        if (! stash.messages.isEmpty()) {
-          if (! ensureActivated(stash.messages.get(0))) {
-            stash.messages.remove(0);
-            return;
-          }
-          
-          while (stash.unstashing && ! stash.messages.isEmpty()) {
-            final Message stashed = stash.messages.remove(0);
-            processUnsolicited(stashed);
-          }
-        }
-      } finally {
-        if (stash.messages.isEmpty()) {
-          stash = null;
-        }
+      while (! stash.messages.isEmpty() && ! ensureActivated(stash.messages.get(0))) {
+        stash.messages.remove(0);
+      }
+      
+      while (stash.unstashing && ! stash.messages.isEmpty()) {
+        final Message stashed = stash.messages.remove(0);
+        processUnsolicited(stashed);
+      }
+      
+      if (stash.messages.isEmpty()) {
+        stash = null;
       }
     }
   }
