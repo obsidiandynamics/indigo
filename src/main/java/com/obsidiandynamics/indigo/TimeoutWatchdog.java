@@ -52,9 +52,8 @@ final class TimeoutWatchdog extends Thread {
         join();
         if (interrupted) {
           Thread.currentThread().interrupt();
-        } else {
-          return;
         }
+        return;
       } catch (InterruptedException e) {
         interrupted = true;
       }

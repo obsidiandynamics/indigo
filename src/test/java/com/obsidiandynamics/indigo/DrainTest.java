@@ -54,4 +54,40 @@ public final class DrainTest implements TestSupport {
     
     system.shutdown();
   }
+  
+  @Test(expected=InterruptedException.class)
+  public void testInterruptOnDrain() throws InterruptedException {
+    final ActorSystem system = new TestActorSystemConfig() {}.define();
+    
+    Thread.currentThread().interrupt();
+    try {
+      system.drain(0);
+    } finally {
+      system.shutdownQuietly();
+    }
+    fail("Interrupt not detected");
+  }
+  
+  @Test(expected=InterruptedException.class)
+  public void testInterruptOnShutdown() throws InterruptedException {
+    final ActorSystem system = new TestActorSystemConfig() {}.define();
+    
+    Thread.currentThread().interrupt();
+    try {
+      system.shutdown();
+    } finally {
+      system.shutdown();
+    }
+    fail("Interrupt not detected");
+  }
+  
+  @Test
+  public void testInterruptOnShutdownQuietly() {
+    final ActorSystem system = new TestActorSystemConfig() {}.define();
+    
+    Thread.currentThread().interrupt();
+    system.shutdownQuietly();
+    assertTrue(Thread.interrupted());
+    system.shutdownQuietly();
+  }
 }

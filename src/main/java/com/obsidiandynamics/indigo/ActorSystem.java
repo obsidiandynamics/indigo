@@ -262,6 +262,8 @@ public final class ActorSystem {
     final Integral64.Sum sum = new Integral64.Sum();
     int yields = DRAIN_MAX_YIELDS;
     for (;;) {
+      if (Thread.interrupted()) throw new InterruptedException();
+      
       try {
         busyActors.sum(sum);
         if (sum.isCertain() && sum.get() == 0) {
@@ -270,6 +272,7 @@ public final class ActorSystem {
           Thread.yield();
           yields--;
         } else {
+          System.out.println("sleeping");
           Thread.sleep(DRAIN_SLEEP_MILLIS);
         }
         
