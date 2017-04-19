@@ -63,7 +63,9 @@ public final class CycleSuite extends Suite {
   
   public CycleSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
     super(klass, builder);
-    matrix = extractParams(klass.getAnnotation(ParameterMatrix.class));
+    final ParameterMatrix annotation = klass.getAnnotation(ParameterMatrix.class);
+    if (annotation == null) throw new IllegalArgumentException("Missing " + ParameterMatrix.class.getSimpleName() + " annotation");
+    matrix = extractParams(annotation);
   }
   
   private static Parameter[][] extractParams(ParameterMatrix annotation) {
@@ -88,11 +90,20 @@ public final class CycleSuite extends Suite {
       for (Runner child : children) {
         try {
           final Runner r = new BlockJUnit4ClassRunner(((BlockJUnit4ClassRunner) child).getTestClass().getJavaClass()) {
+            private final Map<FrameworkMethod, Description> descriptionCache = new IdentityHashMap<>();
+            
             @Override protected Description describeChild(FrameworkMethod method) {
-              final Description s = super.describeChild(method);
-              return Description.createTestDescription(s.getClassName(), 
-                                                       s.getMethodName() + paramsToString(params), 
-                                                       s.getAnnotations().toArray(new Annotation[0]));
+              final Description cached = descriptionCache.get(method);
+              if (cached == null) {
+                final Description s = super.describeChild(method);
+                final Description derived = Description.createTestDescription(s.getClassName(), 
+                                                                              s.getMethodName() + paramsToString(params), 
+                                                                              s.getAnnotations().toArray(new Annotation[0]));
+                descriptionCache.put(method, derived);
+                return derived;
+              } else {
+                return cached;
+              }
             }
 
             private String paramsToString(Parameter[] params) {
