@@ -285,36 +285,38 @@ public final class ActorSystem {
     for (;;) {
       if (Thread.interrupted()) throw new InterruptedException();
       
-      try {
+      busyActors.sum(sum);
+      if (sum.isCertain() && sum.get() == 0) {
+        checkUncaughtExceptions();
+        return 0;
+      } else if (yields > 0) {
+        Thread.yield();
+        yields--;
+      } else {
+        Thread.sleep(DRAIN_SLEEP_MILLIS);
+      }
+      
+      if (deadline != 0 && System.currentTimeMillis() > deadline) {
         busyActors.sum(sum);
-        if (sum.isCertain() && sum.get() == 0) {
-          return 0;
-        } else if (yields > 0) {
-          Thread.yield();
-          yields--;
+        assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, executor);
+        checkUncaughtExceptions();
+        return sum.isCertain() ? sum.get() : Math.min(Math.max(1, sum.get()), activations.size());
+      }
+    }
+  }
+  
+  private void checkUncaughtExceptions() {
+    if (! errors.isEmpty()) {
+      final List<Throwable> errorsReturn = new ArrayList<>(errors.size());
+      while (! errors.isEmpty()) {
+        final Throwable error = errors.poll();
+        if (error != null) {
+          errorsReturn.add(error);
         } else {
-          Thread.sleep(DRAIN_SLEEP_MILLIS);
-        }
-        
-        if (deadline != 0 && System.currentTimeMillis() > deadline) {
-          busyActors.sum(sum);
-          assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, executor);
-          return sum.isCertain() ? sum.get() : Math.min(Math.max(1, sum.get()), activations.size());
-        }
-      } finally {
-        if (! errors.isEmpty()) {
-          final List<Throwable> errorsReturn = new ArrayList<>(errors.size());
-          while (! errors.isEmpty()) {
-            final Throwable error = errors.poll();
-            if (error != null) {
-              errorsReturn.add(error);
-            } else {
-              break;
-            }
-          }
-          throw new UnhandledMultiException(errorsReturn.toArray(new Throwable[errorsReturn.size()]));
+          break;
         }
       }
+      throw new UnhandledMultiException(errorsReturn.toArray(new Throwable[errorsReturn.size()]));
     }
   }
   
