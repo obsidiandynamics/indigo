@@ -98,27 +98,28 @@ final class TimeoutWatchdog extends Thread {
   
   private void delay(long until) {
     boolean interrupted = false;
-    
-    synchronized (sleepLock) {
-      nextWake = until;
-      while (running && ! forceTimeout) {
-        final long timeDiff = Math.min(MAX_SLEEP_NANOS, nextWake - System.nanoTime() - ADJ_NANOS);
-        try {
-          if (timeDiff >= MIN_SLEEP_NANOS) {
-            final long millis = timeDiff / 1_000_000l;
-            final int nanos = (int) (timeDiff - millis * 1_000_000l);
-            sleepLock.wait(millis, nanos);
-          } else {
-            break;
+    try {
+      synchronized (sleepLock) {
+        nextWake = until;
+        while (running && ! forceTimeout) {
+          final long timeDiff = Math.min(MAX_SLEEP_NANOS, nextWake - System.nanoTime() - ADJ_NANOS);
+          try {
+            if (timeDiff >= MIN_SLEEP_NANOS) {
+              final long millis = timeDiff / 1_000_000l;
+              final int nanos = (int) (timeDiff - millis * 1_000_000l);
+              sleepLock.wait(millis, nanos);
+            } else {
+              break;
+            }
+          } catch (InterruptedException e) {
+            interrupted = true;
           }
-        } catch (InterruptedException e) {
-          interrupted = true;
         }
       }
-    }
-    
-    if (interrupted) {
-      Thread.currentThread().interrupt();
+    } finally {
+      if (interrupted) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
   
