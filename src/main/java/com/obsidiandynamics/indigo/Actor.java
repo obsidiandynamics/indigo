@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo;
 
+@FunctionalInterface
 public interface Actor {
   default void activated(Activation a) {}
   
