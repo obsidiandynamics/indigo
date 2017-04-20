@@ -7,8 +7,6 @@ public interface Integral64 {
     private long value;
     private boolean certain;
     
-    public Sum() {}
-    
     public long get() {
       return value;
     }
