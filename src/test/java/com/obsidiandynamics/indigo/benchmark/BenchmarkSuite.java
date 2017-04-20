@@ -68,7 +68,7 @@ public final class BenchmarkSuite {
       statsSamples = 1_000;
     }}.testPercentile(3, 5, 50, Summary::byLatency);
     
-    System.out.println("_\nMessage pairs - burst throughput");
+    System.out.println("_\nMessage pairs - sustained throughput");
     new RequestResponseBenchmark.Config() {{
       executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors();
