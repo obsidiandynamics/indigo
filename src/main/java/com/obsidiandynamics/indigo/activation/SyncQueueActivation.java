@@ -22,7 +22,8 @@ public final class SyncQueueActivation extends Activation {
   public boolean enqueue(Message m) {
     assert diagnostics().traceMacro("SQA.enqueue: m=%s", m);
     
-    for (boolean throttledOnce = false;;) {
+    boolean throttledOnce = false;
+    for (;;) {
       final boolean noBacklog;
       final boolean noPending;
       final boolean throttleBacklog;
