@@ -34,11 +34,11 @@ public abstract class Diagnostics {
     }
   }
   
-  public final class LogEntry {
+  public static final class LogEntry {
     private final String format;
     private final Object[] args;
     
-    LogEntry(String format, Object[] args) {
+    LogEntry(String format, Object ... args) {
       this.format = format;
       this.args = args;
     }
