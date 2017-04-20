@@ -4,6 +4,8 @@ import java.lang.reflect.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.*;
+
 public class UtilConformanceTest {
   @Test
   public void test() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
@@ -11,6 +13,9 @@ public class UtilConformanceTest {
     assertUtilityClassWellDefined(Functions.class);
     assertUtilityClassWellDefined(PropertyUtils.class);
     assertUtilityClassWellDefined(Threads.class);
+    assertUtilityClassWellDefined(ActorSystemConfig.Key.class);
+    assertUtilityClassWellDefined(ActorConfig.Key.class);
+    assertUtilityClassWellDefined(Diagnostics.Key.class);
   }
 
   /**
