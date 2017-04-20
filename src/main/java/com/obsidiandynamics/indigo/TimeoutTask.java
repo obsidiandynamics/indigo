@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import java.util.*;
 
-final class TimeoutTask implements Comparable<TimeoutTask> {
+final class TimeoutTask {
   private final long expiresAt;
   
   private final UUID requestId;
@@ -33,11 +33,10 @@ final class TimeoutTask implements Comparable<TimeoutTask> {
   PendingRequest getRequest() {
     return request;
   }
-
-  @Override
-  public int compareTo(TimeoutTask o) {
-    final int expiresComp = Long.compare(expiresAt, o.expiresAt);
-    return expiresComp != 0 ? expiresComp : requestId.compareTo(o.requestId);
+  
+  static int byExpiry(TimeoutTask t1, TimeoutTask t2) {
+    final int expiresComp = Long.compare(t1.expiresAt, t2.expiresAt);
+    return expiresComp != 0 ? expiresComp : t1.requestId.compareTo(t2.requestId);
   }
 
   @Override

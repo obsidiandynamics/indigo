@@ -18,7 +18,7 @@ final class TimeoutWatchdog extends Thread {
   
   private final ActorSystem system;
   
-  private final SortedSet<TimeoutTask> timeouts = new ConcurrentSkipListSet<>();
+  private final SortedSet<TimeoutTask> timeouts = new ConcurrentSkipListSet<>(TimeoutTask::byExpiry);
   
   private final Object sleepLock = new Object();
   
