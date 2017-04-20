@@ -24,9 +24,7 @@ public final class StatefulLambdaActor<S> implements Actor {
   
   @Override
   public void activated(Activation a) {
-    onActivated.apply(a).thenAccept(s -> {
-      state = s;
-    });
+    onActivated.apply(a).thenAccept(s -> state = s);
   }
   
   @Override
