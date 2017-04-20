@@ -126,21 +126,22 @@ public final class NodeQueueActivation extends Activation {
   private void run(Node h, boolean skipCurrent) {
     assert diagnostics().traceMacro("NQA.run: h.m=%s, skipCurrent=%b", h.m, skipCurrent);
 
+    Node head = h;
     int cycles = 0;
     if (! skipCurrent) {
       cycles++;
-      processMessage(h.m);
+      processMessage(head.m);
     }
 
     int spins = 0;
     try {
       for (;;) {
-        final Node h1 = h.get();
+        final Node h1 = head.get();
         if (h1 != null) {
           if (cycles < actorConfig.bias) {
-            h = h1;
+            head = h1;
             cycles++;
-            processMessage(h.m);
+            processMessage(head.m);
             spins = 0;
           } else {
             assert diagnostics().traceMacro("NQA.run: scheduling ref=%s", ref);
@@ -152,8 +153,8 @@ public final class NodeQueueActivation extends Activation {
         } else {
           Thread.yield();
           passivateIfScheduled();
-          if (! park(h)) {
-            schedulePark(h);
+          if (! park(head)) {
+            schedulePark(head);
           }
           return;
         }
