@@ -7,7 +7,7 @@ import org.junit.runner.notification.*;
 
 public final class PrimaryTestsSoak {
   public static void main(String[] args) {
-    final int cycles = 4;
+    final int cycles = 400;
     final int n = 10;
     final int threads = Runtime.getRuntime().availableProcessors() * 2;
 
