@@ -30,24 +30,6 @@ public final class Threads {
     }
   }
   
-  public static void await(CountDownLatch latch) {
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-  }
-  
-  public static void await(CyclicBarrier barrier) {
-    try {
-      barrier.await();
-    } catch (BrokenBarrierException e) {
-      throw new IllegalStateException(e);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-    }
-  }
-  
   public static ThreadPoolExecutor prestartedFixedThreadPool(int numThreads) {
     final ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
     pool.prestartAllCoreThreads();

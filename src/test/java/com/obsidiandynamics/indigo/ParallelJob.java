@@ -3,8 +3,6 @@ package com.obsidiandynamics.indigo;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import com.obsidiandynamics.indigo.util.*;
-
 public final class ParallelJob implements Runnable {
   private static final boolean BLOCKING = true;
   private static final boolean NON_BLOCKING = false;
@@ -32,7 +30,7 @@ public final class ParallelJob implements Runnable {
     for (int i = 0; i < threads; i++) {
       final int _i = i;
       final Thread t = new Thread(() ->  {
-        Threads.await(barrier);
+        TestSupport.await(barrier);
         r.accept(_i);
         if (latch != null) latch.countDown();
       }, String.format(threadNameFormat, i));
@@ -47,7 +45,7 @@ public final class ParallelJob implements Runnable {
   
   @Override
   public void run() {
-    Threads.await(barrier);
-    if (latch != null) Threads.await(latch);
+    TestSupport.await(barrier);
+    if (latch != null) TestSupport.await(latch);
   }
 }

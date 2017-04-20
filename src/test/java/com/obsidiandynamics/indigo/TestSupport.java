@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.*;
 
 public interface TestSupport {
@@ -41,6 +42,24 @@ public interface TestSupport {
       Thread.currentThread().interrupt();
     }
   }  
+  
+  static void await(CountDownLatch latch) {
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+  
+  static void await(CyclicBarrier barrier) {
+    try {
+      barrier.await();
+    } catch (BrokenBarrierException e) {
+      throw new IllegalStateException(e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
   
   static int countFaults(FaultType type, Queue<Fault> deadLetterQueue) {
     int count = 0;

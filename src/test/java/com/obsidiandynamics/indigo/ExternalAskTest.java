@@ -7,8 +7,6 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.util.*;
-
 public final class ExternalAskTest implements TestSupport {
   private static final String ADDER = "adder";
 
@@ -45,7 +43,7 @@ public final class ExternalAskTest implements TestSupport {
     
     // block the ingress lambda using a barrier, preventing further message delivery
     system.ingress(a -> {
-      Threads.await(barrier);
+      TestSupport.await(barrier);
     });
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
@@ -54,7 +52,7 @@ public final class ExternalAskTest implements TestSupport {
     f.cancel(false); // cancelling a second time should have no further effect
     
     // unblock the ingress lambda; it should not deliver the cancelled message to the adder
-    Threads.await(barrier);
+    TestSupport.await(barrier);
     
     system.drain(0);
     

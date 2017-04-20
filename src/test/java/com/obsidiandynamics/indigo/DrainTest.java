@@ -7,8 +7,6 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.util.*;
-
 public final class DrainTest implements TestSupport {
   private static final String STAGE = "stage-";
   private static final String SINK = "sink";
@@ -109,7 +107,7 @@ public final class DrainTest implements TestSupport {
     }}
     .define()
     .when(SINK).lambda((a, m) -> {
-      Threads.await(exit);
+      TestSupport.await(exit);
     })
     .ingress().times(actors).act((a, i) -> {
       a.to(ActorRef.of(SINK, String.valueOf(i))).tell();
@@ -118,7 +116,7 @@ public final class DrainTest implements TestSupport {
     final long remaining = system.drain(1);
     assertTrue("remaining=" + remaining, remaining >= 1);
     
-    Threads.await(exit);
+    TestSupport.await(exit);
     system.shutdownQuietly();
   }
 }
