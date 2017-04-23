@@ -71,7 +71,9 @@ public final class ApiTest implements TestSupport {
       try {
         a.to(ActorRef.of(SINK)).ask().onTimeout(() -> {}).onResponse(r -> {});
         fail("Failed to catch IllegalArgumentException");
-      } catch (IllegalArgumentException e) {}
+      } catch (IllegalArgumentException e) {
+        assertEquals("Only one of the timeout time or handler has been set", e.getMessage());
+      }
     })
     .drain(0);
   }
@@ -85,7 +87,9 @@ public final class ApiTest implements TestSupport {
       try {
         a.to(ActorRef.of(SINK)).ask().await(1000).onResponse(r -> {});
         fail("Failed to catch IllegalArgumentException");
-      } catch (IllegalArgumentException e) {}
+      } catch (IllegalArgumentException e) {
+        assertEquals("Only one of the timeout time or handler has been set", e.getMessage());
+      }
     })
     .drain(0);
   }
