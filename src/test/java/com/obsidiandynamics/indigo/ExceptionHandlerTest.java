@@ -45,7 +45,7 @@ public final class ExceptionHandlerTest implements TestSupport {
   }
   
   private void testConsole(Supplier<ActorSystemConfig> actorSystemConfigSupplier, Supplier<ActorConfig> actorConfigSupplier) throws IOException {
-    synchronized (ExceptionHandlerTest.class) {
+    synchronized (System.class) {
       // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
       logTestName();
       

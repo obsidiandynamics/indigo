@@ -19,6 +19,7 @@ public class ToStringTest {
     assertToString(new Fault(null, null, null));
     assertToString(new Diagnostics.LogEntry("test %d, %d %d", 1, 2, 3));
     assertToString(new Integral64.Sum());
+    assertToString(JvmVersionProvider.JvmVersion.parse("1.8.0_1"));
   }
 
   /**

@@ -9,7 +9,8 @@ import com.obsidiandynamics.indigo.util.*;
 @RunWith(Suite.class)
 @SuiteClasses({
   Integral64Test.class,
-  UtilConformanceTest.class,
-  ToStringTest.class
+  JvmVersionProviderTest.class,
+  ToStringTest.class,
+  UtilConformanceTest.class
 })         
 public class SupportingTests {}
