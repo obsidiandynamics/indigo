@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
+import static junit.framework.TestCase.*;
 
 import org.junit.*;
 
@@ -19,13 +20,18 @@ public final class ApiTest implements TestSupport {
     }
   }
   
-  @Test(expected=UnhandledMultiException.class)
+  @Test
   public void testWithoutRole() throws InterruptedException {
     final ActorSystem system = new TestActorSystemConfig() {{
       exceptionHandler = DRAIN;
     }}
     .define()
-    .ingress(a -> a.to(ActorRef.of(SINK)).tell());
+    .ingress(a -> {
+      try {
+        a.to(ActorRef.of(SINK)).tell();
+        fail("Failed to catch IllegalArgumentException");
+      } catch (IllegalArgumentException e) {}
+    });
     
     try {
       system.drain(0);
