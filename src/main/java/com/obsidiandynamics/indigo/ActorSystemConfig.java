@@ -86,9 +86,9 @@ public abstract class ActorSystemConfig {
   }
   
   final void init() {
-    if (exceptionHandler == ExceptionHandlerChoice.SYSTEM) {
+    if (exceptionHandler == SYSTEM) {
       throw new IllegalArgumentException(String.format("Cannot use %s.%s as a top level exception handler", 
-                                                       ExceptionHandlerChoice.class.getSimpleName(), ExceptionHandlerChoice.SYSTEM));
+                                                       ExceptionHandlerChoice.class.getSimpleName(), SYSTEM));
     }
     diagnostics.init();
   }
