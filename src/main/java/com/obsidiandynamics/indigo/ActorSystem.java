@@ -119,8 +119,8 @@ public final class ActorSystem {
       return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.apply(a))));
     }
     
-    public <S> ActorSystem lambdaAsync(Function<Activation, CompletableFuture<S>> stateFactory, TriConsumer<Activation, Message, S> act) {
-      return use(StatefulLambdaActor.<S>builder().act(act).activated(stateFactory));
+    public <S> ActorSystem lambdaAsync(Function<Activation, CompletableFuture<S>> futureStateFactory, TriConsumer<Activation, Message, S> act) {
+      return use(StatefulLambdaActor.<S>builder().act(act).activated(futureStateFactory));
     }
     
     public ActorSystem use(Supplier<Actor> factory) {

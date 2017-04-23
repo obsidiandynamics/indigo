@@ -3,6 +3,7 @@ package com.obsidiandynamics.indigo;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import org.junit.*;
 
@@ -20,7 +21,7 @@ public final class RequestResponseTest implements TestSupport {
 
     new TestActorSystemConfig() {}
     .define()
-    .when(DRIVER).lambdaSync(IntegerState::new, (a, m, s) -> {
+    .when(DRIVER).lambdaAsync(a -> CompletableFuture.completedFuture(new IntegerState()), (a, m, s) -> {
       a.to(ActorRef.of(ADDER)).ask(s.value).onResponse(r -> {
         final int res = r.body();
         if (res == runs) {
