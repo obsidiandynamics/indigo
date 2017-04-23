@@ -9,6 +9,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
 @RunWith(Suite.class)
 @SuiteClasses({
   ActorSystemConfigTest.class,
+  ApiTest.class,
   DiagnosticsTest.class,
   DLQTest.class,
   DrainTest.class,
