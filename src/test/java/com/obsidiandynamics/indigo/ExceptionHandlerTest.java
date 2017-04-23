@@ -13,11 +13,10 @@ public final class ExceptionHandlerTest implements TestSupport {
   
   @Test(expected=IllegalArgumentException.class)
   public void testSystemSystem() {
-    logTestName();
     new TestActorSystemConfig() {{
       exceptionHandler = SYSTEM;
     }}
-    .define().shutdownQuietly();
+    .define();
   }
   
   private final class HandlerTestException extends RuntimeException {
@@ -47,8 +46,6 @@ public final class ExceptionHandlerTest implements TestSupport {
   private void testConsole(Supplier<ActorSystemConfig> actorSystemConfigSupplier, Supplier<ActorConfig> actorConfigSupplier) throws IOException {
     synchronized (System.class) {
       // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
-      logTestName();
-      
       final PrintStream standardErr = System.err;
       try (ByteArrayOutputStream out = new ByteArrayOutputStream(); PrintStream customErr = new PrintStream(out)) {
         System.setErr(customErr);

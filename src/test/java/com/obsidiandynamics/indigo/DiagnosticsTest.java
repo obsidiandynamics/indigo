@@ -13,8 +13,6 @@ public final class DiagnosticsTest implements TestSupport {
   }
 
   private void test(int limit) throws IOException {
-    logTestName();
-    
     final ActorSystem system = new TestActorSystemConfig() {{
       diagnostics = new Diagnostics() {{
         traceEnabled = true;

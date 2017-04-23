@@ -35,8 +35,6 @@ public final class ParallelConsistencyTest implements TestSupport {
   }
 
   private void test(int actors, int runs, int fanIn, int sinkBias) {
-    logTestName();
-    
     final Set<ActorRef> doneRuns = new HashSet<>();
 
     new TestActorSystemConfig() {}

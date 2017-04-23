@@ -30,8 +30,6 @@ public final class DrainTest implements TestSupport {
   }
 
   private void test(int actors, int runs, int stages) throws InterruptedException {
-    logTestName();
-    
     final AtomicInteger received = new AtomicInteger();
     final ActorSystem system = new TestActorSystemConfig() {}.define();
     
@@ -59,7 +57,6 @@ public final class DrainTest implements TestSupport {
   
   @Test(expected=InterruptedException.class)
   public void testInterruptOnDrain() throws InterruptedException {
-    logTestName();
     final ActorSystem system = new TestActorSystemConfig() {}.define();
     
     Thread.currentThread().interrupt();
@@ -73,7 +70,6 @@ public final class DrainTest implements TestSupport {
   
   @Test(expected=InterruptedException.class)
   public void testInterruptOnShutdown() throws InterruptedException {
-    logTestName();
     final ActorSystem system = new TestActorSystemConfig() {}.define();
     
     Thread.currentThread().interrupt();
@@ -87,7 +83,6 @@ public final class DrainTest implements TestSupport {
   
   @Test
   public void testInterruptOnShutdownQuietly() {
-    logTestName();
     final ActorSystem system = new TestActorSystemConfig() {}.define();
     
     Thread.currentThread().interrupt();
@@ -98,7 +93,6 @@ public final class DrainTest implements TestSupport {
   
   @Test
   public void testRemainingOnDrain() throws InterruptedException {
-    logTestName();
     final int actors = 1;
     final CyclicBarrier exit = new CyclicBarrier(actors + 1);
     

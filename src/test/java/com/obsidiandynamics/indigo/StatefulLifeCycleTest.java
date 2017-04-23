@@ -54,8 +54,6 @@ public final class StatefulLifeCycleTest implements TestSupport {
   }
 
   private void test(boolean async, int n, int actorBias) {
-    logTestName();
-    
     final AtomicBoolean activating = new AtomicBoolean();
     final AtomicBoolean activated = new AtomicBoolean();
     final AtomicBoolean passivating = new AtomicBoolean();

@@ -14,8 +14,6 @@ public final class RequestResponseTest implements TestSupport {
 
   @Test
   public void testRequestResponse() {
-    logTestName();
-    
     final int actors = 5;
     final int runs = 10;
     final Set<ActorRef> doneRuns = new HashSet<>();
@@ -44,8 +42,6 @@ public final class RequestResponseTest implements TestSupport {
   
   @Test
   public void testUnsolicitedReply() {
-    logTestName();
-    
     final Set<String> receivedRoles = new HashSet<>();
     new TestActorSystemConfig() {}
     .define()

@@ -12,8 +12,6 @@ public final class ExternalAskTest implements TestSupport {
 
   @Test
   public void testResponse() throws InterruptedException, ExecutionException, TimeoutException {
-    logTestName();
-    
     final ActorSystem system = new TestActorSystemConfig() {}
     .define()
     .when(ADDER).lambda((a, m) -> a.reply(m).tell(m.<Integer>body() + 1));
@@ -29,8 +27,6 @@ public final class ExternalAskTest implements TestSupport {
 
   @Test
   public void testCancel() throws InterruptedException, ExecutionException, TimeoutException {
-    logTestName();
-    
     final AtomicBoolean ran = new AtomicBoolean();
     final CyclicBarrier barrier = new CyclicBarrier(2);
     
@@ -62,8 +58,6 @@ public final class ExternalAskTest implements TestSupport {
 
   @Test(expected=TimeoutException.class)
   public void testTimeoutWithCancel() throws InterruptedException, ExecutionException, TimeoutException {
-    logTestName();
-    
     final ActorSystem system = new TestActorSystemConfig() {}
     .define()
     .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
@@ -80,8 +74,6 @@ public final class ExternalAskTest implements TestSupport {
 
   @Test(expected=TimeoutException.class)
   public void testTimeoutWithForce() throws InterruptedException, ExecutionException, TimeoutException {
-    logTestName();
-    
     final ActorSystem system = new TestActorSystemConfig() {}
     .define()
     .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });

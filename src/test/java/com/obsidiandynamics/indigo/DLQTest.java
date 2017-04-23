@@ -15,8 +15,6 @@ public final class DLQTest implements TestSupport {
   }
 
   private void test(int limit) {
-    logTestName();
-    
     final ActorSystem system = new TestActorSystemConfig() {{
       deadLetterQueueSize = limit;
     }}

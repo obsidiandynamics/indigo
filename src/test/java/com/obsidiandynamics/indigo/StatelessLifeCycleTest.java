@@ -34,8 +34,6 @@ public final class StatelessLifeCycleTest implements TestSupport {
   }
   
   private void test(boolean async, int n, int actorBias) {
-    logTestName();
-    
     final List<Integer> received = new ArrayList<>();
     
     final AtomicBoolean activating = new AtomicBoolean();

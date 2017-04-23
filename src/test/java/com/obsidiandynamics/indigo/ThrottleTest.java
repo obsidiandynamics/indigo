@@ -16,8 +16,6 @@ public final class ThrottleTest implements TestSupport {
    */
   @Test
   public void test() {
-    logTestName();
-    
     final int runs = 20;
     final CountDownLatch start = new CountDownLatch(1);
     final CountDownLatch end = new CountDownLatch(runs);

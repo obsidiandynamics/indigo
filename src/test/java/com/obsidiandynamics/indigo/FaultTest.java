@@ -78,8 +78,6 @@ public final class FaultTest implements TestSupport {
   }
   
   private void testOnActivation(Function<Integer, Boolean> asyncTest, int n, int actorBias) {
-    logTestName();
-    
     final AtomicInteger activationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     final AtomicInteger failedAsyncActivations = new AtomicInteger();
@@ -163,8 +161,6 @@ public final class FaultTest implements TestSupport {
   }
   
   private void testOnActivationException(int n, int actorBias) {
-    logTestName();
-    
     final AtomicInteger activationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     final AtomicInteger failedActivations = new AtomicInteger();
@@ -238,8 +234,6 @@ public final class FaultTest implements TestSupport {
   }
   
   private void testRequestResponse(int n, int actorBias) {
-    logTestName();
-    
     final AtomicInteger faults = new AtomicInteger();
     final AtomicInteger activationAttempts = new AtomicInteger();
     
@@ -310,8 +304,6 @@ public final class FaultTest implements TestSupport {
   }
   
   private void testOnPassivation(boolean async, int n, int actorBias) {
-    logTestName();
-    
     final AtomicInteger passivationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     final AtomicInteger failedPassivations = new AtomicInteger();
@@ -392,8 +384,6 @@ public final class FaultTest implements TestSupport {
   }
   
   private void testOnEgress(int n, int actorBias) {
-    logTestName();
-    
     final AtomicInteger faults = new AtomicInteger();
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
@@ -444,8 +434,6 @@ public final class FaultTest implements TestSupport {
   }
   
   private void testOnFault(int n, int actorBias) {
-    logTestName();
-    
     final ActorSystem system = system(actorBias)
     .define()
     .when(SINK).lambda((a, m) -> {
@@ -480,8 +468,6 @@ public final class FaultTest implements TestSupport {
   }
   
   private void testOnTimeout(int n, int actorBias) {
-    logTestName();
-    
     final ActorSystem system = system(actorBias)
     .define()
     .when(SINK).lambda((a, m) -> { /* stall the response */ })

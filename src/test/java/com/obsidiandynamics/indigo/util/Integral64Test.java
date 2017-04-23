@@ -40,8 +40,6 @@ public final class Integral64Test implements TestSupport {
   }
   
   private void test(int baseThreads, int rotations, long runs, Integral64 integral) {
-    logTestName();
-    
     final AtomicInteger workers = new AtomicInteger(baseThreads);
 
     ParallelJob.nonBlocking(baseThreads, i -> {

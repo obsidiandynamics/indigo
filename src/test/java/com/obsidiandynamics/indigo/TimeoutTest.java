@@ -23,8 +23,6 @@ public final class TimeoutTest implements TestSupport {
 
   @Test
   public void test() {
-    logTestName();
-    
     final int actors = 100;
     final Map<ActorRef, Long> done = new HashMap<>();
 

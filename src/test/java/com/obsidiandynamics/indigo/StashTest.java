@@ -14,8 +14,6 @@ public final class StashTest implements TestSupport {
   
   @Test
   public void testStashInAct() {
-    logTestName();
-    
     final List<Integer> sequence = new ArrayList<>();
 
     new TestActorSystemConfig() {}
@@ -37,8 +35,6 @@ public final class StashTest implements TestSupport {
   
   @Test
   public void testGuard() {
-    logTestName();
-    
     final AtomicBoolean activated = new AtomicBoolean();
     final AtomicBoolean passivated = new AtomicBoolean();
     

@@ -9,10 +9,6 @@ public interface TestSupport {
   static final boolean LOG = false;
   static final PrintStream LOG_STREAM = System.out;
   
-  default void logTestName() {
-    log("Testing %s\n", getClass().getSimpleName());
-  }
-  
   default void log(String format, Object ... args) {
     if (LOG) LOG_STREAM.printf(format, args);
   }
