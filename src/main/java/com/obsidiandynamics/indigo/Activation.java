@@ -130,7 +130,7 @@ public abstract class Activation {
         if (timeoutMillis != 0) {
           timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
                                         requestId,
-                                        Activation.this,
+                                        ref,
                                         req);
           req.setTimeoutTask(timeoutTask);
           system.getTimeoutWatchdog().enqueue(timeoutTask);

@@ -137,7 +137,7 @@ final class TimeoutWatchdog extends Thread {
         if (forceTimeout || System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
           timeouts.remove(first);
           if (! first.getRequest().isComplete()) {
-            system.send(new Message(null, first.getActivation().self(), TIMEOUT_SIGNAL, first.getRequestId(), true));
+            system.send(new Message(null, first.getActorRef(), TIMEOUT_SIGNAL, first.getRequestId(), true));
           }
         }
       } catch (NoSuchElementException e) {} // in case the task was dequeued in the meantime
@@ -146,7 +146,7 @@ final class TimeoutWatchdog extends Thread {
   
   void timeout(TimeoutTask timeoutTask) {
     if (dequeue(timeoutTask)) {
-      system.send(new Message(null, timeoutTask.getActivation().self(), TIMEOUT_SIGNAL, timeoutTask.getRequestId(), true));
+      system.send(new Message(null, timeoutTask.getActorRef(), TIMEOUT_SIGNAL, timeoutTask.getRequestId(), true));
     }
   }
 }

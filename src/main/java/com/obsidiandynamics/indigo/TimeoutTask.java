@@ -7,14 +7,14 @@ final class TimeoutTask {
   
   private final UUID requestId;
   
-  private final Activation activation;
+  private final ActorRef actorRef;
   
   private final PendingRequest request;
 
-  TimeoutTask(long expiresAt, UUID requestId, Activation activation, PendingRequest request) {
+  TimeoutTask(long expiresAt, UUID requestId, ActorRef actorRef, PendingRequest request) {
     this.expiresAt = expiresAt;
     this.requestId = requestId;
-    this.activation = activation;
+    this.actorRef = actorRef;
     this.request = request;
   }
   
@@ -26,8 +26,8 @@ final class TimeoutTask {
     return requestId;
   }
 
-  Activation getActivation() {
-    return activation;
+  ActorRef getActorRef() {
+    return actorRef;
   }
   
   PendingRequest getRequest() {
@@ -41,7 +41,7 @@ final class TimeoutTask {
 
   @Override
   public String toString() {
-    return "TimeoutTask [expiresAt=" + expiresAt + ", requestId=" + requestId + ", activation=" + activation
+    return "TimeoutTask [expiresAt=" + expiresAt + ", requestId=" + requestId + ", actorRef=" + actorRef
            + ", request=" + request + "]";
   }
 }
