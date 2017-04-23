@@ -223,6 +223,7 @@ public final class ActorSystem implements Endpoint {
             if (task == CANCELLED) {
               return;
             } else if (task != null) {
+              // by forcing timeout, the pending task is removed from the ingress actor
               timeoutWatchdog.timeout(task);
               return;
             } else {

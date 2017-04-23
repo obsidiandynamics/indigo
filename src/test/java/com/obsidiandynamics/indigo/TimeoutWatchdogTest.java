@@ -105,6 +105,28 @@ public final class TimeoutWatchdogTest implements TestSupport {
     watchdog.forceTimeout();
     assertEquals(0, endpoint.ids.size());
   }
+
+  @Test
+  public void testEarlyTimeout() {
+    testEarlyTimeout(10);
+  }
+  
+  private void testEarlyTimeout(int tasks) {
+    final List<TimeoutTask> timeouts = new ArrayList<>(tasks); 
+    for (int i = 0; i < tasks; i++) {
+      final TimeoutTask task = expireIn(60_000 + i * 1_000);
+      timeouts.add(task);
+      watchdog.schedule(task);
+    }
+   
+    assertEquals(0, endpoint.ids.size());
+    for (TimeoutTask task : timeouts) {
+      watchdog.timeout(task);
+    }
+    assertEquals(tasks, endpoint.ids.size());
+    watchdog.forceTimeout();
+    assertEquals(tasks, endpoint.ids.size());
+  }
   
   private static TimeoutTask expireIn(long millis) {
     return new TimeoutTask(System.nanoTime() + millis * 1_000_000l, 
