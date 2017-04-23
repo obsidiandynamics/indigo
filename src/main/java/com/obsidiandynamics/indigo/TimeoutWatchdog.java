@@ -16,21 +16,22 @@ final class TimeoutWatchdog extends Thread {
   /** Compensation for overhead of scheduling a timeout message with the dispatcher. */
   private static final long ADJ_NANOS = 500_000l;
   
-  private final ActorSystem system;
+  private final Endpoint endpoint;
   
   private final SortedSet<TimeoutTask> timeouts = new ConcurrentSkipListSet<>(TimeoutTask::byExpiry);
   
   private final Object sleepLock = new Object();
   
+  /** The time when the thread should be woken, in absolute nanoseconds. See {@link System.nanoTime()}. */
   private volatile long nextWake;
   
   private volatile boolean running = true;
   
   private volatile boolean forceTimeout;
   
-  TimeoutWatchdog(ActorSystem system) {
+  TimeoutWatchdog(Endpoint endpoint) {
     super("TimeoutWatchdog");
-    this.system = system;
+    this.endpoint = endpoint;
     setDaemon(true);
   }
   
@@ -80,7 +81,7 @@ final class TimeoutWatchdog extends Thread {
     }
   }
   
-  void enqueue(TimeoutTask task) {
+  void schedule(TimeoutTask task) {
     timeouts.add(task);
     if (task.getExpiresAt() < nextWake) {
       synchronized (sleepLock) {
@@ -92,7 +93,7 @@ final class TimeoutWatchdog extends Thread {
     }
   }
   
-  boolean dequeue(TimeoutTask task) {
+  boolean abort(TimeoutTask task) {
     return timeouts.remove(task);
   }
   
@@ -137,7 +138,7 @@ final class TimeoutWatchdog extends Thread {
         if (forceTimeout || System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
           timeouts.remove(first);
           if (! first.getRequest().isComplete()) {
-            system.send(new Message(null, first.getActorRef(), TIMEOUT_SIGNAL, first.getRequestId(), true));
+            endpoint.send(new Message(null, first.getActorRef(), TIMEOUT_SIGNAL, first.getRequestId(), true));
           }
         }
       } catch (NoSuchElementException e) {} // in case the task was dequeued in the meantime
@@ -145,8 +146,8 @@ final class TimeoutWatchdog extends Thread {
   }
   
   void timeout(TimeoutTask timeoutTask) {
-    if (dequeue(timeoutTask)) {
-      system.send(new Message(null, timeoutTask.getActorRef(), TIMEOUT_SIGNAL, timeoutTask.getRequestId(), true));
+    if (abort(timeoutTask)) {
+      endpoint.send(new Message(null, timeoutTask.getActorRef(), TIMEOUT_SIGNAL, timeoutTask.getRequestId(), true));
     }
   }
 }

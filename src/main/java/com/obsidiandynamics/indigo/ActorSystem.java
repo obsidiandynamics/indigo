@@ -11,7 +11,7 @@ import com.obsidiandynamics.indigo.Activation.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public final class ActorSystem {
+public final class ActorSystem implements Endpoint {
   /** When draining, the maximum number of yields before putting the thread to sleep. */ 
   private static final int DRAIN_MAX_YIELDS = 10_000;
   
@@ -141,11 +141,12 @@ public final class ActorSystem {
     return new ActorBuilder(role);
   }
   
-  public ActorSystem send(Message message) {
+  @Override
+  public void send(Message message) {
     for (;;) {
       final Activation a = activate(message.to());
       if (a.enqueue(message)) {
-        return this;
+        return;
       } else {
         message.to().setCachedActivation(null);
       }

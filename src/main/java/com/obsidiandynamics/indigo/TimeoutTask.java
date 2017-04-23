@@ -3,6 +3,7 @@ package com.obsidiandynamics.indigo;
 import java.util.*;
 
 final class TimeoutTask {
+  /** The expiry time, in absolute nanoseconds. See {@link System.nanoTime()}. */
   private final long expiresAt;
   
   private final UUID requestId;

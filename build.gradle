@@ -8,6 +8,7 @@ repositories {
 dependencies {
   testCompile 'junit:junit:4.12'
   testCompile 'org.apache.commons:commons-math3:3.2'
+  testCompile 'org.awaitility:awaitility:2.0.0'
 }
 
 test {

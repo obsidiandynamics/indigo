@@ -133,7 +133,7 @@ public abstract class Activation {
                                         ref,
                                         req);
           req.setTimeoutTask(timeoutTask);
-          system.getTimeoutWatchdog().enqueue(timeoutTask);
+          system.getTimeoutWatchdog().schedule(timeoutTask);
         }
       }
     }
@@ -271,7 +271,7 @@ public abstract class Activation {
   
   private void cancelTimeout(PendingRequest req) {
     if (req.getTimeoutTask() != null) {
-      system.getTimeoutWatchdog().dequeue(req.getTimeoutTask());
+      system.getTimeoutWatchdog().abort(req.getTimeoutTask());
     }
   }
   
