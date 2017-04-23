@@ -8,35 +8,85 @@ import org.junit.*;
 public final class ApiTest implements TestSupport {
   private static final String SINK = "sink";
   
-  @Test(expected=IllegalStateException.class)
+  private ActorSystem system;
+  
+  @Before
+  public void setup() {
+    system = new TestActorSystemConfig() {}.define();
+  }
+  
+  @After
+  public void teardown() {
+    system.shutdownQuietly();
+  }
+  
+  @Test(expected=DuplicateRoleException.class)
   public void testDuplicateRoleRegistration() {
-    final ActorSystem system = new TestActorSystemConfig() {}.define();
-    
     system.when(SINK).lambda((a, m) -> {});
-    try {
-      system.when(SINK).lambda((a, m) -> {});
-    } finally {
-      system.shutdownQuietly();
-    }
+    system.when(SINK).lambda((a, m) -> {});
   }
   
   @Test
-  public void testWithoutRole() throws InterruptedException {
-    final ActorSystem system = new TestActorSystemConfig() {{
-      exceptionHandler = DRAIN;
-    }}
-    .define()
-    .ingress(a -> {
+  public void testTellWithoutRole() throws InterruptedException {
+    system.getConfig().exceptionHandler = DRAIN;
+    system.ingress(a -> {
       try {
         a.to(ActorRef.of(SINK)).tell();
+        fail("Failed to catch NoSuchRoleException");
+      } catch (NoSuchRoleException e) {}
+    })
+    .drain(0);
+  }
+  
+  @Test
+  public void testUnboundedAskWithoutRole() throws InterruptedException {
+    system.getConfig().exceptionHandler = DRAIN;
+    system.ingress(a -> {
+      try {
+        a.to(ActorRef.of(SINK)).ask().onResponse(r -> {});
+        fail("Failed to catch NoSuchRoleException");
+      } catch (NoSuchRoleException e) {}
+    })
+    .drain(0);
+  }
+  
+  @Test
+  public void testBoundedAskWithoutRole() throws InterruptedException {
+    system.getConfig().exceptionHandler = DRAIN;
+    system.ingress(a -> {
+      try {
+        a.to(ActorRef.of(SINK)).ask().await(1000).onTimeout(() -> {}).onResponse(r -> {});
+        fail("Failed to catch NoSuchRoleException");
+      } catch (NoSuchRoleException e) {}
+    })
+    .drain(0);
+  }
+  
+  @Test
+  public void testBoundedAskWithoutTimeout() throws InterruptedException {
+    system.getConfig().exceptionHandler = DRAIN;
+    system
+    .when(SINK).lambda((a, m) -> {})
+    .ingress(a -> {
+      try {
+        a.to(ActorRef.of(SINK)).ask().onTimeout(() -> {}).onResponse(r -> {});
         fail("Failed to catch IllegalArgumentException");
       } catch (IllegalArgumentException e) {}
-    });
-    
-    try {
-      system.drain(0);
-    } finally {
-      system.shutdownQuietly();
-    }
+    })
+    .drain(0);
+  }
+  
+  @Test
+  public void testBoundedAskWithoutTimeoutHandler() throws InterruptedException {
+    system.getConfig().exceptionHandler = DRAIN;
+    system
+    .when(SINK).lambda((a, m) -> {})
+    .ingress(a -> {
+      try {
+        a.to(ActorRef.of(SINK)).ask().await(1000).onResponse(r -> {});
+        fail("Failed to catch IllegalArgumentException");
+      } catch (IllegalArgumentException e) {}
+    })
+    .drain(0);
   }
 }

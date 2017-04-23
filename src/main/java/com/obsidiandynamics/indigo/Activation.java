@@ -124,8 +124,8 @@ public abstract class Activation {
       for (int i = copies; --i >= 0;) {
         final UUID requestId = new UUID(id, requestCounter++);
         final PendingRequest req = new PendingRequest(onResponse, onTimeout, onFault);
-        pending.put(requestId, req);
         target.send(requestBody, requestId);
+        pending.put(requestId, req);
         
         if (timeoutMillis != 0) {
           timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,

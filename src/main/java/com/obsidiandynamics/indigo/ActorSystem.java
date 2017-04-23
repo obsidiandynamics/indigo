@@ -132,7 +132,7 @@ public final class ActorSystem implements Endpoint {
       final ActorSetup existing = setupRegistry.put(role, new ActorSetup(factory, actorConfig));
       if (existing != null) {
         setupRegistry.put(role, existing);
-        throw new IllegalStateException("Factory for actor of role " + role + " has already been registered");
+        throw new DuplicateRoleException("Factory for actor of role " + role + " has already been registered");
       }
     }
   }
@@ -360,7 +360,7 @@ public final class ActorSystem implements Endpoint {
   
   private Activation createActivation(ActorRef ref) {
     final ActorSetup setup = setupRegistry.get(ref.role());
-    if (setup == null) throw new IllegalArgumentException("No setup for actor of role " + ref.role());
+    if (setup == null) throw new NoSuchRoleException("No setup for actor of role " + ref.role());
     final Actor actor = setup.factory.get();
     return setup.actorConfig.activationFactory.create(nextActivationId++, ref, this, setup.actorConfig, actor);
   }
