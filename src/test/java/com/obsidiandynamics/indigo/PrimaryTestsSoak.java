@@ -15,7 +15,7 @@ public final class PrimaryTestsSoak {
       System.out.format("_\nCycle %d/%d\n", c, cycles);
       test(n, threads, ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL, ActorConfig.ActivationChoice.SYNC_QUEUE);
       test(n, threads, ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL, ActorConfig.ActivationChoice.NODE_QUEUE);
-      test(n, threads, ActorSystemConfig.ExecutorChoice.FORK_JOIN_POOL, ActorConfig.ActivationChoice.SYNC_QUEUE);
+      test(n, threads, ActorSystemConfig.ExecutorChoice.AUTO, ActorConfig.ActivationChoice.SYNC_QUEUE);
       test(n, threads, ActorSystemConfig.ExecutorChoice.FORK_JOIN_POOL, ActorConfig.ActivationChoice.NODE_QUEUE);
     }
   }
