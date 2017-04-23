@@ -57,7 +57,7 @@ public interface TestSupport {
     }
   }
   
-  static int countFaults(FaultType type, Queue<Fault> deadLetterQueue) {
+  static int countFaults(FaultType type, Collection<Fault> deadLetterQueue) {
     int count = 0;
     for (Fault fault : deadLetterQueue) {
       if (fault.getType() == type) {

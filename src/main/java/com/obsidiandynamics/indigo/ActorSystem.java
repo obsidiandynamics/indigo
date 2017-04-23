@@ -245,8 +245,8 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
-  public Queue<Fault> getDeadLetterQueue() {
-    return deadLetterQueue;
+  public List<Fault> getDeadLetterQueue() {
+    return Collections.unmodifiableList(Arrays.asList(deadLetterQueue.toArray(new Fault[0])));
   }
   
   public void _dispatch(Runnable r) {
