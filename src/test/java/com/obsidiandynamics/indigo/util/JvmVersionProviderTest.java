@@ -42,4 +42,18 @@ public final class JvmVersionProviderTest implements TestSupport {
       }
     }
   }
+  
+  @Test
+  public void compareVersions() {
+    assertEquals(-1, compare("1.8.0_1", "2.0.0_1"));
+    assertEquals(-1, compare("1.8.0_1", "1.9.0_1"));
+    assertEquals(-1, compare("1.8.0_1", "1.8.1_1"));
+    assertEquals(-1, compare("1.8.0_1", "1.8.0_2"));
+  }
+  
+  private static int compare(String v1, String v2) {
+    final JvmVersion j1 = new JvmVersionProvider.DefaultProvider(v1).get();
+    final JvmVersion j2 = new JvmVersionProvider.DefaultProvider(v2).get();
+    return j1.compareTo(j2);
+  }
 }

@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.util;
 
 @FunctionalInterface
 public interface JvmVersionProvider {
-  public static final class JvmVersion {
+  public static final class JvmVersion implements Comparable<JvmVersion> {
     public final int major;
     public final int minor;
     public final int update;
@@ -18,6 +18,26 @@ public interface JvmVersionProvider {
     @Override
     public String toString() {
       return "JvmVersion [major=" + major + ", minor=" + minor + ", update=" + update + ", build=" + build + "]";
+    }
+
+    @Override
+    public int compareTo(JvmVersion o) {
+      final int majorComp = Integer.compare(major, o.major);
+      if (majorComp != 0) {
+        return majorComp;
+      } else {
+        final int minorComp = Integer.compare(minor, o.minor);
+        if (minorComp != 0) {
+          return minorComp;
+        } else {
+          final int updateComp = Integer.compare(update, o.update);
+          if (updateComp != 0) {
+            return updateComp;
+          } else {
+            return Integer.compare(build, o.build);
+          }
+        }
+      }
     }
   }
 

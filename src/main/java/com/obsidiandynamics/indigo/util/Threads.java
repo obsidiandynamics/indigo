@@ -4,6 +4,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.ForkJoinPool.*;
 import java.util.function.*;
 
+import com.obsidiandynamics.indigo.util.JvmVersionProvider.*;
+
 public final class Threads {
   private Threads() {}
   
@@ -38,5 +40,9 @@ public final class Threads {
   
   public static ForkJoinPool cappedForkJoinPool(int parallelism) {
     return new CappedForkJoinPool(parallelism, null, true);
+  }
+  
+  public static ExecutorService autoPool(int parallelism, JvmVersion version) {
+    return CappedForkJoinPool.isSafeFor(version) ? cappedForkJoinPool(parallelism) : prestartedFixedThreadPool(parallelism);
   }
 }

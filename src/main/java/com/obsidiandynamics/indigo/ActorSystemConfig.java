@@ -1,14 +1,15 @@
 package com.obsidiandynamics.indigo;
 
-import java.util.concurrent.*;
-import java.util.function.*;
-
-import com.obsidiandynamics.indigo.util.*;
-
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
+
+import java.util.concurrent.*;
+import java.util.function.*;
+
+import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.indigo.util.JvmVersionProvider.*;
 
 public abstract class ActorSystemConfig {
   public static final class Key {
@@ -27,17 +28,28 @@ public abstract class ActorSystemConfig {
   /** The default timeout when asking from outside the actor system. */
   public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 1 * 60_000);
   
-  public enum ExecutorChoice implements Function<Integer, ExecutorService> {
-    FORK_JOIN_POOL(Threads::cappedForkJoinPool),
-    FIXED_THREAD_POOL(Threads::prestartedFixedThreadPool);
+  public static final class ExecutorParams {
+    public final int parallelism;
+    public final JvmVersion version;
     
-    private final Function<Integer, ExecutorService> func;
-    private ExecutorChoice(Function<Integer, ExecutorService> func) { this.func = func; }
-    @Override public ExecutorService apply(Integer parallelism) { return func.apply(parallelism); }
+    public ExecutorParams(int parallelism, JvmVersion version) {
+      this.parallelism = parallelism;
+      this.version = version;
+    }
+  }
+  
+  public enum ExecutorChoice implements Function<ExecutorParams, ExecutorService> {
+    AUTO(params -> Threads.autoPool(params.parallelism, params.version)),
+    FORK_JOIN_POOL(params -> Threads.cappedForkJoinPool(params.parallelism)),
+    FIXED_THREAD_POOL(params -> Threads.prestartedFixedThreadPool(params.parallelism));
+    
+    private final Function<ExecutorParams, ExecutorService> func;
+    private ExecutorChoice(Function<ExecutorParams, ExecutorService> func) { this.func = func; }
+    @Override public ExecutorService apply(ExecutorParams params) { return func.apply(params); }
   }
   
   /** Maps a given parallelism value to an appropriately sized thread pool. */
-  public Function<Integer, ExecutorService> executor = get(EXECUTOR, ExecutorChoice::valueOf, FORK_JOIN_POOL);
+  public Function<ExecutorParams, ExecutorService> executor = get(EXECUTOR, ExecutorChoice::valueOf, AUTO);
   
   public enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
     /** Forwards the exception to the system-level handler. Can only be used within the actor config. */

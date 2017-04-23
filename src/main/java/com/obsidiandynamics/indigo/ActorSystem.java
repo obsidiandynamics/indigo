@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.Activation.*;
+import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ActorSystem {
@@ -52,7 +53,8 @@ public final class ActorSystem {
   ActorSystem(ActorSystemConfig config) {
     config.init();
     this.config = config;
-    executor = config.executor.apply(config.getParallelism());
+    executor = config.executor.apply(new ExecutorParams(config.getParallelism(),
+                                                        new JvmVersionProvider.DefaultProvider().get()));
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
