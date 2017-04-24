@@ -82,6 +82,11 @@ public final class FaultTest implements TestSupport {
     testOnActivation(attempts -> false, 100 * SCALE, 10, true);
   }
   
+  @Test
+  public void testOnAsyncActivationBiasedException() {
+    testOnActivation(attempts -> true, 100 * SCALE, 10, true);
+  }
+  
   private void testOnActivation(Function<Integer, Boolean> asyncTest, int n, int actorBias, boolean exception) {
     final AtomicInteger activationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
