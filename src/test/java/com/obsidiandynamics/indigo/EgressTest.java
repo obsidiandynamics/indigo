@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static junit.framework.TestCase.*;
+import static org.awaitility.Awaitility.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -81,7 +82,7 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testRunnable() throws InterruptedException {
+  public void testRunnableAsk() throws InterruptedException {
     final int runs = 5;
     final AtomicInteger received = new AtomicInteger();
     
@@ -93,6 +94,22 @@ public final class EgressTest implements TestSupport {
     })
     .drain(0);
     
+    assertEquals(runs, received.get());
+  }
+  
+  @Test
+  public void testRunnableTell() throws InterruptedException {
+    final int runs = 5;
+    final AtomicInteger received = new AtomicInteger();
+    
+    system.ingress().times(runs).act((a, i) -> {
+      a.egress(() -> { received.incrementAndGet(); })
+      .using(EXECUTOR)
+      .tell();
+    })
+    .drain(0);
+    
+    await().atMost(10, TimeUnit.SECONDS).until(() -> received.get() == runs);
     assertEquals(runs, received.get());
   }
   

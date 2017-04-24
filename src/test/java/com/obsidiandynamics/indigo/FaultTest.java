@@ -333,11 +333,11 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnEgressBiased() {
-    testOnEgress(100 * SCALE, 10);
+  public void testOnEgressAskBiased() {
+    testOnEgressAsk(100 * SCALE, 10);
   }
   
-  private void testOnEgress(int n, int actorBias) {
+  private void testOnEgressAsk(int n, int actorBias) {
     final AtomicInteger faults = new AtomicInteger();
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
@@ -377,6 +377,46 @@ public final class FaultTest implements TestSupport {
     } catch (InterruptedException e) { throw new RuntimeException(e); }
     system.shutdownQuietly();
     
+    assertEquals(n, faults.get());
+    assertEquals(n, system.getDeadLetterQueue().size());
+    assertEquals(n, countFaults(ON_EGRESS, system.getDeadLetterQueue()));
+  }
+
+  @Test
+  public void testOnEgressTellBiased() {
+    testOnEgressTell(100 * SCALE, 10);
+  }
+  
+  private void testOnEgressTell(int n, int actorBias) {
+    final AtomicInteger faults = new AtomicInteger();
+    
+    final ExecutorService external = Executors.newSingleThreadExecutor();
+    
+    final ActorSystem system = system(actorBias)
+    .define()
+    .ingress().times(n).act((a, i) -> {
+      final Diagnostics d = a.diagnostics();
+      d.trace("act %d", i);
+      a.egress(() -> {
+        d.trace("egress %d", i);
+        faults.incrementAndGet();
+        throw new TestException("Fault in egress");
+      })
+      .using(external)
+      .tell();
+    });
+    
+    try {
+      for (long left; (left = system.drain(10_000)) != 0; ) {
+        log("draining... faults: %s, actors left: %d\n", faults, left);
+        system.getConfig().diagnostics.print(LOG_STREAM);
+        fail("drain did not complete");
+      }
+      external.shutdown();
+      external.awaitTermination(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) { throw new RuntimeException(e); }
+    system.shutdownQuietly();
+
     assertEquals(n, faults.get());
     assertEquals(n, system.getDeadLetterQueue().size());
     assertEquals(n, countFaults(ON_EGRESS, system.getDeadLetterQueue()));
