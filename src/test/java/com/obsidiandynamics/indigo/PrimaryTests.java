@@ -18,6 +18,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
   ExceptionHandlerTest.class,
   ExternalAskTest.class,
   FaultTest.class,
+  ForwarderTest.class,
   ParallelConsistencyTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
