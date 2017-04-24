@@ -42,7 +42,7 @@ public final class RequestResponseTest implements TestSupport {
   }
   
   @Test
-  public void testUnsolicitedReply() {
+  public void testUnsolicitedReply_toSenderOf() {
     final Set<String> receivedRoles = new HashSet<>();
     new TestActorSystemConfig() {}
     .define()
@@ -61,5 +61,31 @@ public final class RequestResponseTest implements TestSupport {
     assertEquals(2, receivedRoles.size());
     assertTrue(receivedRoles.contains(ActorRef.INGRESS));
     assertTrue(receivedRoles.contains(SINK));
+  }
+  
+  @Test
+  public void testUnsolicitedReply_illegalReply() {
+    final Set<String> receivedRoles = new HashSet<>();
+    new TestActorSystemConfig() {}
+    .define()
+    .when(DRIVER).lambda((a, m) -> {
+      receivedRoles.add(m.from().role());
+      if (m.from().isIngress()) {
+        a.to(ActorRef.of(SINK)).tell();
+      }
+    })
+    .when(SINK).lambda((a, m) -> {
+      try {
+        a.reply(m);
+        fail("Failed to catch IllegalArgumentException");
+      } catch (IllegalArgumentException e) {
+        assertEquals("Unsolicited replies are not allowed", e.getMessage());
+      }
+    })
+    .ingress(a -> a.to(ActorRef.of(DRIVER)).tell())
+    .shutdownQuietly();
+    
+    assertEquals(1, receivedRoles.size());
+    assertTrue(receivedRoles.contains(ActorRef.INGRESS));
   }
 }

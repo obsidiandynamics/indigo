@@ -232,12 +232,12 @@ public abstract class Activation {
     }
     
     public void tell(Object responseBody) {
-      final boolean responding = m.requestId() != null;
-      send(new Message(ref, m.from(), responseBody, m.requestId(), responding));
+      send(new Message(ref, m.from(), responseBody, m.requestId(), true));
     }
   }
   
   public final ReplyBuilder reply(Message m) {
+    if (m.requestId() == null) throw new IllegalArgumentException("Unsolicited replies are not allowed");
     return new ReplyBuilder(m);
   }
   
