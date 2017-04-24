@@ -232,12 +232,18 @@ public abstract class Activation {
     }
     
     public void tell(Object responseBody) {
-      send(new Message(ref, m.from(), responseBody, m.requestId(), true));
+      final boolean isResponse = m.requestId() != null;
+      // Solicited responses go through, but unsolicited ones are silently dropped. This relieves
+      // services from having to program defensively, only sending replies when the consumer has
+      // requested them with an <code>ask()</code>. It also prevents a consumer using <code>tell()</code>
+      // from receiving an unsolicited message.
+      if (isResponse) {
+        send(new Message(ref, m.from(), responseBody, m.requestId(), true));
+      }
     }
   }
   
   public final ReplyBuilder reply(Message m) {
-    if (m.requestId() == null) throw new IllegalArgumentException("Unsolicited replies are not allowed");
     return new ReplyBuilder(m);
   }
   

@@ -64,7 +64,7 @@ public final class RequestResponseTest implements TestSupport {
   }
   
   @Test
-  public void testUnsolicitedReply_illegalReply() {
+  public void testUnsolicitedReply_reply() {
     final Set<String> receivedRoles = new HashSet<>();
     new TestActorSystemConfig() {}
     .define()
@@ -75,12 +75,7 @@ public final class RequestResponseTest implements TestSupport {
       }
     })
     .when(SINK).lambda((a, m) -> {
-      try {
-        a.reply(m);
-        fail("Failed to catch IllegalArgumentException");
-      } catch (IllegalArgumentException e) {
-        assertEquals("Unsolicited replies are not allowed", e.getMessage());
-      }
+      a.reply(m);
     })
     .ingress(a -> a.to(ActorRef.of(DRIVER)).tell())
     .shutdownQuietly();
