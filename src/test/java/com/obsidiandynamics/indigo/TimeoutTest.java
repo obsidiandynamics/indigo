@@ -55,7 +55,7 @@ public final class TimeoutTest implements TestSupport {
     }
     final double avgDiff = (double) totalDiff / actors;
     
-    final int timeoutTolerance = get(KEY_TIMEOUT_TOLERANCE, Integer::parseInt, 10);
+    final int timeoutTolerance = get(KEY_TIMEOUT_TOLERANCE, Integer::parseInt, 50);
     log("Average diff: %.1f\n", avgDiff);
     assertTrue(String.format("Average timeout threshold above tolerance: %.1f", avgDiff), 
                avgDiff <= timeoutTolerance);
