@@ -49,35 +49,40 @@ public final class FaultTest implements TestSupport {
   
   @Test
   public void testOnSyncActivationUnbiased() {
-    testOnActivation(attempts -> false, 100 * SCALE, 1);
+    testOnActivation(attempts -> false, 100 * SCALE, 1, false);
   }
   
   @Test
   public void testOnSyncActivationBiased() {
-    testOnActivation(attempts -> false, 100 * SCALE, 10);
+    testOnActivation(attempts -> false, 100 * SCALE, 10, false);
   }
 
   @Test
   public void testOnAsyncActivationUnbiased() {
-    testOnActivation(attempts -> true, 100 * SCALE, 1);
+    testOnActivation(attempts -> true, 100 * SCALE, 1, false);
   }
 
   @Test
   public void testOnAsyncActivationBiased() {
-    testOnActivation(attempts -> true, 100 * SCALE, 10);
+    testOnActivation(attempts -> true, 100 * SCALE, 10, false);
   }
   
   @Test
   public void testOnMixedActivationUnbiased() {
-    testOnActivation(attempts -> attempts % 2 == 0, 100 * SCALE, 1);
+    testOnActivation(attempts -> attempts % 2 == 0, 100 * SCALE, 1, false);
   }
   
   @Test
   public void testOnMixedActivationBiased() {
-    testOnActivation(attempts -> attempts % 2 == 0, 100 * SCALE, 10);
+    testOnActivation(attempts -> attempts % 2 == 0, 100 * SCALE, 10, false);
   }
   
-  private void testOnActivation(Function<Integer, Boolean> asyncTest, int n, int actorBias) {
+  @Test
+  public void testOnSyncActivationBiasedException() {
+    testOnActivation(attempts -> false, 100 * SCALE, 10, true);
+  }
+  
+  private void testOnActivation(Function<Integer, Boolean> asyncTest, int n, int actorBias, boolean exception) {
     final AtomicInteger activationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     final AtomicInteger failedAsyncActivations = new AtomicInteger();
@@ -96,7 +101,7 @@ public final class FaultTest implements TestSupport {
            syncOrAsync(a, external, async, () -> {
              if (activationAttempts.getAndIncrement() % 10 != 0) {
                log("fault\n");
-               a.fault("boom");
+               
                if (async) {
                  failedAsyncActivations.incrementAndGet();
                } else {
@@ -113,6 +118,9 @@ public final class FaultTest implements TestSupport {
                  log("egress responded\n");
                  fail("egress responded");
                });
+               
+               if (exception) throw new TestException("boom");
+               else a.fault("boom");
                Thread.yield();
              } else {
                log("activated\n");
@@ -151,89 +159,21 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnActivationExceptionUnbiased() {
-    testOnActivationException(100 * SCALE, 1);
-  }
-  
-  @Test
-  public void testOnActivationExceptionBiased() {
-    testOnActivationException(100 * SCALE, 10);
-  }
-  
-  private void testOnActivationException(int n, int actorBias) {
-    final AtomicInteger activationAttempts = new AtomicInteger();
-    final AtomicInteger received = new AtomicInteger();
-    final AtomicInteger failedActivations = new AtomicInteger();
-    final AtomicInteger passivated = new AtomicInteger();
-    
-    final ExecutorService external = Executors.newSingleThreadExecutor();
-
-    final ActorSystem system = system(actorBias)
-    .define()
-    .when(SINK)
-    .use(StatelessLambdaActor.builder()
-         .activated(a -> {
-           log("activating\n");
-           if (activationAttempts.getAndIncrement() % 2 == 0) {
-             log("fault\n");
-             failedActivations.incrementAndGet();
-             
-             a.egress(() -> null)
-             .using(external)
-             .await(1_000).onTimeout(() -> {
-               log("egress timed out\n");
-               fail("egress timed out");
-             })
-             .onResponse(r -> {
-               log("egress responded\n");
-               fail("egress responded");
-             });
-             Thread.yield();
-             throw new TestException("Boom");
-           } else {
-             log("activated\n");
-           }
-         })
-         .act((a, m) -> {
-           log("act %d\n", m.<Integer>body());
-           received.getAndIncrement();
-           a.passivate();
-         })
-         .passivated(a -> {
-           log("passivated\n");
-           passivated.getAndIncrement();
-         })
-    )
-    .ingress().times(n).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i));
-
-    try {
-      system.drain(0);
-      external.shutdown();
-      external.awaitTermination(10, TimeUnit.SECONDS);
-    } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdownQuietly();
-    
-    log("activationAttempts: %s, failedActivations: %s, received: %s, passivated: %s\n",
-        activationAttempts, failedActivations, received, passivated);
-    assertTrue(failedActivations.get() >= 1);
-    assertTrue(activationAttempts.get() >= failedActivations.get());
-    assertTrue(received.get() + failedActivations.get() == n);
-    assertTrue(passivated.get() == activationAttempts.get() - failedActivations.get());
-    assertTrue(failedActivations.get() == system.getDeadLetterQueue().size());
-    assertTrue(failedActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
-  }
-  
-  @Test
   public void testRequestResponseUnbiased() {
-    testRequestResponse(100 * SCALE, 1);
+    testRequestResponse(100 * SCALE, 1, false);
   }
   
   @Test
   public void testRequestResponseBiased() {
-    testRequestResponse(100 * SCALE, 10);
+    testRequestResponse(100 * SCALE, 10, false);
   }
   
-  private void testRequestResponse(int n, int actorBias) {
+  @Test
+  public void testRequestResponseBiasedException() {
+    testRequestResponse(100 * SCALE, 10, true);
+  }
+  
+  private void testRequestResponse(int n, int actorBias, boolean exception) {
     final AtomicInteger faults = new AtomicInteger();
     final AtomicInteger activationAttempts = new AtomicInteger();
     
@@ -261,12 +201,14 @@ public final class FaultTest implements TestSupport {
          .activated(a -> {
            log("echo activating\n");
            if (activationAttempts.getAndIncrement() % 2 == 0) {
-             a.fault("Error in activation");
+             if (exception) throw new TestException("Error in activation");
+             else a.fault("Error in activation");
            }
          })
          .act((a, m) -> {
            log("echo act\n");
-           a.fault("Error in act");
+           if (exception) throw new TestException("Error in act");
+           else a.fault("Error in act");
            a.passivate();
          })
     )
@@ -284,26 +226,31 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnPassivationSyncUnbiased() {
-    testOnPassivation(false, 100 * SCALE, 1);
+  public void testOnSyncPassivationUnbiased() {
+    testOnPassivation(false, 100 * SCALE, 1, false);
   }
   
   @Test
-  public void testOnPassivationSyncBiased() {
-    testOnPassivation(false, 100 * SCALE, 10);
+  public void testOnSyncPassivationBiased() {
+    testOnPassivation(false, 100 * SCALE, 10, false);
   }
   
   @Test
-  public void testOnPassivationAsyncUnbiased() {
-    testOnPassivation(true, 100 * SCALE, 1);
+  public void testOnAsyncPassivationUnbiased() {
+    testOnPassivation(true, 100 * SCALE, 1, false);
   }
   
   @Test
-  public void testOnPassivationAsyncBiased() {
-    testOnPassivation(true, 100 * SCALE, 10);
+  public void testOnAsyncPassivationBiased() {
+    testOnPassivation(true, 100 * SCALE, 10, false);
   }
   
-  private void testOnPassivation(boolean async, int n, int actorBias) {
+  @Test
+  public void testOnSyncPassivationBiasedException() {
+    testOnPassivation(false, 100 * SCALE, 10, true);
+  }
+  
+  private void testOnPassivation(boolean async, int n, int actorBias, boolean exception) {
     final AtomicInteger passivationAttempts = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     final AtomicInteger failedPassivations = new AtomicInteger();
@@ -331,7 +278,6 @@ public final class FaultTest implements TestSupport {
            syncOrAsync(a, external, async, () -> {
              if (passivationAttempts.getAndIncrement() % 2 == 0) {
                log("fault\n");
-               a.fault("boom");
                failedPassivations.incrementAndGet();
                passivationFailed.set(true);
                
@@ -345,7 +291,10 @@ public final class FaultTest implements TestSupport {
                  log("egress responded\n");
                  fail("egress responded");
                });
+               
                Thread.yield();
+               if (exception) throw new TestException("boom");
+               else a.fault("boom");
              } else {
                passivated.incrementAndGet();
                log("passivated\n");
@@ -429,16 +378,22 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnFault() {
-    testOnFault(100 * SCALE, 10);
+  public void testOnFaultBiased() {
+    testOnFault(100 * SCALE, 10, false);
   }
   
-  private void testOnFault(int n, int actorBias) {
+  @Test
+  public void testOnFaultBiasedException() {
+    testOnFault(100 * SCALE, 10, true);
+  }
+  
+  private void testOnFault(int n, int actorBias, boolean exception) {
     final ActorSystem system = system(actorBias)
     .define()
     .when(SINK).lambda((a, m) -> {
       log("sink act %d\n", m.<Integer>body());
-      a.fault("fault in act");
+      if (exception) throw new TestException("fault in act");
+      else a.fault("fault in act");
     })
     .ingress().times(n).act((a, i) -> {
       log("asking sink %d\n", i);
@@ -448,7 +403,8 @@ public final class FaultTest implements TestSupport {
         fail("sink timed out");
       })
       .onFault(f -> {
-        a.fault("fault in onFault");
+        if (exception) throw new TestException("fault in onFault");
+        else a.fault("fault in onFault");
       })
       .onResponse(r -> {
         log("sink responded\n");
@@ -463,18 +419,24 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnTimeout() {
-    testOnTimeout(100 * SCALE, 10);
+  public void testOnTimeoutBiased() {
+    testOnTimeout(100 * SCALE, 10, false);
   }
   
-  private void testOnTimeout(int n, int actorBias) {
+  @Test
+  public void testOnTimeoutBiasedException() {
+    testOnTimeout(100 * SCALE, 10, true);
+  }
+  
+  private void testOnTimeout(int n, int actorBias, boolean exception) {
     final ActorSystem system = system(actorBias)
     .define()
     .when(SINK).lambda((a, m) -> { /* stall the response */ })
     .ingress().times(n).act((a, i) -> {
       a.to(ActorRef.of(SINK)).ask()
       .await(1).onTimeout(() -> {
-        a.fault("fault in onTimeout");
+        if (exception) throw new TestException("fault in onTimeout");
+        else a.fault("fault in onTimeout");
       })
       .onFault(f -> {
         log("sink faulted\n");
