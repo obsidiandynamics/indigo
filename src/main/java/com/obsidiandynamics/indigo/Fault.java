@@ -21,8 +21,9 @@ public final class Fault implements Signal {
     return originalMessage;
   }
 
-  public Object getReason() {
-    return reason;
+  @SuppressWarnings("unchecked")
+  public <T> T getReason() {
+    return (T) reason;
   }
 
   @Override

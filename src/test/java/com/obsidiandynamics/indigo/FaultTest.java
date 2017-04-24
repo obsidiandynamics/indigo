@@ -248,7 +248,7 @@ public final class FaultTest implements TestSupport {
         fail("echo timed out");
       })
       .onFault(f -> {
-        log("echo faulted: %s\n", f.getReason());
+        log("echo faulted: %s\n", f.<Object>getReason());
         faults.getAndIncrement();
       })
       .onResponse(r -> {
