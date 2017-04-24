@@ -48,14 +48,14 @@ public final class FrameworkErrorTest implements TestSupport {
       fail("Failed to catch UnhandledMultiException");
     } catch (UnhandledMultiException e) {
       assertEquals(1, e.getErrors().length);
-      assertUnsupportedOperationException(e.getErrors()[0]);
+      assertFrameworkError(e.getErrors()[0]);
     }
     
     assertFalse(system.isRunning());
   }
   
-  private void assertUnsupportedOperationException(Throwable t) {
-    assertEquals(UnsupportedOperationException.class, t.getClass());
+  private void assertFrameworkError(Throwable t) {
+    assertEquals(FrameworkError.class, t.getClass());
     assertEquals("Unsupported signal of type " + BadSignal.class.getName(), t.getMessage());
   }
 }

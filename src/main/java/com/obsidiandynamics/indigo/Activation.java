@@ -429,7 +429,7 @@ public abstract class Activation {
           }
         }
       } else {
-        throw new UnsupportedOperationException("Unsupported signal of type " + body.getClass().getName());
+        throw new FrameworkError("Unsupported signal of type " + body.getClass().getName());
       }
     } else if (req != null) {
       cancelTimeout(req);

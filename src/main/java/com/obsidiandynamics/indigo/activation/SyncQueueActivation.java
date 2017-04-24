@@ -66,7 +66,7 @@ public final class SyncQueueActivation extends Activation {
     final Message[] messages;
     final int backlogSize;
     synchronized (backlog) {
-      if (on) throw new IllegalStateException("Actor " + ref + " was already entered");
+      if (on) throw new FrameworkError("Actor " + ref + " was already entered");
 
       backlogSize = backlog.size();
       messages = new Message[Math.min(actorConfig.bias, backlogSize)];
@@ -88,7 +88,7 @@ public final class SyncQueueActivation extends Activation {
     final boolean noBacklog;
     final boolean noPending;
     synchronized (backlog) {
-      if (! on) throw new IllegalStateException("Actor " + ref + " was already cleared");
+      if (! on) throw new FrameworkError("Actor " + ref + " was already cleared");
 
       on = false;
       noBacklog = backlog.isEmpty();
