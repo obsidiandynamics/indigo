@@ -258,7 +258,7 @@ public final class ActorSystem implements Endpoint {
       } catch (Throwable t) {
         config.exceptionHandler.accept(this, t);
         running = false;
-        timeoutWatchdog.terminateForcibly();
+        timeoutWatchdog.terminate();
         executor.shutdownNow();
       }
     });
@@ -413,9 +413,5 @@ public final class ActorSystem implements Endpoint {
     timeoutWatchdog.terminate();
     executor.shutdown();
     running = false;
-    
-    if (Thread.interrupted()) {
-      throw new InterruptedException();
-    }
   }
 }
