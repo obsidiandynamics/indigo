@@ -74,6 +74,13 @@ final class TimeoutWatchdog extends Thread {
     }
   }  
   
+  void terminateForcibly() {
+    running = false;
+    synchronized (sleepLock) {
+      sleepLock.notify();
+    }
+  }
+  
   @Override
   public void run() {
     while (running) {

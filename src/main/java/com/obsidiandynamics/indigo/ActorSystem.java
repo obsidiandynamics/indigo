@@ -41,6 +41,8 @@ public final class ActorSystem implements Endpoint {
   
   private long nextActivationId = Crypto.machineRandom();
   
+  private volatile boolean running = true;
+  
   private static final class ActorSetup {
     final Supplier<Actor> factory;
     final ActorConfig actorConfig;
@@ -250,7 +252,16 @@ public final class ActorSystem implements Endpoint {
   }
   
   public void _dispatch(Runnable r) {
-    executor.execute(r);
+    executor.execute(() -> {
+      try {
+        r.run();
+      } catch (Throwable t) {
+        config.exceptionHandler.accept(this, t);
+        running = false;
+        timeoutWatchdog.terminateForcibly();
+        executor.shutdownNow();
+      }
+    });
   }
   
   public void _incBusyActors() {
@@ -263,6 +274,15 @@ public final class ActorSystem implements Endpoint {
   
   void addError(Throwable t) {
     errors.add(t);
+  }
+  
+  /**
+   *  Determines whether the actor system is operational.
+   *  
+   *  @return True if the system is operational; false if it has been shut down.
+   */
+  public boolean isRunning() {
+    return running;
   }
   
   /**
@@ -290,7 +310,7 @@ public final class ActorSystem implements Endpoint {
       if (Thread.interrupted()) throw new InterruptedException();
       
       busyActors.sum(sum);
-      if (sum.isCertain() && sum.get() == 0) {
+      if (! running || (sum.isCertain() && sum.get() == 0)) {
         checkUncaughtExceptions();
         return 0;
       } else if (yields > 0) {
@@ -392,6 +412,7 @@ public final class ActorSystem implements Endpoint {
     timeoutWatchdog.forceTimeout();
     timeoutWatchdog.terminate();
     executor.shutdown();
+    running = false;
     
     if (Thread.interrupted()) {
       throw new InterruptedException();
