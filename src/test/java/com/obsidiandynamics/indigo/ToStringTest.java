@@ -2,6 +2,8 @@ package com.obsidiandynamics.indigo;
 
 import static org.junit.Assert.*;
 
+import java.util.*;
+
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
@@ -10,6 +12,7 @@ public class ToStringTest {
   @Test
   public void test() {
     assertToString(new Message(null, null, null, null, false));
+    assertToString(new Message(null, null, null, new UUID(0, 0), false));
     assertToString(ActorRef.of("role"));
     assertToString(ActorRef.of("role", "key"));
     assertToString(new Activation(0, null, null, null, null) {
