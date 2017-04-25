@@ -55,9 +55,10 @@ public final class Integral64Test implements TestSupport {
       workers.decrementAndGet();
     }).run();
 
+    final Sum s = new Sum();
     while (workers.get() != 0) {
       for (int i = 0; i < 1_000; i++) {
-        final long sum = integral.sumCertain();
+        final long sum = i % 2 == 0 ? integral.sumCertain() : integral.sumCertain(s).get();
         if (LOG) log("sum is %d\n", sum);
         assertTrue("sum is " + sum, sum >= 0);
       }

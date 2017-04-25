@@ -22,6 +22,8 @@ public class ToStringTest {
     assertToString(new Fault(null, null, null));
     assertToString(new Diagnostics.LogEntry("test %d, %d %d", 1, 2, 3));
     assertToString(new Integral64.Sum());
+    assertToString(new Integral64.Sum().certain(42));
+    assertToString(new Integral64.Sum().uncertain(42));
     assertToString(new JvmVersionProvider.JvmVersion(0, 0, 0, 0));
   }
 

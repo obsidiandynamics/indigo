@@ -11,7 +11,7 @@ public interface Integral64 {
       return value;
     }
     
-    void set(long value) {
+    public void set(long value) {
       this.value = value;
     }
     
@@ -19,17 +19,17 @@ public interface Integral64 {
       return certain;
     }
     
-    void setCertain(boolean certain) {
+    public void setCertain(boolean certain) {
       this.certain = certain;
     }
     
-    Sum certain(long value) {
+    public Sum certain(long value) {
       this.value = value;
       certain = true;
       return this;
     }
     
-    Sum uncertain(long value) {
+    public Sum uncertain(long value) {
       this.value = value;
       certain = false;
       return this;
