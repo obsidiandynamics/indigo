@@ -95,7 +95,7 @@ public final class ExternalAskTest implements TestSupport {
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     try {
-      f.get(10, TimeUnit.MILLISECONDS);
+      f.get();
       fail("Failed to catch ExecutionException");
     } catch (ExecutionException e) {
       assertEquals(FaultException.class, e.getCause().getClass());
@@ -112,12 +112,13 @@ public final class ExternalAskTest implements TestSupport {
     }}
     .define()
     .when(ADDER).lambda((a, m) -> {
+      TestSupport.sleep(5);
       throw new TestException("some reason");
     });
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     try {
-      f.get(10, TimeUnit.MILLISECONDS);
+      f.get();
       fail("Failed to catch ExecutionException");
     } catch (ExecutionException e) {
       assertEquals(TestException.class, e.getCause().getClass());
