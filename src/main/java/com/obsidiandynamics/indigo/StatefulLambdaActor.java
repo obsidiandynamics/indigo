@@ -67,8 +67,4 @@ public final class StatefulLambdaActor<S> implements Actor {
   public static <S> Builder<S> builder() {
     return new Builder<>();
   }
-  
-  public static <S> void agent(Activation a, Message m, S s) {
-    m.<BiConsumer<Activation, S>>body().accept(a, s);
-  }
 }
