@@ -486,6 +486,22 @@ public final class FaultTest implements TestSupport {
     assertEquals(n, countFaults(ON_TIMEOUT, system.getDeadLetterQueue()));
   }
   
+  @Test
+  public void testOnExternal() {
+    final AtomicBoolean faulted = new AtomicBoolean();
+    
+    final ActorSystem system = system(1)
+    .define()
+    .when(SINK).lambda((a, m) -> { 
+      a.fault("boom");
+      faulted.set(true);
+    });
+    
+    system.tell(ActorRef.of(SINK));
+    system.shutdownQuietly();
+    assertTrue(faulted.get());
+  }
+  
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {
     if (async) {
       a.egress(() -> null)
