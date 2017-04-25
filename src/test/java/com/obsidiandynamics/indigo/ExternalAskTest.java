@@ -86,4 +86,44 @@ public final class ExternalAskTest implements TestSupport {
       system.shutdownQuietly();
     }
   }
+  
+  @Test
+  public void testFaultString() throws InterruptedException, TimeoutException {
+    final ActorSystem system = new TestActorSystemConfig() {}
+    .define()
+    .when(ADDER).lambda((a, m) -> a.fault("some reason"));
+    
+    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
+    try {
+      f.get(10, TimeUnit.MILLISECONDS);
+      fail("Failed to catch ExecutionException");
+    } catch (ExecutionException e) {
+      assertEquals(FaultException.class, e.getCause().getClass());
+      assertEquals("some reason", ((FaultException) e.getCause()).getReason());
+    } finally {
+      system.shutdownQuietly();
+    }
+  }
+  
+  @Test
+  public void testFaultException() throws InterruptedException, TimeoutException {
+    final ActorSystem system = new TestActorSystemConfig() {{
+      exceptionHandler = TestException.BYPASS_DRAIN_HANDLER;
+    }}
+    .define()
+    .when(ADDER).lambda((a, m) -> {
+      throw new TestException("some reason");
+    });
+    
+    final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
+    try {
+      f.get(10, TimeUnit.MILLISECONDS);
+      fail("Failed to catch ExecutionException");
+    } catch (ExecutionException e) {
+      assertEquals(TestException.class, e.getCause().getClass());
+      assertEquals("some reason", e.getCause().getMessage());
+    } finally {
+      system.shutdownQuietly();
+    }
+  }
 }

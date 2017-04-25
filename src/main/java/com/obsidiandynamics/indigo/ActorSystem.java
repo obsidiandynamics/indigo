@@ -198,17 +198,24 @@ public final class ActorSystem implements Endpoint {
    *  @return A future.
    */
   public <T> CompletableFuture<T> ask(ActorRef ref, long timeoutMillisUpperBound, Object requestBody) {
-    final CompletableFuture<T> f = new CompletableFuture<>();
+    final CompletableFuture<T> future = new CompletableFuture<>();
     
     final AtomicBoolean taskRegion = new AtomicBoolean();
     final AtomicReference<TimeoutTask> timeoutTaskHolder = new AtomicReference<>();
     ingress(a -> {
       if (taskRegion.compareAndSet(false, true)) {
-        if (! f.isCancelled()) {
+        if (! future.isCancelled()) {
           final MessageBuilder mb = a.to(ref);
           mb.ask(requestBody).await(timeoutMillisUpperBound)
-          .onTimeout(() -> f.completeExceptionally(new TimeoutException()))
-          .onResponse(r -> f.complete(r.body()));
+          .onTimeout(() -> future.completeExceptionally(new TimeoutException()))
+          .onFault(f -> {
+            if (f.getReason() instanceof Throwable) {
+              future.completeExceptionally(f.getReason());
+            } else {
+              future.completeExceptionally(new FaultException(f.getReason()));
+            }
+          })
+          .onResponse(r -> future.complete(r.body()));
           timeoutTaskHolder.set(mb.getTimeoutTask());
         } else {
           timeoutTaskHolder.set(CANCELLED);
@@ -216,8 +223,8 @@ public final class ActorSystem implements Endpoint {
       }
     });
     
-    f.whenComplete((t, x) -> {
-      if (f.isCancelled()) {
+    future.whenComplete((t, x) -> {
+      if (future.isCancelled()) {
         if (! taskRegion.compareAndSet(false, true)) {
           TimeoutTask task;
           for (;;) {
@@ -237,7 +244,7 @@ public final class ActorSystem implements Endpoint {
         }
       }
     });
-    return f;
+    return future;
   }
   
   void addToDeadLetterQueue(Fault fault) {

@@ -19,21 +19,9 @@ public final class FaultTest implements TestSupport {
   private static final String SINK = "sink";
   private static final String ECHO = "echo";
   
-  private static final class TestException extends RuntimeException {
-    private static final long serialVersionUID = 1L;
-    
-    TestException(String m) { super(m); }
-  }
-  
   private static ActorSystemConfig system(int actorBias) {
     return new TestActorSystemConfig() {{
-      exceptionHandler = (sys, t) -> {
-        if (! (t instanceof TestException)) {
-          sys.addError(t);
-          t.printStackTrace();
-        }
-      };
-      
+      exceptionHandler = TestException.BYPASS_DRAIN_HANDLER;
       deadLetterQueueSize = Integer.MAX_VALUE;
       
       diagnostics = new Diagnostics() {{
