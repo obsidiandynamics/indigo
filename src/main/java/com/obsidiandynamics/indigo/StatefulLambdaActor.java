@@ -53,8 +53,8 @@ public final class StatefulLambdaActor<S> implements Actor {
     }
     
     public StatefulLambdaActor<S> build() {
-      if (onAct == null) throw new IllegalStateException("No act lambda has been assigned");
-      if (onActivated == null) throw new IllegalStateException("No activated lambda has been assigned");
+      if (onAct == null) throw new IllegalStateException("No on-act lambda has been assigned");
+      if (onActivated == null) throw new IllegalStateException("No on-activated lambda has been assigned");
       return new StatefulLambdaActor<>(onAct, onActivated, onPassivated);
     }
 

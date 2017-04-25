@@ -11,6 +11,8 @@ import com.obsidiandynamics.indigo.util.*;
   CappedForkJoinPoolTest.class,
   Integral64Test.class,
   JvmVersionProviderTest.class,
+  StatefulLambdaActorApiTest.class,
+  StatelessLambdaActorApiTest.class,
   TimeoutWatchdogTest.class,
   ToStringTest.class,
   UtilConformanceTest.class
