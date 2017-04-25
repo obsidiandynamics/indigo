@@ -4,13 +4,13 @@ import static junit.framework.TestCase.*;
 
 import org.junit.*;
 
-public final class StatefulLambdaActorApiTest implements TestSupport {
+public final class StatefulLambdaActorBuilderTest implements TestSupport {
   @Test
-  public void testNoAct() throws InterruptedException {
+  public void testNoAct() {
     try {
       StatelessLambdaActor.builder().build();
-      fail("Failed to catch IllegalStateException");
-    } catch (IllegalStateException e) {
+      fail("Failed to catch IllegalArgumentException");
+    } catch (IllegalArgumentException e) {
       assertEquals("No on-act lambda has been assigned", e.getMessage());
     }
   }

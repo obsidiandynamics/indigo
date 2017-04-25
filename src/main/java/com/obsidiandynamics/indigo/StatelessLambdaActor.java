@@ -51,7 +51,7 @@ public final class StatelessLambdaActor implements Actor {
     }
     
     public StatelessLambdaActor build() {
-      if (onAct == null) throw new IllegalStateException("No on-act lambda has been assigned");
+      if (onAct == null) throw new IllegalArgumentException("No on-act lambda has been assigned");
       return new StatelessLambdaActor(onAct, onActivated, onPassivated);
     }
 
