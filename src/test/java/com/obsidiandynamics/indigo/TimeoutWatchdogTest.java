@@ -55,6 +55,16 @@ public final class TimeoutWatchdogTest implements TestSupport {
     await().atMost(10, SECONDS).until(endpoint.isSize(tasks));
     assertEquals(ids, endpoint.ids);
   }
+  
+  @Test
+  public void testTimeoutInterrupted() {
+    final TimeoutTask task = expireIn(1);
+    // interruption should abort delivery and terminate the thread
+    watchdog.interrupt();
+    watchdog.schedule(task);
+    assertEquals(0, endpoint.ids.size());
+    await().atMost(10, SECONDS).until(() -> ! watchdog.isAlive());
+  }
 
   @Test
   public void testForceTimeout() {
