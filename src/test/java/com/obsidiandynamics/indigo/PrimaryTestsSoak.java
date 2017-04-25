@@ -103,6 +103,7 @@ public final class PrimaryTestsSoak {
             
             @Override public void testFailure(Failure failure) throws Exception {
               System.err.println("Failed: " + failure);
+              System.err.println(failure.getTrace());
             }
           });
           core.run(computer, PrimaryTests.class);
