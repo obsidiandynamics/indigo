@@ -5,7 +5,7 @@ import static junit.framework.TestCase.*;
 
 import org.junit.*;
 
-public final class ApiTest implements TestSupport {
+public final class RoleRegistrationTest implements TestSupport {
   private static final String SINK = "sink";
   
   private ActorSystem system;
@@ -58,38 +58,6 @@ public final class ApiTest implements TestSupport {
         a.to(ActorRef.of(SINK)).ask().await(1000).onTimeout(() -> {}).onResponse(r -> {});
         fail("Failed to catch NoSuchRoleException");
       } catch (NoSuchRoleException e) {}
-    })
-    .drain(0);
-  }
-  
-  @Test
-  public void testBoundedAskWithoutTimeout() throws InterruptedException {
-    system.getConfig().exceptionHandler = DRAIN;
-    system
-    .when(SINK).lambda((a, m) -> {})
-    .ingress(a -> {
-      try {
-        a.to(ActorRef.of(SINK)).ask().onTimeout(() -> {}).onResponse(r -> {});
-        fail("Failed to catch IllegalArgumentException");
-      } catch (IllegalArgumentException e) {
-        assertEquals("Only one of the timeout time or handler has been set", e.getMessage());
-      }
-    })
-    .drain(0);
-  }
-  
-  @Test
-  public void testBoundedAskWithoutTimeoutHandler() throws InterruptedException {
-    system.getConfig().exceptionHandler = DRAIN;
-    system
-    .when(SINK).lambda((a, m) -> {})
-    .ingress(a -> {
-      try {
-        a.to(ActorRef.of(SINK)).ask().await(1000).onResponse(r -> {});
-        fail("Failed to catch IllegalArgumentException");
-      } catch (IllegalArgumentException e) {
-        assertEquals("Only one of the timeout time or handler has been set", e.getMessage());
-      }
     })
     .drain(0);
   }

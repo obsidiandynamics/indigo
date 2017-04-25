@@ -8,8 +8,8 @@ import com.obsidiandynamics.indigo.benchmark.*;
 
 @RunWith(Suite.class)
 @SuiteClasses({
+  ActivationApiTest.class,
   ActorSystemConfigTest.class,
-  ApiTest.class,
   DiagnosticsTest.class,
   DLQTest.class,
   DrainTest.class,
@@ -23,6 +23,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
   ParallelConsistencyTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
+  RoleRegistrationTest.class,
   StashTest.class,
   StatelessChainTest.class,
   StatelessLifeCycleTest.class,
