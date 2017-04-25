@@ -104,7 +104,9 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       log = new LogConfig() {{
         summary = stages = LOG;
       }};
-      statsSamples = 1_000;
+      stats = true;
+      statsSync = true;
+      statsSamples = 100;
     }}.test();
   }
   
@@ -152,7 +154,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
             if (sendTime == 0) {
               a.send(s.blank);
             } else {
-              a.reply(m).tell(sendTime);
+              a.toSenderOf(m).tell(sendTime);
             }
             s.tx++;
           }

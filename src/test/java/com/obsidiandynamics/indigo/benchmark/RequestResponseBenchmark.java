@@ -90,7 +90,9 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       log = new LogConfig() {{
         summary = stages = LOG;
       }};
-      statsSamples = 1_000;
+      stats = true;
+      statsSync = true;
+      statsSamples = 100;
     }}.test();
   }
   
