@@ -66,4 +66,14 @@ public interface TestSupport {
     }
     return count;
   }
+  
+  static Executor oneTimeExecutor(String threadName) {
+    return r -> asyncDaemon(r, threadName);
+  }
+  
+  static void asyncDaemon(Runnable r, String threadName) {
+    final Thread t = new Thread(r, threadName);
+    t.setDaemon(true);
+    t.start();
+  }
 }

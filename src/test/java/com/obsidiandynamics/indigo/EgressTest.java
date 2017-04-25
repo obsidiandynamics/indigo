@@ -15,7 +15,7 @@ public final class EgressTest implements TestSupport {
   private static final String DONE_RUNS = "done_runs";
   private static final String EXTERNAL = "external";
   
-  private static final Executor EXECUTOR = r -> new Thread(r, EXTERNAL).start();
+  private static final Executor EXECUTOR = TestSupport.oneTimeExecutor(EXTERNAL);
 
   private ActorSystem system;
   
