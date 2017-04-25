@@ -16,6 +16,28 @@ public final class CappedForkJoinPool extends ForkJoinPool {
   /** An absolute cap on the number of threads in the pool. */
   private static final int MAX_THREADS = get("indigo.fjp.maxThreads", Integer::parseInt, 1024);
   
+  private final static class CappedThreadFactory implements ForkJoinWorkerThreadFactory {
+    private final int parallelism;
+    private final int scale;
+    private final int maxThreads;
+    
+    CappedThreadFactory(int parallelism, int scale, int maxThreads) {
+      this.parallelism = parallelism;
+      this.scale = scale;
+      this.maxThreads = maxThreads;
+    }
+
+    @Override
+    public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
+      // note: pool.getPoolSize() includes the new (yet to be created) thread
+      if (pool.getPoolSize() <= min(parallelism * scale, maxThreads)) {
+        return defaultForkJoinWorkerThreadFactory.newThread(pool) ;
+      } else {
+        return null;
+      }
+    }
+  }
+  
   /**
    *  Tests if the FJP is safe for use with the given JVM version. Specifically, it tests
    *  for the presence of the bug JDK-8078490, which can stall submissions to the FJP.
@@ -28,13 +50,13 @@ public final class CappedForkJoinPool extends ForkJoinPool {
         version.compareTo(new JvmVersion(1, 8, 0, 65)) >= 0;
   }
   
-  public CappedForkJoinPool(int parallelism,
-                            UncaughtExceptionHandler handler,
-                            boolean asyncMode) {
-    super(min(parallelism, MAX_THREADS), 
-          pool -> pool.getPoolSize() < min(parallelism * SCALE, MAX_THREADS) 
-              ? defaultForkJoinWorkerThreadFactory.newThread(pool) 
-              : null, 
+  public CappedForkJoinPool(int parallelism, UncaughtExceptionHandler handler, boolean asyncMode) {
+    this(parallelism, SCALE, MAX_THREADS, handler, asyncMode);
+  }
+  
+  public CappedForkJoinPool(int parallelism, int scale, int maxThreads, UncaughtExceptionHandler handler, boolean asyncMode) {
+    super(min(parallelism, maxThreads), 
+          new CappedThreadFactory(parallelism, scale, maxThreads), 
           handler, 
           asyncMode);
   }
