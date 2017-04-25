@@ -14,6 +14,7 @@ import com.obsidiandynamics.indigo.util.*;
   MessageBuilderTest.class,
   StatefulLambdaActorBuilderTest.class,
   StatelessLambdaActorBuilderTest.class,
+  ThreadsTest.class,
   TimeoutWatchdogTest.class,
   ToStringTest.class,
   UtilConformanceTest.class
