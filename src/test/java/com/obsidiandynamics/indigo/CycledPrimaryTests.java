@@ -9,8 +9,7 @@ import com.obsidiandynamics.indigo.CycleSuite.*;
 @SuiteClasses(PrimaryTests.class)     
 @ParameterMatrix(
   keys={ActorSystemConfig.Key.EXECUTOR,ActorConfig.Key.ACTIVATION_FACTORY},
-  values={@ParameterValues({"FIXED_THREAD_POOL","SYNC_QUEUE"}),
-          @ParameterValues({"FIXED_THREAD_POOL","NODE_QUEUE"}),
+  values={@ParameterValues({"FIXED_THREAD_POOL","NODE_QUEUE"}),
           @ParameterValues({"AUTO","SYNC_QUEUE"}),
           @ParameterValues({"FORK_JOIN_POOL","NODE_QUEUE"})
 })
