@@ -19,7 +19,7 @@ public final class ActorSystem implements Endpoint {
   private static final long DRAIN_SLEEP_MILLIS = 1;
   
   /** A symbol for a task that's been cancelled. */
-  private static final TimeoutTask CANCELLED = new TimeoutTask(0, null, null, null);
+  private static final TimeoutTask CANCELLED = new TimeoutTask(0, new UUID(0, 0), null, null);
   
   private final ActorSystemConfig config;
   
@@ -226,13 +226,11 @@ public final class ActorSystem implements Endpoint {
     future.whenComplete((t, x) -> {
       if (future.isCancelled()) {
         if (! taskRegion.compareAndSet(false, true)) {
-          TimeoutTask task;
           for (;;) {
-            task = timeoutTaskHolder.get();
-            if (task == CANCELLED) {
-              return;
-            } else if (task != null) {
-              // by forcing timeout, the pending task is removed from the ingress actor
+            final TimeoutTask task = timeoutTaskHolder.get();
+            if (task != null) {
+              // by forcing timeout, the pending task is removed from the ingress actor; calling this
+              // a second (and subsequent) times has no further effect
               timeoutWatchdog.timeout(task);
               return;
             } else {
