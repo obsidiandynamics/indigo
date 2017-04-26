@@ -144,8 +144,7 @@ final class TimeoutWatchdog extends Thread {
       try {
         final TimeoutTask first = timeouts.first();
         if (forceTimeout || System.nanoTime() >= first.getExpiresAt() - ADJ_NANOS) {
-          final boolean removed = timeouts.remove(first);
-          if (removed && ! first.getRequest().isComplete()) {
+          if (timeouts.remove(first)) {
             endpoint.send(new Message(null, first.getActorRef(), TIMEOUT_SIGNAL, first.getRequestId(), true));
           }
         }

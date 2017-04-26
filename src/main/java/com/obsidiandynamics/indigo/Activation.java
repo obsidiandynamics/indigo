@@ -283,7 +283,6 @@ public abstract class Activation {
   
   private void clearPending() {
     for (PendingRequest req : pending.values()) {
-      req.setComplete(true);
       cancelTimeout(req);
     }
     pending.clear();
@@ -409,7 +408,6 @@ public abstract class Activation {
     if (body instanceof Signal) {
       if (body instanceof Timeout) {
         if (req != null) {
-          req.setComplete(true);
           try {
             req.getOnTimeout().run();
           } catch (Throwable t) {
@@ -422,7 +420,6 @@ public abstract class Activation {
       } else if (body instanceof Fault) {
         if (req != null) {
           cancelTimeout(req);
-          req.setComplete(true);
           if (req.getOnFault() != null) {
             try {
               req.getOnFault().accept((Fault) body);
@@ -439,7 +436,6 @@ public abstract class Activation {
       }
     } else if (req != null) {
       cancelTimeout(req);
-      req.setComplete(true);
       try {
         req.getOnResponse().accept(m);
       } catch (Throwable t) {
