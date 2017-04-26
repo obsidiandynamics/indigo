@@ -8,7 +8,7 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class NodeQueueActivation extends Activation {
-  private static final int MAX_SPINS = 10;
+  private static final int MAX_YIELDS = 128;
 
   private static final class Node extends AtomicReference<Node> {
     private static final long serialVersionUID = 1L;
@@ -65,7 +65,7 @@ public final class NodeQueueActivation extends Activation {
         system._incBusyActors();
       }
       assert diagnostics().traceMacro("NQA.enqueue: scheduling m=%s", m);
-      scheduleRun(t);
+      scheduleRunStart(t);
     } else {
       t1.lazySet(t);
     }
@@ -85,16 +85,12 @@ public final class NodeQueueActivation extends Activation {
     }
   }
 
-  private void scheduleRun(Node h) {
-    system._dispatch(() -> run(h, false));
+  private void scheduleRunStart(Node n) {
+    system._dispatch(() -> run(n, false));
   }
-
-  private void schedulePark(Node n) {
-    system._dispatch(() -> {
-      if (! park(n)) {
-        run(n, true);
-      }
-    });
+  
+  private void scheduleRunContinue(Node n) {
+    system._dispatch(() -> run(n, true));
   }
 
   private boolean park(Node n) {
@@ -133,29 +129,35 @@ public final class NodeQueueActivation extends Activation {
       processMessage(head.m);
     }
 
-    int spins = 0;
+    final int bias = actorConfig.bias;
+    int yields = 0;
+    boolean attemptedPark = false;
     try {
       for (;;) {
         final Node h1 = head.get();
         if (h1 != null) {
-          if (cycles < actorConfig.bias) {
+          if (cycles < bias) {
             head = h1;
             cycles++;
             processMessage(head.m);
-            spins = 0;
+            yields = 0;
           } else {
             assert diagnostics().traceMacro("NQA.run: scheduling ref=%s", ref);
-            scheduleRun(h1);
+            scheduleRunStart(h1);
             return;
           }
-        } else if (spins != MAX_SPINS) {
-          spins++;
-        } else {
-          Thread.yield();
+        } else if (! attemptedPark) {
           passivateIfScheduled();
-          if (! park(head)) {
-            schedulePark(head);
+          if (park(head)) {
+            return;
+          } else {
+            attemptedPark = true;
           }
+        } else if (yields != MAX_YIELDS) {
+          Thread.yield();
+          yields++;
+        } else {
+          scheduleRunContinue(head);
           return;
         }
       }
