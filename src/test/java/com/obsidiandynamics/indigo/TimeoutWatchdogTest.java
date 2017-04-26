@@ -93,11 +93,11 @@ public final class TimeoutWatchdogTest implements TestSupport {
   }
   
   @Test
-  public void testDequeue() {
-    testDequeue(10);
+  public void testAbort() {
+    testAbort(10);
   }
   
-  private void testDequeue(int tasks) {
+  private void testAbort(int tasks) {
     final List<TimeoutTask> timeouts = new ArrayList<>(tasks); 
     for (int i = 0; i < tasks; i++) {
       final TimeoutTask task = expireIn(60_000 + i * 1_000);
@@ -108,7 +108,8 @@ public final class TimeoutWatchdogTest implements TestSupport {
     assertEquals(0, endpoint.ids.size());
     
     for (TimeoutTask task : timeouts) {
-      watchdog.abort(task);
+      assertTrue(watchdog.abort(task));
+      assertFalse(watchdog.abort(task)); // 2nd call should have no effect
     }
     
     assertEquals(0, endpoint.ids.size());
@@ -132,6 +133,7 @@ public final class TimeoutWatchdogTest implements TestSupport {
     assertEquals(0, endpoint.ids.size());
     for (TimeoutTask task : timeouts) {
       watchdog.timeout(task);
+      watchdog.timeout(task); // 2nd call should have no effect
     }
     assertEquals(tasks, endpoint.ids.size());
     watchdog.forceTimeout();
