@@ -554,6 +554,40 @@ public final class FaultTest implements TestSupport {
     assertEquals(1, system.getDeadLetterQueue().size());
   }
   
+  @Test
+  public void testFaultAfterTimeout() {
+    final CyclicBarrier barrier = new CyclicBarrier(2);
+    final AtomicBoolean faulted = new AtomicBoolean();
+    final AtomicBoolean timedOut = new AtomicBoolean();
+    
+    new TestActorSystemConfig() {}
+    .define()
+    .when(SINK).lambda((a, m) -> {
+      // delay the fault so that it gets beaten by the timeout
+      TestSupport.await(barrier);
+      a.fault("delayed boom");
+      faulted.set(true);
+    })
+    .ingress(a -> {
+      a.to(ActorRef.of(SINK)).ask()
+      .await(1)
+      .onTimeout(() -> {
+        TestSupport.await(barrier);
+        timedOut.set(true);
+      })
+      .onFault(f -> {
+        fail("Unexpected fault");
+      })
+      .onResponse(r -> {
+        fail("Unexpected response");
+      });
+    })
+    .shutdownQuietly();
+    
+    assertTrue(faulted.get());
+    assertTrue(timedOut.get());
+  }
+  
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {
     if (async) {
       a.egress(() -> null)

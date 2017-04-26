@@ -4,6 +4,7 @@ import static junit.framework.TestCase.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
@@ -82,5 +83,36 @@ public final class RequestResponseTest implements TestSupport {
     
     assertEquals(1, receivedRoles.size());
     assertTrue(receivedRoles.contains(ActorRef.INGRESS));
+  }
+  
+  @Test
+  public void testResponseAfterTimeout() {
+    final CyclicBarrier barrier = new CyclicBarrier(2);
+    final AtomicBoolean responded = new AtomicBoolean();
+    final AtomicBoolean timedOut = new AtomicBoolean();
+    
+    new TestActorSystemConfig() {}
+    .define()
+    .when(SINK).lambda((a, m) -> {
+      // delay the response so that it gets beaten by the timeout
+      TestSupport.await(barrier);
+      a.reply(m).tell();
+      responded.set(true);
+    })
+    .ingress(a -> {
+      a.to(ActorRef.of(SINK)).ask()
+      .await(1)
+      .onTimeout(() -> {
+        TestSupport.await(barrier);
+        timedOut.set(true);
+      })
+      .onResponse(r -> {
+        fail("Unexpected response");
+      });
+    })
+    .shutdownQuietly();
+    
+    assertTrue(responded.get());
+    assertTrue(timedOut.get());
   }
 }
