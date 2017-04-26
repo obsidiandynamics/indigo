@@ -451,9 +451,9 @@ public abstract class Activation {
         case ACTIVATING:
           clearPending();
           _unstash();
-          if (stash != null && ! stash.messages.isEmpty()) {
-            stash.messages.remove(0);
-          }
+          // during asynchronous activation, the message causing the activation gets stashed - treat as
+          // offending and remove it
+          stash.messages.remove(0);
           setState(PASSIVATED);
           fault(fault.getReason());
           raiseFault(ON_ACTIVATION, activatingMessage);

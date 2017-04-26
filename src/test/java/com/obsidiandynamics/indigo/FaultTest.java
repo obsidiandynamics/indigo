@@ -36,6 +36,61 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
+  public void testSimpleAsyncActivation() {
+    final AtomicBoolean faulted = new AtomicBoolean();
+    final AtomicBoolean handled = new AtomicBoolean();
+    
+    final ExecutorService external = Executors.newSingleThreadExecutor();
+    final ActorSystem system = system(1)
+    .define()
+    .when(SINK)
+    .use(StatelessLambdaActor.builder()
+         .activated(a -> {
+           log("activating\n");
+           a.egress(() -> null)
+           .using(external)
+           .await(1_000).onTimeout(() -> {
+             log("egress timed out\n");
+             fail("egress timed out");
+           })
+           .onFault(f -> {
+             log("egress faulted\n");
+             fail("egress faulted");
+           })
+           .onResponse(r -> {
+             a.fault("boom");
+             faulted.set(true);
+           });
+         })
+         .act((a, m) -> {
+           log("act\n");
+           a.passivate();
+         })
+         .passivated(a -> {
+           log("passivated\n");
+         })
+    )
+    .ingress(a -> { 
+      a.to(ActorRef.of(SINK)).ask()
+      .onFault(f -> {
+        log("fault detected");
+        handled.set(true);
+      })
+      .onResponse(r -> {
+        fail("Unexpected response\n");
+      });
+    });
+    system.shutdownQuietly();
+    external.shutdown();
+    
+    assertTrue(faulted.get());
+    assertTrue(handled.get());
+    assertEquals(2, system.getDeadLetterQueue().size());
+    assertEquals(1, countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
+    assertEquals(1, countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
+  }
+  
+  @Test
   public void testOnSyncActivationUnbiased() {
     testOnActivation(attempts -> false, 100 * SCALE, 1, false);
   }
