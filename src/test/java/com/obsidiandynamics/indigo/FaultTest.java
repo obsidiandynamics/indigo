@@ -503,6 +503,57 @@ public final class FaultTest implements TestSupport {
     assertTrue(faulted.get());
   }
   
+  @Test
+  public void testUnhandledFault() {
+    final AtomicBoolean faulted = new AtomicBoolean();
+    
+    final ActorSystem system = system(1)
+    .define()
+    .when(SINK).lambda((a, m) -> { 
+      a.fault("boom");
+      faulted.set(true);
+    })
+    .ingress(a -> {
+      a.to(ActorRef.of(SINK)).ask().onResponse(r -> {
+        fail("Unexpected response");
+      });
+    });
+    
+    system.shutdownQuietly();
+    assertTrue(faulted.get());
+    assertEquals(1, system.getDeadLetterQueue().size());
+  }
+  
+  @Test
+  public void testDoubleFault() {
+    final AtomicBoolean faulted = new AtomicBoolean();
+    final AtomicBoolean handled = new AtomicBoolean();
+    
+    final ActorSystem system = system(1)
+    .define()
+    .when(SINK).lambda((a, m) -> { 
+      a.fault("boom 1");
+      faulted.set(true);
+      throw new TestException("boom 2"); // should overwrite the prior fault
+    })
+    .ingress(a -> {
+      a.to(ActorRef.of(SINK)).ask()
+      .onFault(f -> {
+        assertFalse(handled.get());
+        assertEquals("boom 2", f.<Exception>getReason().getMessage());
+        handled.set(true);
+      })
+      .onResponse(r -> {
+        fail("Unexpected response");
+      });
+    });
+    
+    system.shutdownQuietly();
+    assertTrue(faulted.get());
+    assertTrue(handled.get());
+    assertEquals(1, system.getDeadLetterQueue().size());
+  }
+  
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {
     if (async) {
       a.egress(() -> null)
