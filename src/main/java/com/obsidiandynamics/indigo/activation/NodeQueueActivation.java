@@ -10,6 +10,11 @@ import com.obsidiandynamics.indigo.util.*;
 public final class NodeQueueActivation extends Activation {
   private static final int MAX_YIELDS = 128;
 
+  private static final byte DISPOSAL_STATE_NEUTRAL = 0;
+  private static final byte DISPOSAL_STATE_PROPOSED = 1;
+  private static final byte DISPOSAL_STATE_ACCEPTED = 2;
+  private static final byte DISPOSAL_STATE_COMPLETE = 3;
+
   private static final class Node extends AtomicReference<Node> {
     private static final long serialVersionUID = 1L;
 
@@ -19,18 +24,14 @@ public final class NodeQueueActivation extends Activation {
   }
 
   private final AtomicReference<Node> tail = new AtomicReference<>();
-
-  private volatile boolean disposalComplete;
-
-  /** Raised by the dispatch thread just prior to the CAS parking attempt when disposal is required. If
-   *  CAS fails, this flag is immediately lowered. */
-  private volatile boolean disposalAttemptProposed;
-
-  /** Raised by the dispatch thread just after the CAS parking attempt when disposal is required. If both
-   *  the 'attempted' and 'succeeded' flags are true, the queuing threads will back off until disposal
-   *  completes. */
-  private volatile boolean disposalAttemptAccepted;
-
+  
+  /** Set to by the dispatch thread to {@link #DISPOSAL_ATTEMPT_PROPOSED} just prior to the CAS parking 
+   *  attempt when disposal is required, and subsequently overwritten either to {@link #DISPOSAL_STATE_NEUTRAL}
+   *  or {@link #DISPOSAL_STATE_ACCEPTED} depending on whether or not CAS succeeded. Eventually, when
+   *  disposal is complete, this field is set to {@link #DISPOSAL_STATE_COMPLETE}.
+   */
+  private volatile byte disposalState;
+  
   private final AtomicInteger backlogSize;
 
   public NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
@@ -54,7 +55,7 @@ public final class NodeQueueActivation extends Activation {
 
     if (isDisposing()) {
       assert diagnostics().traceMacro("NQA.enqueue: awaiting disposal m=%s", m);
-      while (! disposalComplete) {
+      while (disposalState != DISPOSAL_STATE_COMPLETE) {
         Thread.yield();
       }
       return false;
@@ -74,13 +75,13 @@ public final class NodeQueueActivation extends Activation {
 
   private boolean isDisposing() {
     for (;;) {
-      if (disposalAttemptProposed) {
-        if (disposalAttemptAccepted) {
-          return true;
-        }
+      final byte _disposalState = disposalState;
+      if (_disposalState == DISPOSAL_STATE_NEUTRAL) {
+        return false;
+      } else if (_disposalState == DISPOSAL_STATE_PROPOSED) {
         Thread.yield();
       } else {
-        return false;
+        return true;
       }
     }
   }
@@ -98,7 +99,7 @@ public final class NodeQueueActivation extends Activation {
     final boolean noPending = pending.isEmpty();
     final boolean disposing = getState() == PASSIVATED;
     if (disposing) {
-      disposalAttemptProposed = true;
+      disposalState = DISPOSAL_STATE_PROPOSED;
     }
 
     final boolean parked = tail.compareAndSet(n, null);
@@ -107,14 +108,14 @@ public final class NodeQueueActivation extends Activation {
       if (noPending) {
         if (disposing) {
           assert diagnostics().traceMacro("NQA.park: disposed ref=%s", ref);
-          disposalAttemptAccepted = true;
+          disposalState = DISPOSAL_STATE_ACCEPTED;
           system._dispose(ref);
-          disposalComplete = true;
+          disposalState = DISPOSAL_STATE_COMPLETE;
         }
         system._decBusyActors();
       }
     } else if (noPending && disposing) {
-      disposalAttemptProposed = false;
+      disposalState = DISPOSAL_STATE_NEUTRAL;
     }
     return parked;
   }
