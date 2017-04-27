@@ -9,6 +9,7 @@ import com.obsidiandynamics.indigo.util.*;
 @RunWith(Suite.class)
 @SuiteClasses({
   CappedForkJoinPoolTest.class,
+  IndigoVersionTest.class,
   Integral64Test.class,
   JvmVersionProviderTest.class,
   MessageBuilderTest.class,

@@ -9,13 +9,14 @@ import com.obsidiandynamics.indigo.*;
 public class UtilConformanceTest {
   @Test
   public void test() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    assertUtilityClassWellDefined(ActorConfig.Key.class);
+    assertUtilityClassWellDefined(ActorSystemConfig.Key.class);
+    assertUtilityClassWellDefined(Diagnostics.Key.class);
     assertUtilityClassWellDefined(Crypto.class);
     assertUtilityClassWellDefined(Functions.class);
+    assertUtilityClassWellDefined(IndigoVersion.class);
     assertUtilityClassWellDefined(PropertyUtils.class);
     assertUtilityClassWellDefined(Threads.class);
-    assertUtilityClassWellDefined(ActorSystemConfig.Key.class);
-    assertUtilityClassWellDefined(ActorConfig.Key.class);
-    assertUtilityClassWellDefined(Diagnostics.Key.class);
   }
 
   /**

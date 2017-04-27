@@ -1,6 +1,16 @@
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
+
+String getVersion() {
+  def versionFile = sourceSets.main.resources.srcDirs[0].path + '/' + project.name + '.version'
+  def version = new BufferedReader(new FileReader(versionFile)).readLine().trim()
+  return version
+}
+
+group = 'com.obsidiandynamics.indigo'
+version = getVersion()
+
 repositories {
   jcenter()
 }
@@ -28,11 +38,11 @@ task testJar (type: Jar) {
     configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
     configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) }
   }   
-  archiveName 'indigo-test.jar'
+  baseName 'indigo-core-test'
 }
 
 jar {
-  archiveName 'indigo.jar'
+  baseName 'indigo-core'
   finalizedBy jacocoTestReport
 }
 

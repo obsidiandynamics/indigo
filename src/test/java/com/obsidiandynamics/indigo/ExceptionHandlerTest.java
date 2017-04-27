@@ -64,7 +64,7 @@ public final class ExceptionHandlerTest implements TestSupport {
         log("output is %s\n", output);
         
         final String exceptionFullName = HandlerTestException.class.getName();
-        assertTrue(output.startsWith(exceptionFullName));
+        assertTrue("output=" + output, output.startsWith(exceptionFullName));
       } finally {
         System.setErr(standardErr);
       }
