@@ -38,7 +38,7 @@ public final class PrimaryTestsSoak {
       int mins;
       try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
         final String read = reader.readLine();
-        if (read.trim().isEmpty()) {
+        if (read == null || read.trim().isEmpty()) {
           mins = DEF_MINS;
         } else {
           try {

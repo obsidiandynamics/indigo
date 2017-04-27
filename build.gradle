@@ -26,7 +26,7 @@ test {
   include 'com/obsidiandynamics/indigo/SupportingTests.class'
 }
 
-task testJar (type: Jar) {
+task testJar(type: Jar) {
   dependsOn jar
   manifest { 
     attributes "Main-Class": "com.obsidiandynamics.indigo.PrimaryTestsSoak"
@@ -52,4 +52,19 @@ jacocoTestReport {
     xml.enabled false
     html.enabled true
   }
+}
+
+def perfJvmArgs = '-server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC'
+
+task testBench(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
+  main = 'com.obsidiandynamics.indigo.benchmark.BenchmarkSuite'
+}
+
+task testSoak(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+  jvmArgs = Arrays.asList perfJvmArgs.split(' ') + '-ea'
+  standardInput = System.in
+  main = 'com.obsidiandynamics.indigo.PrimaryTestsSoak'
 }
