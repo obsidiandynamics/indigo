@@ -256,7 +256,7 @@ public final class ActorSystem implements Endpoint {
     return Collections.unmodifiableList(Arrays.asList(deadLetterQueue.toArray(new Fault[0])));
   }
   
-  public void _dispatch(Runnable r) {
+  void dispatch(Runnable r) {
     executor.execute(() -> {
       try {
         r.run();
@@ -269,11 +269,11 @@ public final class ActorSystem implements Endpoint {
     });
   }
   
-  public void _incBusyActors() {
+  void incBusyActors() {
     busyActors.add(1);
   }
   
-  public void _decBusyActors() {
+  void decBusyActors() {
     busyActors.add(-1);
   }
   
@@ -375,7 +375,7 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
-  public void _dispose(ActorRef ref) {
+  void dispose(ActorRef ref) {
     activations.remove(ref);
   }
   

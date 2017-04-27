@@ -1,10 +1,9 @@
-package com.obsidiandynamics.indigo.activation;
+package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActivationState.*;
 
 import java.util.*;
 
-import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class SyncQueueActivation extends Activation {
@@ -19,7 +18,7 @@ public final class SyncQueueActivation extends Activation {
   }
   
   @Override
-  public boolean enqueue(Message m) {
+  boolean enqueue(Message m) {
     assert diagnostics().traceMacro("SQA.enqueue: m=%s", m);
     
     boolean throttledOnce = false;
@@ -49,12 +48,12 @@ public final class SyncQueueActivation extends Activation {
       }
     
       if (noBacklog && noPending) {
-        system._incBusyActors();
+        system.incBusyActors();
       }
       
       if (noBacklog) {
         assert diagnostics().traceMacro("SQA.enqueue: scheduling m=%s", m);
-        system._dispatch(this::run);
+        system.dispatch(this::run);
       }
       
       return true;
@@ -96,18 +95,18 @@ public final class SyncQueueActivation extends Activation {
       
       if (noBacklog && getState() == PASSIVATED) {
         assert diagnostics().traceMacro("SQA.run: disposing ref=%s", ref);
-        system._dispose(ref);
+        system.dispose(ref);
         disposed = true;
       }
     }
 
     if (noBacklog) {
       if (noPending) {
-        system._decBusyActors();
+        system.decBusyActors();
       }
     } else {
       assert diagnostics().traceMacro("SQA.run: scheduling, ref=%s", ref);
-      system._dispatch(this::run);
+      system.dispatch(this::run);
     }
   }
   

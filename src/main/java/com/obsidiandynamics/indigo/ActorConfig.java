@@ -8,7 +8,6 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
-import com.obsidiandynamics.indigo.activation.*;
 
 public abstract class ActorConfig {
   public static final class Key {

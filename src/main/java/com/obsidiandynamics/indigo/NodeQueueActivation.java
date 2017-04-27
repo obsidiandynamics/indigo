@@ -1,10 +1,9 @@
-package com.obsidiandynamics.indigo.activation;
+package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActivationState.*;
 
 import java.util.concurrent.atomic.*;
 
-import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class NodeQueueActivation extends Activation {
@@ -40,7 +39,7 @@ public final class NodeQueueActivation extends Activation {
   }
 
   @Override
-  public boolean enqueue(Message m) {
+  boolean enqueue(Message m) {
     assert diagnostics().traceMacro("NQA.enqueue: m=%s", m);
 
     if (! m.isResponse() && shouldThrottle()) {
@@ -63,7 +62,7 @@ public final class NodeQueueActivation extends Activation {
 
     if (t1 == null) {
       if (pending.isEmpty()) {
-        system._incBusyActors();
+        system.incBusyActors();
       }
       assert diagnostics().traceMacro("NQA.enqueue: scheduling m=%s", m);
       scheduleRunStart(t);
@@ -87,11 +86,11 @@ public final class NodeQueueActivation extends Activation {
   }
 
   private void scheduleRunStart(Node n) {
-    system._dispatch(() -> run(n, false));
+    system.dispatch(() -> run(n, false));
   }
   
   private void scheduleRunContinue(Node n) {
-    system._dispatch(() -> run(n, true));
+    system.dispatch(() -> run(n, true));
   }
 
   private boolean park(Node n) {
@@ -109,10 +108,10 @@ public final class NodeQueueActivation extends Activation {
         if (disposing) {
           assert diagnostics().traceMacro("NQA.park: disposed ref=%s", ref);
           disposalState = DISPOSAL_STATE_ACCEPTED;
-          system._dispose(ref);
+          system.dispose(ref);
           disposalState = DISPOSAL_STATE_COMPLETE;
         }
-        system._decBusyActors();
+        system.decBusyActors();
       }
     } else if (noPending && disposing) {
       disposalState = DISPOSAL_STATE_NEUTRAL;

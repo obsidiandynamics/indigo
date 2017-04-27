@@ -43,7 +43,7 @@ public abstract class Activation {
     this.actor = actor;
   }
   
-  public abstract boolean enqueue(Message m);
+  abstract boolean enqueue(Message m);
   
   public final ActorRef self() {
     return ref;
