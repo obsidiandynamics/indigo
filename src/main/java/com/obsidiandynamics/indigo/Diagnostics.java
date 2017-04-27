@@ -5,6 +5,8 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import java.io.*;
 import java.util.concurrent.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public abstract class Diagnostics {
   public static final class Key {
     public static final String TRACE_ENABLED = "indigo.diagnostics.traceEnabled";
@@ -21,16 +23,8 @@ public abstract class Diagnostics {
   private final BlockingQueue<LogEntry> log = new LinkedBlockingQueue<>();
   
   final void init() {
-    if (traceEnabled) {
-      boolean caught = false;
-      try {
-        assert false;
-      } catch (AssertionError e) {
-        caught = true;
-      }
-      if (! caught) {
-        throw new AssertionError("Assertions need to be enabled for tracing, run JVM with -ea flag");
-      }
+    if (traceEnabled && ! Assertions.areEnabled()) {
+      throw new IllegalStateException("Assertions need to be enabled for tracing, run JVM with -ea flag");
     }
   }
   

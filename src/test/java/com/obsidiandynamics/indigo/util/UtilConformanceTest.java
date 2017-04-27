@@ -11,6 +11,7 @@ public class UtilConformanceTest {
   public void test() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
     assertUtilityClassWellDefined(ActorConfig.Key.class);
     assertUtilityClassWellDefined(ActorSystemConfig.Key.class);
+    assertUtilityClassWellDefined(Assertions.class);
     assertUtilityClassWellDefined(Diagnostics.Key.class);
     assertUtilityClassWellDefined(Crypto.class);
     assertUtilityClassWellDefined(Functions.class);

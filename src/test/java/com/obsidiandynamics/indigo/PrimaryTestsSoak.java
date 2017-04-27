@@ -12,6 +12,11 @@ import com.obsidiandynamics.indigo.util.OneShotActor.*;
 
 public final class PrimaryTestsSoak {
   public static void main(String[] args) throws InterruptedException, ExecutionException {
+    if (! Assertions.areEnabled()) {
+      System.err.println("Assertions need to be enabled for tracing, run JVM with -ea flag");
+      System.exit(1);
+    }
+    
     final String ONE_SHOT = "one_shot";
     final ActorSystem system = new ActorSystemConfig() {}
     .define()
