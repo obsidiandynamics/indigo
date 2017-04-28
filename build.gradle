@@ -1,6 +1,8 @@
+plugins {
+  id 'com.jfrog.bintray' version '1.7.3'
+}
 apply plugin: 'java'
 apply plugin: 'jacoco'
-
 
 String getVersion() {
   def versionFile = sourceSets.main.resources.srcDirs[0].path + '/' + project.name + '.version'
@@ -67,4 +69,37 @@ task testSoak(type: JavaExec) {
   jvmArgs = Arrays.asList perfJvmArgs.split(' ') + '-ea'
   standardInput = System.in
   main = 'com.obsidiandynamics.indigo.PrimaryTestsSoak'
+}
+
+bintray {
+  def envKey = 'BINTRAY_KEY'
+  if (System.getenv(envKey) == null) {
+    throw new GradleException("No Bintray key specified; set with 'export ${envKey}=<key>'")
+  }
+  def packageVersion = version
+  
+  user = 'ekoutanov'
+  key = System.getenv(envKey)
+  configurations = ['archives']
+  pkg {
+    repo = 'indigo'
+    name = 'indigo-core'
+    userOrg = 'obsidiandynamics'
+    desc = 'A lightweight actor system for the JVM'
+    websiteUrl = 'https://github.com/obsidiandynamics/indigo'
+    licenses = ['BSD New']
+    vcsUrl = 'https://github.com/obsidiandynamics/indigo.git'
+    publicDownloadNumbers = true
+    githubRepo = 'obsidiandynamics/indigo'
+    version {
+      name = packageVersion
+      desc = 'Indigo'
+      released  = new Date()
+      vcsTag = packageVersion
+    }
+  }
+}
+
+task publish {
+  dependsOn bintrayUpload
 }
