@@ -425,6 +425,58 @@ public final class FaultTest implements TestSupport {
     assertEquals(n, system.getDeadLetterQueue().size());
     assertEquals(n, countFaults(ON_EGRESS, system.getDeadLetterQueue()));
   }
+  
+  @Test
+  public void testOnAsyncEgressBiased() {
+    testOnAsyncEgressAsk(100 * SCALE, 10);
+  }
+  
+  private void testOnAsyncEgressAsk(int n, int actorBias) {
+  final AtomicInteger faults = new AtomicInteger();
+    
+    final ExecutorService external = Executors.newSingleThreadExecutor();
+    
+    final ActorSystem system = system(actorBias)
+    .createActorSystem()
+    .ingress().times(n).act((a, i) -> {
+      final Diagnostics d = a.diagnostics();
+      d.trace("act %d", i);
+      a.egressAsync(() -> {
+        d.trace("egress %d", i);
+        final CompletableFuture<Object> future = new CompletableFuture<>();
+        future.completeExceptionally(new TestException("Fault in async egress"));
+        return future;
+      })
+      .withExecutor(external)
+      .await(1_000).onTimeout(() -> {
+        log("egress timed out\n");
+        fail("egress timed out");
+      })
+      .onFault(f -> {
+        d.trace("fault %d", i);
+        faults.incrementAndGet();
+      })
+      .onResponse(r -> {
+        log("egress responded\n");
+        fail("egress responded");
+      });
+    });
+    
+    try {
+      for (long left; (left = system.drain(10_000)) != 0; ) {
+        log("draining... faults: %s, actors left: %d\n", faults, left);
+        system.getConfig().diagnostics.print(LOG_STREAM);
+        fail("drain did not complete");
+      }
+      external.shutdown();
+      external.awaitTermination(10, TimeUnit.SECONDS);
+    } catch (InterruptedException e) { throw new RuntimeException(e); }
+    system.shutdownQuietly();
+    
+    assertEquals(n, faults.get());
+    assertEquals(n, system.getDeadLetterQueue().size());
+    assertEquals(n, countFaults(ON_EGRESS, system.getDeadLetterQueue()));
+  }
 
   @Test
   public void testOnEgressTellBiased() {

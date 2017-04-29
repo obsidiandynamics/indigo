@@ -152,10 +152,14 @@ public abstract class Activation {
   }
   
   public final class EgressBuilder<I, O> {
-    private final Function<I, O> func;
+    private final Function<I, CompletableFuture<O>> func;
 
-    EgressBuilder(Function<I, O> func) {
+    EgressBuilder(Function<I, CompletableFuture<O>> func) {
       this.func = func;
+    }
+    
+    public MessageBuilder withCommonPool() {
+      return withExecutor(ForkJoinPool.commonPool());
     }
 
     @SuppressWarnings("unchecked")
@@ -163,42 +167,48 @@ public abstract class Activation {
       return new MessageBuilder((body, requestId) -> {
         stashIfTransitioning();
         executor.execute(() -> {
-          final O out;
+          final CompletableFuture<O> future;
           try {
-            out = func.apply((I) body);
+            future = func.apply((I) body);
           } catch (Throwable t) {
-            actorConfig.exceptionHandler.accept(system, t);
-            final Fault fault = new Fault(ON_EGRESS, null, t);
-            addToDeadLetterQueue(fault);
-            if (requestId != null) {
-              final Message resp = new Message(null, ref, fault, requestId, true);
-              system.send(resp);
-            }
+            handleError(requestId, t);
             return;
           }
           
-          if (requestId != null) {
-            final Message resp = new Message(null, ref, out, requestId, true);
-            system.send(resp);
-          }
+          future.whenComplete((out, t) -> {
+            if (t == null) {
+              if (requestId != null) {
+                final Message resp = new Message(null, ref, out, requestId, true);
+                system.send(resp);
+              }
+            } else {
+              handleError(requestId, t);
+            }
+          });
         });
       });
     }
-  }
-  
-  public final <I, O> EgressBuilder<I, O> egress(Function<I, O> func) {
-    return new EgressBuilder<>(func);
+    
+    private void handleError(UUID requestId, Throwable t) {
+      actorConfig.exceptionHandler.accept(system, t);
+      final Fault fault = new Fault(ON_EGRESS, null, t);
+      addToDeadLetterQueue(fault);
+      if (requestId != null) {
+        final Message resp = new Message(null, ref, fault, requestId, true);
+        system.send(resp);
+      }
+    }
   }
   
   public final <I> EgressBuilder<I, Void> egress(Consumer<I> consumer) {
-    return new EgressBuilder<>(in -> {
+    return egress(in -> {
       consumer.accept(in);
       return null;
     });
   }
   
   public final <I> EgressBuilder<I, Void> egress(Runnable runnable) {
-    return new EgressBuilder<>(in -> {
+    return egress(in -> {
       if (in != null) throw new IllegalArgumentException("Cannot pass a value to this egress lambda");
       
       runnable.run();
@@ -207,11 +217,27 @@ public abstract class Activation {
   }
   
   public final <O> EgressBuilder<Object, O> egress(Supplier<O> supplier) {
-    return new EgressBuilder<>(in -> {
+    return egress(in -> {
       if (in != null) throw new IllegalArgumentException("Cannot pass a value to this egress lambda");
       
       return supplier.get();
     });
+  }
+  
+  public final <I, O> EgressBuilder<I, O> egress(Function<I, O> func) {
+    return egressAsync(i -> CompletableFuture.completedFuture(func.apply(i)));
+  }
+  
+  public final <I, O> EgressBuilder<I, O> egressAsync(Supplier<CompletableFuture<O>> supplier) {
+    return egressAsync(in -> {
+      if (in != null) throw new IllegalArgumentException("Cannot pass a value to this egress lambda");
+      
+      return supplier.get();
+    });
+  }
+  
+  public final <I, O> EgressBuilder<I, O> egressAsync(Function<I, CompletableFuture<O>> func) {
+    return new EgressBuilder<>(func);
   }
   
   public final MessageBuilder toSelf() {
@@ -290,8 +316,7 @@ public abstract class Activation {
   
   private Fault raiseFault(FaultType type, Message originalMessage) {
     final Fault fault = new Fault(type, originalMessage, faultReason);
-    if (originalMessage != null && originalMessage.requestId() != null && 
-        ! originalMessage.isResponse() && originalMessage.from() != null) {
+    if (originalMessage != null && originalMessage.requestId() != null && ! originalMessage.isResponse()) {
       send(new Message(ref, originalMessage.from(), fault, originalMessage.requestId(), true));
     }
     addToDeadLetterQueue(fault);

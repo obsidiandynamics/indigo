@@ -154,6 +154,33 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
+  public void testAsyncSupplier() throws InterruptedException {
+    final int runs = 5;
+    final AtomicInteger received = new AtomicInteger();
+    final AtomicInteger processed = new AtomicInteger();
+    
+    system.ingress().times(runs).act((a, i) -> {
+      a.egressAsync(in -> {
+        assertNull(in);
+        final int newVal = received.incrementAndGet();
+        final CompletableFuture<Integer> f = new CompletableFuture<>();
+        TestSupport.asyncDaemon(() -> {
+          processed.incrementAndGet();
+          f.complete(newVal);
+        }, "AsyncIngress");
+        return f;
+      })
+      .withCommonPool()
+      .ask()
+      .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
+    })
+    .drain(0);
+    
+    assertEquals(runs, received.get());
+    assertEquals(runs, processed.get());
+  }
+  
+  @Test
   public void testSupplierWithIllegalValue() throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
 
@@ -161,6 +188,30 @@ public final class EgressTest implements TestSupport {
     system.ingress(a -> {
       a.egress(() -> received.incrementAndGet())
       .withExecutor(EXECUTOR)
+      .ask("foo")
+      .onFault(f -> assertIllegalArgumentException(f.getReason()))
+      .onResponse(r -> assertNull(r.body()));
+    });
+    
+    try {
+      system.drain(0);
+      fail("Failed to catch UnhandledMultiException");
+    } catch (UnhandledMultiException e) {
+      assertEquals(1, e.getErrors().length);
+      assertIllegalArgumentException(e.getErrors()[0]);
+    }
+    
+    assertEquals(0, received.get());
+  }
+  
+  @Test
+  public void testAsyncSupplierWithIllegalValue() throws InterruptedException {
+    final AtomicInteger received = new AtomicInteger();
+
+    system.getConfig().exceptionHandler = DRAIN;
+    system.ingress(a -> {
+      a.egressAsync(() -> CompletableFuture.completedFuture(received.incrementAndGet()))
+      .withCommonPool()
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
       .onResponse(r -> assertNull(r.body()));
