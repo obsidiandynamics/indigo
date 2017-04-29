@@ -1,17 +1,18 @@
 plugins {
   id 'com.jfrog.bintray' version '1.7.3'
 }
+apply plugin: 'maven-publish'
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
-String getVersion() {
+def packageVersion = {
   def versionFile = sourceSets.main.resources.srcDirs[0].path + '/' + project.name + '.version'
   def version = new BufferedReader(new FileReader(versionFile)).readLine().trim()
   return version
-}
+}()
 
 group = 'com.obsidiandynamics.indigo'
-version = getVersion()
+version = packageVersion
 
 repositories {
   jcenter()
@@ -76,21 +77,22 @@ bintray {
   if (System.getenv(envKey) == null) {
     throw new GradleException("No Bintray key specified; set with 'export ${envKey}=<key>'")
   }
-  def packageVersion = version
   
   user = 'ekoutanov'
   key = System.getenv(envKey)
-  configurations = ['archives']
+  publications = ['mavenJava']
   pkg {
     repo = 'indigo'
     name = 'indigo-core'
     userOrg = 'obsidiandynamics'
-    desc = 'A lightweight actor system for the JVM'
+    desc = 'A dynamic actor framework for the JVM'
     websiteUrl = 'https://github.com/obsidiandynamics/indigo'
     licenses = ['BSD New']
     vcsUrl = 'https://github.com/obsidiandynamics/indigo.git'
     publicDownloadNumbers = true
     githubRepo = 'obsidiandynamics/indigo'
+    override = true
+    publish = false
     version {
       name = packageVersion
       desc = 'Indigo'
@@ -100,6 +102,42 @@ bintray {
   }
 }
 
-task publish {
-  dependsOn bintrayUpload
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  baseName 'indigo-core'
+  classifier = 'javadoc'
+  from "$buildDir/docs/javadoc"
+}
+ 
+task sourcesJar(type: Jar) {
+  baseName 'indigo-core'
+  from sourceSets.main.allSource
+  classifier = 'sources'
+}
+ 
+artifacts {
+  archives jar
+  archives javadocJar
+  archives sourcesJar
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      groupId 'com.obsidiandynamics.indigo'
+      artifactId 'indigo-core'
+      version packageVersion
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+    }
+  }
+  repositories {
+    maven {
+      url "${project(':').projectDir}/../repo"
+    }
+  }
+}
+
+bintrayUpload {
+  // invoke this task when ready to publish to Bintray
 }
