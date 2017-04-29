@@ -1,5 +1,5 @@
 package com.obsidiandynamics.indigo;
 
-public enum ActivationState {
+enum ActivationState {
   ACTIVATING, ACTIVATED, PASSIVATING, PASSIVATED
 }

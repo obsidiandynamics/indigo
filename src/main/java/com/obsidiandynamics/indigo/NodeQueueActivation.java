@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class NodeQueueActivation extends Activation {
+final class NodeQueueActivation extends Activation {
   private static final int MAX_YIELDS = 128;
 
   private static final byte DISPOSAL_STATE_NEUTRAL = 0;

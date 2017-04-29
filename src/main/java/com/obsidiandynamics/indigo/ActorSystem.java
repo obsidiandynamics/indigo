@@ -176,6 +176,7 @@ public final class ActorSystem implements Endpoint {
    *  <code>TimeoutException</code> is thrown. To override this limit, call the overloaded
    *  <code>ask()</code> that takes a <code>timeoutMillisUpperBound</code> argument.
    *  
+   *  @param <T> The future's type.
    *  @param ref The target actor.
    *  @param requestBody The request body.
    *  @return A future.
@@ -191,6 +192,7 @@ public final class ActorSystem implements Endpoint {
    *  This method provides the ability to override the default upper bound on the timeout that is
    *  set in <code>ActorSystemConfig</code>.
    *  
+   *  @param <T> The future's type.
    *  @param ref The target actor.
    *  @param timeoutMillisUpperBound The upper bound on the timeout. Beyond this time, the future
    *                                 will yield a <code>TimeoutException</code>.
@@ -304,7 +306,7 @@ public final class ActorSystem implements Endpoint {
    *  
    *  @param timeoutMillis The maximum amount of time to wait, or 0 for indefinite.
    *  @return The approximate number of backlogged actors remaining, in the range of 0 to the number of activated actors.
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread is interrupted.
    *  @throws UnhandledMultiException If any unhandled exceptions were accumulated.
    */
   public long drain(long timeoutMillis) throws InterruptedException {
@@ -407,7 +409,7 @@ public final class ActorSystem implements Endpoint {
   /**
    *  Drains the actor system of any pending tasks and terminates it.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread is interrupted.
    */
   public void shutdown() throws InterruptedException {
     for (;;) {

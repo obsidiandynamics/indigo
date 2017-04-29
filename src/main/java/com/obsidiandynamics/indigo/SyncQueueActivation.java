@@ -6,7 +6,7 @@ import java.util.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class SyncQueueActivation extends Activation {
+final class SyncQueueActivation extends Activation {
   private final Queue<Message> backlog = new ArrayDeque<>(1);
   
   private boolean on;
