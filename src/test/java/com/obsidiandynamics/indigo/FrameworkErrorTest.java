@@ -17,7 +17,7 @@ public final class FrameworkErrorTest implements TestSupport {
     system = new TestActorSystemConfig() {{
       exceptionHandler = DRAIN;
     }}
-    .define();
+    .createActorSystem();
   }
   
   @After
@@ -27,7 +27,7 @@ public final class FrameworkErrorTest implements TestSupport {
   
   @Test
   public void testUnsupportedSignal() throws InterruptedException {
-    system.when(SINK).lambda((a, m) -> {
+    system.on(SINK).cue((a, m) -> {
       a.reply(m).tell(new BadSignal());
     })
     .ingress(a -> { 

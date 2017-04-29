@@ -11,7 +11,7 @@ import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
-public abstract class ActorSystemConfig {
+public class ActorSystemConfig {
   public static final class Key {
     public static final String PARALLELISM = "indigo.system.parallelism";
     public static final String DEFAULT_ASK_TIMEOUT_MILLIS = "indigo.system.defaultAskTimeoutMillis";
@@ -77,8 +77,8 @@ public abstract class ActorSystemConfig {
   /** The default actor configuration. */
   public ActorConfig defaultActorConfig = new ActorConfig() {};
   
-  public final ActorSystem define() {
-    return new ActorSystem(this);
+  public final ActorSystem createActorSystem() {
+    return ActorSystem.create(this);
   }
   
   final int getParallelism() {

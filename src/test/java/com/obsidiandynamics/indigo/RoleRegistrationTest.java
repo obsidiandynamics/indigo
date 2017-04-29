@@ -12,7 +12,7 @@ public final class RoleRegistrationTest implements TestSupport {
   
   @Before
   public void setup() {
-    system = new TestActorSystemConfig() {}.define();
+    system = new TestActorSystemConfig() {}.createActorSystem();
   }
   
   @After
@@ -22,8 +22,8 @@ public final class RoleRegistrationTest implements TestSupport {
   
   @Test(expected=DuplicateRoleException.class)
   public void testDuplicateRoleRegistration() {
-    system.when(SINK).lambda((a, m) -> {});
-    system.when(SINK).lambda((a, m) -> {});
+    system.on(SINK).cue((a, m) -> {});
+    system.on(SINK).cue((a, m) -> {});
   }
   
   @Test

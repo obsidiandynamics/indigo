@@ -27,8 +27,8 @@ public final class TimeoutTest implements TestSupport {
     final Map<ActorRef, Long> done = new HashMap<>();
 
     new TestActorSystemConfig() {}
-    .define()
-    .when(DRIVER).lambda((a, m) -> {
+    .createActorSystem()
+    .on(DRIVER).cue((a, m) -> {
       final long startTime = System.currentTimeMillis();
       final long timeout = generateRandomTimeout();
       a.to(ActorRef.of(ECHO)).ask().await(timeout)
@@ -43,8 +43,8 @@ public final class TimeoutTest implements TestSupport {
         fail(String.format("Got unexpected response, timeout set to %d", timeout));
       });
     })
-    .when(ECHO).lambda((a, m) -> { /* do nothing, stalling the reply */ })
-    .when(DONE).lambda((a, m) -> done.put(m.from(), m.body()))
+    .on(ECHO).cue((a, m) -> { /* do nothing, stalling the reply */ })
+    .on(DONE).cue((a, m) -> done.put(m.from(), m.body()))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdownQuietly();
 

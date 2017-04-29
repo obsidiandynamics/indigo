@@ -131,8 +131,8 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
         backlogThrottleTries = 1;
       }};
     }}
-    .define()
-    .when(DRIVER).lambdaSync(DriverState::new, (a, m, s) -> {
+    .createActorSystem()
+    .on(DRIVER).cueSync(DriverState::new, (a, m, s) -> {
       switch (m.from().role()) {
         case ECHO:
           s.rx++;
@@ -168,19 +168,19 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
         default: throw new UnsupportedOperationException(m.from().role());
       }
     })
-    .when(ECHO).lambdaSync(EchoState::new, (a, m, s) -> {
+    .on(ECHO).cueSync(EchoState::new, (a, m, s) -> {
       final long sendTime = m.body();
       if (sendTime != 0) {
         final long took = System.nanoTime() - sendTime;
         if (c.statsSync) {
           summary.stats.samples.addValue(took);
         } else {
-          a.<Long>egress(summary.stats.samples::addValue).using(summary.stats.executor).tell(took);
+          a.<Long>egress(summary.stats.samples::addValue).withExecutor(summary.stats.executor).tell(took);
         }
       }
       a.send(s.blank);
     })
-    .when(TIMER).lambda((a, m) -> states.add(m.body()))
+    .on(TIMER).cue((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdownQuietly();
 

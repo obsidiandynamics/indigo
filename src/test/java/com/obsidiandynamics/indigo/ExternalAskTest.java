@@ -13,8 +13,8 @@ public final class ExternalAskTest implements TestSupport {
   @Test
   public void testResponse() throws InterruptedException, ExecutionException, TimeoutException {
     final ActorSystem system = new TestActorSystemConfig() {}
-    .define()
-    .when(ADDER).lambda((a, m) -> a.reply(m).tell(m.<Integer>body() + 1));
+    .createActorSystem()
+    .on(ADDER).cue((a, m) -> a.reply(m).tell(m.<Integer>body() + 1));
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     try {
@@ -31,8 +31,8 @@ public final class ExternalAskTest implements TestSupport {
     final CyclicBarrier barrier = new CyclicBarrier(2);
     
     final ActorSystem system = new TestActorSystemConfig() {}
-    .define()
-    .when(ADDER).lambda((a, m) -> {
+    .createActorSystem()
+    .on(ADDER).cue((a, m) -> {
       a.reply(m).tell(m.<Integer>body() + 1);
       ran.set(true);
     });
@@ -59,8 +59,8 @@ public final class ExternalAskTest implements TestSupport {
   @Test(expected=TimeoutException.class)
   public void testTimeoutWithCancel() throws InterruptedException, ExecutionException, TimeoutException {
     final ActorSystem system = new TestActorSystemConfig() {}
-    .define()
-    .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
+    .createActorSystem()
+    .on(ADDER).cue((a, m) -> { /* do nothing, stalling the reply */ });
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER));
     try {
@@ -75,8 +75,8 @@ public final class ExternalAskTest implements TestSupport {
   @Test(expected=TimeoutException.class)
   public void testTimeoutWithForce() throws InterruptedException, ExecutionException, TimeoutException {
     final ActorSystem system = new TestActorSystemConfig() {}
-    .define()
-    .when(ADDER).lambda((a, m) -> { /* do nothing, stalling the reply */ });
+    .createActorSystem()
+    .on(ADDER).cue((a, m) -> { /* do nothing, stalling the reply */ });
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     try {
@@ -90,8 +90,8 @@ public final class ExternalAskTest implements TestSupport {
   @Test
   public void testFaultString() throws InterruptedException, TimeoutException {
     final ActorSystem system = new TestActorSystemConfig() {}
-    .define()
-    .when(ADDER).lambda((a, m) -> a.fault("some reason"));
+    .createActorSystem()
+    .on(ADDER).cue((a, m) -> a.fault("some reason"));
     
     final CompletableFuture<Integer> f = system.ask(ActorRef.of(ADDER), 41);
     try {
@@ -110,8 +110,8 @@ public final class ExternalAskTest implements TestSupport {
     final ActorSystem system = new TestActorSystemConfig() {{
       exceptionHandler = TestException.BYPASS_DRAIN_HANDLER;
     }}
-    .define()
-    .when(ADDER).lambda((a, m) -> {
+    .createActorSystem()
+    .on(ADDER).cue((a, m) -> {
       TestSupport.sleep(5);
       throw new TestException("some reason");
     });

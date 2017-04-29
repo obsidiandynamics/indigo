@@ -159,7 +159,7 @@ public abstract class Activation {
     }
 
     @SuppressWarnings("unchecked")
-    public MessageBuilder using(Executor executor) {
+    public MessageBuilder withExecutor(Executor executor) {
       return new MessageBuilder((body, requestId) -> {
         stashIfTransitioning();
         executor.execute(() -> {

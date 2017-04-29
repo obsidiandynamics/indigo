@@ -9,7 +9,7 @@ import java.util.function.*;
 
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 
-public abstract class ActorConfig {
+public class ActorConfig {
   public static final class Key {
     public static final String BIAS = "indigo.actor.bias";
     public static final String BACKLOG_THROTTLE_CAPACITY = "indigo.actor.backlogThrottleCapacity";

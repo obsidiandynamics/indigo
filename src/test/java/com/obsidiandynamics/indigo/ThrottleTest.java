@@ -27,8 +27,8 @@ public final class ThrottleTest implements TestSupport {
         backlogThrottleTries = 1;
       }};
     }}
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       log("waiting to start\n");
       TestSupport.await(start);
       log("started\n");

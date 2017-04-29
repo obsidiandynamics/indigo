@@ -19,13 +19,12 @@ public final class ForwarderTest implements TestSupport {
     final AtomicInteger forwarded = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     
-    final ActorSystem system = new TestActorSystemConfig() {}
-    .define()
-    .when(FORWARDER).lambda((a, m) -> {
+    final ActorSystem system = ActorSystem.create()
+    .on(FORWARDER).cue((a, m) -> {
       a.forward(m).to(ActorRef.of(SINK));
       forwarded.incrementAndGet();
     })
-    .when(SINK).lambda((a, m) -> {
+    .on(SINK).cue((a, m) -> {
       assertEquals(ActorRef.INGRESS, m.from().role());
       received.incrementAndGet();
     })

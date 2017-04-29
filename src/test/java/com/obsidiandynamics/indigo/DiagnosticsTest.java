@@ -19,7 +19,7 @@ public final class DiagnosticsTest implements TestSupport {
         logSize = limit;
       }};
     }}
-    .define()
+    .createActorSystem()
     .ingress().times(limit * 2).act((a, i) -> {});
     
     system.shutdownQuietly();

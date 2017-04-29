@@ -73,9 +73,9 @@ public final class StatefulLifeCycleTest implements TestSupport {
         backlogThrottleCapacity = 10;
       }};
     }}
-    .define()
-    .when(TARGET)
-    .use(StatefulLambdaActor
+    .createActorSystem()
+    .on(TARGET)
+    .cue(StatefulLambdaActor
          .<IntegerState>builder()
          .activated(a -> {
            log("activating\n");
@@ -102,7 +102,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
            
            if (async) {
              a.egress(() -> db.get(a.self()))
-             .using(external)
+             .withExecutor(external)
              .ask()
              .onResponse(r -> activator.accept(r.body()));
            } else {
@@ -146,7 +146,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
            
            if (async) {
              a.egress(() -> db.put(a.self(), s))
-             .using(external)
+             .withExecutor(external)
              .ask()
              .onResponse(r -> passivator.run());
            } else {

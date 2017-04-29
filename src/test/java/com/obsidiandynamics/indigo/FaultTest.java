@@ -42,13 +42,13 @@ public final class FaultTest implements TestSupport {
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
     final ActorSystem system = system(1)
-    .define()
-    .when(SINK)
-    .use(StatelessLambdaActor.builder()
+    .createActorSystem()
+    .on(SINK)
+    .cue(StatelessLambdaActor.builder()
          .activated(a -> {
            log("activating\n");
            a.egress(() -> null)
-           .using(external)
+           .withExecutor(external)
            .await(1_000).onTimeout(() -> {
              log("egress timed out\n");
              fail("egress timed out");
@@ -140,9 +140,9 @@ public final class FaultTest implements TestSupport {
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
     final ActorSystem system = system(actorBias)
-    .define()
-    .when(SINK)
-    .use(StatelessLambdaActor.builder()
+    .createActorSystem()
+    .on(SINK)
+    .cue(StatelessLambdaActor.builder()
          .activated(a -> {
            log("activating\n");
            final boolean async = asyncTest.apply(activationAttempts.get());
@@ -157,7 +157,7 @@ public final class FaultTest implements TestSupport {
                }
                
                a.egress(() -> null)
-               .using(external)
+               .withExecutor(external)
                .await(1_000).onTimeout(() -> {
                  log("egress timed out\n");
                  fail("egress timed out");
@@ -226,8 +226,8 @@ public final class FaultTest implements TestSupport {
     final AtomicInteger activationAttempts = new AtomicInteger();
     
     final ActorSystem system = system(actorBias)
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       log("sink asking\n");
 
       a.to(ActorRef.of(ECHO)).ask()
@@ -245,8 +245,8 @@ public final class FaultTest implements TestSupport {
         fail("echo responded");
       });
     })
-    .when(ECHO)
-    .use(StatelessLambdaActor.builder()
+    .on(ECHO)
+    .cue(StatelessLambdaActor.builder()
          .activated(a -> {
            log("echo activating\n");
            if (activationAttempts.getAndIncrement() % 2 == 0) {
@@ -309,9 +309,9 @@ public final class FaultTest implements TestSupport {
     final ExecutorService external = Executors.newSingleThreadExecutor();
 
     final ActorSystem system = system(actorBias)
-    .define()
-    .when(SINK)
-    .use(StatelessLambdaActor.builder()
+    .createActorSystem()
+    .on(SINK)
+    .cue(StatelessLambdaActor.builder()
          .activated(a -> {
            log("activated\n");
            assertFalse(passivationFailed.get());
@@ -331,7 +331,7 @@ public final class FaultTest implements TestSupport {
                passivationFailed.set(true);
                
                a.egress(() -> null)
-               .using(external)
+               .withExecutor(external)
                .await(1_000).onTimeout(() -> {
                  log("egress timed out\n");
                  fail("egress timed out");
@@ -387,7 +387,7 @@ public final class FaultTest implements TestSupport {
     final ExecutorService external = Executors.newSingleThreadExecutor();
     
     final ActorSystem system = system(actorBias)
-    .define()
+    .createActorSystem()
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
@@ -395,7 +395,7 @@ public final class FaultTest implements TestSupport {
         d.trace("egress %d", i);
         throw new TestException("Fault in egress");
       })
-      .using(external)
+      .withExecutor(external)
       .await(1_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");
@@ -437,7 +437,7 @@ public final class FaultTest implements TestSupport {
     final ExecutorService external = Executors.newSingleThreadExecutor();
     
     final ActorSystem system = system(actorBias)
-    .define()
+    .createActorSystem()
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
@@ -446,7 +446,7 @@ public final class FaultTest implements TestSupport {
         faults.incrementAndGet();
         throw new TestException("Fault in egress");
       })
-      .using(external)
+      .withExecutor(external)
       .tell();
     });
     
@@ -478,8 +478,8 @@ public final class FaultTest implements TestSupport {
   
   private void testOnFault(int n, int actorBias, boolean exception) {
     final ActorSystem system = system(actorBias)
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       log("sink act %d\n", m.<Integer>body());
       if (exception) throw new TestException("fault in act");
       else a.fault("fault in act");
@@ -519,8 +519,8 @@ public final class FaultTest implements TestSupport {
   
   private void testOnTimeout(int n, int actorBias, boolean exception) {
     final ActorSystem system = system(actorBias)
-    .define()
-    .when(SINK).lambda((a, m) -> { /* stall the response */ })
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> { /* stall the response */ })
     .ingress().times(n).act((a, i) -> {
       a.to(ActorRef.of(SINK)).ask()
       .await(1).onTimeout(() -> {
@@ -547,8 +547,8 @@ public final class FaultTest implements TestSupport {
     final AtomicBoolean faulted = new AtomicBoolean();
     
     final ActorSystem system = system(1)
-    .define()
-    .when(SINK).lambda((a, m) -> { 
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> { 
       a.fault("boom");
       faulted.set(true);
     });
@@ -563,8 +563,8 @@ public final class FaultTest implements TestSupport {
     final AtomicBoolean faulted = new AtomicBoolean();
     
     final ActorSystem system = system(1)
-    .define()
-    .when(SINK).lambda((a, m) -> { 
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> { 
       a.fault("boom");
       faulted.set(true);
     })
@@ -585,8 +585,8 @@ public final class FaultTest implements TestSupport {
     final AtomicBoolean handled = new AtomicBoolean();
     
     final ActorSystem system = system(1)
-    .define()
-    .when(SINK).lambda((a, m) -> { 
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> { 
       a.fault("boom 1");
       faulted.set(true);
       throw new TestException("boom 2"); // should overwrite the prior fault
@@ -616,8 +616,8 @@ public final class FaultTest implements TestSupport {
     final AtomicBoolean timedOut = new AtomicBoolean();
     
     new TestActorSystemConfig() {}
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       // delay the fault so that it gets beaten by the timeout
       TestSupport.await(barrier);
       a.fault("delayed boom");
@@ -646,7 +646,7 @@ public final class FaultTest implements TestSupport {
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {
     if (async) {
       a.egress(() -> null)
-      .using(external)
+      .withExecutor(external)
       .await(1_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");

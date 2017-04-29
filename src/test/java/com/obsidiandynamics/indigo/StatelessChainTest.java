@@ -17,8 +17,8 @@ public final class StatelessChainTest implements TestSupport {
     final Set<ActorRef> doneRuns = new HashSet<>();
 
     new TestActorSystemConfig() {}
-    .define()
-    .when(RUN).lambda((a, m) -> {
+    .createActorSystem()
+    .on(RUN).cue((a, m) -> {
       final int body = m.body();
       if (body < runs) {
         a.toSelf().tell(body + 1);
@@ -26,7 +26,7 @@ public final class StatelessChainTest implements TestSupport {
         a.to(ActorRef.of(DONE_RUNS)).tell();
       }
     })
-    .when(DONE_RUNS).lambda(refCollector(doneRuns))
+    .on(DONE_RUNS).cue(refCollector(doneRuns))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(RUN, String.valueOf(i))).tell(1))
     .shutdownQuietly();
 

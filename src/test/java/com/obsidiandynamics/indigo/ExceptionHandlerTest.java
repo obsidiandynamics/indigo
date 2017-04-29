@@ -16,7 +16,7 @@ public final class ExceptionHandlerTest implements TestSupport {
     new TestActorSystemConfig() {{
       exceptionHandler = SYSTEM;
     }}
-    .define();
+    .createActorSystem();
   }
   
   private final class HandlerTestException extends RuntimeException {
@@ -52,8 +52,8 @@ public final class ExceptionHandlerTest implements TestSupport {
         
         assertEquals(0, out.size());
         
-        actorSystemConfigSupplier.get().define()
-        .when(SINK).configure(actorConfigSupplier.get()).lambda((a, m) -> {
+        actorSystemConfigSupplier.get().createActorSystem()
+        .on(SINK).withConfig(actorConfigSupplier.get()).cue((a, m) -> {
           throw new HandlerTestException();
         })
         .ingress(a -> a.to(ActorRef.of(SINK)).tell())
@@ -76,8 +76,8 @@ public final class ExceptionHandlerTest implements TestSupport {
     final ActorSystem system = new TestActorSystemConfig() {{
       exceptionHandler = DRAIN;
     }}
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       throw new HandlerTestException();
     })
     .ingress(a -> a.to(ActorRef.of(SINK)).tell());

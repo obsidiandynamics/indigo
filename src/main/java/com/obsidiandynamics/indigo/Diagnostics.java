@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public abstract class Diagnostics {
+public class Diagnostics {
   public static final class Key {
     public static final String TRACE_ENABLED = "indigo.diagnostics.traceEnabled";
     public static final String LOG_SIZE = "indigo.diagnostics.logSize";

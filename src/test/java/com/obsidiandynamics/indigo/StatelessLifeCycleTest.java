@@ -52,9 +52,9 @@ public final class StatelessLifeCycleTest implements TestSupport {
         backlogThrottleCapacity = 10;
       }};
     }}
-    .define()
-    .when(TARGET)
-    .use(StatelessLambdaActor
+    .createActorSystem()
+    .on(TARGET)
+    .cue(StatelessLambdaActor
          .builder()
          .activated(a -> {
            log("activating\n");
@@ -107,7 +107,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
              passivationCount.incrementAndGet();
            });
          }))
-    .when(ECHO).lambda((a, m) -> a.reply(m).tell())
+    .on(ECHO).cue((a, m) -> a.reply(m).tell())
     .ingress().act(a -> {
       for (int i = 0; i < n; i++) {
         a.to(ActorRef.of(TARGET)).tell(i);

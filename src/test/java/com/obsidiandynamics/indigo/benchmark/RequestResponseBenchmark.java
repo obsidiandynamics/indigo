@@ -116,12 +116,12 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
         backlogThrottleCapacity = Integer.MAX_VALUE;
       }};
     }}
-    .define()
-    .when(DRIVER).lambdaSync(DriverState::new, (a, m, s) -> {
+    .createActorSystem()
+    .on(DRIVER).cueSync(DriverState::new, (a, m, s) -> {
       send(a, s.to, s, c, c.seedPairs, summary.stats);
     })
-    .when(ECHO).lambda((a, m) -> a.reply(m).tell())
-    .when(TIMER).lambda((a, m) -> states.add(m.body()))
+    .on(ECHO).cue((a, m) -> a.reply(m).tell())
+    .on(TIMER).cue((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdownQuietly();
 
@@ -149,7 +149,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
         if (c.statsSync) {
           stats.samples.addValue(took);
         } else {
-          a.<Long>egress(stats.samples::addValue).using(stats.executor).tell(took);
+          a.<Long>egress(stats.samples::addValue).withExecutor(stats.executor).tell(took);
         }
       }
       

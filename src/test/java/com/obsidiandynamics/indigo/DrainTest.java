@@ -31,11 +31,11 @@ public final class DrainTest implements TestSupport {
 
   private void test(int actors, int runs, int stages) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
-    final ActorSystem system = new TestActorSystemConfig() {}.define();
+    final ActorSystem system = new TestActorSystemConfig() {}.createActorSystem();
     
     for (int stage = 0; stage < stages; stage++) {
       final int _stage = stage;
-      system.when(STAGE + stage).lambda((a, m) -> {
+      system.on(STAGE + stage).cue((a, m) -> {
         if (_stage != stages - 1) {
           a.to(ActorRef.of(STAGE + (_stage + 1), a.self().key())).tell();
         } else {
@@ -57,7 +57,7 @@ public final class DrainTest implements TestSupport {
   
   @Test(expected=InterruptedException.class)
   public void testInterruptOnDrain() throws InterruptedException {
-    final ActorSystem system = new TestActorSystemConfig() {}.define();
+    final ActorSystem system = new TestActorSystemConfig() {}.createActorSystem();
     
     Thread.currentThread().interrupt();
     try {
@@ -70,7 +70,7 @@ public final class DrainTest implements TestSupport {
   
   @Test(expected=InterruptedException.class)
   public void testInterruptOnShutdown() throws InterruptedException {
-    final ActorSystem system = new TestActorSystemConfig() {}.define();
+    final ActorSystem system = new TestActorSystemConfig() {}.createActorSystem();
     
     Thread.currentThread().interrupt();
     try {
@@ -83,7 +83,7 @@ public final class DrainTest implements TestSupport {
   
   @Test
   public void testInterruptOnShutdownQuietly() {
-    final ActorSystem system = new TestActorSystemConfig() {}.define();
+    final ActorSystem system = new TestActorSystemConfig() {}.createActorSystem();
     
     Thread.currentThread().interrupt();
     system.shutdownQuietly();
@@ -99,8 +99,8 @@ public final class DrainTest implements TestSupport {
     final ActorSystem system = new TestActorSystemConfig() {{
       parallelism = actors + 1;
     }}
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       TestSupport.await(exit);
     })
     .ingress().times(actors).act((a, i) -> {

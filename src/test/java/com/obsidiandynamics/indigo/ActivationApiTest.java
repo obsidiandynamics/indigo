@@ -12,7 +12,7 @@ public final class ActivationApiTest implements TestSupport {
   
   @Before
   public void setup() {
-    system = new TestActorSystemConfig() {}.define();
+    system = new TestActorSystemConfig() {}.createActorSystem();
   }
   
   @After
@@ -24,7 +24,7 @@ public final class ActivationApiTest implements TestSupport {
   public void testBoundedAskWithoutTimeout() throws InterruptedException {
     system.getConfig().exceptionHandler = DRAIN;
     system
-    .when(SINK).lambda((a, m) -> {})
+    .on(SINK).cue((a, m) -> {})
     .ingress(a -> {
       try {
         a.to(ActorRef.of(SINK)).ask().onTimeout(() -> {}).onResponse(r -> {});
@@ -40,7 +40,7 @@ public final class ActivationApiTest implements TestSupport {
   public void testBoundedAskWithoutTimeoutHandler() throws InterruptedException {
     system.getConfig().exceptionHandler = DRAIN;
     system
-    .when(SINK).lambda((a, m) -> {})
+    .on(SINK).cue((a, m) -> {})
     .ingress(a -> {
       try {
         a.to(ActorRef.of(SINK)).ask().await(1000).onResponse(r -> {});

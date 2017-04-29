@@ -21,7 +21,7 @@ public final class EgressTest implements TestSupport {
   
   @Before
   public void setup() {
-    system = new TestActorSystemConfig() {}.define();
+    system = new TestActorSystemConfig() {}.createActorSystem();
   }
   
   @After
@@ -35,12 +35,12 @@ public final class EgressTest implements TestSupport {
     final int runs = 10;
     final Set<ActorRef> doneRuns = new HashSet<>();
     
-    system.when(DRIVER).lambdaSync(IntegerState::new, (a, m, s) -> {
+    system.on(DRIVER).cueSync(IntegerState::new, (a, m, s) -> {
       a.<Integer, Integer>egress(in -> {
         assertEquals(EXTERNAL, Thread.currentThread().getName());
         return in + 1; 
       })
-      .using(EXECUTOR)
+      .withExecutor(EXECUTOR)
       .ask(s.value).onResponse(r -> {
         assertFalse("Driven by an external thread", Thread.currentThread().getName().equals(EXTERNAL));
         
@@ -54,7 +54,7 @@ public final class EgressTest implements TestSupport {
         }
       });
     })
-    .when(DONE_RUNS).lambda(refCollector(doneRuns))
+    .on(DONE_RUNS).cue(refCollector(doneRuns))
     .ingress(a -> {
       for (int i = 0; i < actors; i++) {
         a.to(ActorRef.of(DRIVER, i + "")).tell();
@@ -72,7 +72,7 @@ public final class EgressTest implements TestSupport {
     
     system.ingress().times(runs).act((a, i) -> {
       a.<Integer>egress(in -> received.add(in))
-      .using(EXECUTOR)
+      .withExecutor(EXECUTOR)
       .ask(i)
       .onResponse(r -> assertNull(r.body()));
     })
@@ -88,7 +88,7 @@ public final class EgressTest implements TestSupport {
     
     system.ingress().times(runs).act((a, i) -> {
       a.egress(() -> { received.incrementAndGet(); })
-      .using(EXECUTOR)
+      .withExecutor(EXECUTOR)
       .ask()
       .onResponse(r -> assertNull(r.body()));
     })
@@ -104,7 +104,7 @@ public final class EgressTest implements TestSupport {
     
     system.ingress().times(runs).act((a, i) -> {
       a.egress(() -> { received.incrementAndGet(); })
-      .using(EXECUTOR)
+      .withExecutor(EXECUTOR)
       .tell();
     })
     .drain(0);
@@ -120,7 +120,7 @@ public final class EgressTest implements TestSupport {
     system.getConfig().exceptionHandler = DRAIN;
     system.ingress(a -> {
       a.egress(() -> { received.incrementAndGet(); })
-      .using(EXECUTOR)
+      .withExecutor(EXECUTOR)
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
       .onResponse(r -> assertNull(r.body()));
@@ -144,7 +144,7 @@ public final class EgressTest implements TestSupport {
     
     system.ingress().times(runs).act((a, i) -> {
       a.egress(() -> received.incrementAndGet())
-      .using(EXECUTOR)
+      .withExecutor(EXECUTOR)
       .ask()
       .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
     })
@@ -160,7 +160,7 @@ public final class EgressTest implements TestSupport {
     system.getConfig().exceptionHandler = DRAIN;
     system.ingress(a -> {
       a.egress(() -> received.incrementAndGet())
-      .using(EXECUTOR)
+      .withExecutor(EXECUTOR)
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
       .onResponse(r -> assertNull(r.body()));

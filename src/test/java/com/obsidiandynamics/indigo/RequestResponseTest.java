@@ -21,8 +21,8 @@ public final class RequestResponseTest implements TestSupport {
     final Set<ActorRef> doneRuns = new HashSet<>();
 
     new TestActorSystemConfig() {}
-    .define()
-    .when(DRIVER).lambdaAsync(a -> CompletableFuture.completedFuture(new IntegerState()), (a, m, s) -> {
+    .createActorSystem()
+    .on(DRIVER).cueAsync(a -> CompletableFuture.completedFuture(new IntegerState()), (a, m, s) -> {
       a.to(ActorRef.of(ADDER)).ask(s.value).onResponse(r -> {
         final int res = r.body();
         if (res == runs) {
@@ -34,8 +34,8 @@ public final class RequestResponseTest implements TestSupport {
         }
       });
     })
-    .when(ADDER).lambda((a, m) -> a.reply(m).tell(m.<Integer>body() + 1))
-    .when(DONE_RUNS).lambda(refCollector(doneRuns))
+    .on(ADDER).cue((a, m) -> a.reply(m).tell(m.<Integer>body() + 1))
+    .on(DONE_RUNS).cue(refCollector(doneRuns))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdownQuietly();
 
@@ -46,14 +46,14 @@ public final class RequestResponseTest implements TestSupport {
   public void testUnsolicitedReply_toSenderOf() {
     final Set<String> receivedRoles = new HashSet<>();
     new TestActorSystemConfig() {}
-    .define()
-    .when(DRIVER).lambda((a, m) -> {
+    .createActorSystem()
+    .on(DRIVER).cue((a, m) -> {
       receivedRoles.add(m.from().role());
       if (m.from().isIngress()) {
         a.to(ActorRef.of(SINK)).tell();
       }
     })
-    .when(SINK).lambda((a, m) -> {
+    .on(SINK).cue((a, m) -> {
       a.toSenderOf(m).tell();
     })
     .ingress(a -> a.to(ActorRef.of(DRIVER)).tell())
@@ -68,14 +68,14 @@ public final class RequestResponseTest implements TestSupport {
   public void testUnsolicitedReply_reply() {
     final Set<String> receivedRoles = new HashSet<>();
     new TestActorSystemConfig() {}
-    .define()
-    .when(DRIVER).lambda((a, m) -> {
+    .createActorSystem()
+    .on(DRIVER).cue((a, m) -> {
       receivedRoles.add(m.from().role());
       if (m.from().isIngress()) {
         a.to(ActorRef.of(SINK)).tell();
       }
     })
-    .when(SINK).lambda((a, m) -> {
+    .on(SINK).cue((a, m) -> {
       a.reply(m).tell();
     })
     .ingress(a -> a.to(ActorRef.of(DRIVER)).tell())
@@ -92,8 +92,8 @@ public final class RequestResponseTest implements TestSupport {
     final AtomicBoolean timedOut = new AtomicBoolean();
     
     new TestActorSystemConfig() {}
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       // delay the response so that it gets beaten by the timeout
       TestSupport.await(barrier);
       a.reply(m).tell();

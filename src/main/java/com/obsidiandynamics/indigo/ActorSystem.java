@@ -52,13 +52,13 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
-  ActorSystem(ActorSystemConfig config) {
+  private ActorSystem(ActorSystemConfig config) {
     config.init();
     this.config = config;
     executor = config.executor.apply(new ExecutorParams(config.getParallelism(),
                                                         new JvmVersionProvider.DefaultProvider().get()));
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
-    when(ingressRef.role()).lambda(StatelessLambdaActor::agent);
+    on(ingressRef.role()).cue(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
   }
   
@@ -104,28 +104,28 @@ public final class ActorSystem implements Endpoint {
       this.role = role;
     }
     
-    public ActorBuilder configure(ActorConfig actorConfig) {
+    public ActorBuilder withConfig(ActorConfig actorConfig) {
       this.actorConfig = actorConfig;
       return this;
     }
     
-    public ActorSystem lambda(BiConsumer<Activation, Message> act) {
-      return use(StatelessLambdaActor.builder().act(act)); 
+    public ActorSystem cue(BiConsumer<Activation, Message> act) {
+      return cue(StatelessLambdaActor.builder().act(act)); 
     }
     
-    public <S> ActorSystem lambdaSync(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
-      return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.get())));
+    public <S> ActorSystem cueSync(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
+      return cue(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.get())));
     }
     
-    public <S> ActorSystem lambdaSync(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
-      return use(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.apply(a))));
+    public <S> ActorSystem cueSync(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
+      return cue(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.apply(a))));
     }
     
-    public <S> ActorSystem lambdaAsync(Function<Activation, CompletableFuture<S>> futureStateFactory, TriConsumer<Activation, Message, S> act) {
-      return use(StatefulLambdaActor.<S>builder().act(act).activated(futureStateFactory));
+    public <S> ActorSystem cueAsync(Function<Activation, CompletableFuture<S>> futureStateFactory, TriConsumer<Activation, Message, S> act) {
+      return cue(StatefulLambdaActor.<S>builder().act(act).activated(futureStateFactory));
     }
     
-    public ActorSystem use(Supplier<Actor> factory) {
+    public ActorSystem cue(Supplier<Actor> factory) {
       register(role, factory, actorConfig);
       return ActorSystem.this;
     }
@@ -139,7 +139,7 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
-  public ActorBuilder when(String role) {
+  public ActorBuilder on(String role) {
     return new ActorBuilder(role);
   }
   
@@ -420,5 +420,13 @@ public final class ActorSystem implements Endpoint {
     timeoutWatchdog.terminate();
     executor.shutdown();
     running = false;
+  }
+  
+  public static ActorSystem create() {
+    return create(new ActorSystemConfig());
+  }
+  
+  public static ActorSystem create(ActorSystemConfig config) {
+    return new ActorSystem(config);
   }
 }

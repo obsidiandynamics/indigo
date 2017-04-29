@@ -17,8 +17,8 @@ public final class StashTest implements TestSupport {
     final List<Integer> sequence = new ArrayList<>();
 
     new TestActorSystemConfig() {}
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       final int body = m.body();
       if (body == 0) {
         a.stash(c -> c.<Integer>body() % 4 != 0);
@@ -39,9 +39,9 @@ public final class StashTest implements TestSupport {
     final AtomicBoolean passivated = new AtomicBoolean();
     
     new TestActorSystemConfig() {}
-    .define()
-    .when(SINK)
-    .use(StatelessLambdaActor.builder()
+    .createActorSystem()
+    .on(SINK)
+    .cue(StatelessLambdaActor.builder()
          .activated(a -> {
            try {
              a.stash(Functions::alwaysTrue);

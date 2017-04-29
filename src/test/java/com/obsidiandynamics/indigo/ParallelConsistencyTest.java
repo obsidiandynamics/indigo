@@ -38,24 +38,24 @@ public final class ParallelConsistencyTest implements TestSupport {
     final Set<ActorRef> doneRuns = new HashSet<>();
 
     new TestActorSystemConfig() {}
-    .define()
-    .when(DRIVER).configure(new ActorConfig() {{
+    .createActorSystem()
+    .on(DRIVER).withConfig(new ActorConfig() {{
       bias = 1;
     }})
-    .lambda((a, m) -> {
+    .cue((a, m) -> {
       final ActorRef target = ActorRef.of(SINK, String.valueOf(Integer.valueOf(a.self().key()) % actors));
       for (int j = 1; j <= runs; j++) {
         a.to(target).tell(j);
       }
       a.to(ActorRef.of(DONE)).tell();
     })
-    .when(SINK).configure(new ActorConfig() {{
+    .on(SINK).withConfig(new ActorConfig() {{
       bias = sinkBias;
       backlogThrottleCapacity = Integer.MAX_VALUE;
       backlogThrottleMillis = 1;
       backlogThrottleTries = 1;
     }})
-    .lambdaSync(() -> new int[fanIn], (a, m, s) -> {
+    .cueSync(() -> new int[fanIn], (a, m, s) -> {
       final int msg = m.body();
       log("got %d from %s\n", msg, m.from());
       final int actor = Integer.valueOf(m.from().key()) / actors;
@@ -72,7 +72,7 @@ public final class ParallelConsistencyTest implements TestSupport {
         }
       }
     })
-    .when(DONE).lambda(refCollector(doneRuns))
+    .on(DONE).cue(refCollector(doneRuns))
     .ingress().times(actors * fanIn).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
     .shutdownQuietly();
 

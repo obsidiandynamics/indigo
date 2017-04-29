@@ -72,8 +72,8 @@ public final class ThroughputBenchmark implements TestSupport {
         backlogThrottleTries = 10;
       }};
     }}
-    .define()
-    .when(SINK).lambdaSync(IntegerState::new, (a, m, s) -> {
+    .createActorSystem()
+    .on(SINK).cueSync(IntegerState::new, (a, m, s) -> {
       if (++s.value == n) {
         latch.countDown();
       }

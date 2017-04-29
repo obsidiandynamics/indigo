@@ -18,8 +18,8 @@ public final class DLQTest implements TestSupport {
     final ActorSystem system = new TestActorSystemConfig() {{
       deadLetterQueueSize = limit;
     }}
-    .define()
-    .when(SINK).lambda((a, m) -> {
+    .createActorSystem()
+    .on(SINK).cue((a, m) -> {
       a.fault("something happened");
     })
     .ingress().times(limit * 2).act((a, i) -> a.to(ActorRef.of(SINK)).tell());

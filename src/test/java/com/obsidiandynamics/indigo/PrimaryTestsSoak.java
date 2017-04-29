@@ -19,12 +19,12 @@ public final class PrimaryTestsSoak {
     
     final String ONE_SHOT = "one_shot";
     final ActorSystem system = new ActorSystemConfig() {}
-    .define()
-    .when(ONE_SHOT).use(() -> new OneShotActor((a, b) -> {
+    .createActorSystem()
+    .on(ONE_SHOT).cue(() -> new OneShotActor((a, b) -> {
       final CompletableFuture<?> f = new CompletableFuture<>();
       
       a.egress(PrimaryTestsSoak::runForMinutes)
-      .using(TestSupport.oneTimeExecutor("SoakRunner"))
+      .withExecutor(TestSupport.oneTimeExecutor("SoakRunner"))
       .ask(b)
       .onResponse(r -> f.complete(r.body()));
       
