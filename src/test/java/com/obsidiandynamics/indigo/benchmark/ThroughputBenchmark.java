@@ -73,7 +73,7 @@ public final class ThroughputBenchmark implements TestSupport {
       }};
     }}
     .createActorSystem()
-    .on(SINK).cueSync(IntegerState::new, (a, m, s) -> {
+    .on(SINK).cue(IntegerState::new, (a, m, s) -> {
       if (++s.value == n) {
         latch.countDown();
       }

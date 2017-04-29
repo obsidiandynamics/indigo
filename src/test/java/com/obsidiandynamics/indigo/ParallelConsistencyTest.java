@@ -55,7 +55,7 @@ public final class ParallelConsistencyTest implements TestSupport {
       backlogThrottleMillis = 1;
       backlogThrottleTries = 1;
     }})
-    .cueSync(() -> new int[fanIn], (a, m, s) -> {
+    .cue(() -> new int[fanIn], (a, m, s) -> {
       final int msg = m.body();
       log("got %d from %s\n", msg, m.from());
       final int actor = Integer.valueOf(m.from().key()) / actors;

@@ -132,7 +132,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       }};
     }}
     .createActorSystem()
-    .on(DRIVER).cueSync(DriverState::new, (a, m, s) -> {
+    .on(DRIVER).cue(DriverState::new, (a, m, s) -> {
       switch (m.from().role()) {
         case ECHO:
           s.rx++;
@@ -168,7 +168,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
         default: throw new UnsupportedOperationException(m.from().role());
       }
     })
-    .on(ECHO).cueSync(EchoState::new, (a, m, s) -> {
+    .on(ECHO).cue(EchoState::new, (a, m, s) -> {
       final long sendTime = m.body();
       if (sendTime != 0) {
         final long took = System.nanoTime() - sendTime;

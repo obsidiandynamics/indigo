@@ -35,7 +35,7 @@ public final class EgressTest implements TestSupport {
     final int runs = 10;
     final Set<ActorRef> doneRuns = new HashSet<>();
     
-    system.on(DRIVER).cueSync(IntegerState::new, (a, m, s) -> {
+    system.on(DRIVER).cue(IntegerState::new, (a, m, s) -> {
       a.<Integer, Integer>egress(in -> {
         assertEquals(EXTERNAL, Thread.currentThread().getName());
         return in + 1; 

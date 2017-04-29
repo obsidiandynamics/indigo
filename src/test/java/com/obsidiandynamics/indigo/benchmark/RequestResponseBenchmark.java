@@ -117,7 +117,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }};
     }}
     .createActorSystem()
-    .on(DRIVER).cueSync(DriverState::new, (a, m, s) -> {
+    .on(DRIVER).cue(DriverState::new, (a, m, s) -> {
       send(a, s.to, s, c, c.seedPairs, summary.stats);
     })
     .on(ECHO).cue((a, m) -> a.reply(m).tell())

@@ -113,11 +113,11 @@ public final class ActorSystem implements Endpoint {
       return cue(StatelessLambdaActor.builder().act(act)); 
     }
     
-    public <S> ActorSystem cueSync(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
+    public <S> ActorSystem cue(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
       return cue(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.get())));
     }
     
-    public <S> ActorSystem cueSync(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
+    public <S> ActorSystem cue(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
       return cue(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.apply(a))));
     }
     
