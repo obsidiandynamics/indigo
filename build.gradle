@@ -72,12 +72,17 @@ task testSoak(type: JavaExec) {
   main = 'com.obsidiandynamics.indigo.PrimaryTestsSoak'
 }
 
-bintray {
-  def envKey = 'BINTRAY_KEY'
-  if (System.getenv(envKey) == null) {
-    throw new GradleException("No Bintray key specified; set with 'export ${envKey}=<key>'")
+def envKey = 'BINTRAY_KEY'
+
+task bintrayCredentialsCheck {
+  doLast {
+    if (System.getenv(envKey) == null) {
+      throw new GradleException("No Bintray key specified; set with 'export ${envKey}=<key>'")
+    }
   }
-  
+}
+
+bintray {
   user = 'ekoutanov'
   key = System.getenv(envKey)
   publications = ['mavenJava']
@@ -100,6 +105,11 @@ bintray {
       vcsTag = packageVersion
     }
   }
+}
+
+// invoke this task when ready to publish to Bintray
+bintrayUpload {
+  dependsOn bintrayCredentialsCheck
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -136,8 +146,4 @@ publishing {
       url "${project(':').projectDir}/../repo"
     }
   }
-}
-
-bintrayUpload {
-  // invoke this task when ready to publish to Bintray
 }
