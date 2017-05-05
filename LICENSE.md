@@ -1,7 +1,7 @@
 Software License Agreement (BSD License)
 ===
 
-Copyright (c) 2017, Obsidian Dynamics
+Copyright (c) 2017, Obsidian Dynamics (Emil Koutanov and others)
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

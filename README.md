@@ -20,7 +20,7 @@ Indigo is optimised for Java 8 and functional programming, while leaving the imp
 
 # Getting Started
 ## Get the binaries
-Indigo builds are hosted on JCenter (MavenCentral is coming soon). Just add the following snippet to your build file (replacing the version number in the snippet with the version shown on the Download badge at the top of this README).
+Indigo builds are hosted on JCenter (MavenCentral is coming soon). Just add the following snippet to your build file (replacing the version number in the snippet with the version shown on the Download badge at the top of this readme).
 
 For Maven:
 
@@ -66,3 +66,9 @@ Indigo is -
 * Significantly faster than any JVM-based actor framework - in the order of 200 million messages/sec and sub-microsecond latencies.
 
 Give it a whirl.
+
+# Authors
+Emil Koutanov and other contributors as listed in CONTRIBUTORS.md.
+
+# License
+This project is licensed under the BSD (3-clause) License - see the LICENSE.md file for details.
