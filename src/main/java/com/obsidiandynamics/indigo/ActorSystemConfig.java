@@ -14,6 +14,7 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 public class ActorSystemConfig {
   public static final class Key {
     public static final String PARALLELISM = "indigo.system.parallelism";
+    public static final String INGRESS_COUNT = "indigo.system.ingressCount";
     public static final String DEFAULT_ASK_TIMEOUT_MILLIS = "indigo.system.defaultAskTimeoutMillis";
     public static final String EXECUTOR = "indigo.system.executor";
     public static final String EXCEPTION_HANDLER = "indigo.system.exceptionHandler";
@@ -22,8 +23,19 @@ public class ActorSystemConfig {
   }
   
   /** The number of threads for the dispatcher pool. This number is a guide only; the actual pool may
-   *  be sized dynamically depending on the thread pool used. */
+   *  be sized dynamically depending on the thread pool used.<p>
+   *  
+   *  Positive number: number of threads;
+   *  Zero: set to the number of cores on the machine;
+   *  Negative number: subtracts the number from the number of cores, so a -1 on an 8-core machine gives 7 threads. */
   public int parallelism = get(PARALLELISM, Integer::parseInt, 0);
+  
+  /** The number of ingress actors to use.<p>
+   *  
+   *  Positive number: number of actors;
+   *  Zero: set to the number of cores on the machine;
+   *  Negative number: subtracts the number from the number of cores, so a -1 on an 8-core machine gives 7 actors. */
+  public int ingressCount = get(INGRESS_COUNT, Integer::parseInt, 0);
   
   /** The default timeout when asking from outside the actor system. */
   public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 1 * 60_000);
@@ -85,6 +97,10 @@ public class ActorSystemConfig {
   
   final int getParallelism() {
     return parallelism > 0 ? parallelism : getNumProcessors() - parallelism;
+  }
+  
+  final int getIngressCount() {
+    return ingressCount > 0 ? ingressCount : getNumProcessors() - ingressCount;
   }
   
   final void init() {

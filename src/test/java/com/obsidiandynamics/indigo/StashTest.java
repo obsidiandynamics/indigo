@@ -27,7 +27,9 @@ public final class StashTest implements TestSupport {
       }
       sequence.add(body);
     })
-    .ingress().times(9).act((a, i) -> a.to(ActorRef.of(SINK)).tell(i))
+    .ingress(a -> {
+      for (int i = 0; i < 9; i++) a.to(ActorRef.of(SINK)).tell(i);
+    })
     .shutdownQuietly();
 
     assertEquals(Arrays.asList(0, 4, 8, 1, 2, 3, 5, 6, 7), sequence);

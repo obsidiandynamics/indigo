@@ -31,13 +31,13 @@ public final class ActorSystem implements Endpoint {
   
   private final Integral64 busyActors = new Integral64.TripleStriped();
   
-  private final ActorRef ingressRef = ActorRef.of(INGRESS);
-  
   private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
   
   private final BlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
   
   private final BlockingQueue<Fault> deadLetterQueue = new LinkedBlockingQueue<>();
+  
+  private final int ingressCount;
   
   private long nextActivationId = Crypto.machineRandom();
   
@@ -57,8 +57,9 @@ public final class ActorSystem implements Endpoint {
     this.config = config;
     executor = config.executor.apply(new ExecutorParams(config.getParallelism(),
                                                         new JvmVersionProvider.DefaultProvider().get()));
+    ingressCount = config.getIngressCount();
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
-    on(ingressRef.role()).cue(StatelessLambdaActor::agent);
+    on(INGRESS).cue(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
   }
   
@@ -67,7 +68,8 @@ public final class ActorSystem implements Endpoint {
   }
   
   public ActorSystem ingress(Consumer<Activation> act) {
-    tell(ingressRef, act);
+    final int randomIdx = ThreadLocalRandom.current().nextInt(ingressCount);
+    tell(ActorRef.of(INGRESS, String.valueOf(randomIdx)), act);
     return this;
   }
   

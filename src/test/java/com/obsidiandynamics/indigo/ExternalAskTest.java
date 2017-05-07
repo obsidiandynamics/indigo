@@ -30,7 +30,9 @@ public final class ExternalAskTest implements TestSupport {
     final AtomicBoolean ran = new AtomicBoolean();
     final CyclicBarrier barrier = new CyclicBarrier(2);
     
-    final ActorSystem system = new TestActorSystemConfig() {}
+    final ActorSystem system = new TestActorSystemConfig() {{
+      ingressCount = 1; // locking this down to 1 so that we can artificially block the ingress within the test
+    }}
     .createActorSystem()
     .on(ADDER).cue((a, m) -> {
       a.reply(m).tell(m.<Integer>body() + 1);
