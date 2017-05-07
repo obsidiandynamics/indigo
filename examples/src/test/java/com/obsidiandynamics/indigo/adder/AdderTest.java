@@ -18,6 +18,21 @@ public class AdderTest {
     .shutdown();
   }
   
+  @Test
+  public void testInterfaceActor_multiIngress() throws InterruptedException {
+    ActorSystem.create()
+    .on(AdderContract.ROLE).cue(AdderActor::new)
+    .ingress().times(10).act((a, i) ->
+      a.to(ActorRef.of(AdderContract.ROLE)).tell(new AdderContract.Add(i + 1))
+    )
+    .ingress(a ->
+      a.to(ActorRef.of(AdderContract.ROLE))
+      .ask(new AdderContract.Get())
+      .onResponse(r -> assertEquals(55, r.<AdderContract.GetResponse>body().getSum()))
+    )
+    .shutdown();
+  }
+  
   static class IntegerSum {
     int sum;
   }
