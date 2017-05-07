@@ -44,6 +44,13 @@ public final class ExceptionHandlerTest implements TestSupport {
   }
   
   private void testConsole(Supplier<ActorSystemConfig> actorSystemConfigSupplier, Supplier<ActorConfig> actorConfigSupplier) throws IOException {
+    final ActorSystem system = actorSystemConfigSupplier.get().createActorSystem()
+    .on(SINK).withConfig(actorConfigSupplier.get()).cue((a, m) -> {
+      throw new HandlerTestException();
+    });
+    
+    UnhandledMultiException ume = null;
+    
     synchronized (System.class) {
       // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
       final PrintStream standardErr = System.err;
@@ -52,12 +59,13 @@ public final class ExceptionHandlerTest implements TestSupport {
         
         assertEquals(0, out.size());
         
-        actorSystemConfigSupplier.get().createActorSystem()
-        .on(SINK).withConfig(actorConfigSupplier.get()).cue((a, m) -> {
-          throw new HandlerTestException();
-        })
-        .ingress(a -> a.to(ActorRef.of(SINK)).tell())
-        .shutdownQuietly();
+        system.ingress(a -> a.to(ActorRef.of(SINK)).tell());
+        
+        try {
+          system.shutdownQuietly();
+        } catch (UnhandledMultiException e) {
+          ume = e;
+        }
         
         customErr.flush();
         final String output = new String(out.toByteArray());
@@ -66,7 +74,12 @@ public final class ExceptionHandlerTest implements TestSupport {
         final String exceptionFullName = HandlerTestException.class.getName();
         assertTrue("output=" + output, output.startsWith(exceptionFullName));
       } finally {
+        system.shutdownQuietly();
         System.setErr(standardErr);
+      }
+      
+      if (ume != null) {
+        throw ume;
       }
     }
   }
@@ -87,5 +100,15 @@ public final class ExceptionHandlerTest implements TestSupport {
     } finally {
       system.shutdownQuietly();
     }
+  }
+  
+  @Test(expected=UnhandledMultiException.class)
+  public void testConsoleDrain() throws InterruptedException, IOException {
+    testConsole(() -> new ActorSystemConfig() {{
+      exceptionHandler = CONSOLE_DRAIN;
+    }},
+    () -> new ActorConfig() {{
+      exceptionHandler = SYSTEM;
+    }});
   }
 }

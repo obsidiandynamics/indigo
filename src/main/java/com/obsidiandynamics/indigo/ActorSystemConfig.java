@@ -54,10 +54,12 @@ public class ActorSystemConfig {
   public enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
     /** Forwards the exception to the system-level handler. Can only be used within the actor config. */
     SYSTEM((sys, t) -> sys.getConfig().exceptionHandler.accept(sys, t)),
-    /** Prints the stack trace to <code>System.err</code>. */
+    /** Prints the stack trace to {@link System#err}. */
     CONSOLE((sys, t) -> t.printStackTrace()),
-    /** Accumulates exceptions internally, throwing them from the <code>drain()</code> method. */
-    DRAIN((sys, t) -> sys.addError(t));
+    /** Accumulates exceptions internally, throwing them from the {@link ActorSystem#drain} method. */
+    DRAIN((sys, t) -> sys.addError(t)),
+    /** Combination of both {@link #CONSOLE} and {@link #DRAIN}. */
+    CONSOLE_DRAIN(CONSOLE.andThen(DRAIN));
     
     private final BiConsumer<ActorSystem, Throwable> handler;
     private ExceptionHandlerChoice(BiConsumer<ActorSystem, Throwable> handler) { this.handler = handler; }
@@ -66,7 +68,7 @@ public class ActorSystemConfig {
   
   /** Handles uncaught exceptions thrown from within an actor, where those exceptions aren't handled by the actor's
    *  own uncaught exception handler. */
-  public BiConsumer<ActorSystem, Throwable> exceptionHandler = get(EXCEPTION_HANDLER, ExceptionHandlerChoice::valueOf, CONSOLE);
+  public BiConsumer<ActorSystem, Throwable> exceptionHandler = get(EXCEPTION_HANDLER, ExceptionHandlerChoice::valueOf, CONSOLE_DRAIN);
   
   /** Upper bound on the size of the DQL. Beyond this, truncation from the head (least recent) occurs. */
   public int deadLetterQueueSize = get(DEAD_LETTER_QUEUE_SIZE, Integer::parseInt, 10_000);
