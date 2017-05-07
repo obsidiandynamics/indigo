@@ -95,7 +95,7 @@ public final class OneShotActor implements Actor {
 
   @Override
   public void act(Activation a, Message m) {
-    m.switchBody()
+    m.select()
     .when(Fire.class).then(b -> fire(a, m))
     .when(GetStatus.class).then(b -> getStatus(a, m))
     .otherwise(a::messageFault);

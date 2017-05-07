@@ -7,7 +7,7 @@ import java.util.function.*;
 
 import org.junit.*;
 
-public final class SwitchBodyTest implements TestSupport {
+public final class SelectTest implements TestSupport {
   private static final String SINK = "sink";
   
   private final class Foo {}
@@ -39,7 +39,7 @@ public final class SwitchBodyTest implements TestSupport {
     
     system
     .on(SINK).cue((a, m) ->
-      m.switchBody()
+      m.select()
       .when(Foo.class).then(got(foo))
       .when(Bar.class).then(got(bar))
       .whenNull(got(aNull))
@@ -63,7 +63,7 @@ public final class SwitchBodyTest implements TestSupport {
     
     system
     .on(SINK).cue((a, m) ->
-      m.switchBody()
+      m.select()
       .when(Bar.class).then(got(bar))
       .when(Foo.class).then(got(foo))
       .whenNull(got(aNull))
@@ -87,7 +87,7 @@ public final class SwitchBodyTest implements TestSupport {
     
     system
     .on(SINK).cue((a, m) ->
-      m.switchBody()
+      m.select()
       .when(Bar.class).then(got(bar))
       .when(Foo.class).then(got(foo))
       .whenNull(got(aNull))
@@ -110,7 +110,7 @@ public final class SwitchBodyTest implements TestSupport {
     
     system
     .on(SINK).cue((a, m) ->
-      m.switchBody()
+      m.select()
       .when(Foo.class).then(got(foo))
       .whenNull(got(aNull))
       .otherwise(got(otherwise))
@@ -132,7 +132,7 @@ public final class SwitchBodyTest implements TestSupport {
     
     system
     .on(SINK).cue((a, m) ->
-      m.switchBody()
+      m.select()
       .when(Foo.class).then(got(foo))
       .whenNull(got(aNull))
       .otherwise(a::messageFault)
@@ -154,7 +154,7 @@ public final class SwitchBodyTest implements TestSupport {
     
     system
     .on(SINK).cue((a, m) ->
-      m.switchBody()
+      m.select()
       .when(Foo.class).then(got(foo))
       .whenNull(a::messageFault)
     )

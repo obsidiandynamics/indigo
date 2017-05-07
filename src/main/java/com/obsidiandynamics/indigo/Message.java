@@ -65,7 +65,7 @@ public final class Message {
     return new MessageBuilder();
   }
   
-  public final class SwitchBuilder {
+  public final class SelectBuilder {
     private boolean consumed;
     
     public final class ThenAction<B> {
@@ -73,25 +73,25 @@ public final class Message {
       
       ThenAction(Class<B> bodyClass) { this.bodyClass = bodyClass; }
       
-      public SwitchBuilder then(Consumer<B> bodyConsumer) {
+      public SelectBuilder then(Consumer<B> bodyConsumer) {
         if (! consumed && body != null && bodyClass.isAssignableFrom(body.getClass())) {
           bodyConsumer.accept(body());
           consumed = true;
         }
-        return SwitchBuilder.this;
+        return SelectBuilder.this;
       }
     }
     
-    public SwitchBuilder whenNull(Consumer<?> nullBodyConsumer) {
+    public SelectBuilder whenNull(Consumer<?> nullBodyConsumer) {
       return whenNull(() -> nullBodyConsumer.accept(null));
     }
     
-    public SwitchBuilder whenNull(Runnable action) {
+    public SelectBuilder whenNull(Runnable action) {
       if (! consumed && body == null) {
         action.run();
         consumed = true;
       }
-      return SwitchBuilder.this;
+      return SelectBuilder.this;
     }
     
     public <B> ThenAction<B> when(Class<B> bodyClass) {
@@ -106,8 +106,8 @@ public final class Message {
     }
   }
   
-  public SwitchBuilder switchBody() {
-    return new SwitchBuilder();
+  public SelectBuilder select() {
+    return new SelectBuilder();
   }
 
   @Override

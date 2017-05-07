@@ -26,7 +26,7 @@ public class AdderTest {
   public void testLambdaActor_shortForm() throws InterruptedException {
     ActorSystem.create()
     .on(AdderContract.ROLE).cue(IntegerSum::new, (a, m, s) ->
-      m.switchBody()
+      m.select()
       .when(Add.class).then(b -> s.sum += b.getValue())
       .when(Get.class).then(b -> a.reply(m).tell(new GetResponse(s.sum)))
       .otherwise(a::messageFault)
@@ -42,7 +42,7 @@ public class AdderTest {
     .cue(StatefulLambdaActor.<IntegerSum>builder()
          .activated(a -> CompletableFuture.completedFuture(new IntegerSum()))
          .act((a, m, s) -> 
-           m.switchBody()
+           m.select()
            .when(Add.class).then(b -> s.sum += b.getValue())
            .when(Get.class).then(b -> a.reply(m).tell(new GetResponse(s.sum)))
            .otherwise(a::messageFault)

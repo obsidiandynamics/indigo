@@ -24,11 +24,11 @@ import com.obsidiandynamics.indigo.benchmark.*;
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
   RoleRegistrationTest.class,
+  SelectTest.class,
   StashTest.class,
   StatelessChainTest.class,
   StatelessLifeCycleTest.class,
   StatefulLifeCycleTest.class,
-  SwitchBodyTest.class,
   ThrottleTest.class,
   ThroughputBenchmark.class,
   TimeoutTest.class

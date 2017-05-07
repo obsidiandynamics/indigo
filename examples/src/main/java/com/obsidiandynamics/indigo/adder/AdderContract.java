@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo.adder;
 
 /**
- *  The public API contract for the adder actor.
+ *  The public message contract for the adder actor.
  */
 public final class AdderContract {
   public static final String ROLE = "adder";
