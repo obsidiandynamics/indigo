@@ -57,6 +57,10 @@ public abstract class Activation {
     faultReason = reason;
   }
   
+  public final void messageFault(Object body) {
+    fault(body != null ? "Cannot handle message body of type " + body.getClass().getName() : "Cannot handle null message body");
+  }
+  
   @FunctionalInterface
   private interface MessageTarget {
     void send(Object body, UUID requestId);

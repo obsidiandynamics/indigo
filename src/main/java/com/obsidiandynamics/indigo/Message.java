@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import java.util.*;
+import java.util.function.*;
 
 public final class Message {
   private final ActorRef from;
@@ -62,6 +63,51 @@ public final class Message {
   
   public static MessageBuilder builder() {
     return new MessageBuilder();
+  }
+  
+  public final class SwitchBuilder {
+    private boolean consumed;
+    
+    public final class ThenAction<B> {
+      private final Class<B> bodyClass;
+      
+      ThenAction(Class<B> bodyClass) { this.bodyClass = bodyClass; }
+      
+      public SwitchBuilder then(Consumer<B> bodyConsumer) {
+        if (! consumed && body != null && bodyClass.isAssignableFrom(body.getClass())) {
+          bodyConsumer.accept(body());
+          consumed = true;
+        }
+        return SwitchBuilder.this;
+      }
+    }
+    
+    public SwitchBuilder whenNull(Consumer<?> nullBodyConsumer) {
+      return whenNull(() -> nullBodyConsumer.accept(null));
+    }
+    
+    public SwitchBuilder whenNull(Runnable action) {
+      if (! consumed && body == null) {
+        action.run();
+        consumed = true;
+      }
+      return SwitchBuilder.this;
+    }
+    
+    public <B> ThenAction<B> when(Class<B> bodyClass) {
+      return new ThenAction<>(bodyClass);
+    }
+    
+    public <B> void otherwise(Consumer<B> bodyConsumer) {
+      if (! consumed) {
+        bodyConsumer.accept(body());
+        consumed = true;
+      }
+    }
+  }
+  
+  public SwitchBuilder switchBody() {
+    return new SwitchBuilder();
   }
 
   @Override

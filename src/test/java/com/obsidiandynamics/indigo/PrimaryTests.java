@@ -28,6 +28,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
   StatelessChainTest.class,
   StatelessLifeCycleTest.class,
   StatefulLifeCycleTest.class,
+  SwitchBodyTest.class,
   ThrottleTest.class,
   ThroughputBenchmark.class,
   TimeoutTest.class
