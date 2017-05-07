@@ -95,13 +95,10 @@ public final class OneShotActor implements Actor {
 
   @Override
   public void act(Activation a, Message m) {
-    if (m.body() instanceof Fire) {
-      fire(a, m);
-    } else if (m.body() instanceof GetStatus) {
-      getStatus(a, m);
-    } else {
-      a.fault("Unsupported message " + m.body());
-    }
+    m.switchBody()
+    .when(Fire.class).then(b -> fire(a, m))
+    .when(GetStatus.class).then(b -> getStatus(a, m))
+    .otherwise(a::messageFault);
   }
   
   private void fire(Activation a, Message m) {
