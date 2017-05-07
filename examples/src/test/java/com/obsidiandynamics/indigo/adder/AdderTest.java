@@ -2,6 +2,8 @@ package com.obsidiandynamics.indigo.adder;
 
 import static org.junit.Assert.*;
 
+import java.util.concurrent.*;
+
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
@@ -16,19 +18,35 @@ public class AdderTest {
     .shutdown();
   }
   
+  static class IntegerSum {
+    int sum;
+  }
+  
   @Test
-  public void testLambdaActor() throws InterruptedException {
-    class IntegerSum {
-      int sum;
-    }
-    
+  public void testLambdaActor_shortForm() throws InterruptedException {
     ActorSystem.create()
-    .on(AdderContract.ROLE).cue(IntegerSum::new, (a, m, s) -> {
+    .on(AdderContract.ROLE).cue(IntegerSum::new, (a, m, s) ->
       m.switchBody()
       .when(Add.class).then(b -> s.sum += b.getValue())
       .when(Get.class).then(b -> a.reply(m).tell(new GetResponse(s.sum)))
-      .otherwise(a::messageFault);
-    })
+      .otherwise(a::messageFault)
+    )
+    .ingress(AdderTest::addAndVerify)
+    .shutdown();
+  }
+  
+  @Test
+  public void testLambdaActor_longForm() throws InterruptedException {
+    ActorSystem.create()
+    .on(AdderContract.ROLE)
+    .cue(StatefulLambdaActor.<IntegerSum>builder()
+         .activated(a -> CompletableFuture.completedFuture(new IntegerSum()))
+         .act((a, m, s) -> 
+           m.switchBody()
+           .when(Add.class).then(b -> s.sum += b.getValue())
+           .when(Get.class).then(b -> a.reply(m).tell(new GetResponse(s.sum)))
+           .otherwise(a::messageFault)
+         ))
     .ingress(AdderTest::addAndVerify)
     .shutdown();
   }
