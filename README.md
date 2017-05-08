@@ -1,8 +1,6 @@
-<img src="http://www.obsidiandynamics.com/indigo/images/indigo-logo.svg" alt="logo" style="width: 80px"/> Indigo
+<img src="http://www.obsidiandynamics.com/indigo/images/indigo-logo.svg" alt="logo" width="80"/> <span style="line-height: 30px">Indigo</span>
 ===
-<div style="text-align: right; line-height: 0">
 [ ![Download](https://api.bintray.com/packages/obsidiandynamics/indigo/indigo-core/images/download.svg) ](https://bintray.com/obsidiandynamics/indigo/indigo-core/_latestVersion)
-</div>
 
 Indigo is a next generation dynamic [actor model](https://en.wikipedia.org/wiki/Actor_model) framework that makes writing asynchronous and concurrent applications easy.
 
