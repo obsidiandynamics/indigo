@@ -49,7 +49,7 @@ public final class FaultTest implements TestSupport {
            log("activating\n");
            a.egress(() -> null)
            .withExecutor(external)
-           .await(1_000).onTimeout(() -> {
+           .await(60_000).onTimeout(() -> {
              log("egress timed out\n");
              fail("egress timed out");
            })
@@ -240,7 +240,7 @@ public final class FaultTest implements TestSupport {
       log("sink asking\n");
 
       a.to(ActorRef.of(ECHO)).ask()
-      .await(1_000).onTimeout(() -> {
+      .await(60_000).onTimeout(() -> {
         log("echo timed out\n");
         fail("echo timed out");
       })
@@ -346,7 +346,7 @@ public final class FaultTest implements TestSupport {
                
                a.egress(() -> null)
                .withExecutor(external)
-               .await(1_000).onTimeout(() -> {
+               .await(60_000).onTimeout(() -> {
                  log("egress timed out\n");
                  fail("egress timed out");
                })
@@ -410,7 +410,7 @@ public final class FaultTest implements TestSupport {
         throw new TestException("Fault in egress");
       })
       .withExecutor(external)
-      .await(1_000).onTimeout(() -> {
+      .await(60_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");
       })
@@ -462,7 +462,7 @@ public final class FaultTest implements TestSupport {
         return future;
       })
       .withExecutor(external)
-      .await(1_000).onTimeout(() -> {
+      .await(60_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");
       })
@@ -553,7 +553,7 @@ public final class FaultTest implements TestSupport {
     .ingress().times(n).act((a, i) -> {
       log("asking sink %d\n", i);
       a.to(ActorRef.of(SINK)).ask(i)
-      .await(1_000).onTimeout(() -> {
+      .await(60_000).onTimeout(() -> {
         log("sink timed out\n");
         fail("sink timed out");
       })
@@ -713,7 +713,7 @@ public final class FaultTest implements TestSupport {
     if (async) {
       a.egress(() -> null)
       .withExecutor(external)
-      .await(1_000).onTimeout(() -> {
+      .await(60_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");
       })
