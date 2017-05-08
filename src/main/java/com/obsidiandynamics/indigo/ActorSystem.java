@@ -37,7 +37,7 @@ public final class ActorSystem implements Endpoint {
   
   private final BlockingQueue<Fault> deadLetterQueue = new LinkedBlockingQueue<>();
   
-  private final int ingressCount;
+  private final ActorRef[] ingressRefs;
   
   private long nextActivationId = Crypto.machineRandom();
   
@@ -57,10 +57,18 @@ public final class ActorSystem implements Endpoint {
     this.config = config;
     executor = config.executor.apply(new ExecutorParams(config.getParallelism(),
                                                         new JvmVersionProvider.DefaultProvider().get()));
-    ingressCount = config.getIngressCount();
+    ingressRefs = createIngressRefs(config.getIngressCount());
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     on(INGRESS).cue(StatelessLambdaActor::agent);
     timeoutWatchdog.start();
+  }
+  
+  private static ActorRef[] createIngressRefs(int ingressCount) {
+    final ActorRef[] refs = new ActorRef[ingressCount];
+    for (int i = 0; i < ingressCount; i++) { 
+      refs[i] = ActorRef.of(INGRESS, String.valueOf(i));
+    }
+    return refs;
   }
   
   public ActorSystemConfig getConfig() {
@@ -68,8 +76,8 @@ public final class ActorSystem implements Endpoint {
   }
   
   public ActorSystem ingress(Consumer<Activation> act) {
-    final int randomIdx = ThreadLocalRandom.current().nextInt(ingressCount);
-    tell(ActorRef.of(INGRESS, String.valueOf(randomIdx)), act);
+    final int randomIdx = ThreadLocalRandom.current().nextInt(ingressRefs.length);
+    tell(ingressRefs[randomIdx], act);
     return this;
   }
   
