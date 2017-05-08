@@ -147,7 +147,7 @@ public final class FaultTest implements TestSupport {
            log("activating\n");
            final boolean async = asyncTest.apply(activationAttempts.get());
            syncOrAsync(a, external, async, () -> {
-             if (activationAttempts.getAndIncrement() % 10 != 0) {
+             if (activationAttempts.incrementAndGet() % 10 != 0) {
                log("fault\n");
                
                if (async) {
@@ -158,7 +158,7 @@ public final class FaultTest implements TestSupport {
                
                a.egress(() -> null)
                .withExecutor(external)
-               .await(1_000).onTimeout(() -> {
+               .await(1).onTimeout(() -> {
                  log("egress timed out\n");
                  fail("egress timed out");
                })
@@ -197,13 +197,22 @@ public final class FaultTest implements TestSupport {
     final int failedActivations = failedAsyncActivations.get() + failedSyncActivations.get();
     log("activationAttempts: %s, failedAsyncActivations: %s, failedSyncActivations: %s, received: %s, passivated: %s\n",
         activationAttempts, failedAsyncActivations, failedSyncActivations, received, passivated);
-    assertTrue(failedActivations >= 1);
-    assertTrue(activationAttempts.get() >= failedActivations);
-    assertTrue(received.get() + failedActivations == n);
-    assertTrue(passivated.get() == activationAttempts.get() - failedActivations);
-    assertTrue(failedAsyncActivations.get() * 2 + failedSyncActivations.get() == system.getDeadLetterQueue().size());
-    assertTrue(failedAsyncActivations.get() + failedSyncActivations.get() == countFaults(ON_ACTIVATION, system.getDeadLetterQueue()));
-    assertTrue(failedAsyncActivations.get() == countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
+    assertTrue("failedActivations=" + failedActivations, 
+               failedActivations >= 1);
+    assertTrue("activationAttempts=" + activationAttempts + ", failedActivations=" + failedActivations, 
+               activationAttempts.get() >= failedActivations);
+    assertTrue("received=" + received + ", failedActivations=" + failedActivations + ", n=" + n, 
+               received.get() + failedActivations == n);
+    assertTrue("passivated=" + passivated + ", activationAttempts=" + activationAttempts + ", failedActivations=" + failedActivations,
+               passivated.get() == activationAttempts.get() - failedActivations);
+    assertTrue("failedAsyncActivations=" + failedAsyncActivations + ", failedSyncActivations=" + failedSyncActivations + ", dlq.size=" + system.getDeadLetterQueue().size(), 
+               failedAsyncActivations.get() * 2 + failedSyncActivations.get() == system.getDeadLetterQueue().size());
+    final int activationFaults = countFaults(ON_ACTIVATION, system.getDeadLetterQueue());
+    assertTrue("failedAsyncActivations=" + failedAsyncActivations + ", failedSyncActivations" + failedSyncActivations + ", activationFaults=" + activationFaults,
+               failedAsyncActivations.get() + failedSyncActivations.get() == activationFaults);
+    final int responseFaults = countFaults(ON_RESPONSE, system.getDeadLetterQueue());
+    assertTrue("failedAsyncActivations=" + failedAsyncActivations + ", responseFaults=" + responseFaults,
+               failedAsyncActivations.get() == responseFaults);
   }
   
   @Test
@@ -268,10 +277,15 @@ public final class FaultTest implements TestSupport {
     system.shutdownQuietly();
 
     log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
-    assertTrue(activationAttempts.get() >= 1);
+    assertTrue("activationAttempts=" + activationAttempts,
+               activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
-    assertTrue(faults.get() == system.getDeadLetterQueue().size());
-    assertTrue(countFaults(ON_ACTIVATION, system.getDeadLetterQueue()) + countFaults(ON_ACT, system.getDeadLetterQueue()) == faults.get());
+    assertTrue("faults=" + faults + ", dlq.size=" + system.getDeadLetterQueue().size(),
+               faults.get() == system.getDeadLetterQueue().size());
+    final int activationFaults = countFaults(ON_ACTIVATION, system.getDeadLetterQueue());
+    final int actFaults = countFaults(ON_ACT, system.getDeadLetterQueue());
+    assertTrue("activationFaults=" + activationFaults + ", actFaults=" + actFaults + ", faults=" + faults,
+               activationFaults + actFaults == faults.get());
   }
   
   @Test
