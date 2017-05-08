@@ -55,7 +55,7 @@ public final class RoleRegistrationTest implements TestSupport {
     system.getConfig().exceptionHandler = DRAIN;
     system.ingress(a -> {
       try {
-        a.to(ActorRef.of(SINK)).ask().await(1000).onTimeout(() -> {}).onResponse(r -> {});
+        a.to(ActorRef.of(SINK)).ask().await(60_000).onTimeout(() -> {}).onResponse(r -> {});
         fail("Failed to catch NoSuchRoleException");
       } catch (NoSuchRoleException e) {}
     })

@@ -35,7 +35,7 @@ public final class FrameworkErrorTest implements TestSupport {
       .onFault(f -> {
         fail("Unexpected fault");
       })
-      .await(10_000).onTimeout(() -> {
+      .await(60_000).onTimeout(() -> {
         fail("Unexpected timeout");
       })
       .onResponse(r -> {

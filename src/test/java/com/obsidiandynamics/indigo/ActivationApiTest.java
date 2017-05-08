@@ -43,7 +43,7 @@ public final class ActivationApiTest implements TestSupport {
     .on(SINK).cue((a, m) -> {})
     .ingress(a -> {
       try {
-        a.to(ActorRef.of(SINK)).ask().await(1000).onResponse(r -> {});
+        a.to(ActorRef.of(SINK)).ask().await(60_000).onResponse(r -> {});
         fail("Failed to catch IllegalArgumentException");
       } catch (IllegalArgumentException e) {
         assertEquals("Only one of the timeout time or handler has been set", e.getMessage());

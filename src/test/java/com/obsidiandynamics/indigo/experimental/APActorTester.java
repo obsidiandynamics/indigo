@@ -14,7 +14,6 @@ public final class APActorTester {
       final Counter counter = new Counter();
       return m -> {
         counter.value++;
-        //System.out.format("%x got %08d (%d)\n", System.identityHashCode(addr), m, counter.value);
         if (counter.value == expected) {
           System.out.format("%x is done\n", System.identityHashCode(addr));
           latch.countDown();
