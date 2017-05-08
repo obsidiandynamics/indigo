@@ -277,8 +277,7 @@ public final class FaultTest implements TestSupport {
     system.shutdownQuietly();
 
     log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
-    assertTrue("activationAttempts=" + activationAttempts,
-               activationAttempts.get() >= 1);
+    assertTrue("activationAttempts=" + activationAttempts, activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
     assertTrue("faults=" + faults + ", dlq.size=" + system.getDeadLetterQueue().size(),
                faults.get() == system.getDeadLetterQueue().size());
@@ -376,16 +375,21 @@ public final class FaultTest implements TestSupport {
     
     log("passivationAttempts: %s, failedPassivations: %s, received: %s, passivated: %s\n",
         passivationAttempts, failedPassivations, received, passivated);
-    assertTrue(failedPassivations.get() >= 1);
-    assertTrue(passivationAttempts.get() >= failedPassivations.get());
+    assertTrue("failedPassivations=" + failedPassivations, failedPassivations.get() >= 1);
+    assertTrue("passivationAttempts=" + passivationAttempts + ", failedPassivations=" + failedPassivations,
+               passivationAttempts.get() >= failedPassivations.get());
     assertEquals(n, received.get());
-    assertTrue(passivated.get() == passivationAttempts.get() - failedPassivations.get());
+    assertTrue("passivated=" + passivated + ", passivationAttempts=" + passivationAttempts + ", failedPassivations=" + failedPassivations,
+               passivated.get() == passivationAttempts.get() - failedPassivations.get());
+    final int dlqSize = system.getDeadLetterQueue().size();
     if (async) {
-      assertTrue(failedPassivations.get() * 2 == system.getDeadLetterQueue().size());
+      assertTrue("failedPassivations=" + failedPassivations + ", dlqSize=" + dlqSize,
+                 failedPassivations.get() * 2 == dlqSize);
       assertEquals(failedPassivations.get(), countFaults(ON_PASSIVATION, system.getDeadLetterQueue()));
       assertEquals(failedPassivations.get(), countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
     } else {
-      assertTrue(failedPassivations.get() == system.getDeadLetterQueue().size());
+      assertTrue("failedPassivations=" + failedPassivations + ", dlqSize=" + dlqSize,
+                 failedPassivations.get() == dlqSize);
       assertEquals(failedPassivations.get(), countFaults(ON_PASSIVATION, system.getDeadLetterQueue()));
     }
   }

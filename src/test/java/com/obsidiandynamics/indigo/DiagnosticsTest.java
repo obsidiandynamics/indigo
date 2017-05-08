@@ -24,13 +24,14 @@ public final class DiagnosticsTest implements TestSupport {
     
     system.shutdownQuietly();
 
-    assertTrue(system.getConfig().diagnostics.getLog().length <= limit);
+    final int logLength = system.getConfig().diagnostics.getLog().length;
+    assertTrue("logLength=" + logLength, logLength <= limit);
     try (ByteArrayOutputStream out = new ByteArrayOutputStream(); PrintStream print = new PrintStream(out)) {
       system.getConfig().diagnostics.print(print);
       print.flush();
       final String output = new String(out.toByteArray());
       log("output is %s\n", output);
-      assertTrue(output.length() >= 1);
+      assertTrue("output.length=" + output.length(), output.length() >= 1);
     }
   }
 }

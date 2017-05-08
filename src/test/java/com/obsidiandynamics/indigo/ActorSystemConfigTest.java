@@ -15,7 +15,7 @@ public final class ActorSystemConfigTest implements TestSupport {
     final ExecutorParams params = new ExecutorParams(1, new JvmVersion(1, 8, 0, 65));
     final ExecutorService executor = ActorSystemConfig.ExecutorChoice.AUTO.apply(params);
     try {
-      assertTrue(executor instanceof ForkJoinPool);
+      assertTrue("executor.class=" + executor.getClass().getName(), executor instanceof ForkJoinPool);
     } finally {
       executor.shutdown();
     }
@@ -26,7 +26,7 @@ public final class ActorSystemConfigTest implements TestSupport {
     final ExecutorParams params = new ExecutorParams(1, new JvmVersion(1, 8, 0, 64));
     final ExecutorService executor = ActorSystemConfig.ExecutorChoice.AUTO.apply(params);
     try {
-      assertTrue(executor instanceof ThreadPoolExecutor);
+      assertTrue("executor.class=" + executor.getClass().getName(), executor instanceof ThreadPoolExecutor);
     } finally {
       executor.shutdown();
     }

@@ -13,10 +13,10 @@ public final class JvmVersionProviderTest implements TestSupport {
   @Test
   public void testDefault() {
     final JvmVersion version = new JvmVersionProvider.DefaultProvider().get();
-    assertTrue(version.major >= 1);
-    assertTrue(version.minor >= 8);
-    assertTrue(version.update >= 0);
-    assertTrue(version.build >= 1);
+    assertTrue("version=" + version, version.major >= 1);
+    assertTrue("version=" + version, version.minor >= 8);
+    assertTrue("version=" + version, version.update >= 0);
+    assertTrue("version=" + version, version.build >= 1);
   }
   
   @Test
@@ -36,7 +36,7 @@ public final class JvmVersionProviderTest implements TestSupport {
         customErr.flush();
         final String output = new String(out.toByteArray());
         log("output is %s\n", output);
-        assertTrue(output.startsWith("WARNING"));
+        assertTrue("output=" + output, output.startsWith("WARNING"));
       } finally {
         System.setErr(standardErr);
       }
