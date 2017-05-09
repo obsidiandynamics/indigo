@@ -1,4 +1,4 @@
-<img src="http://www.obsidiandynamics.com/indigo/images/indigo-logo.svg" alt="logo" width="80"/> <span style="line-height: 30px">Indigo</span>
+<img src="http://www.obsidiandynamics.com/indigo/images/indigo-logo.svg" alt="logo" width="80"/> Indigo
 ===
 [ ![Download](https://api.bintray.com/packages/obsidiandynamics/indigo/indigo-core/images/download.svg) ](https://bintray.com/obsidiandynamics/indigo/indigo-core/_latestVersion)
 
