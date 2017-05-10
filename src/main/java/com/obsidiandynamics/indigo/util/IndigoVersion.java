@@ -6,17 +6,12 @@ import java.net.*;
 public final class IndigoVersion {
   private IndigoVersion() {}
   
-  public static String get() {
+  public static String get() throws IOException {
     return get("indigo.version");
   }
   
-  static String get(String versionFile) {
-    try {
-      return readResourceHead(versionFile);
-    } catch (IOException e) {
-      System.err.format("I/O error reading %s: %s", versionFile, e);
-      return null;
-    }
+  static String get(String versionFile) throws IOException {
+    return readResourceHead(versionFile);
   }
   
   private static String readResourceHead(String file) throws IOException {
