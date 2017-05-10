@@ -26,6 +26,18 @@ public final class CappedForkJoinPoolTest implements TestSupport {
   }
 
   @Test
+  public void testSafeVersionInstantiation() {
+    final ForkJoinPool pool = Threads.cappedForkJoinPool(1, new JvmVersion(1, 8, 0, 39));
+    assertNotNull(pool);
+    pool.shutdownNow();
+  }
+
+  @Test(expected=UnsupportedOperationException.class)
+  public void testUnsafeVersionInstantiation() {
+    Threads.cappedForkJoinPool(1, new JvmVersion(1, 8, 0, 40));
+  }
+
+  @Test
   public void testCappedThreadFactory() {
     testCappedThreadFactory(1);
     testCappedThreadFactory(2);

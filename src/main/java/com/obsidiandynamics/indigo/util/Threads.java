@@ -38,11 +38,15 @@ public final class Threads {
     return pool;
   }
   
-  public static ForkJoinPool cappedForkJoinPool(int parallelism) {
-    return new CappedForkJoinPool(parallelism, null, true);
+  public static ForkJoinPool cappedForkJoinPool(int parallelism, JvmVersion version) {
+    if (CappedForkJoinPool.isSafeFor(version)) {
+      return new CappedForkJoinPool(parallelism, null, true);
+    } else {
+      throw new UnsupportedOperationException("ForkJoinPool cannot be used with this JVM version");
+    }
   }
   
   public static ExecutorService autoPool(int parallelism, JvmVersion version) {
-    return CappedForkJoinPool.isSafeFor(version) ? cappedForkJoinPool(parallelism) : prestartedFixedThreadPool(parallelism);
+    return CappedForkJoinPool.isSafeFor(version) ? new CappedForkJoinPool(parallelism, null, true) : prestartedFixedThreadPool(parallelism);
   }
 }

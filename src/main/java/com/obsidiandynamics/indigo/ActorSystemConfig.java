@@ -53,7 +53,7 @@ public class ActorSystemConfig {
   
   public enum ExecutorChoice implements Function<ExecutorParams, ExecutorService> {
     AUTO(params -> Threads.autoPool(params.parallelism, params.version)),
-    FORK_JOIN_POOL(params -> Threads.cappedForkJoinPool(params.parallelism)),
+    FORK_JOIN_POOL(params -> Threads.cappedForkJoinPool(params.parallelism, params.version)),
     FIXED_THREAD_POOL(params -> Threads.prestartedFixedThreadPool(params.parallelism));
     
     private final Function<ExecutorParams, ExecutorService> func;
