@@ -51,6 +51,7 @@ public final class ExceptionHandlerTest implements TestSupport {
     
     UnhandledMultiException ume = null;
     
+    final String output;
     synchronized (System.class) {
       // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
       final PrintStream standardErr = System.err;
@@ -68,19 +69,20 @@ public final class ExceptionHandlerTest implements TestSupport {
         }
         
         customErr.flush();
-        final String output = new String(out.toByteArray());
-        log("output is %s\n", output);
-        
-        final String exceptionFullName = HandlerTestException.class.getName();
-        assertTrue("output=" + output, output.startsWith(exceptionFullName));
+        output = new String(out.toByteArray());
       } finally {
         system.shutdownQuietly();
         System.setErr(standardErr);
       }
-      
-      if (ume != null) {
-        throw ume;
-      }
+    }
+    
+    log("output is %s\n", output);
+    
+    final String exceptionFullName = HandlerTestException.class.getName();
+    assertTrue("output=<<" + output + ">>", output.startsWith(exceptionFullName));
+    
+    if (ume != null) {
+      throw ume;
     }
   }
   

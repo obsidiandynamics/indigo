@@ -17,6 +17,7 @@ public class IndigoVersionTest implements TestSupport {
   }
   @Test
   public void testInvalid() throws IOException {
+    final String output;
     synchronized (System.class) {
       // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
       final PrintStream standardErr = System.err;
@@ -26,12 +27,12 @@ public class IndigoVersionTest implements TestSupport {
         assertNull(IndigoVersion.get("wrong.file"));
         
         customErr.flush();
-        final String output = new String(out.toByteArray());
-        log("output is %s\n", output);
-        assertTrue("output=" + output, output.startsWith("I/O error"));
+        output = new String(out.toByteArray());
       } finally {
         System.setErr(standardErr);
       }
     }
+    log("output is %s\n", output);
+    assertTrue("output=<<" + output + ">>", output.startsWith("I/O error"));
   }
 }

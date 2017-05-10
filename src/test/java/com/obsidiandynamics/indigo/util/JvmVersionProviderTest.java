@@ -21,6 +21,7 @@ public final class JvmVersionProviderTest implements TestSupport {
   
   @Test
   public void testFallback() throws IOException {
+    final String output;
     synchronized (System.class) {
       // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
       final PrintStream standardErr = System.err;
@@ -34,13 +35,16 @@ public final class JvmVersionProviderTest implements TestSupport {
         assertEquals(1, version.build);
         
         customErr.flush();
-        final String output = new String(out.toByteArray());
+        output = new String(out.toByteArray());
         log("output is %s\n", output);
         assertTrue("output=" + output, output.startsWith("WARNING"));
       } finally {
         System.setErr(standardErr);
       }
     }
+    
+    log("output is %s\n", output);
+    assertTrue("output=<<" + output + ">>", output.startsWith("WARNING"));
   }
   
   @Test
