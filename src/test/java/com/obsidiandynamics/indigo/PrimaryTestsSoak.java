@@ -8,7 +8,7 @@ import org.junit.runner.*;
 import org.junit.runner.notification.*;
 
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.util.OneShotActor.*;
+import com.obsidiandynamics.indigo.util.OneShotContract.*;
 
 public final class PrimaryTestsSoak {
   public static void main(String[] args) throws InterruptedException, ExecutionException {
