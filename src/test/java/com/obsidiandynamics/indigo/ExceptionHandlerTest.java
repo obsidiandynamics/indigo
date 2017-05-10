@@ -52,28 +52,23 @@ public final class ExceptionHandlerTest implements TestSupport {
     UnhandledMultiException ume = null;
     
     final String output;
-    synchronized (System.class) {
-      // as we're tinkering with System.err, which is a singleton, only one test can be allowed to proceed per class loader
-      final PrintStream standardErr = System.err;
-      try (ByteArrayOutputStream out = new ByteArrayOutputStream(); PrintStream customErr = new PrintStream(out)) {
-        System.setErr(customErr);
-        
-        assertEquals(0, out.size());
-        
-        system.ingress(a -> a.to(ActorRef.of(SINK)).tell());
-        
-        try {
-          system.shutdownQuietly();
-        } catch (UnhandledMultiException e) {
-          ume = e;
-        }
-        
-        customErr.flush();
-        output = new String(out.toByteArray());
-      } finally {
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream(); PrintStream customErr = new PrintStream(out)) {
+      system.getConfig().err = customErr;
+      
+      assertEquals(0, out.size());
+      
+      system.ingress(a -> a.to(ActorRef.of(SINK)).tell());
+      
+      try {
         system.shutdownQuietly();
-        System.setErr(standardErr);
+      } catch (UnhandledMultiException e) {
+        ume = e;
       }
+      
+      customErr.flush();
+      output = new String(out.toByteArray());
+    } finally {
+      system.shutdownQuietly();
     }
     
     log("output is %s\n", output);

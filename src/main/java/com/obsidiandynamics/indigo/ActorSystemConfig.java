@@ -1,15 +1,16 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
+
+import java.io.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.util.JvmVersionProvider.*;
-
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
-import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
 public class ActorSystemConfig {
   public static final class Key {
@@ -63,11 +64,14 @@ public class ActorSystemConfig {
   /** Maps a given parallelism value to an appropriately sized thread pool. */
   public Function<ExecutorParams, ExecutorService> executor = get(EXECUTOR, ExecutorChoice::valueOf, AUTO);
   
+  /** The default error stream to use. */
+  public PrintStream err = System.err;
+  
   public enum ExceptionHandlerChoice implements BiConsumer<ActorSystem, Throwable> {
     /** Forwards the exception to the system-level handler. Can only be used within the actor config. */
     SYSTEM((sys, t) -> sys.getConfig().exceptionHandler.accept(sys, t)),
     /** Prints the stack trace to {@link System#err}. */
-    CONSOLE((sys, t) -> t.printStackTrace()),
+    CONSOLE((sys, t) -> t.printStackTrace(sys.getConfig().err)),
     /** Accumulates exceptions internally, throwing them from the {@link ActorSystem#drain} method. */
     DRAIN((sys, t) -> sys.addError(t)),
     /** Combination of both {@link #CONSOLE} and {@link #DRAIN}. */
