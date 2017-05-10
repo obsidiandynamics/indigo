@@ -38,7 +38,7 @@ public class ActorSystemConfig {
   public int ingressCount = get(INGRESS_COUNT, Integer::parseInt, 0);
   
   /** The default timeout when asking from outside the actor system. */
-  public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 1 * 60_000);
+  public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 60_000);
   
   public static final class ExecutorParams {
     public final int parallelism;
