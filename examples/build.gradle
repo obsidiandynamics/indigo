@@ -1,4 +1,19 @@
 apply plugin: 'java'
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath "io.spring.gradle:dependency-management-plugin:1.0.0.RC2"
+  }
+}
+apply plugin: "io.spring.dependency-management"
+
+dependencyManagement {
+  imports {
+    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.126'
+  }
+}
 
 repositories {
   jcenter()
@@ -6,5 +21,8 @@ repositories {
 
 dependencies {
   compile project(':')
+  //compile 'com.amazonaws:aws-java-sdk-osgi:1.11.126'
+  //compile 'com.amazonaws:aws-java-sdk-s3:1.11.126'
+  compile 'com.amazonaws:aws-java-sdk-dynamodb'
   testCompile 'junit:junit:4.12'
 }
