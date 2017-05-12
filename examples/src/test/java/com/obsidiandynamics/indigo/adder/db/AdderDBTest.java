@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.adder.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public class AdderDBTest {
-  private static final boolean MOCK = PropertyUtils.get("indigo.AdderDBTest.mock", Boolean::parseBoolean, true);
+  private static final boolean MOCK = PropertyUtils.get("indigo.AdderDB.mock", Boolean::parseBoolean, true);
   
   private AdderDB db;
   
@@ -28,15 +28,20 @@ public class AdderDBTest {
     db.createTable();
     assertTrue(db.hasTable());
     
-    db.setSavePoint(SavePoint.of(ActorRef.of(AdderContract.ROLE), 42));
+    final ActorRef actorRef = ActorRef.of(AdderContract.ROLE);
     
-    final SavePoint saved1 = db.getSavePoint(ActorRef.of(AdderContract.ROLE));
+    final SavePoint saved0 = db.getSavePoint(actorRef);
+    assertNull(saved0);
+    
+    db.setSavePoint(SavePoint.of(actorRef, 42));
+    
+    final SavePoint saved1 = db.getSavePoint(actorRef);
     assertNotNull(saved1);
     assertEquals(42, saved1.getSum());
     
-    db.setSavePoint(SavePoint.of(ActorRef.of(AdderContract.ROLE), 43));
+    db.setSavePoint(SavePoint.of(actorRef, 43));
     
-    final SavePoint saved2 = db.getSavePoint(ActorRef.of(AdderContract.ROLE));
+    final SavePoint saved2 = db.getSavePoint(actorRef);
     assertNotNull(saved2);
     assertEquals(43, saved2.getSum());
     

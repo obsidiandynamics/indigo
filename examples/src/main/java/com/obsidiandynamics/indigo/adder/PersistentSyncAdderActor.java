@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo.adder;
 
+import java.util.function.*;
+
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.adder.AdderContract.*;
 import com.obsidiandynamics.indigo.adder.db.*;
@@ -17,7 +19,9 @@ public final class PersistentSyncAdderActor implements Actor {
   @Override
   public void activated(Activation a) {
     final SavePoint saved = db.getSavePoint(a.self());
-    sum = saved.getSum();
+    if (saved != null) {
+      sum = saved.getSum();
+    }
   }
   
   @Override
@@ -31,5 +35,9 @@ public final class PersistentSyncAdderActor implements Actor {
     .when(Add.class).then(b -> sum += b.getValue())
     .when(Get.class).then(b -> a.reply(m).tell(new GetResponse(sum)))
     .otherwise(a::messageFault);
+  }
+  
+  public static Supplier<PersistentSyncAdderActor> factory(AdderDB db) {
+    return () -> new PersistentSyncAdderActor(db);
   }
 }
