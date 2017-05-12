@@ -6,13 +6,16 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.adder.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public class AdderDBTest {
+  private static final boolean MOCK = PropertyUtils.get("indigo.AdderDBTest.mock", Boolean::parseBoolean, true);
+  
   private AdderDB db;
   
   @Before
   public void setup() {
-    db = DynamoAdderDB.withLocalEndpoint();
+    db = MOCK ? new MockAdderDB() : DynamoAdderDB.withLocalEndpoint();
     if (db.hasTable()) {
       db.deleteTable();
     }

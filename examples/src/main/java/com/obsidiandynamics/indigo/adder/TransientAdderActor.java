@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.adder;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.adder.AdderContract.*;
 
-public final class AdderActor implements Actor {
+public final class TransientAdderActor implements Actor {
   /** The current sum. */
   private int sum;
   

@@ -9,19 +9,19 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.adder.AdderContract.*;
 
-public class AdderTest {
+public class TransientAdderTest {
   @Test
   public void testInterfaceActor() throws InterruptedException {
     ActorSystem.create()
-    .on(AdderContract.ROLE).cue(AdderActor::new)
-    .ingress(AdderTest::addAndVerify)
+    .on(AdderContract.ROLE).cue(TransientAdderActor::new)
+    .ingress(TransientAdderTest::addAndVerify)
     .shutdown();
   }
   
   @Test
   public void testInterfaceActor_multiIngress() throws InterruptedException {
     final ActorSystem system = ActorSystem.create()
-    .on(AdderContract.ROLE).cue(AdderActor::new);
+    .on(AdderContract.ROLE).cue(TransientAdderActor::new);
     
     system.ingress().times(10).act((a, i) ->
       a.to(ActorRef.of(AdderContract.ROLE)).tell(new AdderContract.Add(i + 1))
@@ -51,7 +51,7 @@ public class AdderTest {
       .when(Get.class).then(b -> a.reply(m).tell(new GetResponse(s.sum)))
       .otherwise(a::messageFault)
     )
-    .ingress(AdderTest::addAndVerify)
+    .ingress(TransientAdderTest::addAndVerify)
     .shutdown();
   }
   
@@ -67,7 +67,7 @@ public class AdderTest {
            .when(Get.class).then(b -> a.reply(m).tell(new GetResponse(s.sum)))
            .otherwise(a::messageFault)
          ))
-    .ingress(AdderTest::addAndVerify)
+    .ingress(TransientAdderTest::addAndVerify)
     .shutdown();
   }
   
