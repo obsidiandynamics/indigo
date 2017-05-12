@@ -44,9 +44,9 @@ public final class ActorSystem implements Endpoint {
   private volatile boolean running = true;
   
   private static final class ActorSetup {
-    final Supplier<Actor> factory;
+    final Supplier<? extends Actor> factory;
     final ActorConfig actorConfig;
-    ActorSetup(Supplier<Actor> factory, ActorConfig actorConfig) {
+    ActorSetup(Supplier<? extends Actor> factory, ActorConfig actorConfig) {
       this.factory = factory;
       this.actorConfig = actorConfig;
     }
@@ -135,12 +135,12 @@ public final class ActorSystem implements Endpoint {
       return cue(StatefulLambdaActor.<S>builder().act(act).activated(futureStateFactory));
     }
     
-    public ActorSystem cue(Supplier<Actor> factory) {
+    public ActorSystem cue(Supplier<? extends Actor> factory) {
       register(role, factory, actorConfig);
       return ActorSystem.this;
     }
     
-    private void register(String role, Supplier<Actor> factory, ActorConfig actorConfig) {
+    private void register(String role, Supplier<? extends Actor> factory, ActorConfig actorConfig) {
       final ActorSetup existing = setupRegistry.put(role, new ActorSetup(factory, actorConfig));
       if (existing != null) {
         setupRegistry.put(role, existing);
