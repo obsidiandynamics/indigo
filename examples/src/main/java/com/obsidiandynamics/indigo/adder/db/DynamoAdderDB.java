@@ -1,7 +1,5 @@
 package com.obsidiandynamics.indigo.adder.db;
 
-import static java.util.Arrays.*;
-
 import com.amazonaws.client.builder.*;
 import com.amazonaws.regions.*;
 import com.amazonaws.services.dynamodbv2.*;
@@ -10,16 +8,17 @@ import com.amazonaws.services.dynamodbv2.model.*;
 import com.obsidiandynamics.indigo.*;
 
 public final class DynamoAdderDB implements AdderDB {
-//  private static final String TABLE_NAME = "Adder";
-//  private static final String ATT_ROLE = "actorRef.role";
-//  private static final String ATT_KEY = "actorRef.key";
-  
   private final AmazonDynamoDB db;
 
-  public DynamoAdderDB() {
+  public DynamoAdderDB(AwsClientBuilder.EndpointConfiguration endpointConfig) {
     db = AmazonDynamoDBClientBuilder.standard()
-        .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("http://localhost:8000", Regions.DEFAULT_REGION.getName()))
+        .withEndpointConfiguration(endpointConfig)
         .build();
+  }
+  
+  public static DynamoAdderDB withLocalEndpoint() {
+    return new DynamoAdderDB(new AwsClientBuilder.EndpointConfiguration("http://localhost:8000", 
+                                                                        Regions.DEFAULT_REGION.getName()));
   }
   
   private DynamoDBMapper mapper() {
@@ -41,12 +40,6 @@ public final class DynamoAdderDB implements AdderDB {
     final CreateTableRequest rq = mapper().generateCreateTableRequest(SavePoint.class);
     rq.setProvisionedThroughput(new ProvisionedThroughput(10L, 10L));
     db.createTable(rq);
-//    db.createTable(asList(new AttributeDefinition(ATT_ROLE, ScalarAttributeType.S),
-//                          new AttributeDefinition(ATT_KEY, ScalarAttributeType.S)),
-//                   TABLE_NAME,
-//                   asList(new KeySchemaElement(ATT_ROLE, KeyType.HASH),
-//                          new KeySchemaElement(ATT_KEY, KeyType.RANGE)),
-//                   new ProvisionedThroughput(10L, 10L));
   }
 
   @Override
@@ -62,6 +55,5 @@ public final class DynamoAdderDB implements AdderDB {
   @Override
   public void deleteTable() {
     db.deleteTable(mapper().generateDeleteTableRequest(SavePoint.class));
-//    db.deleteTable(TABLE_NAME);
   }
 }

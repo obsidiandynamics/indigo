@@ -12,7 +12,7 @@ public class AdderDBTest {
   
   @Before
   public void setup() {
-    db = new DynamoAdderDB();
+    db = DynamoAdderDB.withLocalEndpoint();
     if (db.hasTable()) {
       db.deleteTable();
     }
