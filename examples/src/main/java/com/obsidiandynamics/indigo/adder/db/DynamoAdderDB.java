@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.adder.db;
 
+import com.amazonaws.auth.*;
 import com.amazonaws.client.builder.*;
 import com.amazonaws.regions.*;
 import com.amazonaws.services.dynamodbv2.*;
@@ -10,14 +11,21 @@ import com.obsidiandynamics.indigo.*;
 public final class DynamoAdderDB implements AdderDB {
   private final AmazonDynamoDB db;
 
-  public DynamoAdderDB(AwsClientBuilder.EndpointConfiguration endpointConfig) {
+  public DynamoAdderDB(AWSCredentialsProvider credentialsProvider, AwsClientBuilder.EndpointConfiguration endpointConfig) {
     db = AmazonDynamoDBClientBuilder.standard()
+        .withCredentials(credentialsProvider)
         .withEndpointConfiguration(endpointConfig)
         .build();
   }
   
   public static DynamoAdderDB withLocalEndpoint() {
-    return new DynamoAdderDB(new AwsClientBuilder.EndpointConfiguration("http://localhost:8000", 
+    final BasicAWSCredentials credentials = new BasicAWSCredentials("", "");
+    final AWSCredentialsProvider credentialsProvider = new AWSCredentialsProvider() {
+      @Override public AWSCredentials getCredentials() { return credentials; }
+      @Override public void refresh() {}
+    };
+    return new DynamoAdderDB(credentialsProvider,
+                             new AwsClientBuilder.EndpointConfiguration("http://localhost:8000", 
                                                                         Regions.DEFAULT_REGION.getName()));
   }
   
