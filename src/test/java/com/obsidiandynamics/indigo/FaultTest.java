@@ -395,11 +395,16 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnEgressAskBiased() {
-    testOnEgressAsk(100 * SCALE, 10);
+  public void testOnSerialEgressAskBiased() {
+    testOnEgressAsk(100 * SCALE, 10, false);
   }
   
-  private void testOnEgressAsk(int n, int actorBias) {
+  @Test
+  public void testOnParallelEgressAskBiased() {
+    testOnEgressAsk(100 * SCALE, 10, true);
+  }
+  
+  private void testOnEgressAsk(int n, int actorBias, boolean parallel) {
     final AtomicInteger faults = new AtomicInteger();
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
@@ -409,10 +414,10 @@ public final class FaultTest implements TestSupport {
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
-      a.egress(() -> {
+      egressMode(a.egress(() -> {
         d.trace("egress %d", i);
         throw new TestException("Fault in egress");
-      })
+      }), parallel)
       .withExecutor(external)
       .await(60_000).onTimeout(() -> {
         log("egress timed out\n");
@@ -445,12 +450,17 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
-  public void testOnAsyncEgressBiased() {
-    testOnAsyncEgressAsk(100 * SCALE, 10);
+  public void testOnAsyncSerialEgressBiased() {
+    testOnAsyncEgressAsk(100 * SCALE, 10, false);
   }
   
-  private void testOnAsyncEgressAsk(int n, int actorBias) {
-  final AtomicInteger faults = new AtomicInteger();
+  @Test
+  public void testOnAsyncParallelEgressBiased() {
+    testOnAsyncEgressAsk(100 * SCALE, 10, true);
+  }
+  
+  private void testOnAsyncEgressAsk(int n, int actorBias, boolean parallel) {
+    final AtomicInteger faults = new AtomicInteger();
     
     final ExecutorService external = Executors.newSingleThreadExecutor();
     
@@ -459,12 +469,12 @@ public final class FaultTest implements TestSupport {
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
-      a.egressAsync(() -> {
+      egressMode(a.egressAsync(() -> {
         d.trace("egress %d", i);
         final CompletableFuture<Object> future = new CompletableFuture<>();
         future.completeExceptionally(new TestException("Fault in async egress"));
         return future;
-      })
+      }), parallel)
       .withExecutor(external)
       .await(60_000).onTimeout(() -> {
         log("egress timed out\n");

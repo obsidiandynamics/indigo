@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActivationState.*;
 
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import com.obsidiandynamics.indigo.util.*;
@@ -39,7 +40,7 @@ final class NodeQueueActivation extends Activation {
   }
 
   @Override
-  boolean enqueue(Message m) {
+  boolean enqueue(Message m, Executor x) {
     assert diagnostics().traceMacro("NQA.enqueue: m=%s", m);
 
     if (! m.isResponse() && shouldThrottle()) {
@@ -65,7 +66,7 @@ final class NodeQueueActivation extends Activation {
         system.incBusyActors();
       }
       assert diagnostics().traceMacro("NQA.enqueue: scheduling m=%s", m);
-      scheduleRunStart(t);
+      scheduleRunStart(t, x);
     } else {
       t1.lazySet(t);
     }
@@ -85,12 +86,12 @@ final class NodeQueueActivation extends Activation {
     }
   }
 
-  private void scheduleRunStart(Node n) {
-    system.dispatch(() -> run(n, false));
+  private void scheduleRunStart(Node n, Executor x) {
+    dispatch(x, () -> run(n, x, false));
   }
   
-  private void scheduleRunContinue(Node n) {
-    system.dispatch(() -> run(n, true));
+  private void scheduleRunContinue(Node n, Executor x) {
+    dispatch(x, () -> run(n, x, true));
   }
 
   private boolean park(Node n) {
@@ -119,7 +120,7 @@ final class NodeQueueActivation extends Activation {
     return parked;
   }
 
-  private void run(Node h, boolean skipCurrent) {
+  private void run(Node h, Executor x, boolean skipCurrent) {
     assert diagnostics().traceMacro("NQA.run: h.m=%s, skipCurrent=%b", h.m, skipCurrent);
 
     Node head = h;
@@ -143,7 +144,7 @@ final class NodeQueueActivation extends Activation {
             yields = 0;
           } else {
             assert diagnostics().traceMacro("NQA.run: scheduling ref=%s", ref);
-            scheduleRunStart(h1);
+            scheduleRunStart(h1, x);
             return;
           }
         } else if (! attemptedPark) {
@@ -157,7 +158,7 @@ final class NodeQueueActivation extends Activation {
           Thread.yield();
           yields++;
         } else {
-          scheduleRunContinue(head);
+          scheduleRunContinue(head, x);
           return;
         }
       }

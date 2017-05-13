@@ -3,6 +3,7 @@ package com.obsidiandynamics.indigo;
 import static com.obsidiandynamics.indigo.ActivationState.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
@@ -18,7 +19,7 @@ final class SyncQueueActivation extends Activation {
   }
   
   @Override
-  boolean enqueue(Message m) {
+  boolean enqueue(Message m, Executor x) {
     assert diagnostics().traceMacro("SQA.enqueue: m=%s", m);
     
     boolean throttledOnce = false;
@@ -53,14 +54,14 @@ final class SyncQueueActivation extends Activation {
       
       if (noBacklog) {
         assert diagnostics().traceMacro("SQA.enqueue: scheduling m=%s", m);
-        system.dispatch(this::run);
+        dispatch(x, () -> run(x));
       }
       
       return true;
     }
   }
   
-  private void run() {
+  private void run(Executor x) {
     assert diagnostics().traceMacro("SQA.run: ref=%s", ref);
     final Message[] messages;
     final int backlogSize;
@@ -106,7 +107,7 @@ final class SyncQueueActivation extends Activation {
       }
     } else {
       assert diagnostics().traceMacro("SQA.run: scheduling, ref=%s", ref);
-      system.dispatch(this::run);
+      dispatch(x, () -> run(x));
     }
   }
   

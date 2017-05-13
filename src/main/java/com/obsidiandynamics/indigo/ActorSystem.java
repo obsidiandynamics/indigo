@@ -23,7 +23,7 @@ public final class ActorSystem implements Endpoint {
   
   private final ActorSystemConfig config;
   
-  private final ExecutorService executor;
+  private final ExecutorService globalExecutor;
   
   private final Map<ActorRef, Activation> activations;
   
@@ -55,12 +55,17 @@ public final class ActorSystem implements Endpoint {
   private ActorSystem(ActorSystemConfig config) {
     config.init();
     this.config = config;
-    executor = config.executor.apply(new ExecutorParams(config.getParallelism(),
+    globalExecutor = config.executor.apply(new ExecutorParams(config.getParallelism(),
                                                         new JvmVersionProvider.DefaultProvider().get()));
     ingressRefs = createIngressRefs(config.getIngressCount());
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
-    on(INGRESS).cue(StatelessLambdaActor::agent);
+    registerStandardActors();
     timeoutWatchdog.start();
+  }
+  
+  private void registerStandardActors() {
+    on(INGRESS).cue(StatelessLambdaActor::agent);
+    on(EGRESS).withConfig(new ActorConfig() {{ bias = Integer.MAX_VALUE; }}).cue(BackgroundAgent::new);
   }
   
   private static ActorRef[] createIngressRefs(int ingressCount) {
@@ -155,9 +160,13 @@ public final class ActorSystem implements Endpoint {
   
   @Override
   public void send(Message message) {
+    send(message, globalExecutor);
+  }
+  
+  void send(Message message, Executor executor) {
     for (;;) {
       final Activation a = activate(message.to());
-      if (a.enqueue(message)) {
+      if (a.enqueue(message, executor)) {
         return;
       } else {
         message.to().setCachedActivation(null);
@@ -268,19 +277,6 @@ public final class ActorSystem implements Endpoint {
     return Collections.unmodifiableList(Arrays.asList(deadLetterQueue.toArray(new Fault[0])));
   }
   
-  void dispatch(Runnable r) {
-    executor.execute(() -> {
-      try {
-        r.run();
-      } catch (Throwable t) {
-        config.exceptionHandler.accept(this, t);
-        running = false;
-        timeoutWatchdog.terminate();
-        executor.shutdownNow();
-      }
-    });
-  }
-  
   void incBusyActors() {
     busyActors.add(1);
   }
@@ -339,7 +335,7 @@ public final class ActorSystem implements Endpoint {
       
       if (deadline != 0 && System.currentTimeMillis() > deadline) {
         busyActors.sum(sum);
-        assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, executor);
+        assert config.diagnostics.traceMacro("AS.drain: sum=%s, executor=%s\n", sum, globalExecutor);
         checkUncaughtExceptions();
         return sum.isCertain() ? sum.get() : Math.min(Math.max(1, sum.get()), activations.size());
       }
@@ -428,8 +424,14 @@ public final class ActorSystem implements Endpoint {
     }
     timeoutWatchdog.forceTimeout();
     timeoutWatchdog.terminate();
-    executor.shutdown();
+    globalExecutor.shutdown();
     running = false;
+  }
+  
+  void terminate() {
+    running = false;
+    timeoutWatchdog.terminate();
+    globalExecutor.shutdownNow();
   }
   
   public static ActorSystem create() {

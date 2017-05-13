@@ -1,8 +1,9 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
+import static com.obsidiandynamics.indigo.TestSupport.*;
 import static junit.framework.TestCase.*;
-import static org.awaitility.Awaitility.*;
+import static org.awaitility.Awaitility.await;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -30,16 +31,23 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testFunction() throws InterruptedException {
-    final int actors = 5;
-    final int runs = 10;
+  public void testFunction_serial() throws InterruptedException {
+    testFunction(5, 10, false);
+  }
+  
+  @Test
+  public void testFunction_parallel() throws InterruptedException {
+    testFunction(5, 10, true);
+  }
+  
+  private void testFunction(int actors, int runs, boolean parallel) throws InterruptedException {
     final Set<ActorRef> doneRuns = new HashSet<>();
     
     system.on(DRIVER).cue(IntegerState::new, (a, m, s) -> {
-      a.<Integer, Integer>egress(in -> {
+      egressMode(a.<Integer, Integer>egress(in -> {
         assertEquals(EXTERNAL, Thread.currentThread().getName());
         return in + 1; 
-      })
+      }), parallel)
       .withExecutor(EXECUTOR)
       .ask(s.value).onResponse(r -> {
         assertFalse("Driven by an external thread", Thread.currentThread().getName().equals(EXTERNAL));
@@ -66,12 +74,20 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testConsumer() throws InterruptedException {
-    final int runs = 5;
+  public void testConsumer_serial() throws InterruptedException {
+    testConsumer(5, false);
+  }
+  
+  @Test
+  public void testConsumer_parallel() throws InterruptedException {
+    testConsumer(5, true);
+  }
+  
+  private void testConsumer(int runs, boolean parallel) throws InterruptedException {
     final Set<Integer> received = new CopyOnWriteArraySet<>();
     
     system.ingress().times(runs).act((a, i) -> {
-      a.<Integer>egress(in -> received.add(in))
+      egressMode(a.<Integer>egress(in -> received.add(in)), parallel)
       .withExecutor(EXECUTOR)
       .ask(i)
       .onResponse(r -> assertNull(r.body()));
@@ -82,12 +98,20 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testRunnableAsk() throws InterruptedException {
-    final int runs = 5;
+  public void testRunnableAsk_serial() throws InterruptedException {
+    testRunnableAsk(5, false);
+  }
+  
+  @Test
+  public void testRunnableAsk_parallel() throws InterruptedException {
+    testRunnableAsk(5, true);
+  }
+  
+  private void testRunnableAsk(int runs, boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
     
     system.ingress().times(runs).act((a, i) -> {
-      a.egress(() -> { received.incrementAndGet(); })
+      egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
       .withExecutor(EXECUTOR)
       .ask()
       .onResponse(r -> assertNull(r.body()));
@@ -98,28 +122,45 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testRunnableTell() throws InterruptedException {
-    final int runs = 5;
+  public void testRunnableTell_serial() throws InterruptedException {
+    testRunnableTell(5, false);
+  }
+
+  @Test
+  public void testRunnableTell_parallel() throws InterruptedException {
+    testRunnableTell(5, true);
+  }
+  
+  private void testRunnableTell(int runs, boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
     
     system.ingress().times(runs).act((a, i) -> {
-      a.egress(() -> { received.incrementAndGet(); })
+      egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
       .withExecutor(EXECUTOR)
       .tell();
     })
     .drain(0);
     
-    await().atMost(10, TimeUnit.SECONDS).until(() -> received.get() == runs);
+    if (parallel) await().atMost(10, TimeUnit.SECONDS).until(() -> received.get() == runs);
     assertEquals(runs, received.get());
   }
-  
+
   @Test
-  public void testRunnableWithIllegalValue() throws InterruptedException {
+  public void testRunnableWithIllegalValue_serial() throws InterruptedException {
+    testRunnableWithIllegalValue(false);
+  }
+
+  @Test
+  public void testRunnableWithIllegalValue_parallel() throws InterruptedException {
+    testRunnableWithIllegalValue(true);
+  }
+  
+  private void testRunnableWithIllegalValue(boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
 
     system.getConfig().exceptionHandler = DRAIN;
     system.ingress(a -> {
-      a.egress(() -> { received.incrementAndGet(); })
+      egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
       .withExecutor(EXECUTOR)
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
@@ -138,12 +179,20 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testSupplier() throws InterruptedException {
-    final int runs = 5;
+  public void testSupplier_serial() throws InterruptedException {
+    testSupplier(5, false);
+  }
+  
+  @Test
+  public void testSupplier_parallel() throws InterruptedException {
+    testSupplier(5, true);
+  }
+  
+  private void testSupplier(int runs, boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
     
     system.ingress().times(runs).act((a, i) -> {
-      a.egress(() -> received.incrementAndGet())
+      egressMode(a.egress(() -> received.incrementAndGet()), parallel)
       .withExecutor(EXECUTOR)
       .ask()
       .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
@@ -154,13 +203,21 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testAsyncSupplier() throws InterruptedException {
-    final int runs = 5;
+  public void testAsyncSupplier_serial() throws InterruptedException {
+    testAsyncSupplier(5, false);
+  }
+  
+  @Test
+  public void testAsyncSupplier_parallel() throws InterruptedException {
+    testAsyncSupplier(5, true);
+  }
+  
+  private void testAsyncSupplier(int runs, boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
     final AtomicInteger processed = new AtomicInteger();
     
     system.ingress().times(runs).act((a, i) -> {
-      a.egressAsync(in -> {
+      egressMode(a.egressAsync(in -> {
         assertNull(in);
         final int newVal = received.incrementAndGet();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
@@ -169,7 +226,7 @@ public final class EgressTest implements TestSupport {
           f.complete(newVal);
         }, "AsyncIngress");
         return f;
-      })
+      }), parallel)
       .withCommonPool()
       .ask()
       .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
@@ -179,14 +236,23 @@ public final class EgressTest implements TestSupport {
     assertEquals(runs, received.get());
     assertEquals(runs, processed.get());
   }
-  
+
   @Test
-  public void testSupplierWithIllegalValue() throws InterruptedException {
+  public void testSupplierWithIllegalValue_serial() throws InterruptedException {
+    testSupplierWithIllegalValue(false);
+  }
+
+  @Test
+  public void testSupplierWithIllegalValue_parallel() throws InterruptedException {
+    testSupplierWithIllegalValue(true);
+  }
+
+  private void testSupplierWithIllegalValue(boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
 
     system.getConfig().exceptionHandler = DRAIN;
     system.ingress(a -> {
-      a.egress(() -> received.incrementAndGet())
+      egressMode(a.egress(() -> received.incrementAndGet()), parallel)
       .withExecutor(EXECUTOR)
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
@@ -205,12 +271,21 @@ public final class EgressTest implements TestSupport {
   }
   
   @Test
-  public void testAsyncSupplierWithIllegalValue() throws InterruptedException {
+  public void testAsyncSupplierWithIllegalValue_serial() throws InterruptedException {
+    testAsyncSupplierWithIllegalValue(false);
+  }
+  
+  @Test
+  public void testAsyncSupplierWithIllegalValue_parallel() throws InterruptedException {
+    testAsyncSupplierWithIllegalValue(true);
+  }
+  
+  private void testAsyncSupplierWithIllegalValue(boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
 
     system.getConfig().exceptionHandler = DRAIN;
     system.ingress(a -> {
-      a.egressAsync(() -> CompletableFuture.completedFuture(received.incrementAndGet()))
+      egressMode(a.egressAsync(() -> CompletableFuture.completedFuture(received.incrementAndGet())), parallel)
       .withCommonPool()
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
@@ -226,6 +301,26 @@ public final class EgressTest implements TestSupport {
     }
     
     assertEquals(0, received.get());
+  }
+  
+  @Test
+  public void testExecutionOrder() throws InterruptedException {
+    final int runs = 1000;
+    final IntegerState s = new IntegerState();
+    
+    system.ingress(a -> {
+      for (int i = 0; i < runs; i++) {
+        a.egress(_i -> {
+          assertEquals(s.value, _i);
+          s.value++;
+        })
+        .withCommonPool()
+        .tell(i);
+      }
+    })
+    .drain(0);
+    
+    assertEquals(runs, s.value);
   }
   
   private void assertIllegalArgumentException(Throwable t) {

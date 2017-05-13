@@ -4,6 +4,7 @@ import java.lang.ref.*;
 
 public final class ActorRef {
   public static final String INGRESS = "_ingress";
+  public static final String EGRESS = "_egress";
   
   private final String role;
   
@@ -26,6 +27,14 @@ public final class ActorRef {
   
   public boolean isIngress() {
     return role.equals(INGRESS);
+  }
+  
+  public String encode() {
+    return key != null ? encode(role) + ":" + encode(key) : encode(role);
+  }
+  
+  private static String encode(String str) {
+    return str.replace(":", "\\:");
   }
 
   @Override

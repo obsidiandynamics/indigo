@@ -43,7 +43,18 @@ public abstract class Activation {
     this.actor = actor;
   }
   
-  abstract boolean enqueue(Message m);
+  abstract boolean enqueue(Message m, Executor x);
+  
+  protected final void dispatch(Executor x, Runnable r) {
+    x.execute(() -> {
+      try {
+        r.run();
+      } catch (Throwable t) {
+        system.getConfig().exceptionHandler.accept(system, t);
+        system.terminate();
+      }
+    });
+  }
   
   public final ActorRef self() {
     return ref;
@@ -157,39 +168,70 @@ public abstract class Activation {
   
   public final class EgressBuilder<I, O> {
     private final Function<I, CompletableFuture<O>> func;
+    
+    private boolean parallel = false;
 
     EgressBuilder(Function<I, CompletableFuture<O>> func) {
       this.func = func;
+    }
+    
+    /**
+     *  Enables strict serialisation, whereby tasks are executed in the order of submission
+     *  and always one-at-a-time with respect to the enqueuing actor.<br><br>
+     *  
+     *  This is the default execution mode. Use {@link #parallel()} to override.
+     */
+    public void serial() {
+      parallel = false;
+    }
+    
+    /**
+     *  Enables parallel execution, whereby tasks may be executed in parallel and in any order.
+     */
+    public void parallel() {
+      parallel = true;
     }
     
     public MessageBuilder withCommonPool() {
       return withExecutor(ForkJoinPool.commonPool());
     }
 
-    @SuppressWarnings("unchecked")
     public MessageBuilder withExecutor(Executor executor) {
       return new MessageBuilder((body, requestId) -> {
         stashIfTransitioning();
-        executor.execute(() -> {
-          final CompletableFuture<O> future;
-          try {
-            future = func.apply((I) body);
-          } catch (Throwable t) {
-            handleError(requestId, t);
-            return;
+        if (parallel) {
+          // execute directly on the given executor, with the response going back as a message
+          // into the actor system
+          executor.execute(() -> processEgress(body, requestId));
+        } else {
+          // execute using an egress agent within the fundamental rules of an actor system (such
+          // full serialisation), but using the given executor (rather than the global executor)
+          final Consumer<Activation> agent = a -> processEgress(body, requestId);
+          final ActorRef egressRef = ActorRef.of(ActorRef.EGRESS, self().encode());
+          system.send(new Message(self(), egressRef, agent, null, false), executor);
+        }
+      });
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void processEgress(Object body, UUID requestId) {
+      final CompletableFuture<O> future;
+      try {
+        future = func.apply((I) body);
+      } catch (Throwable t) {
+        handleError(requestId, t);
+        return;
+      }
+      
+      future.whenComplete((out, t) -> {
+        if (t == null) {
+          if (requestId != null) {
+            final Message resp = new Message(null, ref, out, requestId, true);
+            system.send(resp);
           }
-          
-          future.whenComplete((out, t) -> {
-            if (t == null) {
-              if (requestId != null) {
-                final Message resp = new Message(null, ref, out, requestId, true);
-                system.send(resp);
-              }
-            } else {
-              handleError(requestId, t);
-            }
-          });
-        });
+        } else {
+          handleError(requestId, t);
+        }
       });
     }
     

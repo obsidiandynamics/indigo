@@ -8,6 +8,7 @@ import com.obsidiandynamics.indigo.util.*;
 
 @RunWith(Suite.class)
 @SuiteClasses({
+  ActorRefTest.class,
   CappedForkJoinPoolTest.class,
   IndigoVersionTest.class,
   Integral64Test.class,
