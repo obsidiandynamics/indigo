@@ -132,43 +132,12 @@ public abstract class Activation {
     return to(m.from());
   }
   
-  public final class ReplyBuilder {
-    private final Message m;
-    
-    ReplyBuilder(Message m) { this.m = m; }
-    
-    public void tell() {
-      tell(null);
-    }
-    
-    public void tell(Object responseBody) {
-      final boolean isResponse = m.requestId() != null;
-      // Solicited responses go through, but unsolicited ones are silently dropped. This relieves
-      // services from having to program defensively, only sending replies when the consumer has
-      // requested them with an <code>ask()</code>. It also prevents a consumer using <code>tell()</code>
-      // from receiving an unsolicited message.
-      if (isResponse) {
-        send(new Message(ref, m.from(), responseBody, m.requestId(), true));
-      }
-    }
-  }
-  
   public final ReplyBuilder reply(Message m) {
-    return new ReplyBuilder(m);
-  }
-  
-  public final class ForwardBuilder {
-    private final Message m;
-    
-    ForwardBuilder(Message m) { this.m = m; }
-    
-    public void to(ActorRef to) {
-      send(new Message(m.from(), to, m.body(), m.requestId(), m.isResponse()));
-    }
+    return new ReplyBuilder(this, m);
   }
   
   public final ForwardBuilder forward(Message m) {
-    return new ForwardBuilder(m);
+    return new ForwardBuilder(this, m);
   }
   
   public final void send(Message message) {
