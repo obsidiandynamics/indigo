@@ -8,7 +8,6 @@ import java.util.function.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.Activation.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.benchmark.Summary.*;
 

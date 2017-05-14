@@ -7,7 +7,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
-import com.obsidiandynamics.indigo.Activation.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.util.*;
 

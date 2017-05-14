@@ -5,8 +5,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import com.obsidiandynamics.indigo.Activation.*;
-
 public interface TestSupport {
   static final boolean LOG = false;
   static final PrintStream LOG_STREAM = System.out;

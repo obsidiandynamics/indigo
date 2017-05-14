@@ -56,6 +56,14 @@ public abstract class Activation {
     });
   }
   
+  final long getId() {
+    return id;
+  }
+  
+  final long getAndIncrementRequestCounter() {
+    return requestCounter++;
+  }
+  
   public final ActorRef self() {
     return ref;
   }
@@ -72,178 +80,8 @@ public abstract class Activation {
     fault(body != null ? "Cannot handle message body of type " + body.getClass().getName() : "Cannot handle null message body");
   }
   
-  @FunctionalInterface
-  private interface MessageTarget {
-    void send(Object body, UUID requestId);
-  }
-  
-  public final class MessageBuilder {
-    private final MessageTarget target;
-    
-    private int copies = 1;
-    
-    private Object requestBody;
-    
-    private long timeoutMillis;
-    
-    private Runnable onTimeout;
-    
-    private Consumer<Fault> onFault;
-    
-    private TimeoutTask timeoutTask;
-    
-    MessageBuilder(MessageTarget target) {
-      this.target = target;
-    }
-    
-    public MessageBuilder times(int copies) {
-      this.copies = copies;
-      return this;
-    }
-    
-    public void tell(Object body) {
-      for (int i = copies; --i >= 0;) {
-        target.send(body, null);
-      }
-    }
-    
-    public MessageBuilder ask(Object requestBody) {
-      this.requestBody = requestBody;
-      return this;
-    }
-    
-    public MessageBuilder ask() {
-      return ask(null);
-    }
-    
-    public MessageBuilder await(long timeoutMillis) {
-      this.timeoutMillis = timeoutMillis;
-      return this;
-    }
-    
-    public MessageBuilder onTimeout(Runnable onTimeout) {
-      this.onTimeout = onTimeout;
-      return this;
-    }
-    
-    public MessageBuilder onFault(Consumer<Fault> onFault) {
-      this.onFault = onFault;
-      return this;
-    }
-    
-    public void onResponse(Consumer<Message> onResponse) {
-      if (timeoutMillis != 0 ^ onTimeout != null) {
-        throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
-      }
-      
-      for (int i = copies; --i >= 0;) {
-        final UUID requestId = new UUID(id, requestCounter++);
-        final PendingRequest req = new PendingRequest(onResponse, onTimeout, onFault);
-        target.send(requestBody, requestId);
-        pending.put(requestId, req);
-        
-        if (timeoutMillis != 0) {
-          timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
-                                        requestId,
-                                        ref,
-                                        req);
-          req.setTimeoutTask(timeoutTask);
-          system.getTimeoutWatchdog().schedule(timeoutTask);
-        }
-      }
-    }
-    
-    TimeoutTask getTimeoutTask() {
-      return timeoutTask;
-    }
-    
-    public void tell() {
-      tell(null);
-    }
-  }
-  
   public final MessageBuilder to(ActorRef to) {
-    return new MessageBuilder((body, requestId) -> send(new Message(ref, to, body, requestId, false)));
-  }
-  
-  public final class EgressBuilder<I, O> {
-    private final Function<I, CompletableFuture<O>> func;
-    
-    private boolean parallel = false;
-
-    EgressBuilder(Function<I, CompletableFuture<O>> func) {
-      this.func = func;
-    }
-    
-    /**
-     *  Enables strict serialisation, whereby tasks are executed in the order of submission
-     *  and always one-at-a-time with respect to the enqueuing actor.<br><br>
-     *  
-     *  This is the default execution mode. Use {@link #parallel()} to override.
-     */
-    public void serial() {
-      parallel = false;
-    }
-    
-    /**
-     *  Enables parallel execution, whereby tasks may be executed in parallel and in any order.
-     */
-    public void parallel() {
-      parallel = true;
-    }
-    
-    public MessageBuilder withCommonPool() {
-      return withExecutor(ForkJoinPool.commonPool());
-    }
-
-    public MessageBuilder withExecutor(Executor executor) {
-      return new MessageBuilder((body, requestId) -> {
-        stashIfTransitioning();
-        if (parallel) {
-          // execute directly on the given executor, with the response going back as a message
-          // into the actor system
-          executor.execute(() -> processEgress(body, requestId));
-        } else {
-          // execute using an egress agent within the fundamental rules of an actor system (such
-          // full serialisation), but using the given executor (rather than the global executor)
-          final Consumer<Activation> agent = a -> processEgress(body, requestId);
-          final ActorRef egressRef = ActorRef.of(ActorRef.EGRESS, self().encode());
-          system.send(new Message(self(), egressRef, agent, null, false), executor);
-        }
-      });
-    }
-    
-    @SuppressWarnings("unchecked")
-    private void processEgress(Object body, UUID requestId) {
-      final CompletableFuture<O> future;
-      try {
-        future = func.apply((I) body);
-      } catch (Throwable t) {
-        handleError(requestId, t);
-        return;
-      }
-      
-      future.whenComplete((out, t) -> {
-        if (t == null) {
-          if (requestId != null) {
-            final Message resp = new Message(null, ref, out, requestId, true);
-            system.send(resp);
-          }
-        } else {
-          handleError(requestId, t);
-        }
-      });
-    }
-    
-    private void handleError(UUID requestId, Throwable t) {
-      actorConfig.exceptionHandler.accept(system, t);
-      final Fault fault = new Fault(ON_EGRESS, null, t);
-      addToDeadLetterQueue(fault);
-      if (requestId != null) {
-        final Message resp = new Message(null, ref, fault, requestId, true);
-        system.send(resp);
-      }
-    }
+    return new MessageBuilder(this, (body, requestId) -> send(new Message(ref, to, body, requestId, false)));
   }
   
   public final <I> EgressBuilder<I, Void> egress(Consumer<I> consumer) {
@@ -283,7 +121,7 @@ public abstract class Activation {
   }
   
   public final <I, O> EgressBuilder<I, O> egressAsync(Function<I, CompletableFuture<O>> func) {
-    return new EgressBuilder<>(func);
+    return new EgressBuilder<>(this, func);
   }
   
   public final MessageBuilder toSelf() {
@@ -340,7 +178,7 @@ public abstract class Activation {
     system.send(message);
   }
   
-  private void stashIfTransitioning() {
+  final void stashIfTransitioning() {
     final ActivationState stateCache = state;
     if (stateCache == ACTIVATING || stateCache == PASSIVATING) {
       _stash(Functions::alwaysTrue);
@@ -365,13 +203,9 @@ public abstract class Activation {
     if (originalMessage != null && originalMessage.requestId() != null && ! originalMessage.isResponse()) {
       send(new Message(ref, originalMessage.from(), fault, originalMessage.requestId(), true));
     }
-    addToDeadLetterQueue(fault);
+    system.addToDeadLetterQueue(fault);
     faultReason = null;
     return fault;
-  }
-  
-  private void addToDeadLetterQueue(Fault fault) {
-    system.addToDeadLetterQueue(fault);
   }
   
   private Fault checkAndRaiseFault(FaultType type, Message originalMessage) {
