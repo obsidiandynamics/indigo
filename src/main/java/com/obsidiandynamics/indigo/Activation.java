@@ -81,7 +81,7 @@ public abstract class Activation {
   }
   
   public final MessageBuilder to(ActorRef to) {
-    return new MessageBuilder(this, (body, requestId) -> send(new Message(ref, to, body, requestId, false)));
+    return new MessageBuilder(this).target((body, requestId) -> send(new Message(ref, to, body, requestId, false)));
   }
   
   public final <I> EgressBuilder<I, Void> egress(Consumer<I> consumer) {

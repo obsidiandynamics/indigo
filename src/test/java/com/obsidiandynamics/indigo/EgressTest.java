@@ -227,7 +227,6 @@ public final class EgressTest implements TestSupport {
         }, "AsyncIngress");
         return f;
       }), parallel)
-      .withCommonPool()
       .ask()
       .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
     })
@@ -286,7 +285,6 @@ public final class EgressTest implements TestSupport {
     system.getConfig().exceptionHandler = DRAIN;
     system.ingress(a -> {
       egressMode(a.egressAsync(() -> CompletableFuture.completedFuture(received.incrementAndGet())), parallel)
-      .withCommonPool()
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
       .onResponse(r -> assertNull(r.body()));

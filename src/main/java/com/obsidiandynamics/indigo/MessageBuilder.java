@@ -3,15 +3,15 @@ package com.obsidiandynamics.indigo;
 import java.util.*;
 import java.util.function.*;
 
-public final class MessageBuilder {
+public class MessageBuilder {
   @FunctionalInterface
   interface MessageTarget {
     void send(Object body, UUID requestId);
   }
   
-  private final Activation activation;
+  protected final Activation activation;
   
-  private final MessageTarget target;
+  protected MessageTarget target;
   
   private int copies = 1;
   
@@ -25,47 +25,51 @@ public final class MessageBuilder {
   
   private TimeoutTask timeoutTask;
   
-  MessageBuilder(Activation activation, MessageTarget target) {
+  MessageBuilder(Activation activation) {
     this.activation = activation;
-    this.target = target;
   }
   
-  public MessageBuilder times(int copies) {
+  final MessageBuilder target(MessageTarget target) {
+    this.target = target;
+    return this;
+  }
+  
+  public final MessageBuilder times(int copies) {
     this.copies = copies;
     return this;
   }
   
-  public void tell(Object body) {
+  public final void tell(Object body) {
     for (int i = copies; --i >= 0;) {
       target.send(body, null);
     }
   }
   
-  public MessageBuilder ask(Object requestBody) {
+  public final MessageBuilder ask(Object requestBody) {
     this.requestBody = requestBody;
     return this;
   }
   
-  public MessageBuilder ask() {
+  public final MessageBuilder ask() {
     return ask(null);
   }
   
-  public MessageBuilder await(long timeoutMillis) {
+  public final MessageBuilder await(long timeoutMillis) {
     this.timeoutMillis = timeoutMillis;
     return this;
   }
   
-  public MessageBuilder onTimeout(Runnable onTimeout) {
+  public final MessageBuilder onTimeout(Runnable onTimeout) {
     this.onTimeout = onTimeout;
     return this;
   }
   
-  public MessageBuilder onFault(Consumer<Fault> onFault) {
+  public final MessageBuilder onFault(Consumer<Fault> onFault) {
     this.onFault = onFault;
     return this;
   }
   
-  public void onResponse(Consumer<Message> onResponse) {
+  public final void onResponse(Consumer<Message> onResponse) {
     if (timeoutMillis != 0 ^ onTimeout != null) {
       throw new IllegalArgumentException("Only one of the timeout time or handler has been set");
     }
@@ -87,11 +91,11 @@ public final class MessageBuilder {
     }
   }
   
-  TimeoutTask getTimeoutTask() {
+  final TimeoutTask getTimeoutTask() {
     return timeoutTask;
   }
   
-  public void tell() {
+  public final void tell() {
     tell(null);
   }
 }

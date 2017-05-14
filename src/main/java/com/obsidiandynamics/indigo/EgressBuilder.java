@@ -4,16 +4,27 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-public final class EgressBuilder<I, O> {
-  private final Activation activation;
+public final class EgressBuilder<I, O> extends MessageBuilder {
+  private Executor executor;
   
-  private final Function<I, CompletableFuture<O>> func;
-  
-  private boolean parallel = false;
+  private boolean parallel;
 
   EgressBuilder(Activation activation, Function<I, CompletableFuture<O>> func) {
-    this.activation = activation;
-    this.func = func;
+    super(activation);
+    serial().withCommonPool().target((body, requestId) -> {
+      activation.stashIfTransitioning();
+      if (parallel) {
+        // execute directly on the given executor, with the response going back as a message
+        // into the actor system
+        executor.execute(() -> processEgress(func, body, requestId));
+      } else {
+        // execute using an egress agent within the fundamental rules of an actor system (such
+        // full serialisation), but using the given executor (rather than the global executor)
+        final Consumer<Activation> agent = a -> processEgress(func, body, requestId);
+        final ActorRef egressRef = ActorRef.of(ActorRef.EGRESS, activation.ref.encode());
+        activation.system.send(new Message(activation.ref, egressRef, agent, null, false), executor);
+      }
+    });
   }
   
   /**
@@ -21,41 +32,48 @@ public final class EgressBuilder<I, O> {
    *  and always one-at-a-time with respect to the enqueuing actor.<br><br>
    *  
    *  This is the default execution mode. Use {@link #parallel()} to override.
+   *  
+   *  @return This builder instance for chaining.
    */
-  public void serial() {
+  public EgressBuilder<I, O> serial() {
     parallel = false;
+    return this;
   }
   
   /**
    *  Enables parallel execution, whereby tasks may be executed in parallel and in any order.
+   *  
+   *  @return This builder instance for chaining.
    */
-  public void parallel() {
+  public EgressBuilder<I, O> parallel() {
     parallel = true;
+    return this;
   }
   
-  public MessageBuilder withCommonPool() {
+  /**
+   *  Configures the egress to use the common {@link ForkJoinPool}.<br><br>
+   *  
+   *  This is the default behaviour. Use {@link #withExecutor(Executor)} to override.
+   *  
+   *  @return This builder instance for chaining.
+   */
+  public EgressBuilder<I, O> withCommonPool() {
     return withExecutor(ForkJoinPool.commonPool());
   }
 
-  public MessageBuilder withExecutor(Executor executor) {
-    return new MessageBuilder(activation, (body, requestId) -> {
-      activation.stashIfTransitioning();
-      if (parallel) {
-        // execute directly on the given executor, with the response going back as a message
-        // into the actor system
-        executor.execute(() -> processEgress(body, requestId));
-      } else {
-        // execute using an egress agent within the fundamental rules of an actor system (such
-        // full serialisation), but using the given executor (rather than the global executor)
-        final Consumer<Activation> agent = a -> processEgress(body, requestId);
-        final ActorRef egressRef = ActorRef.of(ActorRef.EGRESS, activation.ref.encode());
-        activation.system.send(new Message(activation.ref, egressRef, agent, null, false), executor);
-      }
-    });
+  /**
+   *  Configures the egress to use a given executor for scheduling the egress task.
+   *  
+   *  @param executor The executor to use.
+   *  @return This builder instance for chaining.
+   */
+  public EgressBuilder<I, O> withExecutor(Executor executor) {
+    this.executor = executor;
+    return this;
   }
   
   @SuppressWarnings("unchecked")
-  private void processEgress(Object body, UUID requestId) {
+  private void processEgress(Function<I, CompletableFuture<O>> func, Object body, UUID requestId) {
     final CompletableFuture<O> future;
     try {
       future = func.apply((I) body);
