@@ -64,7 +64,7 @@ public final class ActorSystem implements Endpoint {
   
   private void registerStandardActors() {
     on(INGRESS).cue(StatelessLambdaActor::agent);
-    on(EGRESS).withConfig(new ActorConfig() {{ bias = Integer.MAX_VALUE; }}).cue(BackgroundAgent::new);
+    on(EGRESS).withConfig(new ActorConfig() {{ bias = Integer.MAX_VALUE; }}).cue(EphemeralAgent::new);
   }
   
   private static ActorRef[] createIngressRefs(int ingressCount) {
