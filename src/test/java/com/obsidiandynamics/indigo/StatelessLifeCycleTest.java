@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class StatelessLifeCycleTest implements TestSupport {
   private static final int SCALE = 1;
   
@@ -151,5 +153,103 @@ public final class StatelessLifeCycleTest implements TestSupport {
       sequence.add(i);
     }
     return sequence;
+  }
+  
+  @Test
+  public void testPassivationRequestOnAsyncActivation() {
+    final AtomicBoolean activated = new AtomicBoolean();
+    final AtomicBoolean passivated = new AtomicBoolean();
+    
+    new TestActorSystemConfig() {}
+    .createActorSystem()
+    .on(TARGET)
+    .cue(StatelessLambdaActor
+         .builder()
+         .activated(a -> {
+           log("activating\n");
+           a.egress(() -> null)
+           .ask()
+           .onResponse(r -> {
+             activated.set(true);
+           });
+
+           a.passivate();
+         })
+         .act((a, m) -> {
+         })
+         .passivated(a -> {
+           log("passivating\n");
+           passivated.set(true);
+         }))
+    .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
+    .shutdownQuietly();
+    
+    assertTrue(activated.get());
+    assertTrue(passivated.get());
+  }
+  
+  @Test
+  public void testPassivationRequestOnAsyncAct() {
+    final AtomicBoolean responded = new AtomicBoolean();
+    final AtomicBoolean passivated = new AtomicBoolean();
+    
+    new TestActorSystemConfig() {}
+    .createActorSystem()
+    .on(TARGET)
+    .cue(StatelessLambdaActor
+         .builder()
+         .activated(a -> {
+           log("activating\n");
+         })
+         .act((a, m) -> {
+           log("act\n");
+           a.egress(() -> null)
+           .ask()
+           .onResponse(r -> {
+             responded.set(true);
+           });
+
+           a.passivate();
+         })
+         .passivated(a-> {
+           log("passivating\n");
+           passivated.set(true);
+         }))
+    .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
+    .shutdownQuietly();
+    
+    assertTrue(responded.get());
+    assertTrue(passivated.get());
+  }
+  
+  @Test
+  public void testPassivationRequestWhileStashing() {
+    final AtomicBoolean acted = new AtomicBoolean();
+    final AtomicBoolean passivated = new AtomicBoolean();
+    
+    new TestActorSystemConfig() {}
+    .createActorSystem()
+    .on(TARGET)
+    .cue(StatelessLambdaActor
+         .builder()
+         .activated(a -> {
+           log("activating\n");
+         })
+         .act((a, m) -> {
+           log("act\n");
+           acted.set(true);
+           a.stash(Functions::alwaysTrue);
+
+           a.passivate();
+         })
+         .passivated(a -> {
+           log("passivating\n");
+           passivated.set(true);
+         }))
+    .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
+    .shutdownQuietly();
+    
+    assertTrue(acted.get());
+    assertFalse(passivated.get());
   }
 }
