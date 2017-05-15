@@ -117,6 +117,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }};
     }}
     .createActorSystem()
+    .useExecutor(summary.stats.executor).named("summary-stats")
     .on(DRIVER).cue(DriverState::new, (a, m, s) -> {
       send(a, s.to, s, c, c.seedPairs, summary.stats);
     })
@@ -149,7 +150,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
         if (c.statsSync) {
           stats.samples.addValue(took);
         } else {
-          a.<Long>egress(stats.samples::addValue).withExecutor(stats.executor).tell(took);
+          a.<Long>egress(stats.samples::addValue).withExecutor("summary-stats").tell(took);
         }
       }
       

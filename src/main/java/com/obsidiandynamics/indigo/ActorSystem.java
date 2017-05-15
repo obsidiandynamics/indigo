@@ -7,11 +7,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
-import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.task.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ActorSystem implements Endpoint {
+  public static final String COMMON_EXECUTOR_NAME = "common";
+  
   /** When draining, the maximum number of yields before putting the thread to sleep. */ 
   private static final int DRAIN_MAX_YIELDS = 10_000;
   
@@ -43,6 +44,8 @@ public final class ActorSystem implements Endpoint {
   
   private final BlockingQueue<Fault> deadLetterQueue = new LinkedBlockingQueue<>();
   
+  private final Map<String, Executor> localExecutors = new HashMap<>();
+  
   private final ActorRef[] ingressRefs;
   
   private long nextActivationId = Crypto.machineRandom();
@@ -68,6 +71,7 @@ public final class ActorSystem implements Endpoint {
     ingressRefs = createIngressRefs(config.getIngressCount());
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     registerStandardActors();
+    registerStandardExecutors();
     timeoutScheduler.start();
     backgroundScheduler.start();
     reaper.init();
@@ -76,6 +80,10 @@ public final class ActorSystem implements Endpoint {
   private void registerStandardActors() {
     on(INGRESS).cue(StatelessLambdaActor::agent);
     on(EGRESS).cue(StatelessLambdaActor::ephemeralAgent);
+  }
+  
+  private void registerStandardExecutors() {
+    useExecutor(ForkJoinPool.commonPool()).named(COMMON_EXECUTOR_NAME);
   }
   
   private String getIdAsHex() {
@@ -101,75 +109,40 @@ public final class ActorSystem implements Endpoint {
   }
   
   public IngressBuilder ingress() {
-    return new IngressBuilder();
+    return new IngressBuilder(this);
   }
   
-  public final class IngressBuilder {
-    private int iterations = 1;
-    
-    public IngressBuilder times(int iterations) {
-      this.iterations = iterations;
-      return this;
-    }
-    
-    public ActorSystem act(Consumer<Activation> act) {
-      return act((a, i) -> act.accept(a));
-    }
-    
-    public ActorSystem act(BiConsumer<Activation, Integer> act) {
-      for (int i = 0; i < iterations; i++) {
-        final int _i = i;
-        ActorSystem.this.ingress(a -> act.accept(a, _i));
-      }
-      return ActorSystem.this;
+  void registerActor(String role, Supplier<? extends Actor> factory, ActorConfig actorConfig) {
+    final ActorSetup existing = setupRegistry.put(role, new ActorSetup(factory, actorConfig));
+    if (existing != null) {
+      setupRegistry.put(role, existing);
+      throw new DuplicateRoleException("Factory for actor of role " + role + " has already been registered");
     }
   }
   
-  public final class ActorBuilder {
-    private final String role;
-    private ActorConfig actorConfig = config.defaultActorConfig;
-    
-    ActorBuilder(String role) { 
-      this.role = role;
+  public final class LocalExecutorBuilder {
+    private final Executor executor;
+
+    LocalExecutorBuilder(Executor executor) {
+      this.executor = executor;
     }
     
-    public ActorBuilder withConfig(ActorConfig actorConfig) {
-      this.actorConfig = actorConfig;
-      return this;
-    }
-    
-    public ActorSystem cue(BiConsumer<Activation, Message> act) {
-      return cue(StatelessLambdaActor.builder().act(act)); 
-    }
-    
-    public <S> ActorSystem cue(Supplier<S> stateFactory, TriConsumer<Activation, Message, S> act) {
-      return cue(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.get())));
-    }
-    
-    public <S> ActorSystem cue(Function<Activation, S> stateFactory, TriConsumer<Activation, Message, S> act) {
-      return cue(StatefulLambdaActor.<S>builder().act(act).activated(a -> CompletableFuture.completedFuture(stateFactory.apply(a))));
-    }
-    
-    public <S> ActorSystem cueAsync(Function<Activation, CompletableFuture<S>> futureStateFactory, TriConsumer<Activation, Message, S> act) {
-      return cue(StatefulLambdaActor.<S>builder().act(act).activated(futureStateFactory));
-    }
-    
-    public ActorSystem cue(Supplier<? extends Actor> factory) {
-      register(role, factory, actorConfig);
-      return ActorSystem.this;
-    }
-    
-    private void register(String role, Supplier<? extends Actor> factory, ActorConfig actorConfig) {
-      final ActorSetup existing = setupRegistry.put(role, new ActorSetup(factory, actorConfig));
+    public ActorSystem named(String name) {
+      final Executor existing = localExecutors.put(name, executor);
       if (existing != null) {
-        setupRegistry.put(role, existing);
-        throw new DuplicateRoleException("Factory for actor of role " + role + " has already been registered");
+        localExecutors.put(name, existing);
+        throw new DuplicateExecutorException("Executor named " + name + " has already been registered");
       }
+      return ActorSystem.this;
     }
+  }
+  
+  public LocalExecutorBuilder useExecutor(Executor executor) {
+    return new LocalExecutorBuilder(executor);
   }
   
   public ActorBuilder on(String role) {
-    return new ActorBuilder(role);
+    return new ActorBuilder(this, role);
   }
   
   @Override
@@ -177,7 +150,9 @@ public final class ActorSystem implements Endpoint {
     send(message, null);
   }
   
-  void send(Message message, Executor preferredExecutor) {
+  void send(Message message, String preferredExecutorName) {
+    final Executor preferredExecutor = preferredExecutorName != null ? getNamedExecutor(preferredExecutorName) : null;
+    
     for (;;) {
       final Activation a = activate(message.to(), preferredExecutor);
       if (a.enqueue(message)) {
@@ -188,8 +163,12 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
-  Executor getGlobalExecutor() {
-    return globalExecutor;
+  Executor getNamedExecutor(String name) {
+    final Executor executor = localExecutors.get(name);
+    if (executor == null) {
+      throw new NoSuchExecutorException("No executor for name " + name);
+    }
+    return executor;
   }
   
   public void tell(ActorRef ref) {
@@ -362,7 +341,7 @@ public final class ActorSystem implements Endpoint {
   private void checkUncaughtExceptions() {
     if (! errors.isEmpty()) {
       final List<Throwable> errorsReturn = new ArrayList<>(errors.size());
-      while (! errors.isEmpty()) {
+      for (;;) {
         final Throwable error = errors.poll();
         if (error != null) {
           errorsReturn.add(error);

@@ -43,12 +43,13 @@ public final class FaultTest implements TestSupport {
     final ExecutorService external = Executors.newSingleThreadExecutor();
     final ActorSystem system = system(1)
     .createActorSystem()
+    .useExecutor(external).named("ext")
     .on(SINK)
     .cue(StatelessLambdaActor.builder()
          .activated(a -> {
            log("activating\n");
            a.egress(() -> null)
-           .withExecutor(external)
+           .withExecutor("ext")
            .await(60_000).onTimeout(() -> {
              log("egress timed out\n");
              fail("egress timed out");
@@ -141,6 +142,7 @@ public final class FaultTest implements TestSupport {
 
     final ActorSystem system = system(actorBias)
     .createActorSystem()
+    .useExecutor(external).named("ext")
     .on(SINK)
     .cue(StatelessLambdaActor.builder()
          .activated(a -> {
@@ -157,7 +159,7 @@ public final class FaultTest implements TestSupport {
                }
                
                a.egress(() -> null)
-               .withExecutor(external)
+               .withExecutor("ext")
                .await(1).onTimeout(() -> {
                  log("egress timed out\n");
                  fail("egress timed out");
@@ -323,6 +325,7 @@ public final class FaultTest implements TestSupport {
 
     final ActorSystem system = system(actorBias)
     .createActorSystem()
+    .useExecutor(external).named("ext")
     .on(SINK)
     .cue(StatelessLambdaActor.builder()
          .activated(a -> {
@@ -344,7 +347,7 @@ public final class FaultTest implements TestSupport {
                passivationFailed.set(true);
                
                a.egress(() -> null)
-               .withExecutor(external)
+               .withExecutor("ext")
                .await(60_000).onTimeout(() -> {
                  log("egress timed out\n");
                  fail("egress timed out");
@@ -411,6 +414,7 @@ public final class FaultTest implements TestSupport {
     
     final ActorSystem system = system(actorBias)
     .createActorSystem()
+    .useExecutor(external).named("ext")
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
@@ -418,7 +422,7 @@ public final class FaultTest implements TestSupport {
         d.trace("egress %d", i);
         throw new TestException("Fault in egress");
       }), parallel)
-      .withExecutor(external)
+      .withExecutor("ext")
       .await(60_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");
@@ -466,6 +470,7 @@ public final class FaultTest implements TestSupport {
     
     final ActorSystem system = system(actorBias)
     .createActorSystem()
+    .useExecutor(external).named("ext")
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
@@ -475,7 +480,7 @@ public final class FaultTest implements TestSupport {
         future.completeExceptionally(new TestException("Fault in async egress"));
         return future;
       }), parallel)
-      .withExecutor(external)
+      .withExecutor("ext")
       .await(60_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");
@@ -518,6 +523,7 @@ public final class FaultTest implements TestSupport {
     
     final ActorSystem system = system(actorBias)
     .createActorSystem()
+    .useExecutor(external).named("ext")
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
@@ -526,7 +532,7 @@ public final class FaultTest implements TestSupport {
         faults.incrementAndGet();
         throw new TestException("Fault in egress");
       })
-      .withExecutor(external)
+      .withExecutor("ext")
       .tell();
     });
     
@@ -726,7 +732,7 @@ public final class FaultTest implements TestSupport {
   private void syncOrAsync(Activation a, Executor external, boolean async, Runnable run) {
     if (async) {
       a.egress(() -> null)
-      .withExecutor(external)
+      .withExecutor("ext")
       .await(60_000).onTimeout(() -> {
         log("egress timed out\n");
         fail("egress timed out");

@@ -133,6 +133,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       }};
     }}
     .createActorSystem()
+    .useExecutor(summary.stats.executor).named("summary-stats")
     .on(DRIVER).cue(DriverState::new, (a, m, s) -> {
       switch (m.from().role()) {
         case ECHO:
@@ -176,7 +177,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
         if (c.statsSync) {
           summary.stats.samples.addValue(took);
         } else {
-          a.<Long>egress(summary.stats.samples::addValue).withExecutor(summary.stats.executor).tell(took);
+          a.<Long>egress(summary.stats.samples::addValue).withExecutor("summary-stats").tell(took);
         }
       }
       a.send(s.blank);

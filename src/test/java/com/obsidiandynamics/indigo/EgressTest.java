@@ -43,12 +43,14 @@ public final class EgressTest implements TestSupport {
   private void testFunction(int actors, int runs, boolean parallel) throws InterruptedException {
     final Set<ActorRef> doneRuns = new HashSet<>();
     
-    system.on(DRIVER).cue(IntegerState::new, (a, m, s) -> {
+    system
+    .useExecutor(EXECUTOR).named("custom")
+    .on(DRIVER).cue(IntegerState::new, (a, m, s) -> {
       egressMode(a.<Integer, Integer>egress(in -> {
         assertEquals(EXTERNAL, Thread.currentThread().getName());
         return in + 1; 
       }), parallel)
-      .withExecutor(EXECUTOR)
+      .withExecutor("custom")
       .ask(s.value).onResponse(r -> {
         assertFalse("Driven by an external thread", Thread.currentThread().getName().equals(EXTERNAL));
         
@@ -86,9 +88,11 @@ public final class EgressTest implements TestSupport {
   private void testConsumer(int runs, boolean parallel) throws InterruptedException {
     final Set<Integer> received = new CopyOnWriteArraySet<>();
     
-    system.ingress().times(runs).act((a, i) -> {
+    system
+    .useExecutor(EXECUTOR).named("custom")
+    .ingress().times(runs).act((a, i) -> {
       egressMode(a.<Integer>egress(in -> received.add(in)), parallel)
-      .withExecutor(EXECUTOR)
+      .withExecutor("custom")
       .ask(i)
       .onResponse(r -> assertNull(r.body()));
     })
@@ -110,9 +114,11 @@ public final class EgressTest implements TestSupport {
   private void testRunnableAsk(int runs, boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
     
-    system.ingress().times(runs).act((a, i) -> {
+    system
+    .useExecutor(EXECUTOR).named("custom")
+    .ingress().times(runs).act((a, i) -> {
       egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
-      .withExecutor(EXECUTOR)
+      .withExecutor("custom")
       .ask()
       .onResponse(r -> assertNull(r.body()));
     })
@@ -134,9 +140,11 @@ public final class EgressTest implements TestSupport {
   private void testRunnableTell(int runs, boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
     
-    system.ingress().times(runs).act((a, i) -> {
+    system
+    .useExecutor(EXECUTOR).named("custom")
+    .ingress().times(runs).act((a, i) -> {
       egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
-      .withExecutor(EXECUTOR)
+      .withExecutor("custom")
       .tell();
     })
     .drain(0);
@@ -159,9 +167,11 @@ public final class EgressTest implements TestSupport {
     final AtomicInteger received = new AtomicInteger();
 
     system.getConfig().exceptionHandler = DRAIN;
-    system.ingress(a -> {
+    system
+    .useExecutor(EXECUTOR).named("custom")
+    .ingress(a -> {
       egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
-      .withExecutor(EXECUTOR)
+      .withExecutor("custom")
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
       .onResponse(r -> assertNull(r.body()));
@@ -191,9 +201,11 @@ public final class EgressTest implements TestSupport {
   private void testSupplier(int runs, boolean parallel) throws InterruptedException {
     final AtomicInteger received = new AtomicInteger();
     
-    system.ingress().times(runs).act((a, i) -> {
+    system
+    .useExecutor(EXECUTOR).named("custom")
+    .ingress().times(runs).act((a, i) -> {
       egressMode(a.egress(() -> received.incrementAndGet()), parallel)
-      .withExecutor(EXECUTOR)
+      .withExecutor("custom")
       .ask()
       .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
     })
@@ -250,9 +262,11 @@ public final class EgressTest implements TestSupport {
     final AtomicInteger received = new AtomicInteger();
 
     system.getConfig().exceptionHandler = DRAIN;
-    system.ingress(a -> {
+    system
+    .useExecutor(EXECUTOR).named("custom")
+    .ingress(a -> {
       egressMode(a.egress(() -> received.incrementAndGet()), parallel)
-      .withExecutor(EXECUTOR)
+      .withExecutor("custom")
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
       .onResponse(r -> assertNull(r.body()));

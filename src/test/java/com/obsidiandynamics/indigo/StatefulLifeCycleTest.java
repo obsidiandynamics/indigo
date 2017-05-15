@@ -74,6 +74,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
       }};
     }}
     .createActorSystem()
+    .useExecutor(external).named("ext")
     .on(TARGET)
     .cue(StatefulLambdaActor
          .<IntegerState>builder()
@@ -102,7 +103,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
            
            if (async) {
              a.egress(() -> db.get(a.self()))
-             .withExecutor(external)
+             .withExecutor("ext")
              .ask()
              .onResponse(r -> activator.accept(r.body()));
            } else {
@@ -146,7 +147,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
            
            if (async) {
              a.egress(() -> db.put(a.self(), s))
-             .withExecutor(external)
+             .withExecutor("ext")
              .ask()
              .onResponse(r -> passivator.run());
            } else {

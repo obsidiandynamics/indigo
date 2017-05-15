@@ -6,7 +6,6 @@ import java.util.concurrent.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.util.JvmVersionProvider.*;
 
 public final class ActorSystemConfigTest implements TestSupport {
