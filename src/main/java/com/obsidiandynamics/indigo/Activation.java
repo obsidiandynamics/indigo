@@ -31,7 +31,7 @@ public abstract class Activation {
   
   private boolean passivationScheduled;
   
-  private long requestCounter = Crypto.machineRandom();
+  private long requestCounter;
   
   private Object faultReason;
   
@@ -76,6 +76,10 @@ public abstract class Activation {
   }
   
   final long getAndIncrementRequestCounter() {
+    if (requestCounter == 0) {
+      // lazy assignment of the request counter's initial value
+      requestCounter = Crypto.machineRandom();
+    }
     return requestCounter++;
   }
   
