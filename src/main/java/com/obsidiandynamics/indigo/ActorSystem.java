@@ -226,42 +226,32 @@ public final class ActorSystem implements Endpoint {
     final CompletableFuture<T> future = new CompletableFuture<>();
     
     final AtomicBoolean taskRegion = new AtomicBoolean();
-    final AtomicReference<TimeoutTask> timeoutTaskHolder = new AtomicReference<>();
+    final AwaitableAtomicReference<TimeoutTask> timeoutTaskHolder = new AwaitableAtomicReference<>();
     ingress(a -> {
       if (taskRegion.compareAndSet(false, true)) {
-        if (! future.isCancelled()) {
-          final MessageBuilder mb = a.to(ref);
-          mb.ask(requestBody).await(timeoutMillisUpperBound)
-          .onTimeout(() -> future.completeExceptionally(new TimeoutException()))
-          .onFault(f -> {
-            if (f.getReason() instanceof Throwable) {
-              future.completeExceptionally(f.getReason());
-            } else {
-              future.completeExceptionally(new FaultException(f.getReason()));
-            }
-          })
-          .onResponse(r -> future.complete(r.body()));
-          timeoutTaskHolder.set(mb.getTimeoutTask());
-        } else {
-          timeoutTaskHolder.set(CANCELLED);
-        }
+        final MessageBuilder mb = a.to(ref);
+        mb.ask(requestBody).await(timeoutMillisUpperBound)
+        .onTimeout(() -> future.completeExceptionally(new TimeoutException()))
+        .onFault(f -> {
+          if (f.getReason() instanceof Throwable) {
+            future.completeExceptionally(f.getReason());
+          } else {
+            future.completeExceptionally(new FaultException(f.getReason()));
+          }
+        })
+        .onResponse(r -> future.complete(r.body()));
+        timeoutTaskHolder.set(mb.getTimeoutTask());
       }
     });
     
     future.whenComplete((t, x) -> {
       if (future.isCancelled()) {
         if (! taskRegion.compareAndSet(false, true)) {
-          for (;;) {
-            final TimeoutTask task = timeoutTaskHolder.get();
-            if (task != null) {
-              // by forcing timeout, the pending task is removed from the ingress actor; calling this
-              // a second (and subsequent) times has no further effect
-              timeoutScheduler.executeNow(task);
-              return;
-            } else {
-              Thread.yield();
-            }
-          }
+          final TimeoutTask task = timeoutTaskHolder.awaitThenGet();
+          // by forcing timeout, the pending task is removed from the ingress actor; calling this
+          // a second (and subsequent) times has no further effect
+          timeoutScheduler.executeNow(task);
+          return;
         } else {
           timeoutTaskHolder.set(CANCELLED);
         }
