@@ -21,14 +21,6 @@ final class TimeoutTask extends Task<UUID> {
     this.endpoint = endpoint;
   }
   
-  ActorRef getActorRef() {
-    return actorRef;
-  }
-  
-  PendingRequest getRequest() {
-    return request;
-  }
-
   @Override
   protected void execute() {
     endpoint.send(new Message(null, actorRef, TIMEOUT_SIGNAL, getId(), true));

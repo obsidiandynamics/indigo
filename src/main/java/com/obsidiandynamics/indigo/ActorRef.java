@@ -46,8 +46,8 @@ public final class ActorRef {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
+    result = prime * result + role.hashCode();
     result = prime * result + ((key == null) ? 0 : key.hashCode());
-    result = prime * result + ((role == null) ? 0 : role.hashCode());
     return result;
   }
 
@@ -65,10 +65,7 @@ public final class ActorRef {
         return false;
     } else if (!key.equals(other.key))
       return false;
-    if (role == null) {
-      if (other.role != null)
-        return false;
-    } else if (!role.equals(other.role))
+    if (!role.equals(other.role))
       return false;
     return true;
   }

@@ -35,6 +35,8 @@ public final class ActorSystem implements Endpoint {
   
   private final TaskScheduler timeoutScheduler = new TaskScheduler("TimeoutScheduler-" + Long.toHexString(systemId));
   
+  private final TaskScheduler backgroundScheduler = new TaskScheduler("BackgroundScheduler-" + Long.toHexString(systemId));
+  
   private final BlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
   
   private final BlockingQueue<Fault> deadLetterQueue = new LinkedBlockingQueue<>();
@@ -426,6 +428,8 @@ public final class ActorSystem implements Endpoint {
     }
     timeoutScheduler.forceExecute();
     timeoutScheduler.terminate();
+    backgroundScheduler.forceExecute();
+    backgroundScheduler.terminate();
     globalExecutor.shutdown();
     running = false;
   }
@@ -433,6 +437,7 @@ public final class ActorSystem implements Endpoint {
   void terminate() {
     running = false;
     timeoutScheduler.terminate();
+    backgroundScheduler.terminate();
     globalExecutor.shutdownNow();
   }
   

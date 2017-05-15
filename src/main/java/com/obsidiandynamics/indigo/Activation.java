@@ -223,7 +223,7 @@ public abstract class Activation {
   }
   
   protected final void passivateIfScheduled() {
-    if (passivationScheduled && state == ACTIVATED && pending.isEmpty() && (stash == null || stash.messages.isEmpty())) {
+    if (passivationScheduled && state == ACTIVATED && pending.isEmpty() && stash == null) {
       assert diagnostics().traceMacro("A.passivateIfScheduled: passivating ref=%s", ref);
       
       passivationScheduled = false;

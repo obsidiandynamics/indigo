@@ -20,6 +20,42 @@ public class ActorRefTest {
   }
   
   @Test
+  public void testEqualsSame() {
+    final ActorRef ref = ActorRef.of("foo");
+    assertTrue(ref.equals(ref));
+  }
+  
+  @Test
+  public void testEqualsNull() {
+    assertFalse(ActorRef.of("foo").equals(null));
+  }
+  
+  @Test
+  public void testEqualsWrongType() {
+    assertFalse(ActorRef.of("foo").equals(3));
+  }
+  
+  @Test
+  public void testEqualsWrongRole() {
+    assertFalse(ActorRef.of("foo").equals(ActorRef.of("oof")));
+  }
+  
+  @Test
+  public void testEqualThisNullKey() {
+    assertFalse(ActorRef.of("foo").equals(ActorRef.of("foo", "bar")));
+  }
+  
+  @Test
+  public void testEqualsOtherNullKey() {
+    assertFalse(ActorRef.of("foo", "bar").equals(ActorRef.of("foo")));
+  }
+  
+  @Test
+  public void testEqualsWrongKey() {
+    assertFalse(ActorRef.of("foo", "bar").equals(ActorRef.of("foo", "baz")));
+  }
+  
+  @Test
   public void testEncodeRoleOnly() {
     assertEquals("foo", ActorRef.of("foo").encode()); 
   }
