@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.task.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public class ToStringTest {
@@ -19,7 +20,10 @@ public class ToStringTest {
     assertToString(new Activation(0, null, null, null, null) {
       @Override public boolean enqueue(Message m, Executor x) { return false; }
     });
-    assertToString(new TimeoutTask(0, null, null, null));
+    assertToString(new TimeoutTask(0, null, null, null, null));
+    assertToString(new Task<Integer>(0, null) {
+      @Override protected void execute() {}
+    });
     assertToString(new Fault(null, null, null));
     assertToString(new Diagnostics.LogEntry("test %d, %d %d", 1, 2, 3));
     assertToString(new Integral64.Sum());

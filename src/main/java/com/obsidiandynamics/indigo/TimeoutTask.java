@@ -2,31 +2,25 @@ package com.obsidiandynamics.indigo;
 
 import java.util.*;
 
-final class TimeoutTask {
-  /** The expiry time, in absolute nanoseconds. See {@link System.nanoTime()}. */
-  private final long expiresAt;
-  
-  private final UUID requestId;
+import com.obsidiandynamics.indigo.task.*;
+
+final class TimeoutTask extends Task<UUID> {
+  /** A pre-instantiated timeout signal (all timeout signals are the same). */
+  private static final Timeout TIMEOUT_SIGNAL = new Timeout();
   
   private final ActorRef actorRef;
   
   private final PendingRequest request;
+  
+  private final Endpoint endpoint;
 
-  TimeoutTask(long expiresAt, UUID requestId, ActorRef actorRef, PendingRequest request) {
-    this.expiresAt = expiresAt;
-    this.requestId = requestId;
+  TimeoutTask(long expiresAt, UUID requestId, ActorRef actorRef, PendingRequest request, Endpoint endpoint) {
+    super(expiresAt, requestId);
     this.actorRef = actorRef;
     this.request = request;
+    this.endpoint = endpoint;
   }
   
-  long getExpiresAt() {
-    return expiresAt;
-  }
-
-  UUID getRequestId() {
-    return requestId;
-  }
-
   ActorRef getActorRef() {
     return actorRef;
   }
@@ -34,15 +28,15 @@ final class TimeoutTask {
   PendingRequest getRequest() {
     return request;
   }
-  
-  static int byExpiry(TimeoutTask t1, TimeoutTask t2) {
-    final int expiresComp = Long.compare(t1.expiresAt, t2.expiresAt);
-    return expiresComp != 0 ? expiresComp : t1.requestId.compareTo(t2.requestId);
-  }
 
   @Override
+  protected void execute() {
+    endpoint.send(new Message(null, actorRef, TIMEOUT_SIGNAL, getId(), true));
+  }
+  
+  @Override
   public String toString() {
-    return "TimeoutTask [expiresAt=" + expiresAt + ", requestId=" + requestId + ", actorRef=" + actorRef
+    return "TimeoutTask [time=" + getTime() + ", id=" + getId() + ", actorRef=" + actorRef
            + ", request=" + request + "]";
   }
 }

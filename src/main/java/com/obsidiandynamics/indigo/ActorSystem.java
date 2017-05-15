@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
+import com.obsidiandynamics.indigo.task.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ActorSystem implements Endpoint {
@@ -18,7 +19,9 @@ public final class ActorSystem implements Endpoint {
   private static final long DRAIN_SLEEP_MILLIS = 1;
   
   /** A symbol for a task that's been cancelled. */
-  private static final TimeoutTask CANCELLED = new TimeoutTask(0, new UUID(0, 0), null, null);
+  private static final TimeoutTask CANCELLED = new TimeoutTask(0, new UUID(0, 0), null, null, null);
+  
+  private final long systemId = Crypto.machineRandom();
   
   private final ActorSystemConfig config;
   
@@ -30,7 +33,7 @@ public final class ActorSystem implements Endpoint {
   
   private final Integral64 busyActors = new Integral64.TripleStriped();
   
-  private final TimeoutWatchdog timeoutWatchdog = new TimeoutWatchdog(this);
+  private final TaskScheduler timeoutScheduler = new TaskScheduler("TimeoutScheduler-" + Long.toHexString(systemId));
   
   private final BlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
   
@@ -55,11 +58,11 @@ public final class ActorSystem implements Endpoint {
     config.init();
     this.config = config;
     globalExecutor = config.executor.apply(new ExecutorParams(config.getParallelism(),
-                                                        new JvmVersionProvider.DefaultProvider().get()));
+                                                              new JvmVersionProvider.DefaultProvider().get()));
     ingressRefs = createIngressRefs(config.getIngressCount());
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     registerStandardActors();
-    timeoutWatchdog.start();
+    timeoutScheduler.start();
   }
   
   private void registerStandardActors() {
@@ -251,7 +254,7 @@ public final class ActorSystem implements Endpoint {
             if (task != null) {
               // by forcing timeout, the pending task is removed from the ingress actor; calling this
               // a second (and subsequent) times has no further effect
-              timeoutWatchdog.timeout(task);
+              timeoutScheduler.executeNow(task);
               return;
             } else {
               Thread.yield();
@@ -302,7 +305,7 @@ public final class ActorSystem implements Endpoint {
    *  messages enqueued after this call.
    */
   public void forceTimeout() {
-    timeoutWatchdog.forceTimeout();
+    timeoutScheduler.forceExecute();
   }
   
   /**
@@ -386,8 +389,8 @@ public final class ActorSystem implements Endpoint {
     activations.remove(ref);
   }
   
-  TimeoutWatchdog getTimeoutWatchdog() {
-    return timeoutWatchdog;
+  TaskScheduler getTimeoutScheduler() {
+    return timeoutScheduler;
   }
   
   private Activation createActivation(ActorRef ref) {
@@ -421,15 +424,15 @@ public final class ActorSystem implements Endpoint {
       drain(0);
       break;
     }
-    timeoutWatchdog.forceTimeout();
-    timeoutWatchdog.terminate();
+    timeoutScheduler.forceExecute();
+    timeoutScheduler.terminate();
     globalExecutor.shutdown();
     running = false;
   }
   
   void terminate() {
     running = false;
-    timeoutWatchdog.terminate();
+    timeoutScheduler.terminate();
     globalExecutor.shutdownNow();
   }
   

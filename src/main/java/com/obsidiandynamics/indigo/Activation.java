@@ -156,7 +156,7 @@ public abstract class Activation {
   
   private void cancelTimeout(PendingRequest req) {
     if (req.getTimeoutTask() != null) {
-      system.getTimeoutWatchdog().abort(req.getTimeoutTask());
+      system.getTimeoutScheduler().abort(req.getTimeoutTask());
     }
   }
   

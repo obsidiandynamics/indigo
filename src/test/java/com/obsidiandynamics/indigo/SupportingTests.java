@@ -4,6 +4,7 @@ import org.junit.runner.*;
 import org.junit.runners.*;
 import org.junit.runners.Suite.*;
 
+import com.obsidiandynamics.indigo.task.*;
 import com.obsidiandynamics.indigo.util.*;
 
 @RunWith(Suite.class)
@@ -16,8 +17,8 @@ import com.obsidiandynamics.indigo.util.*;
   MessageBuilderTest.class,
   StatefulLambdaActorBuilderTest.class,
   StatelessLambdaActorBuilderTest.class,
+  TaskSchedulerTest.class,
   ThreadsTest.class,
-  TimeoutWatchdogTest.class,
   ToStringTest.class,
   UtilConformanceTest.class
 })         
