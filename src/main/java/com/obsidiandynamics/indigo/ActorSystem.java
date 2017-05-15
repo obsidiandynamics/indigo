@@ -389,6 +389,10 @@ public final class ActorSystem implements Endpoint {
     return timeoutScheduler;
   }
   
+  TaskScheduler getBackgroundScheduler() {
+    return backgroundScheduler;
+  }
+  
   private Activation createActivation(ActorRef ref) {
     final ActorSetup setup = setupRegistry.get(ref.role());
     if (setup == null) throw new NoSuchRoleException("No setup for actor of role " + ref.role());

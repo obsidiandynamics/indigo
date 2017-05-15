@@ -20,6 +20,7 @@ public class ActorSystemConfig {
     public static final String EXECUTOR = "indigo.system.executor";
     public static final String EXCEPTION_HANDLER = "indigo.system.exceptionHandler";
     public static final String DEAD_LETTER_QUEUE_SIZE = "indigo.system.deadLetterQueueSize";
+    public static final String REAPER_PERIOD_MILLIS = "indigo.system.reaperPeriodMillis";
     private Key() {}
   }
   
@@ -88,6 +89,9 @@ public class ActorSystemConfig {
   
   /** Upper bound on the size of the DQL. Beyond this, truncation from the head (least recent) occurs. */
   public int deadLetterQueueSize = get(DEAD_LETTER_QUEUE_SIZE, Integer::parseInt, 10_000);
+  
+  /** The number of milliseconds to wait between each successive reaper run. */
+  public int reaperPeriodMillis = get(REAPER_PERIOD_MILLIS, Integer::parseInt, 10_000);
   
   /** In-memory diagnostics. */
   public Diagnostics diagnostics = new Diagnostics() {};
