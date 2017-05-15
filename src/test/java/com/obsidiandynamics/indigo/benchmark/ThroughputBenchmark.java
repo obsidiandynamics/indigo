@@ -66,6 +66,7 @@ public final class ThroughputBenchmark implements TestSupport {
         executor = c.executorChoice;
       }
       parallelism = c.threads;
+      reaperPeriodMillis = 0;
       defaultActorConfig = new ActorConfig() {{
         bias = c.bias;
         backlogThrottleCapacity = Integer.MAX_VALUE;
