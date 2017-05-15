@@ -21,7 +21,7 @@ public final class ActorSystem implements Endpoint {
   /** A symbol for a task that's been cancelled. */
   private static final TimeoutTask CANCELLED = new TimeoutTask(0, new UUID(0, 0), null, null, null);
   
-  private final long systemId = Crypto.machineRandom();
+  private final long id = Crypto.machineRandom();
   
   private final ActorSystemConfig config;
   
@@ -33,9 +33,9 @@ public final class ActorSystem implements Endpoint {
   
   private final Integral64 busyActors = new Integral64.TripleStriped();
   
-  private final TaskScheduler timeoutScheduler = new TaskScheduler("TimeoutScheduler-" + Long.toHexString(systemId));
+  private final TaskScheduler timeoutScheduler = new TaskScheduler("TimeoutScheduler-" + getIdAsHex());
   
-  private final TaskScheduler backgroundScheduler = new TaskScheduler("BackgroundScheduler-" + Long.toHexString(systemId));
+  private final TaskScheduler backgroundScheduler = new TaskScheduler("BackgroundScheduler-" + getIdAsHex());
   
   private final BlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
   
@@ -70,6 +70,10 @@ public final class ActorSystem implements Endpoint {
   private void registerStandardActors() {
     on(INGRESS).cue(StatelessLambdaActor::agent);
     on(EGRESS).cue(StatelessLambdaActor::ephemeralAgent);
+  }
+  
+  private String getIdAsHex() {
+    return Long.toHexString(id);
   }
   
   private static ActorRef[] createIngressRefs(int ingressCount) {
