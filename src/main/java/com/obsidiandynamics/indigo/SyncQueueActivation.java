@@ -14,12 +14,12 @@ final class SyncQueueActivation extends Activation {
   
   private boolean disposed;
   
-  public SyncQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
-    super(id, ref, system, actorConfig, actor);
+  public SyncQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
+    super(id, ref, system, actorConfig, actor, executor);
   }
   
   @Override
-  boolean enqueue(Message m, Executor x) {
+  boolean enqueue(Message m) {
     assert diagnostics().traceMacro("SQA.enqueue: m=%s", m);
     
     boolean throttledOnce = false;
@@ -54,14 +54,14 @@ final class SyncQueueActivation extends Activation {
       
       if (noBacklog) {
         assert diagnostics().traceMacro("SQA.enqueue: scheduling m=%s", m);
-        dispatch(x, () -> run(x));
+        dispatch(this::run);
       }
       
       return true;
     }
   }
   
-  private void run(Executor x) {
+  private void run() {
     assert diagnostics().traceMacro("SQA.run: ref=%s", ref);
     final Message[] messages;
     final int backlogSize;
@@ -107,7 +107,7 @@ final class SyncQueueActivation extends Activation {
       }
     } else {
       assert diagnostics().traceMacro("SQA.run: scheduling, ref=%s", ref);
-      dispatch(x, () -> run(x));
+      dispatch(this::run);
     }
   }
   

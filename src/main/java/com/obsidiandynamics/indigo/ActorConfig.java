@@ -5,6 +5,7 @@ import static com.obsidiandynamics.indigo.ActorConfig.Key.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
+import java.util.concurrent.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
@@ -41,8 +42,9 @@ public class ActorConfig {
     
     private final ActivationFactory factory;
     private ActivationChoice(ActivationFactory factory) { this.factory = factory; }
-    @Override public Activation create(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
-      return factory.create(id, ref, system, actorConfig, actor);
+    @Override public Activation create(long id, ActorRef ref, ActorSystem system, 
+                                       ActorConfig actorConfig, Actor actor, Executor executor) {
+      return factory.create(id, ref, system, actorConfig, actor, executor);
     }
   }
   

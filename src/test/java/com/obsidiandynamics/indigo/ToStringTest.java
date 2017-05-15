@@ -3,7 +3,6 @@ package com.obsidiandynamics.indigo;
 import static org.junit.Assert.*;
 
 import java.util.*;
-import java.util.concurrent.*;
 
 import org.junit.*;
 
@@ -17,8 +16,8 @@ public class ToStringTest {
     assertToString(new Message(null, null, null, new UUID(0, 0), false));
     assertToString(ActorRef.of("role"));
     assertToString(ActorRef.of("role", "key"));
-    assertToString(new Activation(0, null, null, null, null) {
-      @Override public boolean enqueue(Message m, Executor x) { return false; }
+    assertToString(new Activation(0, null, null, null, null, null) {
+      @Override public boolean enqueue(Message m) { return false; }
     });
     assertToString(new TimeoutTask(0, null, null, null, null));
     assertToString(new Task<Integer>(0, null) {

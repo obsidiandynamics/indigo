@@ -34,13 +34,13 @@ final class NodeQueueActivation extends Activation {
   
   private final AtomicInteger backlogSize;
 
-  public NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
-    super(id, ref, system, actorConfig, actor);
+  public NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
+    super(id, ref, system, actorConfig, actor, executor);
     backlogSize = actorConfig.backlogThrottleCapacity != Integer.MAX_VALUE ? new AtomicInteger() : null;
   }
 
   @Override
-  boolean enqueue(Message m, Executor x) {
+  boolean enqueue(Message m) {
     assert diagnostics().traceMacro("NQA.enqueue: m=%s", m);
 
     if (! m.isResponse() && shouldThrottle()) {
@@ -66,7 +66,7 @@ final class NodeQueueActivation extends Activation {
         system.incBusyActors();
       }
       assert diagnostics().traceMacro("NQA.enqueue: scheduling m=%s", m);
-      scheduleRunStart(t, x);
+      scheduleRunStart(t);
     } else {
       t1.lazySet(t);
     }
@@ -86,12 +86,12 @@ final class NodeQueueActivation extends Activation {
     }
   }
 
-  private void scheduleRunStart(Node n, Executor x) {
-    dispatch(x, () -> run(n, x, false));
+  private void scheduleRunStart(Node n) {
+    dispatch(() -> run(n, false));
   }
   
-  private void scheduleRunContinue(Node n, Executor x) {
-    dispatch(x, () -> run(n, x, true));
+  private void scheduleRunContinue(Node n) {
+    dispatch(() -> run(n, true));
   }
 
   private boolean park(Node n) {
@@ -120,7 +120,7 @@ final class NodeQueueActivation extends Activation {
     return parked;
   }
 
-  private void run(Node h, Executor x, boolean skipCurrent) {
+  private void run(Node h, boolean skipCurrent) {
     assert diagnostics().traceMacro("NQA.run: h.m=%s, skipCurrent=%b", h.m, skipCurrent);
 
     Node head = h;
@@ -144,7 +144,7 @@ final class NodeQueueActivation extends Activation {
             yields = 0;
           } else {
             assert diagnostics().traceMacro("NQA.run: scheduling ref=%s", ref);
-            scheduleRunStart(h1, x);
+            scheduleRunStart(h1);
             return;
           }
         } else if (! attemptedPark) {
@@ -158,7 +158,7 @@ final class NodeQueueActivation extends Activation {
           Thread.yield();
           yields++;
         } else {
-          scheduleRunContinue(head, x);
+          scheduleRunContinue(head);
           return;
         }
       }

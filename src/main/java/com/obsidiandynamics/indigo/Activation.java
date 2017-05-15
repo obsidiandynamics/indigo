@@ -20,6 +20,8 @@ public abstract class Activation {
   
   private final Actor actor;
   
+  private final Executor executor;
+  
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
   /** Current state of the activation. */
@@ -35,15 +37,16 @@ public abstract class Activation {
   
   private Message activatingMessage;
   
-  protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor) {
+  protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
     this.id = id;
     this.ref = ref;
     this.system = system;
     this.actorConfig = actorConfig;
     this.actor = actor;
+    this.executor = executor;
   }
   
-  abstract boolean enqueue(Message m, Executor x);
+  abstract boolean enqueue(Message m);
   
   final void init() {
     if (actorConfig.reapTimeoutMillis != 0) {
@@ -57,12 +60,8 @@ public abstract class Activation {
     }
   }
   
-  final Executor getPreferredExecutor() {
-    return system.getGlobalExecutor();
-  }
-  
-  protected final void dispatch(Executor x, Runnable r) {
-    x.execute(() -> {
+  protected final void dispatch(Runnable r) {
+    executor.execute(() -> {
       try {
         r.run();
       } catch (Throwable t) {

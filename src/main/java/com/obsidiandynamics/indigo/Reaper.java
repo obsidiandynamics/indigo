@@ -50,7 +50,7 @@ final class Reaper {
   
   private void reap() {
     for (Activation a : activations) {
-      a.enqueue(new Message(null, a.ref, SleepingPill.instance(), null, false), a.getPreferredExecutor());
+      a.enqueue(new Message(null, a.ref, SleepingPill.instance(), null, false));
     }
   }
 }

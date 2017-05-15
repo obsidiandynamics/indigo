@@ -177,10 +177,10 @@ public final class ActorSystem implements Endpoint {
     send(message, null);
   }
   
-  void send(Message message, Executor executor) {
+  void send(Message message, Executor preferredExecutor) {
     for (;;) {
-      final Activation a = activate(message.to());
-      if (a.enqueue(message, executor != null ? executor : a.getPreferredExecutor())) {
+      final Activation a = activate(message.to(), preferredExecutor);
+      if (a.enqueue(message)) {
         return;
       } else {
         message.to().setCachedActivation(null);
@@ -374,7 +374,7 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
-  private Activation activate(ActorRef ref) {
+  private Activation activate(ActorRef ref, Executor preferredExecutor) {
     final Activation cached = ref.getCachedActivation();
     if (cached != null) {
       return cached;
@@ -391,7 +391,7 @@ public final class ActorSystem implements Endpoint {
           ref.setCachedActivation(existing2);
           return existing2;
         } else {
-          final Activation created = createActivation(ref);
+          final Activation created = createActivation(ref, preferredExecutor != null ? preferredExecutor : globalExecutor);
           activations.put(ref, created);
           ref.setCachedActivation(created);
           return created;
@@ -417,12 +417,13 @@ public final class ActorSystem implements Endpoint {
     return reaper;
   }
   
-  private Activation createActivation(ActorRef ref) {
+  private Activation createActivation(ActorRef ref, Executor executor) {
     final ActorSetup setup = setupRegistry.get(ref.role());
     if (setup == null) throw new NoSuchRoleException("No setup for actor of role " + ref.role());
     final Actor actor = setup.factory.get();
     final Activation activation = setup.actorConfig.activationFactory.create(nextActivationId++, 
-                                                                             ref, this, setup.actorConfig, actor);
+                                                                             ref, this, setup.actorConfig, 
+                                                                             actor, executor);
     activation.init();
     return activation;
   }
