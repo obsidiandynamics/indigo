@@ -5,7 +5,6 @@ import java.util.concurrent.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.util.JvmVersionProvider.*;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
@@ -41,16 +40,6 @@ public class ActorSystemConfig {
   
   /** The default timeout when asking from outside the actor system. */
   public int defaultAskTimeoutMillis = get(DEFAULT_ASK_TIMEOUT_MILLIS, Integer::parseInt, 60_000);
-  
-  public static final class ExecutorParams {
-    public final int parallelism;
-    public final JvmVersion version;
-    
-    public ExecutorParams(int parallelism, JvmVersion version) {
-      this.parallelism = parallelism;
-      this.version = version;
-    }
-  }
   
   public enum ExecutorChoice implements Function<ExecutorParams, ExecutorService> {
     AUTO(params -> Threads.autoPool(params.parallelism, params.version)),
