@@ -17,6 +17,7 @@ public class ActorConfig {
     public static final String BACKLOG_THROTTLE_TRIES = "indigo.actor.backlogThrottleTries";
     public static final String ACTIVATION_FACTORY = "indigo.actor.activationFactory";
     public static final String EXCEPTION_HANDLER = "indigo.actor.exceptionHandler";
+    public static final String REAP_TIMEOUT_MILLIS = "indigo.actor.reapTimeoutMillis";
     private Key() {}
   }
   
@@ -50,4 +51,8 @@ public class ActorConfig {
   
   /** Handles uncaught exceptions thrown from within an actor. */
   public BiConsumer<ActorSystem, Throwable> exceptionHandler = get(EXCEPTION_HANDLER, ExceptionHandlerChoice::valueOf, SYSTEM);
+  
+  /** The lower bound on the number of milliseconds elapsed since the last message to the actor before it 
+   *  becomes a candidate for reaping. Leave at <code>0</code> (default) to disable reaping. */
+  public int reapTimeoutMillis = get(REAP_TIMEOUT_MILLIS, Integer::parseInt, 0);
 }

@@ -37,6 +37,8 @@ public final class ActorSystem implements Endpoint {
   
   private final TaskScheduler backgroundScheduler = new TaskScheduler("BackgroundScheduler-" + getIdAsHex());
   
+  private final Reaper reaper = new Reaper(this);
+  
   private final BlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
   
   private final BlockingQueue<Fault> deadLetterQueue = new LinkedBlockingQueue<>();
@@ -44,6 +46,8 @@ public final class ActorSystem implements Endpoint {
   private final ActorRef[] ingressRefs;
   
   private long nextActivationId = Crypto.machineRandom();
+  
+  private volatile boolean shuttingDown;
   
   private volatile boolean running = true;
   
@@ -65,6 +69,8 @@ public final class ActorSystem implements Endpoint {
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     registerStandardActors();
     timeoutScheduler.start();
+    backgroundScheduler.start();
+    reaper.init();
   }
   
   private void registerStandardActors() {
@@ -168,18 +174,22 @@ public final class ActorSystem implements Endpoint {
   
   @Override
   public void send(Message message) {
-    send(message, globalExecutor);
+    send(message, null);
   }
   
   void send(Message message, Executor executor) {
     for (;;) {
       final Activation a = activate(message.to());
-      if (a.enqueue(message, executor)) {
+      if (a.enqueue(message, executor != null ? executor : a.getPreferredExecutor())) {
         return;
       } else {
         message.to().setCachedActivation(null);
       }
     }
+  }
+  
+  Executor getGlobalExecutor() {
+    return globalExecutor;
   }
   
   public void tell(ActorRef ref) {
@@ -288,6 +298,15 @@ public final class ActorSystem implements Endpoint {
   }
   
   /**
+   *  Determines whether this actor system is in the process of being shut down.
+   *  
+   *  @return True if shutdown is in progress.
+   */
+  public boolean isShuttingDown() {
+    return shuttingDown;
+  }
+  
+  /**
    *  Determines whether the actor system is operational.
    *  
    *  @return True if the system is operational; false if it has been shut down.
@@ -382,7 +401,8 @@ public final class ActorSystem implements Endpoint {
   }
   
   void dispose(ActorRef ref) {
-    activations.remove(ref);
+    final Activation activation = activations.remove(ref);
+    activation.dispose();
   }
   
   TaskScheduler getTimeoutScheduler() {
@@ -393,11 +413,18 @@ public final class ActorSystem implements Endpoint {
     return backgroundScheduler;
   }
   
+  Reaper getReaper() {
+    return reaper;
+  }
+  
   private Activation createActivation(ActorRef ref) {
     final ActorSetup setup = setupRegistry.get(ref.role());
     if (setup == null) throw new NoSuchRoleException("No setup for actor of role " + ref.role());
     final Actor actor = setup.factory.get();
-    return setup.actorConfig.activationFactory.create(nextActivationId++, ref, this, setup.actorConfig, actor);
+    final Activation activation = setup.actorConfig.activationFactory.create(nextActivationId++, 
+                                                                             ref, this, setup.actorConfig, actor);
+    activation.init();
+    return activation;
   }
   
   /**
@@ -420,6 +447,7 @@ public final class ActorSystem implements Endpoint {
    *  @throws InterruptedException If the thread is interrupted.
    */
   public void shutdown() throws InterruptedException {
+    shuttingDown = true;
     for (;;) {
       drain(0);
       break;
@@ -433,6 +461,7 @@ public final class ActorSystem implements Endpoint {
   }
   
   void terminate() {
+    shuttingDown = true;
     running = false;
     timeoutScheduler.terminate();
     backgroundScheduler.terminate();

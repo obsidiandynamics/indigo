@@ -45,6 +45,22 @@ public abstract class Activation {
   
   abstract boolean enqueue(Message m, Executor x);
   
+  final void init() {
+    if (actorConfig.reapTimeoutMillis != 0) {
+      system.getReaper().register(this);
+    }
+  }
+  
+  final void dispose() {
+    if (actorConfig.reapTimeoutMillis != 0) {
+      system.getReaper().deregister(this);
+    }
+  }
+  
+  final Executor getPreferredExecutor() {
+    return system.getGlobalExecutor();
+  }
+  
   protected final void dispatch(Executor x, Runnable r) {
     x.execute(() -> {
       try {
@@ -70,6 +86,10 @@ public abstract class Activation {
   
   public final void passivate() {
     passivationScheduled = true;
+  }
+  
+  public final void unpassivate() {
+    passivationScheduled = false;
   }
   
   public final void fault(Object reason) {
@@ -367,6 +387,13 @@ public abstract class Activation {
   private void processUnsolicited(Message m) {
     if (stash != null && ! stash.unstashing && stash.filter.test(m)) {
       stash.messages.add(m);
+    } else if (m.body() instanceof Signal) {
+      final Signal signal = m.body();
+      if (signal instanceof SleepingPill) {
+        passivate();
+      } else {
+        throw new FrameworkError("Unsupported signal of type " + signal.getClass().getName());
+      }
     } else {
       try {
         actor.act(this, m);

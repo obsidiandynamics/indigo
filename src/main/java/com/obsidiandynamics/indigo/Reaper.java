@@ -11,8 +11,6 @@ final class Reaper {
   
   private final Set<Activation> activations = new CopyOnWriteArraySet<>();
   
-  private volatile boolean running = true;
-  
   Reaper(ActorSystem system) {
     this.system = system;
   }
@@ -21,12 +19,24 @@ final class Reaper {
     scheduleNext();
   }
   
-  void terminate() {
-    running = false;
+  void register(Activation activation) {
+    if (isReapingEnabled()) {
+      activations.add(activation);
+    }
+  }
+  
+  void deregister(Activation activation) {
+    if (isReapingEnabled()) {
+      activations.remove(activation);
+    }
+  }
+  
+  private boolean isReapingEnabled() {
+    return system.getConfig().reaperPeriodMillis != 0;
   }
   
   private void scheduleNext() {
-    if (running) {
+    if (isReapingEnabled() && ! system.isShuttingDown()) {
       final long nextReap = System.nanoTime() + system.getConfig().reaperPeriodMillis * 1_000_000l;
       system.getBackgroundScheduler().schedule(new Task<Long>(nextReap, Crypto.machineRandom()) {
         @Override
@@ -39,6 +49,8 @@ final class Reaper {
   }
   
   private void reap() {
-    //TODO
+    for (Activation a : activations) {
+      a.enqueue(new Message(null, a.ref, SleepingPill.instance(), null, false), a.getPreferredExecutor());
+    }
   }
 }

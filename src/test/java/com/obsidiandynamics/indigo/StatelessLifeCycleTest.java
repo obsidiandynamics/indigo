@@ -3,6 +3,7 @@ package com.obsidiandynamics.indigo;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import org.junit.*;
@@ -251,5 +252,82 @@ public final class StatelessLifeCycleTest implements TestSupport {
     
     assertTrue(acted.get());
     assertFalse(passivated.get());
+  }
+
+  @Test
+  public void testUnspassivate() {
+    final AtomicInteger activated = new AtomicInteger();
+    final AtomicInteger acted = new AtomicInteger();
+    final AtomicBoolean passivated = new AtomicBoolean();
+    final CyclicBarrier barrier = new CyclicBarrier(2);
+    
+    new TestActorSystemConfig() {}
+    .createActorSystem()
+    .on(TARGET)
+    .cue(StatelessLambdaActor
+         .builder()
+         .activated(a -> {
+           log("activating\n");
+           activated.incrementAndGet();
+         })
+         .act((a, m) -> {
+           log("act\n");
+           acted.incrementAndGet();
+
+           if (m.<Integer>body() == 0) {
+             TestSupport.await(barrier); // wait until all messages have been enqueued before requesting passivation
+             a.passivate();
+           } else if (m.<Integer>body() == 1) {
+             a.unpassivate();
+           }
+         })
+         .passivated(a -> {
+           log("passivating\n");
+           passivated.set(true);
+         }))
+    .ingress().act(a -> {
+      a.to(ActorRef.of(TARGET)).tell(0);
+      a.to(ActorRef.of(TARGET)).tell(1);
+      TestSupport.await(barrier);
+    })
+    .shutdownQuietly();
+    
+    assertEquals(1, activated.get());
+    assertEquals(2, acted.get());
+    assertFalse(passivated.get());
+  }
+  
+  @Test
+  public void testSleepingPill() {
+    final AtomicInteger activated = new AtomicInteger();
+    final AtomicInteger acted = new AtomicInteger();
+    final AtomicInteger passivated = new AtomicInteger();
+    
+    new TestActorSystemConfig() {}
+    .createActorSystem()
+    .on(TARGET)
+    .cue(StatelessLambdaActor
+         .builder()
+         .activated(a -> {
+           log("activating\n");
+           activated.incrementAndGet();
+         })
+         .act((a, m) -> {
+           log("act\n");
+           acted.incrementAndGet();
+         })
+         .passivated(a -> {
+           log("passivating\n");
+           passivated.incrementAndGet();
+         }))
+    .ingress().act(a -> {
+      a.to(ActorRef.of(TARGET)).tell();
+      a.to(ActorRef.of(TARGET)).tell(SleepingPill.instance());
+    })
+    .shutdownQuietly();
+    
+    assertEquals(1, activated.get());
+    assertEquals(1, acted.get());
+    assertEquals(1, passivated.get());
   }
 }

@@ -26,12 +26,38 @@ public final class FrameworkErrorTest implements TestSupport {
   }
   
   @Test
-  public void testUnsupportedSignal() throws InterruptedException {
+  public void testUnsupportedSolicitedSignal() throws InterruptedException {
     system.on(SINK).cue((a, m) -> {
       a.reply(m).tell(new BadSignal());
     })
     .ingress(a -> { 
       a.to(ActorRef.of(SINK)).ask()
+      .onFault(f -> {
+        fail("Unexpected fault");
+      })
+      .await(60_000).onTimeout(() -> {
+        fail("Unexpected timeout");
+      })
+      .onResponse(r -> {
+        fail("Unexpected response");
+      });
+    });
+    
+    try {
+      system.drain(0);
+      fail("Failed to catch UnhandledMultiException");
+    } catch (UnhandledMultiException e) {
+      assertEquals(1, e.getErrors().length);
+      assertFrameworkError(e.getErrors()[0]);
+    }
+    
+    assertFalse(system.isRunning());
+  }
+  
+  @Test
+  public void testUnsupportedUnsolicitedSignal() throws InterruptedException {
+    system.ingress(a -> { 
+      a.to(ActorRef.of(ActorRef.INGRESS)).ask(new BadSignal())
       .onFault(f -> {
         fail("Unexpected fault");
       })
