@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.marketfeed.messagebus;
+package com.obsidiandynamics.indigo.messagebus;
 
 public interface MessagePublisher {
   void send(Object message);

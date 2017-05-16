@@ -22,5 +22,6 @@ repositories {
 dependencies {
   compile project(':')
   compile 'com.amazonaws:aws-java-sdk-dynamodb'
+  compile 'org.zeromq:jeromq:0.4.0'
   testCompile 'junit:junit:4.12'
 }
