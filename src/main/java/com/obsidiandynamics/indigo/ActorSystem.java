@@ -86,7 +86,7 @@ public final class ActorSystem implements Endpoint {
     useExecutor(ForkJoinPool.commonPool()).named(COMMON_EXECUTOR_NAME);
   }
   
-  private String getIdAsHex() {
+  String getIdAsHex() {
     return Long.toHexString(id);
   }
   
@@ -396,6 +396,10 @@ public final class ActorSystem implements Endpoint {
     return reaper;
   }
   
+  public void reap() {
+    reaper.reap();
+  }
+  
   private Activation createActivation(ActorRef ref, Executor executor) {
     final ActorSetup setup = setupRegistry.get(ref.role());
     if (setup == null) throw new NoSuchRoleException("No setup for actor of role " + ref.role());
@@ -403,7 +407,6 @@ public final class ActorSystem implements Endpoint {
     final Activation activation = setup.actorConfig.activationFactory.create(nextActivationId++, 
                                                                              ref, this, setup.actorConfig, 
                                                                              actor, executor);
-    activation.init();
     return activation;
   }
   

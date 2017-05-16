@@ -22,6 +22,8 @@ public abstract class Activation {
   
   private final Executor executor;
   
+  private final Reaper reaper;
+  
   protected final Map<UUID, PendingRequest> pending = new HashMap<>();
   
   /** Current state of the activation. */
@@ -37,6 +39,8 @@ public abstract class Activation {
   
   private Message activatingMessage;
   
+  private volatile long lastMessageTime;
+  
   protected Activation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
     this.id = id;
     this.ref = ref;
@@ -44,20 +48,26 @@ public abstract class Activation {
     this.actorConfig = actorConfig;
     this.actor = actor;
     this.executor = executor;
+    
+    if (actorConfig.reapTimeoutMillis != 0 && system.getReaper().isReapingEnabled()) {
+      reaper = system.getReaper();
+      lastMessageTime = System.currentTimeMillis();
+      reaper.register(this);
+    } else {
+      reaper = null;
+    }
   }
   
   abstract boolean enqueue(Message m);
   
-  final void init() {
-    if (actorConfig.reapTimeoutMillis != 0) {
-      system.getReaper().register(this);
+  final void dispose() {
+    if (reaper != null) {
+      reaper.deregister(this);
     }
   }
   
-  final void dispose() {
-    if (actorConfig.reapTimeoutMillis != 0) {
-      system.getReaper().deregister(this);
-    }
+  final long getLastMessageTime() {
+    return lastMessageTime;
   }
   
   protected final void dispatch(Runnable r) {
@@ -270,6 +280,10 @@ public abstract class Activation {
   }
   
   protected final void processMessage(Message m) {
+    if (reaper != null) {
+      lastMessageTime = System.currentTimeMillis();
+    }
+    
     if (m.isResponse()) {
       assert diagnostics().traceMacro("A.processMessage: solicited m=%s", m);
       processSolicited(m);

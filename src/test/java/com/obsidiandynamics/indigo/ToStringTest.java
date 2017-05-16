@@ -16,7 +16,7 @@ public class ToStringTest {
     assertToString(new Message(null, null, null, new UUID(0, 0), false));
     assertToString(ActorRef.of("role"));
     assertToString(ActorRef.of("role", "key"));
-    assertToString(new Activation(0, null, null, null, null, null) {
+    assertToString(new Activation(0, null, null, new ActorConfig(), null, null) {
       @Override public boolean enqueue(Message m) { return false; }
     });
     assertToString(new TimeoutTask(0, null, null, null, null));

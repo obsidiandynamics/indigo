@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
 import static com.obsidiandynamics.indigo.TestSupport.*;
+import static java.util.concurrent.TimeUnit.*;
 import static junit.framework.TestCase.*;
 import static org.awaitility.Awaitility.await;
 
@@ -10,6 +11,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import org.junit.*;
+
+import com.obsidiandynamics.indigo.util.*;
 
 public final class EgressTest implements TestSupport {
   private static final String DRIVER = "driver";
@@ -149,7 +152,7 @@ public final class EgressTest implements TestSupport {
     })
     .drain(0);
     
-    if (parallel) await().atMost(10, TimeUnit.SECONDS).until(() -> received.get() == runs);
+    if (parallel) await().atMost(10, SECONDS).until(() -> received.get() == runs);
     assertEquals(runs, received.get());
   }
 
@@ -233,7 +236,7 @@ public final class EgressTest implements TestSupport {
         assertNull(in);
         final int newVal = received.incrementAndGet();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
-        TestSupport.asyncDaemon(() -> {
+        Threads.asyncDaemon(() -> {
           processed.incrementAndGet();
           f.complete(newVal);
         }, "AsyncIngress");

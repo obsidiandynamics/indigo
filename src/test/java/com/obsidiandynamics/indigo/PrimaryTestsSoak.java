@@ -34,7 +34,7 @@ public final class PrimaryTestsSoak {
     
     final int DEF_MINS = 10;
     final int DEF_TIMEOUT_MILLIS = 5_000;
-    TestSupport.asyncDaemon(() -> {
+    Threads.asyncDaemon(() -> {
       System.out.format("Number of minutes to soak [10]: ");
       int mins;
       try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
@@ -56,7 +56,7 @@ public final class PrimaryTestsSoak {
       system.tell(ActorRef.of(ONE_SHOT), new Fire(mins));
     }, "StdinReader");
     
-    TestSupport.asyncDaemon(() -> {
+    Threads.asyncDaemon(() -> {
       TestSupport.sleep(DEF_TIMEOUT_MILLIS);
       system.tell(ActorRef.of(ONE_SHOT), new Fire(DEF_MINS));
     }, "DefaultTimeout");

@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public interface TestSupport {
   static final boolean LOG = false;
   static final PrintStream LOG_STREAM = System.out;
@@ -68,13 +70,7 @@ public interface TestSupport {
   }
   
   static Executor oneTimeExecutor(String threadName) {
-    return r -> asyncDaemon(r, threadName);
-  }
-  
-  static void asyncDaemon(Runnable r, String threadName) {
-    final Thread t = new Thread(r, threadName);
-    t.setDaemon(true);
-    t.start();
+    return r -> Threads.asyncDaemon(r, threadName);
   }
   
   static <I, O> EgressBuilder<I, O> egressMode(EgressBuilder<I, O> builder, boolean parallel) {

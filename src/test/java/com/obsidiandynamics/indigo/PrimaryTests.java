@@ -22,6 +22,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
   ForwarderTest.class,
   FrameworkErrorTest.class,
   ParallelConsistencyTest.class,
+  ReaperTest.class,
   RequestResponseBenchmark.class,
   RequestResponseTest.class,
   RoleRegistrationTest.class,

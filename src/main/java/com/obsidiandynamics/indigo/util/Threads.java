@@ -49,4 +49,10 @@ public final class Threads {
   public static ExecutorService autoPool(int parallelism, JvmVersion version) {
     return CappedForkJoinPool.isSafeFor(version) ? new CappedForkJoinPool(parallelism, null, true) : prestartedFixedThreadPool(parallelism);
   }
+  
+  public static void asyncDaemon(Runnable r, String threadName) {
+    final Thread t = new Thread(r, threadName);
+    t.setDaemon(true);
+    t.start();
+  }
 }

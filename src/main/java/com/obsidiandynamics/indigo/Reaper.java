@@ -11,6 +11,8 @@ final class Reaper {
   
   private final Set<Activation> activations = new CopyOnWriteArraySet<>();
   
+  private final Object reaperLock = new Object();
+  
   Reaper(ActorSystem system) {
     this.system = system;
   }
@@ -20,18 +22,14 @@ final class Reaper {
   }
   
   void register(Activation activation) {
-    if (isReapingEnabled()) {
-      activations.add(activation);
-    }
+    activations.add(activation);
   }
   
   void deregister(Activation activation) {
-    if (isReapingEnabled()) {
-      activations.remove(activation);
-    }
+    activations.remove(activation);
   }
   
-  private boolean isReapingEnabled() {
+  boolean isReapingEnabled() {
     return system.getConfig().reaperPeriodMillis != 0;
   }
   
@@ -39,18 +37,28 @@ final class Reaper {
     if (isReapingEnabled() && ! system.isShuttingDown()) {
       final long nextReap = System.nanoTime() + system.getConfig().reaperPeriodMillis * 1_000_000l;
       system.getBackgroundScheduler().schedule(new Task<Long>(nextReap, Crypto.machineRandom()) {
-        @Override
-        protected void execute() {
-          reap();
-          scheduleNext();
+        @Override protected void execute() {
+          Threads.asyncDaemon(Reaper.this::reapAndReschedule, "Reaper-" + system.getIdAsHex());
         }
       });
     }
   }
   
-  private void reap() {
-    for (Activation a : activations) {
-      a.enqueue(new Message(null, a.ref, SleepingPill.instance(), null, false));
+  private void reapAndReschedule() {
+    reap();
+    scheduleNext();
+  }
+  
+  void reap() {
+    synchronized (reaperLock) {
+      final long now = System.currentTimeMillis();
+      for (Activation a : activations) {
+        final long overdueBy = now - a.getLastMessageTime() - a.actorConfig.reapTimeoutMillis;
+        if (overdueBy > 0) {
+          assert system.getConfig().diagnostics.traceMacro("R.reap: ref=%s, overdue=%d\n", a.ref, overdueBy);
+          a.enqueue(new Message(null, a.ref, SleepingPill.instance(), null, false));
+        }
+      }
     }
   }
 }
