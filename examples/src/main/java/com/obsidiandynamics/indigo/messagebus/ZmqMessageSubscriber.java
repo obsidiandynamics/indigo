@@ -10,11 +10,12 @@ public final class ZmqMessageSubscriber implements MessageSubscriber {
   
   private final Socket socket;
 
-  ZmqMessageSubscriber(ZmqMessageBus bus) {
+  ZmqMessageSubscriber(ZmqMessageBus bus, String topic) {
     this.bus = bus;
     context = ZMQ.context(1);
     socket = context.socket(ZMQ.SUB);
     socket.connect(bus.getSocketAddress());
+    socket.subscribe(topic.getBytes(ZMQ.CHARSET));
   }
   
   @Override
