@@ -256,6 +256,10 @@ public abstract class Activation {
   }
   
   protected final void passivateIfScheduled() {
+    if (actorConfig.ephemeral) {
+      passivationScheduled = true;
+    }
+    
     if (passivationScheduled && state == ACTIVATED && pending.isEmpty() && stash == null) {
       assert diagnostics().traceMacro("A.passivateIfScheduled: passivating ref=%s", ref);
       

@@ -79,7 +79,7 @@ public final class ActorSystem implements Endpoint {
   
   private void registerStandardActors() {
     on(INGRESS).cue(StatelessLambdaActor::agent);
-    on(EGRESS).cue(StatelessLambdaActor::ephemeralAgent);
+    on(EGRESS).withConfig(new ActorConfig() {{ ephemeral = true; }}).cue(StatelessLambdaActor::agent);
   }
   
   private void registerStandardExecutors() {

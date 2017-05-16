@@ -68,9 +68,4 @@ public final class StatelessLambdaActor implements Actor {
   public static void agent(Activation a, Message m) {
     m.<Consumer<Activation>>body().accept(a);
   }
-  
-  public static void ephemeralAgent(Activation a, Message m) {
-    agent(a, m);
-    a.passivate();
-  }
 }

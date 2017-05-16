@@ -330,4 +330,35 @@ public final class StatelessLifeCycleTest implements TestSupport {
     assertEquals(1, acted.get());
     assertEquals(1, passivated.get());
   }
+  
+  @Test
+  public void testEphemeral() {
+    final AtomicInteger activated = new AtomicInteger();
+    final AtomicInteger acted = new AtomicInteger();
+    final AtomicInteger passivated = new AtomicInteger();
+    
+    new TestActorSystemConfig() {}
+    .createActorSystem()
+    .on(TARGET).withConfig(new ActorConfig() {{ ephemeral = true; }})
+    .cue(StatelessLambdaActor
+         .builder()
+         .activated(a -> {
+           log("activating\n");
+           activated.incrementAndGet();
+         })
+         .act((a, m) -> {
+           log("act\n");
+           acted.incrementAndGet();
+         })
+         .passivated(a -> {
+           log("passivating\n");
+           passivated.incrementAndGet();
+         }))
+    .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
+    .shutdownQuietly();
+    
+    assertEquals(1, activated.get());
+    assertEquals(1, acted.get());
+    assertEquals(1, passivated.get());
+  }
 }
