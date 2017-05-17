@@ -13,10 +13,10 @@ public final class GensonCodecTest implements TestSupport {
     final String text;
     final Object[] children;
     
-    @SuppressWarnings("unused")
-    @Deprecated Node() {
-      this(null);
-    }
+//    @SuppressWarnings("unused")
+//    @Deprecated Node() {
+//      this(null);
+//    }
     
     Node(String text) {
       this(text, new Node[0]);

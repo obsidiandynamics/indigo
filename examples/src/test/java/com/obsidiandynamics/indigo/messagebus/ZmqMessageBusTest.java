@@ -44,10 +44,13 @@ public final class ZmqMessageBusTest implements TestSupport {
       }, "ZmqSubscriberThread");
       
       final long syncStart = System.currentTimeMillis();
+      final long maxSyncWait = 10_000;
       while (! synced.get()) {
         log("p: syncing\n");
         pub.send("sync");
         TestSupport.sleep(1);
+        final long taken = System.currentTimeMillis() - syncStart;
+        assertTrue("sync is taking " + taken + " ms", taken < maxSyncWait);
       }
       log("s: sync took %d ms\n", System.currentTimeMillis() - syncStart);
   
