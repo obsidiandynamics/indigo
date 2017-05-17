@@ -10,7 +10,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public class MessageBusTest implements TestSupport {
+public class ZmqMessageBusTest implements TestSupport {
   @Test
   public void testSendReceive() throws InterruptedException {
     final int cycles = 100;
@@ -41,7 +41,7 @@ public class MessageBusTest implements TestSupport {
             }
           }
         }
-      }, "sub");
+      }, "ZmqSubscriberThread");
       
       final long syncStart = System.currentTimeMillis();
       while (! synced.get()) {
@@ -55,7 +55,8 @@ public class MessageBusTest implements TestSupport {
         log("p: sending\n");
         pub.send("hello");
       }
-      subThread.join(10_000);
+      
+      subThread.join(10_000); // allow time for the subscriber to receive all messages and wind up
     }
     
     assertEquals(n, received.size());
