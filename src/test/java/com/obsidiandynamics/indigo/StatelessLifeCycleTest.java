@@ -3,7 +3,6 @@ package com.obsidiandynamics.indigo;
 import static junit.framework.TestCase.*;
 
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import org.junit.*;
@@ -259,7 +258,6 @@ public final class StatelessLifeCycleTest implements TestSupport {
     final AtomicInteger activated = new AtomicInteger();
     final AtomicInteger acted = new AtomicInteger();
     final AtomicBoolean passivated = new AtomicBoolean();
-    final CyclicBarrier barrier = new CyclicBarrier(2);
     
     new TestActorSystemConfig() {}
     .createActorSystem()
@@ -274,26 +272,18 @@ public final class StatelessLifeCycleTest implements TestSupport {
            log("act\n");
            acted.incrementAndGet();
 
-           if (m.<Integer>body() == 0) {
-             TestSupport.await(barrier); // wait until all messages have been enqueued before requesting passivation
-             a.passivate();
-           } else if (m.<Integer>body() == 1) {
-             a.unpassivate();
-           }
+           a.passivate();
+           a.unpassivate();
          })
          .passivated(a -> {
            log("passivating\n");
            passivated.set(true);
          }))
-    .ingress().act(a -> {
-      a.to(ActorRef.of(TARGET)).tell(0);
-      a.to(ActorRef.of(TARGET)).tell(1);
-      TestSupport.await(barrier);
-    })
+    .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
     .shutdownQuietly();
     
     assertEquals(1, activated.get());
-    assertEquals(2, acted.get());
+    assertEquals(1, acted.get());
     assertFalse(passivated.get());
   }
   
