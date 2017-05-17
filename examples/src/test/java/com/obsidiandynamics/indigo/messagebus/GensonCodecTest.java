@@ -7,16 +7,17 @@ import java.util.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.owlike.genson.*;
 
 public final class GensonCodecTest implements TestSupport {
   private static final class Node {
     final String text;
     final Object[] children;
     
-//    @SuppressWarnings("unused")
-//    @Deprecated Node() {
-//      this(null);
-//    }
+    @SuppressWarnings("unused")
+    @Deprecated Node() {
+      this(null);
+    }
     
     Node(String text) {
       this(text, new Node[0]);
@@ -63,7 +64,8 @@ public final class GensonCodecTest implements TestSupport {
   
   @Test
   public void testObj() {
-    final MessageCodec codec = new GensonCodec();
+    final Genson genson = new GensonBuilder().useClassMetadata(true).useIndentation(true).create();
+    final MessageCodec codec = new GensonCodec(genson);
     final Node root = new Node("root", new Node[] {new Node("branch")});
     
     final String encoded = codec.encode(root);
@@ -79,7 +81,7 @@ public final class GensonCodecTest implements TestSupport {
   
   @Test
   public void testNull() {
-    final MessageCodec codec = new GensonCodec();
+    final MessageCodec codec = new GensonCodec(new Genson());
     
     final String encoded = codec.encode(null);
     log("encoded=%s\n", encoded);
