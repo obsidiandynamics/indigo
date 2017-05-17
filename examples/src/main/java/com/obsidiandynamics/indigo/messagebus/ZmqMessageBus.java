@@ -15,15 +15,13 @@ public final class ZmqMessageBus implements MessageBus {
   }
 
   @Override
-  public MessagePublisher getPublisher(String topic) {
-    // TODO Auto-generated method stub
-    return null;
+  public ZmqMessagePublisher getPublisher(String topic) {
+    return new ZmqMessagePublisher(this, topic);
   }
 
   @Override
-  public MessageSubscriber getSubscriber(String topic) {
-    // TODO Auto-generated method stub
-    return null;
+  public ZmqMessageSubscriber getSubscriber(String topic) {
+    return new ZmqMessageSubscriber(this, topic);
   }
 
   MessageCodec getCodec() {

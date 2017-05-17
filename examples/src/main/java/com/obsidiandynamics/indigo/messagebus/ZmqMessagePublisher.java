@@ -6,12 +6,15 @@ import org.zeromq.ZMQ.*;
 public final class ZmqMessagePublisher implements MessagePublisher {
   private final ZmqMessageBus bus;
   
+  private final String topic;
+  
   private final Context context;
   
   private final Socket socket;
 
-  ZmqMessagePublisher(ZmqMessageBus bus) {
+  ZmqMessagePublisher(ZmqMessageBus bus, String topic) {
     this.bus = bus;
+    this.topic = topic;
     context = ZMQ.context(1);
     socket = context.socket(ZMQ.PUB);
     socket.bind(bus.getSocketAddress());
@@ -19,7 +22,9 @@ public final class ZmqMessagePublisher implements MessagePublisher {
   
   @Override
   public void send(Object message) {
-    socket.send(bus.getCodec().encode(message));
+    final String encoded = bus.getCodec().encode(message);
+    final String payload = topic + " " + encoded;
+    socket.send(payload);
   }
 
   @Override
