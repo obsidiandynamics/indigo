@@ -8,7 +8,7 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.adder.db.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public class PersistentSyncActorTest {
+public final class PersistentSyncActorTest {
   private static final boolean MOCK = PropertyUtils.get("indigo.AdderDB.mock", Boolean::parseBoolean, true);
   
   private AdderDB db;

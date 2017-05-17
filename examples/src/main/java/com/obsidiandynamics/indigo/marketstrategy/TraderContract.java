@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.marketindicator;
+package com.obsidiandynamics.indigo.marketstrategy;
 
 public final class TraderContract {
   private TraderContract() {}

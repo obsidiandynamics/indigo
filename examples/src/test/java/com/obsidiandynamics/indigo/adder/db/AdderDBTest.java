@@ -8,7 +8,7 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.adder.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public class AdderDBTest {
+public final class AdderDBTest {
   private static final boolean MOCK = PropertyUtils.get("indigo.AdderDB.mock", Boolean::parseBoolean, true);
   
   private AdderDB db;

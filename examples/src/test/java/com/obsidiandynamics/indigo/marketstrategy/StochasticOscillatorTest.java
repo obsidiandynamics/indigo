@@ -1,15 +1,15 @@
-package com.obsidiandynamics.indigo.marketindicator;
+package com.obsidiandynamics.indigo.marketstrategy;
 
 import static org.junit.Assert.*;
 
 import org.junit.*;
 
-public class StochasticOscillatorTest {
-  final double DELTA = .001;
+public final class StochasticOscillatorTest {
+  private static final double DELTA = .001;
   
   @Test
   public void test() {
-    final StochasticOscillator fast = new StochasticOscillator(14, 3);
+    final StochasticOscillator fast = new StochasticOscillator(14, 3); // fast stochastic
 
     assertNull(fast.add(bar(127.0090f, 125.3574f, 127.0090f)));
     assertNull(fast.add(bar(127.6159f, 126.1633f, 127.6159f)));

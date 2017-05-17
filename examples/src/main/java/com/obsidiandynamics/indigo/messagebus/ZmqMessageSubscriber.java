@@ -36,5 +36,6 @@ public final class ZmqMessageSubscriber implements MessageSubscriber {
   public void close() {
     socket.close();
     context.term();
+    bus.remove(this);
   }
 }

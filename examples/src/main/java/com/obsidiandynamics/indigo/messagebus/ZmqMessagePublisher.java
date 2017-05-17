@@ -22,6 +22,8 @@ public final class ZmqMessagePublisher implements MessagePublisher {
   
   @Override
   public void send(Object message) {
+    if (message == null) throw new NullPointerException("Message cannot be null");
+    
     final String encoded = bus.getCodec().encode(message);
     final String payload = topic + " " + encoded;
     socket.send(payload);
@@ -31,5 +33,6 @@ public final class ZmqMessagePublisher implements MessagePublisher {
   public void close() {
     socket.close();
     context.term();
+    bus.remove(this);
   }
 }

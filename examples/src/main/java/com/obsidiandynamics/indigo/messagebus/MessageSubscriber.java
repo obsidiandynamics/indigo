@@ -1,8 +1,22 @@
 package com.obsidiandynamics.indigo.messagebus;
 
-public interface MessageSubscriber extends AutoCloseable {
+import java.util.function.*;
+
+import com.obsidiandynamics.indigo.util.*;
+
+public interface MessageSubscriber extends SafeCloseable {
   Object receive();
   
-  @Override
-  void close();
+  default void onReceive(Consumer<Object> receiver) {
+    Threads.asyncDaemon(() -> {
+      for (;;) {
+        final Object received = receive();
+        if (received != null) {
+          receiver.accept(received);
+        } else {
+          break;
+        }
+      }
+    }, "Receiver");
+  }
 }

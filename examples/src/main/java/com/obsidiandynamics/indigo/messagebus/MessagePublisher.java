@@ -1,8 +1,5 @@
 package com.obsidiandynamics.indigo.messagebus;
 
-public interface MessagePublisher extends AutoCloseable {
+public interface MessagePublisher extends SafeCloseable {
   void send(Object message);
-  
-  @Override
-  void close();
 }

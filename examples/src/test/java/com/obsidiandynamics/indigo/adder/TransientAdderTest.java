@@ -9,7 +9,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.adder.AdderContract.*;
 
-public class TransientAdderTest {
+public final class TransientAdderTest {
   @Test
   public void testInterfaceActor() throws InterruptedException {
     ActorSystem.create()
