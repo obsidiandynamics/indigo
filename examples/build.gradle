@@ -23,6 +23,9 @@ dependencies {
   compile project(':')
   compile 'com.amazonaws:aws-java-sdk-dynamodb'
   compile 'org.zeromq:jeromq:0.4.0'
+  compile 'com.google.code.gson:gson:2.8.0'
+  compile 'com.owlike:genson:1.4'
+  testCompile project(':').sourceSets.test.output
   testCompile 'junit:junit:4.12'
   testCompile 'org.awaitility:awaitility:2.0.0'
 }

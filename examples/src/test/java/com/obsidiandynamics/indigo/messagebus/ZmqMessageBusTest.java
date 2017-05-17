@@ -10,7 +10,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public class ZmqMessageBusTest implements TestSupport {
+public final class ZmqMessageBusTest implements TestSupport {
   @Test
   public void testSendReceive() throws InterruptedException {
     final int cycles = 100;
