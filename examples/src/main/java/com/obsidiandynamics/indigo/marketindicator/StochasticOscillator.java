@@ -27,7 +27,7 @@ public final class StochasticOscillator implements Indicator {
     if (bars.size() == lookback) {
       final float lowestLow = bars.stream().min((b1, b2) -> Float.compare(b1.getLow(), b2.getLow())).get().getLow();
       final float highestHigh = bars.stream().max((b1, b2) -> Float.compare(b1.getHigh(), b2.getHigh())).get().getHigh();
-      final float k = highestHigh != lowestLow ? (bar.getClose() - lowestLow) / (highestHigh - lowestLow) * 100: 50;
+      final float k = highestHigh != lowestLow ? (bar.getClose() - lowestLow) / (highestHigh - lowestLow) * 100 : 50;
       add(kValues, k, kPeriod);
       
       if (kValues.size() == kPeriod) {
