@@ -255,7 +255,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
   }
 
   @Test
-  public void testUnspassivate() {
+  public void testUnpassivate() {
     final AtomicInteger activated = new AtomicInteger();
     final AtomicInteger acted = new AtomicInteger();
     final AtomicBoolean passivated = new AtomicBoolean();
