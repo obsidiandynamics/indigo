@@ -13,12 +13,20 @@ final class Reaper {
   
   private final Object reaperLock = new Object();
   
+  private boolean running = true;
+  
   Reaper(ActorSystem system) {
     this.system = system;
   }
   
   void init() {
     scheduleNext();
+  }
+  
+  void stop() {
+    synchronized (reaperLock) {
+      running = false;
+    }
   }
   
   void register(Activation activation) {
@@ -51,12 +59,14 @@ final class Reaper {
   
   void reap() {
     synchronized (reaperLock) {
-      final long now = System.currentTimeMillis();
-      for (Activation a : activations) {
-        final long overdueBy = now - a.getLastMessageTime() - a.actorConfig.reapTimeoutMillis;
-        if (overdueBy > 0) {
-          assert system.getConfig().diagnostics.traceMacro("R.reap: ref=%s, overdue=%d\n", a.ref, overdueBy);
-          a.enqueue(new Message(null, a.ref, SleepingPill.instance(), null, false));
+      if (running) {
+        final long now = System.currentTimeMillis();
+        for (Activation a : activations) {
+          final long overdueBy = now - a.getLastMessageTime() - a.actorConfig.reapTimeoutMillis;
+          if (overdueBy > 0) {
+            assert system.getConfig().diagnostics.traceMacro("R.reap: ref=%s, overdue=%d\n", a.ref, overdueBy);
+            a.enqueue(new Message(null, a.ref, SleepingPill.instance(), null, false));
+          }
         }
       }
     }

@@ -1,7 +1,10 @@
 package com.obsidiandynamics.indigo.messagebus;
 
 import org.zeromq.*;
+import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.*;
+
+import zmq.*;
 
 public final class ZmqMessageSubscriber implements MessageSubscriber {
   private final ZmqMessageBus bus;
@@ -23,7 +26,17 @@ public final class ZmqMessageSubscriber implements MessageSubscriber {
   
   @Override
   public Object receive() {
-    final String str = socket.recvStr();
+    final String str;
+    try {
+      str = socket.recvStr();
+    } catch (ZMQException e) {
+      if (e.getErrorCode() == ZError.ETERM) {
+        return null;
+      } else {
+        throw e;
+      }
+    }
+    
     if (str != null) {
       final String encoded = str.substring(topic.length() + 1);
       return bus.getCodec().decode(encoded);

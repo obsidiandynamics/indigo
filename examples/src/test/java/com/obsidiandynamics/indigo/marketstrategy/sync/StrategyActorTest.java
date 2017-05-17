@@ -36,9 +36,9 @@ public final class StrategyActorTest {
       received.add((Order) msg);
     });
     
-    while (! synced.get()) {
-      //TODO
-    }
+//    while (! synced.get()) {
+//      //TODO
+//    }
     
     ActorSystem.create()
     .on("router").cue(RouterActor::new)

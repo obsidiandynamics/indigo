@@ -431,6 +431,7 @@ public final class ActorSystem implements Endpoint {
    */
   public void shutdown() throws InterruptedException {
     shuttingDown = true;
+    reaper.stop();
     for (;;) {
       drain(0);
       break;
@@ -445,6 +446,7 @@ public final class ActorSystem implements Endpoint {
   
   void terminate() {
     shuttingDown = true;
+    reaper.stop();
     running = false;
     timeoutScheduler.terminate();
     backgroundScheduler.terminate();
