@@ -8,6 +8,8 @@ public final class ZmqMessageBus implements MessageBus {
   
   private final MessageCodec codec;
   
+  private volatile ZmqSharedSocket sharedSocket;
+  
   private final Set<SafeCloseable> endpoints = new CopyOnWriteArraySet<>();
 
   public ZmqMessageBus(String socketAddress, MessageCodec codec) {
@@ -21,7 +23,7 @@ public final class ZmqMessageBus implements MessageBus {
 
   @Override
   public ZmqMessagePublisher getPublisher(String topic) {
-    final ZmqMessagePublisher pub = new ZmqMessagePublisher(this, topic);
+    final ZmqMessagePublisher pub = new ZmqMessagePublisher(this, topic, getOrCreateSharedSocket());
     endpoints.add(pub);
     return pub;
   }
@@ -40,11 +42,28 @@ public final class ZmqMessageBus implements MessageBus {
   MessageCodec getCodec() {
     return codec;
   }
+  
+  private ZmqSharedSocket getOrCreateSharedSocket() {
+    final ZmqSharedSocket existing = sharedSocket;
+    if (existing != null) {
+      return existing;
+    } else {
+      synchronized (this) {
+        if (sharedSocket == null) {
+          sharedSocket = new ZmqSharedSocket(socketAddress);
+        }
+        return sharedSocket;
+      }
+    }
+  }
 
   @Override
   public void close() {
     for (SafeCloseable endpoint : endpoints) {
       endpoint.close();
+    }
+    if (sharedSocket != null) {
+      sharedSocket.close();
     }
   }
 }
