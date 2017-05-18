@@ -417,11 +417,21 @@ public final class ActorSystem implements Endpoint {
    *  prior to returning.
    */
   public void shutdownQuietly() {
+    shutdownQuietly(true);
+  }
+
+  private void shutdownQuietly(boolean drain) {
     try {
-      shutdown();
+      shutdown(drain);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
+  }
+  
+  void terminate() {
+    timeoutScheduler.clear();
+    backgroundScheduler.clear();
+    shutdownQuietly(false);
   }
   
   /**
@@ -430,11 +440,17 @@ public final class ActorSystem implements Endpoint {
    *  @throws InterruptedException If the thread is interrupted.
    */
   public void shutdown() throws InterruptedException {
+    shutdown(true);
+  }
+
+  private void shutdown(boolean drain) throws InterruptedException {
     shuttingDown = true;
     reaper.stop();
-    for (;;) {
-      drain(0);
-      break;
+    if (drain) {
+      for (;;) {
+        drain(0);
+        break;
+      }
     }
     timeoutScheduler.forceExecute();
     timeoutScheduler.terminate();
@@ -442,15 +458,6 @@ public final class ActorSystem implements Endpoint {
     backgroundScheduler.terminate();
     globalExecutor.shutdown();
     running = false;
-  }
-  
-  void terminate() {
-    shuttingDown = true;
-    reaper.stop();
-    running = false;
-    timeoutScheduler.terminate();
-    backgroundScheduler.terminate();
-    globalExecutor.shutdownNow();
   }
   
   public static ActorSystem create() {

@@ -107,13 +107,13 @@ public final class PrimaryTestsSoak {
             }
             
             @Override public void testFailure(Failure failure) throws Exception {
-              System.err.println("Failed: " + failure);
+              System.err.println("Failed: " + failure + " (" + failure.getDescription() + ")");
               System.err.println(failure.getTrace());
             }
           });
           core.run(computer, PrimaryTests.class);
         }).run();
-        
+
         if (logRuns) {
           System.out.format("Finished run %,d: %,d active threads, free mem: %,.0f MB\n", 
                             i, Thread.activeCount(), Runtime.getRuntime().freeMemory() / Math.pow(2, 20));

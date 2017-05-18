@@ -37,12 +37,19 @@ public final class TaskScheduler extends Thread {
     setDaemon(true);
   }
   
+  public void clear() {
+    tasks.clear();
+  }
+  
   /**
-   *  Terminates the scheduler, returning as soon as the termination command is issued.
+   *  Terminates the scheduler, and awaits for its thread to end.
+   *  
+   *  @throws InterruptedException If the thread is interrupted.
    */
-  public void terminate() {
+  public void terminate() throws InterruptedException {
     running = false;
     interrupt();
+    join();
   }
   
   @Override

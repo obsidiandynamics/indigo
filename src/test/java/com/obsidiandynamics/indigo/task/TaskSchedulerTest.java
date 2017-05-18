@@ -50,7 +50,7 @@ public final class TaskSchedulerTest implements TestSupport {
   }
   
   @After
-  public void teardown() {
+  public void teardown() throws InterruptedException {
     scheduler.terminate();
   }
   
@@ -100,11 +100,10 @@ public final class TaskSchedulerTest implements TestSupport {
     assertEquals(ids, receiver.ids);
   }
   
-  @Test
-  public void testInterruptedShutdown() {
+  @Test(expected=InterruptedException.class)
+  public void testInterruptedShutdown() throws InterruptedException {
     Thread.currentThread().interrupt();
     scheduler.terminate();
-    assertTrue(Thread.interrupted());
   }
   
   @Test
