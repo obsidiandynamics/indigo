@@ -20,9 +20,9 @@ public final class SimpleStochastic implements Strategy {
     final StochasticOutput out = oscillator.add(bar);
     if (out != null) {
       if (out.getD() <= oversoldLevel) {
-        return new Order(bar.getSymbol(), Side.BUY, 100);
+        return new Order(bar.getSymbol(), Side.BUY, 100 - out.getD());
       } else if (out.getD() >= overboughtLevel) {
-        return new Order(bar.getSymbol(), Side.SELL, 100);
+        return new Order(bar.getSymbol(), Side.SELL, out.getD());
       } else {
         return null;
       }

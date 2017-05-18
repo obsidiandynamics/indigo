@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.marketstrategy.sync;
 
+import java.util.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.*;
@@ -35,8 +36,7 @@ public final class StrategyActor implements Actor {
   public void act(Activation a, Message m) {
     m.select()
     .when(Bar.class).then(bar -> {
-      final Order order = strategy.onBar(bar);
-      publisher.send(order);
+      Optional.ofNullable(strategy.onBar(bar)).ifPresent(publisher::send);
     })
     .otherwise(a::messageFault);
   }

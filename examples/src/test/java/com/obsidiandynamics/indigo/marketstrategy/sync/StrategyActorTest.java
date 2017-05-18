@@ -1,9 +1,12 @@
 package com.obsidiandynamics.indigo.marketstrategy.sync;
 
+import static junit.framework.TestCase.*;
+
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import org.awaitility.*;
 import org.junit.*;
 
 import com.google.gson.*;
@@ -26,23 +29,31 @@ public final class StrategyActorTest {
   
   @Test
   public void test() {
+    final MessagePublisher pub = bus.getPublisher("orders");
+    
     final List<Order> received = new CopyOnWriteArrayList<>();
-    final AtomicBoolean synced = new AtomicBoolean();
+    final AtomicBoolean sync = new AtomicBoolean();
     bus.getSubscriber("orders").onReceive(msg -> {
       if (msg.equals("sync")) {
-        synced.set(true);
+        sync.set(true);
         return;
       }
       received.add((Order) msg);
     });
-    
-//    while (! synced.get()) {
-//      //TODO
-//    }
+
+    while (! sync.get()) pub.send("sync");
     
     ActorSystem.create()
     .on("router").cue(RouterActor::new)
     .on("strategy").cue(() -> new StrategyActor(() -> new SimpleStochastic(14, 3, 80, 20), bus))
+    .ingress(a -> {
+      a.to(ActorRef.of("router")).times(15).tell(new Bar("AAA", 9, 10, 9, 9));   // primes the oscillator
+      a.to(ActorRef.of("router")).times(5).tell(new Bar("AAA", 9, 10, 9, 9.9f)); // should generate some sell signals
+      a.to(ActorRef.of("router")).times(5).tell(new Bar("AAA", 9, 10, 9, 9.1f)); // should generate some buy signals
+    })
     .shutdownQuietly();
+    
+    Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> received.size() >= 6);
+    assertEquals(6, received.size());
   }
 }
