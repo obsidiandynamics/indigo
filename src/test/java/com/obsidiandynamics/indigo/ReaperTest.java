@@ -72,7 +72,7 @@ public final class ReaperTest implements TestSupport {
       system.reap();
       return counters.passivated.get() >= 1;
     });
-    assertEquals(1, counters.passivated.get());
+    assertTrue("passivated=" + counters.passivated, counters.passivated.get() >= 1);
   }
   
   @Test
