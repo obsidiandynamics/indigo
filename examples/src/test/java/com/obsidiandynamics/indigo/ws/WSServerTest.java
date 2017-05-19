@@ -33,8 +33,10 @@ public class WSServerTest implements TestSupport {
     final AtomicBoolean serverConnected = new AtomicBoolean();
     final AtomicBoolean serverClosed = new AtomicBoolean();
     final AtomicInteger serverReceived = new AtomicInteger();
+    final AtomicInteger serverSent = new AtomicInteger();
     final AtomicBoolean clientConnected = new AtomicBoolean();
     final AtomicBoolean clientClosed = new AtomicBoolean();
+    final AtomicInteger clientSent = new AtomicInteger();
     final AtomicInteger clientReceived = new AtomicInteger();
     
     final AtomicBoolean ping = new AtomicBoolean(true);
@@ -60,7 +62,15 @@ public class WSServerTest implements TestSupport {
         super.onWebSocketText(message);
         log("s: received: %s\n", message);
         serverReceived.incrementAndGet();
-        getSession().getRemote().sendStringByFuture("hello from server");
+        getSession().getRemote().sendString("hello from server", new WriteCallback() {
+          @Override public void writeSuccess() {
+            serverSent.incrementAndGet();
+          }
+          
+          @Override public void writeFailed(Throwable x) {
+            x.printStackTrace();
+          }
+        });
       }
       
       @Override public void onWebSocketClose(int statusCode, String reason) {
@@ -117,16 +127,26 @@ public class WSServerTest implements TestSupport {
     client.setMaxIdleTimeout(1000);
     client.start();
     final Session clientSession = client.connect(clientAdapter, URI.create("ws://localhost:" + port)).get();
-    clientSession.getRemote().sendStringByFuture("hello from client");
+    clientSession.getRemote().sendString("hello from client", new WriteCallback() {
+      @Override public void writeSuccess() {
+        clientSent.incrementAndGet();
+      }
+      
+      @Override public void writeFailed(Throwable x) {
+        x.printStackTrace();
+      }
+    });
     clientSession.close();
     
     await().atMost(10, TimeUnit.SECONDS).until(() -> serverClosed.get() && clientClosed.get());
     
     assertTrue(serverConnected.get());
     assertEquals(n, serverReceived.get());
+    assertEquals(n, serverSent.get());
     assertTrue(serverClosed.get());
     
     assertTrue(clientConnected.get());
+    assertEquals(n, clientSent.get());
     assertEquals(n, clientReceived.get());
     assertTrue(clientClosed.get());
   }
