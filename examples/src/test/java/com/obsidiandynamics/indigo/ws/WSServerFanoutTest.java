@@ -169,7 +169,7 @@ public final class WSServerFanoutTest implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(100, 3000, 0, false);
+    test(10, 10, 0, false);
   }
   
   private void test(int n, int m, int idleTimeout, boolean echo) throws Exception {
@@ -206,6 +206,7 @@ public final class WSServerFanoutTest implements TestSupport {
     } else {
       assertEquals(0, totalSent(clients));
     }
+    
     if (logTimings) {
       final long took = System.currentTimeMillis() - start;
       final float rate = 1000f * n * m / took;
