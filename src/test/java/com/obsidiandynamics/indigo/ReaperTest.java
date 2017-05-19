@@ -51,13 +51,14 @@ public final class ReaperTest implements TestSupport {
   @Test
   public void testShortTimeoutForcedReap() throws InterruptedException {
     final Counters counters = new Counters();
+    final int reapTimeout = 1;
     
     system = new TestActorSystemConfig() {{
       reaperPeriodMillis = 600_000;
     }}
     .createActorSystem()
     .on(TARGET).withConfig(new ActorConfig() {{
-      reapTimeoutMillis = 1;
+      reapTimeoutMillis = reapTimeout;
     }})
     .cue(instrumentedActor(counters))
     .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell());
@@ -67,11 +68,10 @@ public final class ReaperTest implements TestSupport {
     assertEquals(1, counters.activated.get());
     assertEquals(1, counters.acted.get());
     assertEquals(0, counters.passivated.get());
-    
-    await().atMost(60, SECONDS).until(() -> {
-      system.reap();
-      return counters.passivated.get() >= 1;
-    });
+
+    TestSupport.sleep(reapTimeout + 1);
+    system.reap();
+    await().atMost(60, SECONDS).until(() -> counters.passivated.get() >= 1);
     assertTrue("passivated=" + counters.passivated, counters.passivated.get() >= 1);
   }
   
