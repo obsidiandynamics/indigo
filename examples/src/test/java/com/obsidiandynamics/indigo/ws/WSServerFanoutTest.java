@@ -4,10 +4,13 @@ import static junit.framework.TestCase.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import org.awaitility.*;
+import org.eclipse.jetty.client.*;
+import org.eclipse.jetty.util.thread.*;
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.client.*;
 import org.junit.*;
@@ -16,14 +19,9 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class WSServerFanoutTest implements TestSupport {
-  @Test
-  public void test() throws Exception {
-    test(1000, 1, 1000);
-  }
-  
   private final class ServerHarness {
-    final AtomicBoolean connected = new AtomicBoolean();
-    final AtomicBoolean closed = new AtomicBoolean();
+    final AtomicInteger connected = new AtomicInteger();
+    final AtomicInteger closed = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     final AtomicInteger sent = new AtomicInteger();
     
@@ -31,11 +29,14 @@ public final class WSServerFanoutTest implements TestSupport {
     
     final WSServer server;
     
+    private final EndpointManager manager;
+    private final WriteCallback writeCallback;
+    
     ServerHarness(int port, int idleTimeout) throws Exception {
       final MessageListener serverListener = new MessageListener() {
         @Override public void onConnect(Session session) {
           log("s: connected: %s\n", session.getRemoteAddress());
-          connected.set(true);
+          connected.incrementAndGet();
           if (idleTimeout != 0) Threads.asyncDaemon(() -> {
             while (ping.get()) {
               try {
@@ -56,21 +57,11 @@ public final class WSServerFanoutTest implements TestSupport {
         @Override public void onText(Session session, String message) {
           log("s: received: %s\n", message);
           received.incrementAndGet();
-          session.getRemote().sendString("hello from server", new WriteCallback() {
-            @Override public void writeSuccess() {
-              sent.incrementAndGet();
-            }
-            
-            @Override public void writeFailed(Throwable x) {
-              System.err.println("server write error");
-              x.printStackTrace();
-            }
-          });
         }
         
         @Override public void onClose(Session session, int statusCode, String reason) {
           log("s: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
-          closed.set(true);
+          closed.incrementAndGet();
           ping.set(false);
         }
         
@@ -81,7 +72,24 @@ public final class WSServerFanoutTest implements TestSupport {
         }
       };
       
-      server = new WSServer(port, "/", new EndpointManager(idleTimeout, new EndpointConfig(), serverListener));
+      server = new WSServer(port, "/", manager = new EndpointManager(idleTimeout, new EndpointConfig(), serverListener));
+      
+      writeCallback = new WriteCallback() {
+        @Override public void writeSuccess() {
+          sent.incrementAndGet();
+        }
+        
+        @Override public void writeFailed(Throwable x) {
+          System.err.println("server write error");
+          x.printStackTrace();
+        }
+      };
+    }
+    
+    void broadcast(String payload) {
+      for (Endpoint endpoint : manager.getEndpoints()) {
+        endpoint.send(payload, writeCallback);
+      }
     }
   }
   
@@ -93,9 +101,9 @@ public final class WSServerFanoutTest implements TestSupport {
     
     final Session session;
     
-    private final WriteCallback clientWriteCallback;
+    private final WriteCallback writeCallback;
     
-    ClientHarness(int port, int idleTimeout) throws Exception {
+    ClientHarness(HttpClient hc, int port, int idleTimeout, boolean echo) throws Exception {
       final MessageListener clientListener = new MessageListener() {
         @Override public void onConnect(Session session) {
           log("c: connected: %s\n", session.getRemoteAddress());
@@ -105,6 +113,9 @@ public final class WSServerFanoutTest implements TestSupport {
         @Override public void onText(Session session, String message) {
           log("c: received: %s\n", message);
           received.incrementAndGet();
+          if (echo) {
+            send("hello from client");
+          }
         }
         
         @Override public void onClose(Session session, int statusCode, String reason) {
@@ -119,11 +130,11 @@ public final class WSServerFanoutTest implements TestSupport {
         }
       };
       
-      final WebSocketClient client = new WebSocketClient();
+      final WebSocketClient client = new WebSocketClient(hc);
       client.setMaxIdleTimeout(idleTimeout);
       client.start();
       session = client.connect(Endpoint.clientOf(new EndpointConfig(), clientListener), URI.create("ws://localhost:" + port)).get();
-      clientWriteCallback = new WriteCallback() {
+      writeCallback = new WriteCallback() {
         @Override public void writeSuccess() {
           sent.incrementAndGet();
         }
@@ -135,41 +146,86 @@ public final class WSServerFanoutTest implements TestSupport {
       };
     }
     
-    void send(String payload) {
-      session.getRemote().sendString(payload, clientWriteCallback);
+    private void send(String payload) {
+      session.getRemote().sendString(payload, writeCallback);
     }
   }
   
-  private void test(int n, int clients, int idleTimeout) throws Exception {
+  private static int totalConnected(List<ClientHarness> clients) {
+    return clients.stream().mapToInt(c -> c.connected.get() ? 1 : 0).sum();
+  }
+  
+  private static int totalClosed(List<ClientHarness> clients) {
+    return clients.stream().mapToInt(c -> c.closed.get() ? 1 : 0).sum();
+  }
+  
+  private static int totalReceived(List<ClientHarness> clients) {
+    return clients.stream().mapToInt(c -> c.received.get()).sum();
+  }
+  
+  private static int totalSent(List<ClientHarness> clients) {
+    return clients.stream().mapToInt(c -> c.sent.get()).sum();
+  }
+  
+  @Test
+  public void test() throws Exception {
+    test(100, 3000, 0, false);
+  }
+  
+  private void test(int n, int m, int idleTimeout, boolean echo) throws Exception {
     final int port = 6667;
+    final int httpClientThreads = 100;
     final boolean logTimings = true;
+    final int waitScale = 1 + n * m / 1_000_000;
 
     final ServerHarness server = new ServerHarness(port, idleTimeout);
+    final List<ClientHarness> clients = new ArrayList<>(m);
+    final HttpClient hc = new HttpClient();
+    hc.setExecutor(new QueuedThreadPool(httpClientThreads));
+    hc.start();
+    for (int i = 0; i < m; i++) {
+      clients.add(new ClientHarness(hc, port, idleTimeout, echo)); 
+    }
     
-    final ClientHarness client = new ClientHarness(port, idleTimeout);
+    assertEquals(m, totalConnected(clients));
     
     final long start = System.currentTimeMillis();
     for (int i = 0; i < n; i++) {
-      client.send("hello from client");
+      server.broadcast("hello from server");
     }
     
-    Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> client.received.get() == n);
+    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalReceived(clients) >= m * n);
+    assertEquals(m * n, totalReceived(clients));
     
-    client.session.close();
+    assertEquals(m, server.connected.get());
+    assertEquals(m * n, server.sent.get());
     
-    Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> server.closed.get() && client.closed.get());
-    if (logTimings) LOG_STREAM.format("took %d ms\n", System.currentTimeMillis() - start);
-    
-    assertTrue(server.connected.get());
-    assertEquals(n, server.received.get());
-    assertEquals(n, server.sent.get());
-    assertTrue(server.closed.get());
-    
-    assertTrue(client.connected.get());
-    assertEquals(n, client.sent.get());
-    assertEquals(n, client.received.get());
-    assertTrue(client.closed.get());
-    
+    if (echo) {
+      Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalSent(clients) >= m * n);
+      assertEquals(m * n, totalSent(clients));
+    } else {
+      assertEquals(0, totalSent(clients));
+    }
+    if (logTimings) {
+      final long took = System.currentTimeMillis() - start;
+      final float rate = 1000f * n * m / took;
+      LOG_STREAM.format("took %,d ms, %,.0f/s (%d threads active)\n", took, rate, Thread.activeCount());
+    }
+
+    for (ClientHarness client : clients) {
+      client.session.close();
+    }
+
+    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.closed.get() == m);
+    assertEquals(m, server.closed.get());
+    assertEquals(m, totalClosed(clients));
+
+    if (echo) {
+      assertEquals(m * n, server.received.get());
+    } else {
+      assertEquals(0, server.received.get());
+    }
+
     server.server.close();
   }
 }

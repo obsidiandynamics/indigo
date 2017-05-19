@@ -47,4 +47,8 @@ public final class EndpointManager extends WebSocketHandler {
   EndpointConfig getConfig() {
     return config;
   }
+  
+  Collection<Endpoint> getEndpoints() {
+    return endpoints;
+  }
 }
