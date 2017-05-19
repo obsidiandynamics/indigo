@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.adder.ws;
+package com.obsidiandynamics.indigo.ws;
 
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;

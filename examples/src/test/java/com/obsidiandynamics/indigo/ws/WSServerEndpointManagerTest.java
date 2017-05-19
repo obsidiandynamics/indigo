@@ -10,14 +10,12 @@ import java.util.concurrent.atomic.*;
 
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.client.*;
-import org.eclipse.jetty.websocket.server.*;
-import org.eclipse.jetty.websocket.servlet.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public class WSServerTest implements TestSupport {
+public class WSServerEndpointManagerTest implements TestSupport {
   private WSServer server;
 
   @After
@@ -40,15 +38,14 @@ public class WSServerTest implements TestSupport {
     
     final AtomicBoolean ping = new AtomicBoolean(true);
     
-    final WebSocketAdapter serverAdapter = new WebSocketAdapter() {
-      @Override public void onWebSocketConnect(Session sess) {
-        super.onWebSocketConnect(sess);
-        log("s: connected: %s\n", sess.getRemoteAddress());
+    final MessageListener serverListener = new MessageListener() {
+      @Override public void onConnect(Session session) {
+        log("s: connected: %s\n", session.getRemoteAddress());
         serverConnected.set(true);
         Threads.asyncDaemon(() -> {
           while (ping.get()) {
             try {
-              sess.getRemote().sendPing(null);
+              session.getRemote().sendPing(null);
             } catch (IOException e) {
               e.printStackTrace();
             }
@@ -57,11 +54,10 @@ public class WSServerTest implements TestSupport {
         }, "PingThread");
       }
 
-      @Override public void onWebSocketText(String message) {
-        super.onWebSocketText(message);
+      @Override public void onText(Session session, String message) {
         log("s: received: %s\n", message);
         serverReceived.incrementAndGet();
-        getSession().getRemote().sendString("hello from server", new WriteCallback() {
+        session.getRemote().sendString("hello from server", new WriteCallback() {
           @Override public void writeSuccess() {
             serverSent.incrementAndGet();
           }
@@ -72,51 +68,38 @@ public class WSServerTest implements TestSupport {
         });
       }
       
-      @Override public void onWebSocketClose(int statusCode, String reason) {
-        super.onWebSocketClose(statusCode, reason);
+      @Override public void onClose(Session session, int statusCode, String reason) {
         log("s: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
         serverClosed.set(true);
       }
       
-      @Override public void onWebSocketError(Throwable cause) {
-        super.onWebSocketError(cause);
+      @Override public void onError(Session session, Throwable cause) {
         log("s: socket error\n");
         cause.printStackTrace();
       }
     };
     
-    server = new WSServer(port, "/", new WebSocketHandler() {
-      @Override public void configure(WebSocketServletFactory factory) {
-        factory.getPolicy().setIdleTimeout(1000);
-        factory.setCreator(new WebSocketCreator() {
-          @Override public Object createWebSocket(ServletUpgradeRequest req, ServletUpgradeResponse resp) {
-            return serverAdapter;
-          }
-        });
-      }
-    });
+    server = new WSServer(port, "/", new EndpointManager(new EndpointConfig() {{
+      idleTimeoutMillis = 1000;
+    }}, serverListener));
     
-    final WebSocketAdapter clientAdapter = new WebSocketAdapter() {
-      @Override public void onWebSocketConnect(Session sess) {
-        super.onWebSocketConnect(sess);
-        log("c: connected: %s\n", sess.getRemoteAddress());
+    final MessageListener clientListener = new MessageListener() {
+      @Override public void onConnect(Session session) {
+        log("c: connected: %s\n", session.getRemoteAddress());
         clientConnected.set(true);
       }
 
-      @Override public void onWebSocketText(String message) {
-        super.onWebSocketText(message);
+      @Override public void onText(Session session, String message) {
         log("c: received: %s\n", message);
         clientReceived.incrementAndGet();
       }
       
-      @Override public void onWebSocketClose(int statusCode, String reason) {
-        super.onWebSocketClose(statusCode, reason);
+      @Override public void onClose(Session session, int statusCode, String reason) {
         log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
         clientClosed.set(true);
       }
       
-      @Override public void onWebSocketError(Throwable cause) {
-        super.onWebSocketError(cause);
+      @Override public void onError(Session session, Throwable cause) {
         log("c: socket error\n");
         cause.printStackTrace();
       }
@@ -125,7 +108,7 @@ public class WSServerTest implements TestSupport {
     final WebSocketClient client = new WebSocketClient();
     client.setMaxIdleTimeout(1000);
     client.start();
-    final Session clientSession = client.connect(clientAdapter, URI.create("ws://localhost:" + port)).get();
+    final Session clientSession = client.connect(Endpoint.clientOf(new EndpointConfig(), clientListener), URI.create("ws://localhost:" + port)).get();
     clientSession.getRemote().sendString("hello from client", new WriteCallback() {
       @Override public void writeSuccess() {
         clientSent.incrementAndGet();
