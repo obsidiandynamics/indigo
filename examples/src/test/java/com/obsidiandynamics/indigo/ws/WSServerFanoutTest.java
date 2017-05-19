@@ -1,13 +1,13 @@
 package com.obsidiandynamics.indigo.ws;
 
 import static junit.framework.TestCase.*;
-import static org.awaitility.Awaitility.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import org.awaitility.*;
 import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.client.*;
 import org.junit.*;
@@ -18,7 +18,7 @@ import com.obsidiandynamics.indigo.util.*;
 public final class WSServerFanoutTest implements TestSupport {
   @Test
   public void test() throws Exception {
-    test(10_000, 1, 1000);
+    test(1000, 1, 1000);
   }
   
   private final class ServerHarness {
@@ -85,65 +85,79 @@ public final class WSServerFanoutTest implements TestSupport {
     }
   }
   
+  private final class ClientHarness {
+    final AtomicBoolean connected = new AtomicBoolean();
+    final AtomicBoolean closed = new AtomicBoolean();
+    final AtomicInteger sent = new AtomicInteger();
+    final AtomicInteger received = new AtomicInteger();
+    
+    final Session session;
+    
+    private final WriteCallback clientWriteCallback;
+    
+    ClientHarness(int port, int idleTimeout) throws Exception {
+      final MessageListener clientListener = new MessageListener() {
+        @Override public void onConnect(Session session) {
+          log("c: connected: %s\n", session.getRemoteAddress());
+          connected.set(true);
+        }
+
+        @Override public void onText(Session session, String message) {
+          log("c: received: %s\n", message);
+          received.incrementAndGet();
+        }
+        
+        @Override public void onClose(Session session, int statusCode, String reason) {
+          log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
+          closed.set(true);
+        }
+        
+        @Override public void onError(Session session, Throwable cause) {
+          log("c: socket error\n");
+          System.err.println("client socket error");
+          cause.printStackTrace();
+        }
+      };
+      
+      final WebSocketClient client = new WebSocketClient();
+      client.setMaxIdleTimeout(idleTimeout);
+      client.start();
+      session = client.connect(Endpoint.clientOf(new EndpointConfig(), clientListener), URI.create("ws://localhost:" + port)).get();
+      clientWriteCallback = new WriteCallback() {
+        @Override public void writeSuccess() {
+          sent.incrementAndGet();
+        }
+        
+        @Override public void writeFailed(Throwable x) {
+          System.err.println("client write error");
+          x.printStackTrace();
+        }
+      };
+    }
+    
+    void send(String payload) {
+      session.getRemote().sendString(payload, clientWriteCallback);
+    }
+  }
+  
   private void test(int n, int clients, int idleTimeout) throws Exception {
     final int port = 6667;
     final boolean logTimings = true;
 
-    final AtomicBoolean clientConnected = new AtomicBoolean();
-    final AtomicBoolean clientClosed = new AtomicBoolean();
-    final AtomicInteger clientSent = new AtomicInteger();
-    final AtomicInteger clientReceived = new AtomicInteger();
-    
     final ServerHarness server = new ServerHarness(port, idleTimeout);
     
-    final MessageListener clientListener = new MessageListener() {
-      @Override public void onConnect(Session session) {
-        log("c: connected: %s\n", session.getRemoteAddress());
-        clientConnected.set(true);
-      }
-
-      @Override public void onText(Session session, String message) {
-        log("c: received: %s\n", message);
-        clientReceived.incrementAndGet();
-      }
-      
-      @Override public void onClose(Session session, int statusCode, String reason) {
-        log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
-        clientClosed.set(true);
-      }
-      
-      @Override public void onError(Session session, Throwable cause) {
-        log("c: socket error\n");
-        System.err.println("client socket error");
-        cause.printStackTrace();
-      }
-    };
-    
-    final WebSocketClient client = new WebSocketClient();
-    client.setMaxIdleTimeout(idleTimeout);
-    client.start();
-    final Session clientSession = client.connect(Endpoint.clientOf(new EndpointConfig(), clientListener), URI.create("ws://localhost:" + port)).get();
-    final WriteCallback clientWriteCallback = new WriteCallback() {
-      @Override public void writeSuccess() {
-        clientSent.incrementAndGet();
-      }
-      
-      @Override public void writeFailed(Throwable x) {
-        System.err.println("client write error");
-        x.printStackTrace();
-      }
-    };
+    final ClientHarness client = new ClientHarness(port, idleTimeout);
     
     final long start = System.currentTimeMillis();
     for (int i = 0; i < n; i++) {
-      clientSession.getRemote().sendString("hello from client", clientWriteCallback);
+      client.send("hello from client");
     }
     
-    await().atMost(60, TimeUnit.SECONDS).until(() -> clientReceived.get() == n);
+    Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> client.received.get() == n);
     
-    clientSession.close();
+    client.session.close();
     
-    await().atMost(60, TimeUnit.SECONDS).until(() -> server.closed.get() && clientClosed.get());
+    Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> server.closed.get() && client.closed.get());
     if (logTimings) LOG_STREAM.format("took %d ms\n", System.currentTimeMillis() - start);
     
     assertTrue(server.connected.get());
@@ -151,10 +165,10 @@ public final class WSServerFanoutTest implements TestSupport {
     assertEquals(n, server.sent.get());
     assertTrue(server.closed.get());
     
-    assertTrue(clientConnected.get());
-    assertEquals(n, clientSent.get());
-    assertEquals(n, clientReceived.get());
-    assertTrue(clientClosed.get());
+    assertTrue(client.connected.get());
+    assertEquals(n, client.sent.get());
+    assertEquals(n, client.received.get());
+    assertTrue(client.closed.get());
     
     server.server.close();
   }
