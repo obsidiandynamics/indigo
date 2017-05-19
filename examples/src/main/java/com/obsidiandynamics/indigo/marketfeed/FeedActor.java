@@ -1,7 +1,6 @@
 package com.obsidiandynamics.indigo.marketfeed;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.adder.db.*;
 
 public final class FeedActor implements Actor {
   private final FeedActorConfig config;

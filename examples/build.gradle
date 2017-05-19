@@ -26,6 +26,8 @@ dependencies {
   compile 'com.google.code.gson:gson:2.8.0'
   compile 'org.danilopianini:gson-extras:0.2.1'
   compile 'com.owlike:genson:1.4'
+  compile 'org.eclipse.jetty.websocket:websocket-server:9.4.5.v20170502'
+  compile 'org.eclipse.jetty.websocket:websocket-client:9.4.5.v20170502'
   testCompile project(':').sourceSets.test.output
   testCompile 'junit:junit:4.12'
   testCompile 'org.awaitility:awaitility:2.0.0'
