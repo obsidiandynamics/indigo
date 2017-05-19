@@ -7,6 +7,8 @@ public interface MessageListener {
   
   void onText(Session session, String message);
   
+  void onBinary(Session session, byte[] payload, int offset, int len);
+  
   void onClose(Session session, int statusCode, String reason);
   
   void onError(Session session, Throwable cause);

@@ -4,6 +4,7 @@ import static junit.framework.TestCase.*;
 
 import java.io.*;
 import java.net.*;
+import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -58,6 +59,12 @@ public final class WSServerFanoutTest implements TestSupport {
           log("s: received: %s\n", message);
           received.incrementAndGet();
         }
+
+        @Override
+        public void onBinary(Session session, byte[] payload, int offset, int len) {
+          log("s: received %d bytes\n", len);
+          received.incrementAndGet();
+        }
         
         @Override public void onClose(Session session, int statusCode, String reason) {
           log("s: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
@@ -86,7 +93,7 @@ public final class WSServerFanoutTest implements TestSupport {
       };
     }
     
-    void broadcast(String payload) {
+    void broadcast(ByteBuffer payload) {
       for (Endpoint endpoint : manager.getEndpoints()) {
         endpoint.send(payload, writeCallback);
       }
@@ -114,7 +121,16 @@ public final class WSServerFanoutTest implements TestSupport {
           log("c: received: %s\n", message);
           received.incrementAndGet();
           if (echo) {
-            send("hello from client");
+            send(ByteBuffer.wrap(message.getBytes()));
+          }
+        }
+
+        @Override
+        public void onBinary(Session session, byte[] payload, int offset, int len) {
+          log("c: received %d bytes\n", len);
+          received.incrementAndGet();
+          if (echo) {
+            send(ByteBuffer.wrap(payload, offset, len));
           }
         }
         
@@ -146,8 +162,8 @@ public final class WSServerFanoutTest implements TestSupport {
       };
     }
     
-    private void send(String payload) {
-      session.getRemote().sendString(payload, writeCallback);
+    private void send(ByteBuffer payload) {
+      session.getRemote().sendBytes(payload, writeCallback);
     }
   }
   
@@ -169,10 +185,10 @@ public final class WSServerFanoutTest implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(10, 10, 0, false);
+    test(1_000_000, 1, 0, false, 1024);
   }
   
-  private void test(int n, int m, int idleTimeout, boolean echo) throws Exception {
+  private void test(int n, int m, int idleTimeout, boolean echo, int numBytes) throws Exception {
     final int port = 6667;
     final int httpClientThreads = 100;
     final boolean logTimings = true;
@@ -188,10 +204,14 @@ public final class WSServerFanoutTest implements TestSupport {
     }
     
     assertEquals(m, totalConnected(clients));
-    
+
+    final byte[] bytes = new byte[numBytes];
+    final ByteBuffer buf = ByteBuffer.wrap(bytes);
+    final Random random = new Random();
     final long start = System.currentTimeMillis();
     for (int i = 0; i < n; i++) {
-      server.broadcast("hello from server");
+      random.nextBytes(bytes);
+      server.broadcast(buf);
     }
     
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalReceived(clients) >= m * n);
@@ -208,9 +228,11 @@ public final class WSServerFanoutTest implements TestSupport {
     }
     
     if (logTimings) {
-      final long took = System.currentTimeMillis() - start;
-      final float rate = 1000f * n * m / took;
-      LOG_STREAM.format("took %,d ms, %,.0f/s (%d threads active)\n", took, rate, Thread.activeCount());
+      final long tookMillis = System.currentTimeMillis() - start;
+      final float ratePerSec = 1000f * n * m / tookMillis * (echo ? 2 : 1);
+      final float bandwidthMpbs = ratePerSec * numBytes / (1 << 20);
+      LOG_STREAM.format("took %,d ms, %,.0f/s, %,.1f Mb/s (%d threads active)\n", 
+                        tookMillis, ratePerSec, bandwidthMpbs, Thread.activeCount());
     }
 
     for (ClientHarness client : clients) {

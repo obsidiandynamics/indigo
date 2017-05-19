@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.ws;
 
+import java.nio.*;
 import java.util.concurrent.atomic.*;
 
 import org.eclipse.jetty.websocket.api.*;
@@ -28,6 +29,12 @@ final class Endpoint extends WebSocketAdapter {
     super.onWebSocketText(message);
     manager.getMessageListener().onText(getSession(), message);
   }
+
+  @Override
+  public void onWebSocketBinary(byte[] payload, int offset, int len) {
+    super.onWebSocketBinary(payload, offset, len);
+    manager.getMessageListener().onBinary(getSession(), payload, offset, len);
+  }
   
   @Override 
   public void onWebSocketClose(int statusCode, String reason) {
@@ -42,13 +49,21 @@ final class Endpoint extends WebSocketAdapter {
   }
   
   public void send(String payload, WriteCallback callback) {
-    final EndpointConfig config = manager.getConfig();
-    if (backlog.get() > config.highWaterMark) {
-      return;
+    if (isBelowHWM()) {
+      backlog.incrementAndGet();
+      getRemote().sendString(payload, wrapCallback(callback));
     }
-    
-    backlog.incrementAndGet();
-    getRemote().sendString(payload,  new WriteCallback() {
+  }
+  
+  public void send(ByteBuffer payload, WriteCallback callback) {
+    if (isBelowHWM()) {
+      backlog.incrementAndGet();
+      getRemote().sendBytes(payload, wrapCallback(callback));
+    }
+  }
+  
+  private WriteCallback wrapCallback(WriteCallback callback) {
+    return new WriteCallback() {
       @Override public void writeSuccess() {
         backlog.decrementAndGet();
         if (callback != null) callback.writeSuccess();
@@ -58,6 +73,11 @@ final class Endpoint extends WebSocketAdapter {
         backlog.decrementAndGet();
         if (callback != null) callback.writeFailed(x);
       }
-    });
+    };
+  }
+  
+  private boolean isBelowHWM() {
+    final EndpointConfig config = manager.getConfig();
+    return backlog.get() < config.highWaterMark;
   }
 }
