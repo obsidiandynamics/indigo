@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import org.awaitility.*;
 import org.junit.runner.*;
 import org.junit.runner.notification.*;
 
@@ -71,6 +72,7 @@ public final class PrimaryTestsSoak {
   
   private static void runForMinutes(int minutesMinimum) {
     System.out.format("\nSoaking for at least %d minute(s)...\n", minutesMinimum);
+    Awaitility.doNotCatchUncaughtExceptionsByDefault();
     final int n = 10;
     final int threads = Runtime.getRuntime().availableProcessors() * 2;
     final long end = System.currentTimeMillis() + minutesMinimum * 60_000;
