@@ -14,7 +14,7 @@ final class Endpoint extends WebSocketAdapter {
   }
   
   public static Endpoint clientOf(EndpointConfig config, MessageListener listener) {
-    return new EndpointManager(config, listener).createEndpoint();
+    return new EndpointManager(0, config, listener).createEndpoint();
   }
   
   @Override 

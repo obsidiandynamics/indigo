@@ -17,7 +17,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public class WSServerTest implements TestSupport {
+public final class WSServerTest implements TestSupport {
   private WSServer server;
 
   @After
@@ -148,5 +148,7 @@ public class WSServerTest implements TestSupport {
     assertEquals(n, clientSent.get());
     assertEquals(n, clientReceived.get());
     assertTrue(clientClosed.get());
+    
+    ping.set(false);
   }
 }
