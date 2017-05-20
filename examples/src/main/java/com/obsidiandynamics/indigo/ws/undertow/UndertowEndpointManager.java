@@ -1,10 +1,7 @@
 package com.obsidiandynamics.indigo.ws.undertow;
 
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
-
-import org.xnio.*;
 
 import io.undertow.websockets.*;
 import io.undertow.websockets.core.*;
@@ -37,7 +34,7 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
 //      e.printStackTrace();
 //    }
     endpoints.add(endpoint);
-    listener.onConnect(channel);
+    listener.onConnect(endpoint, channel);
     return endpoint;
   }
   

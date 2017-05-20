@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.ws.jetty;
 import org.eclipse.jetty.websocket.api.*;
 
 public interface JettyMessageListener {
-  void onConnect(Session session);
+  void onConnect(JettyEndpoint endpoint, Session session);
   
   void onText(Session session, String message);
   

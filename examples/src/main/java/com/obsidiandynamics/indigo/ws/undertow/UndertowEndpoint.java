@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.*;
 
 import io.undertow.websockets.core.*;
 
-public final class UndertowEndpoint extends AbstractReceiveListener {
+public final class UndertowEndpoint extends AbstractReceiveListener implements Closeable {
   private final UndertowEndpointManager manager;
   
   private final WebSocketChannel channel;
@@ -88,7 +88,14 @@ public final class UndertowEndpoint extends AbstractReceiveListener {
   public void flush() {
     channel.flush();
   }
-  
+
+  public void sendPong() throws IOException {
+    if (channel.isOpen()) {
+      WebSockets.sendPongBlocking(ByteBuffer.allocate(0), channel);
+    }
+  }
+
+  @Override
   public void close() throws IOException {
     channel.sendClose();
   }

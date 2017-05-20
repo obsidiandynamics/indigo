@@ -35,7 +35,7 @@ public final class JettyFanOutTest implements TestSupport {
     
     ServerHarness(int port, int idleTimeout) throws Exception {
       final JettyMessageListener serverListener = new JettyMessageListener() {
-        @Override public void onConnect(Session session) {
+        @Override public void onConnect(JettyEndpoint endpoint, Session session) {
           log("s: connected: %s\n", session.getRemoteAddress());
           connected.incrementAndGet();
           if (idleTimeout != 0) Threads.asyncDaemon(() -> {
@@ -115,7 +115,7 @@ public final class JettyFanOutTest implements TestSupport {
     
     ClientHarness(HttpClient hc, int port, int idleTimeout, boolean echo) throws Exception {
       final JettyMessageListener clientListener = new JettyMessageListener() {
-        @Override public void onConnect(Session session) {
+        @Override public void onConnect(JettyEndpoint endpoint, Session session) {
           log("c: connected: %s\n", session.getRemoteAddress());
           connected.set(true);
         }

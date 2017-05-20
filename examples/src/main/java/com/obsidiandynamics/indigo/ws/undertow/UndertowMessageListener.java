@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.ws.undertow;
 import io.undertow.websockets.core.*;
 
 public interface UndertowMessageListener {
-  void onConnect(WebSocketChannel channel);
+  void onConnect(UndertowEndpoint endpoint, WebSocketChannel channel);
   
   void onText(WebSocketChannel channel, BufferedTextMessage message);
   

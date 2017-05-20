@@ -1,11 +1,12 @@
 package com.obsidiandynamics.indigo.ws.jetty;
 
+import java.io.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
 import org.eclipse.jetty.websocket.api.*;
 
-public final class JettyEndpoint extends WebSocketAdapter {
+public final class JettyEndpoint extends WebSocketAdapter implements Closeable {
   private final JettyEndpointManager manager;
   
   private final AtomicLong backlog = new AtomicLong();
@@ -21,7 +22,7 @@ public final class JettyEndpoint extends WebSocketAdapter {
   @Override 
   public void onWebSocketConnect(Session session) {
     super.onWebSocketConnect(session);
-    manager.getMessageListener().onConnect(session);
+    manager.getMessageListener().onConnect(this, session);
   }
 
   @Override 
@@ -79,5 +80,18 @@ public final class JettyEndpoint extends WebSocketAdapter {
   private boolean isBelowHWM() {
     final JettyEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
+  }
+  
+  public void flush() throws IOException {
+    getRemote().flush();
+  }
+  
+  public void sendPong() throws IOException {
+    getRemote().sendPong(ByteBuffer.allocate(0));
+  }
+
+  @Override
+  public void close() throws IOException {
+    getSession().close();
   }
 }

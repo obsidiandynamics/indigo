@@ -15,6 +15,7 @@ import org.xnio.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.connector.*;
 import io.undertow.server.*;
@@ -37,7 +38,7 @@ public final class UndertowFanOutTest implements TestSupport {
     
     ServerHarness(int port, int idleTimeout) throws Exception {
       final UndertowMessageListener serverListener = new UndertowMessageListener() {
-        @Override public void onConnect(WebSocketChannel channel) {
+        @Override public void onConnect(UndertowEndpoint endpoint, WebSocketChannel channel) {
           log("s: connected %s\n", channel.getSourceAddress());
           connected.incrementAndGet();
         }
@@ -86,6 +87,10 @@ public final class UndertowFanOutTest implements TestSupport {
       };
     }
     
+    List<UndertowEndpoint> getEndpoints() {
+      return new ArrayList<>(manager.getEndpoints());
+    }
+    
     void broadcast(List<UndertowEndpoint> endpoints, byte[] payload) {
       for (UndertowEndpoint endpoint : endpoints) {
         endpoint.send(ByteBuffer.wrap(payload), writeCallback);
@@ -112,7 +117,7 @@ public final class UndertowFanOutTest implements TestSupport {
     
     ClientHarness(int port, int idleTimeout, boolean echo) throws Exception {
       final UndertowMessageListener clientListener = new UndertowMessageListener() {
-        @Override public void onConnect(WebSocketChannel channel) {
+        @Override public void onConnect(UndertowEndpoint endpoint, WebSocketChannel channel) {
           log("c: connected: %s\n", channel.getSourceAddress());
           connected.set(true);
         }
@@ -206,7 +211,7 @@ public final class UndertowFanOutTest implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(100000, 10, 0, false, 10, 99);
+    test(10, 1, 0, false, 10, 1);
   }
   
   private void test(int n, int m, int idleTimeout, boolean echo, int numBytes, int cycles) throws Exception {
@@ -226,15 +231,19 @@ public final class UndertowFanOutTest implements TestSupport {
     
     for (int i = 0; i < m; i++) {
       clients.add(new ClientHarness(port, idleTimeout, echo)); 
+      //new FakeClient("/", port);
     }
     
+    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.connected.get() == m);
+
+    assertEquals(m, server.connected.get());
     assertEquals(m, totalConnected(clients));
 
     final byte[] bytes = new byte[numBytes];
     new Random().nextBytes(bytes);
     final long start = System.currentTimeMillis();
     
-    final List<UndertowEndpoint> endpoints = new ArrayList<>(server.manager.getEndpoints());
+    final List<UndertowEndpoint> endpoints = server.getEndpoints();
     ParallelJob.blockingSlice(endpoints, sendThreads, sublist -> {
       for (int i = 0; i < n; i++) {
         server.broadcast(sublist, bytes);
@@ -243,8 +252,6 @@ public final class UndertowFanOutTest implements TestSupport {
         server.flush(sublist);
       }
     }).run();
-
-    assertEquals(m, server.connected.get());
 
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.sent.get() >= m * n);
     assertEquals(m * n, server.sent.get());
