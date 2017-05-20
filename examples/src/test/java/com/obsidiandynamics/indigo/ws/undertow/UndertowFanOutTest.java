@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo.ws.undertow;
 
 import static junit.framework.TestCase.*;
 
+import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.util.*;
@@ -9,15 +10,15 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import org.awaitility.*;
-import org.eclipse.jetty.client.*;
-import org.eclipse.jetty.util.thread.*;
-import org.eclipse.jetty.websocket.api.*;
-import org.eclipse.jetty.websocket.client.*;
 import org.junit.*;
+import org.xnio.*;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.ws.jetty.*;
+import com.obsidiandynamics.indigo.util.*;
 
+import io.undertow.connector.*;
+import io.undertow.server.*;
+import io.undertow.websockets.client.*;
 import io.undertow.websockets.core.*;
 
 public final class UndertowFanOutTest implements TestSupport {
@@ -36,24 +37,24 @@ public final class UndertowFanOutTest implements TestSupport {
     
     ServerHarness(int port, int idleTimeout) throws Exception {
       final UndertowMessageListener serverListener = new UndertowMessageListener() {
-        @Override public void onConnect(WebSocketChannel session) {
-          log("s: connected\n");
+        @Override public void onConnect(WebSocketChannel channel) {
+          log("s: connected %s\n", channel.getSourceAddress());
           connected.incrementAndGet();
         }
 
-        @Override public void onText(WebSocketChannel session, BufferedTextMessage message) {
+        @Override public void onText(WebSocketChannel channel, BufferedTextMessage message) {
           log("s: received: %s\n", message);
           received.incrementAndGet();
         }
 
         @Override
-        public void onBinary(WebSocketChannel session, BufferedBinaryMessage message) {
+        public void onBinary(WebSocketChannel channel, BufferedBinaryMessage message) {
           final ByteBuffer buf = WebSockets.mergeBuffers(message.getData().getResource());
           log("s: received %d bytes\n", buf.limit());
           received.incrementAndGet();
         }
         
-        @Override public void onClose(WebSocketChannel session, int statusCode, String reason) {
+        @Override public void onClose(WebSocketChannel channel, int statusCode, String reason) {
           log("s: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
           closed.incrementAndGet();
           ping.set(false);
@@ -85,9 +86,15 @@ public final class UndertowFanOutTest implements TestSupport {
       };
     }
     
-    void broadcast(byte[] payload) {
-      for (UndertowEndpoint endpoint : manager.getEndpoints()) {
+    void broadcast(List<UndertowEndpoint> endpoints, byte[] payload) {
+      for (UndertowEndpoint endpoint : endpoints) {
         endpoint.send(ByteBuffer.wrap(payload), writeCallback);
+      }
+    }
+    
+    void flush(List<UndertowEndpoint> endpoints) {
+      for (UndertowEndpoint endpoint : endpoints) {
+        endpoint.flush();
       }
     }
   }
@@ -98,65 +105,86 @@ public final class UndertowFanOutTest implements TestSupport {
     final AtomicInteger sent = new AtomicInteger();
     final AtomicInteger received = new AtomicInteger();
     
-    final Session session;
+    final WebSocketChannel channel;
     
-    private final WriteCallback writeCallback;
+    private final WebSocketCallback<Void> writeCallback;
+    private final XnioWorker worker;
     
-    ClientHarness(HttpClient hc, int port, int idleTimeout, boolean echo) throws Exception {
-      final JettyMessageListener clientListener = new JettyMessageListener() {
-        @Override public void onConnect(Session session) {
-          log("c: connected: %s\n", session.getRemoteAddress());
+    ClientHarness(int port, int idleTimeout, boolean echo) throws Exception {
+      final UndertowMessageListener clientListener = new UndertowMessageListener() {
+        @Override public void onConnect(WebSocketChannel channel) {
+          log("c: connected: %s\n", channel.getSourceAddress());
           connected.set(true);
         }
 
-        @Override public void onText(Session session, String message) {
+        @Override public void onText(WebSocketChannel channel, BufferedTextMessage message) {
           log("c: received: %s\n", message);
           received.incrementAndGet();
           if (echo) {
-            send(ByteBuffer.wrap(message.getBytes()));
+            send(ByteBuffer.wrap(message.getData().getBytes()));
           }
         }
 
         @Override
-        public void onBinary(Session session, byte[] payload, int offset, int len) {
-          log("c: received %d bytes\n", len);
+        public void onBinary(WebSocketChannel channel, BufferedBinaryMessage message) {
+          log("c: received\n");
           received.incrementAndGet();
           if (echo) {
-            send(ByteBuffer.wrap(payload, offset, len));
+            send(WebSockets.mergeBuffers(message.getData().getResource()));
           }
         }
         
-        @Override public void onClose(Session session, int statusCode, String reason) {
+        @Override public void onClose(WebSocketChannel channel, int statusCode, String reason) {
           log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
           closed.set(true);
         }
         
-        @Override public void onError(Session session, Throwable cause) {
+        @Override public void onError(WebSocketChannel channel, Throwable cause) {
           log("c: socket error\n");
           System.err.println("client socket error");
           cause.printStackTrace();
         }
       };
       
-      final WebSocketClient client = new WebSocketClient(hc);
-      client.setMaxIdleTimeout(idleTimeout);
-      client.start();
-      session = client.connect(JettyEndpoint.clientOf(new JettyEndpointConfig(), clientListener), 
-                               URI.create("ws://127.0.0.1:" + port + "/")).get();
-      writeCallback = new WriteCallback() {
-        @Override public void writeSuccess() {
+      worker = Xnio.getInstance().createWorker(OptionMap.builder()
+                                               .set(Options.WORKER_IO_THREADS, 1)
+                                               .set(Options.CONNECTION_HIGH_WATER, 1000000)
+                                               .set(Options.CONNECTION_LOW_WATER, 1000000)
+                                               .set(Options.WORKER_TASK_CORE_THREADS, 1)
+                                               .set(Options.WORKER_TASK_MAX_THREADS, 1)
+                                               .set(Options.TCP_NODELAY, true)
+                                               .set(Options.CORK, true)
+                                               .getMap());
+      final ByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
+      channel = WebSocketClient.connectionBuilder(worker, pool, URI.create("ws://127.0.0.1:" + port + "/"))
+          .connect().get();
+      channel.getReceiveSetter().set(UndertowEndpoint.clientOf(channel, new UndertowEndpointConfig(), clientListener));
+      channel.resumeReceives();
+      
+      writeCallback = new WebSocketCallback<Void>() {
+        @Override
+        public void complete(WebSocketChannel channel, Void context) {
           sent.incrementAndGet();
         }
-        
-        @Override public void writeFailed(Throwable x) {
+
+        @Override
+        public void onError(WebSocketChannel channel, Void context, Throwable throwable) {
           System.err.println("client write error");
-          x.printStackTrace();
+          throwable.printStackTrace();
         }
       };
     }
     
     private void send(ByteBuffer payload) {
-      session.getRemote().sendBytes(payload, writeCallback);
+      WebSockets.sendBinary(payload, channel, writeCallback);
+    }
+    
+    void close() throws IOException {
+      channel.sendClose();
+      Threads.asyncDaemon(() -> {
+        TestSupport.sleep(1000);
+        worker.shutdown();
+      }, "WorkerTerminator");
     }
   }
   
@@ -178,26 +206,26 @@ public final class UndertowFanOutTest implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(100, 10, 0, false, 10);
+    test(100000, 10, 0, false, 10, 99);
+  }
+  
+  private void test(int n, int m, int idleTimeout, boolean echo, int numBytes, int cycles) throws Exception {
+    for (int i = 0; i < cycles; i++) {
+      test(n, m, idleTimeout, echo, numBytes);
+    }
   }
   
   private void test(int n, int m, int idleTimeout, boolean echo, int numBytes) throws Exception {
     final int port = 6667;
-    final int httpClientThreads = 100;
     final boolean logTimings = true;
-    final int sendThreads = 10;
+    final int sendThreads = 1;
     final int waitScale = 1 + n * m / 1_000_000;
     
-    if (n % sendThreads != 0) throw new IllegalArgumentException("n must be a whole multiple of sendThreads");
-
     final ServerHarness server = new ServerHarness(port, idleTimeout);
     final List<ClientHarness> clients = new ArrayList<>(m);
     
-    final HttpClient hc = new HttpClient();
-    hc.setExecutor(new QueuedThreadPool(httpClientThreads));
-    hc.start();
     for (int i = 0; i < m; i++) {
-      clients.add(new ClientHarness(hc, port, idleTimeout, echo)); 
+      clients.add(new ClientHarness(port, idleTimeout, echo)); 
     }
     
     assertEquals(m, totalConnected(clients));
@@ -205,21 +233,24 @@ public final class UndertowFanOutTest implements TestSupport {
     final byte[] bytes = new byte[numBytes];
     new Random().nextBytes(bytes);
     final long start = System.currentTimeMillis();
-    final int lim = n / sendThreads;
-    ParallelJob.blocking(sendThreads, t -> {
-      for (int i = 0; i < lim; i++) {
-        if (i % 1000 == 0) System.out.println("sending " + i);
-        server.broadcast(bytes);
+    
+    final List<UndertowEndpoint> endpoints = new ArrayList<>(server.manager.getEndpoints());
+    ParallelJob.blockingSlice(endpoints, sendThreads, sublist -> {
+      for (int i = 0; i < n; i++) {
+        server.broadcast(sublist, bytes);
+      }
+      for (int i = 0; i < n; i++) {
+        server.flush(sublist);
       }
     }).run();
 
-    System.out.println("send complete");
+    assertEquals(m, server.connected.get());
+
+    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.sent.get() >= m * n);
+    assertEquals(m * n, server.sent.get());
     
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalReceived(clients) >= m * n);
     assertEquals(m * n, totalReceived(clients));
-    
-    assertEquals(m, server.connected.get());
-    assertEquals(m * n, server.sent.get());
     
     if (echo) {
       Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalSent(clients) >= m * n);
@@ -237,14 +268,17 @@ public final class UndertowFanOutTest implements TestSupport {
     }
 
     for (ClientHarness client : clients) {
-      client.session.close();
+      client.close();
     }
-
+    
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.closed.get() == m);
     assertEquals(m, server.closed.get());
+
+    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalClosed(clients) == m);
     assertEquals(m, totalClosed(clients));
 
     if (echo) {
+      Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.received.get() == m * n);
       assertEquals(m * n, server.received.get());
     } else {
       assertEquals(0, server.received.get());

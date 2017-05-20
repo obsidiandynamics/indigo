@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo;
 
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
@@ -41,6 +42,28 @@ public final class ParallelJob implements Runnable {
   
   private static int numDigits(int num) {
     return String.valueOf(num).length();
+  }
+  
+  public static <T> ParallelJob blockingSlice(List<T> list, int threads, Consumer<List<T>> task) {
+    return slice(list, threads, true, task);
+  }
+  
+  private static <T> ParallelJob slice(List<T> list, int threads, boolean blocking, Consumer<List<T>> task) {
+    final int actualThreads = Math.min(threads, list.size());
+    final List<List<T>> lists = new ArrayList<>(actualThreads);
+    int pos = 0;
+    for (int i = 0; i < actualThreads; i++) {
+      final int remaining = actualThreads - i;
+      final int len = (list.size() - pos) / remaining;
+      lists.add(list.subList(pos, pos + len));
+      pos += len;
+    }
+    assert pos == list.size() : "pos=" + pos + ", list.size=" + list.size();
+    
+    return create(actualThreads, blocking, i -> {
+      final List<T> sublist = lists.get(i);
+      task.accept(sublist);
+    });
   }
   
   @Override

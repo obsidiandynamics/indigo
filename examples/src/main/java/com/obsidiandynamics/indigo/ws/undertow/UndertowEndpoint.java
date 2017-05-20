@@ -4,8 +4,6 @@ import java.io.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
-import com.obsidiandynamics.indigo.ws.jetty.*;
-
 import io.undertow.websockets.core.*;
 
 public final class UndertowEndpoint extends AbstractReceiveListener {
@@ -85,5 +83,13 @@ public final class UndertowEndpoint extends AbstractReceiveListener {
   private boolean isBelowHWM() {
     final UndertowEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
+  }
+  
+  public void flush() {
+    channel.flush();
+  }
+  
+  public void close() throws IOException {
+    channel.sendClose();
   }
 }
