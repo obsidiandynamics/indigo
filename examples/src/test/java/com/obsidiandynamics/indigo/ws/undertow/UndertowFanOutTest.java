@@ -16,6 +16,7 @@ import org.xnio.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.ws.fake.*;
 
 import io.undertow.connector.*;
 import io.undertow.server.*;
@@ -211,7 +212,7 @@ public final class UndertowFanOutTest implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(10, 1, 0, false, 10, 1);
+    test(1, 1, 0, false, 10, 1);
   }
   
   private void test(int n, int m, int idleTimeout, boolean echo, int numBytes, int cycles) throws Exception {
@@ -231,7 +232,20 @@ public final class UndertowFanOutTest implements TestSupport {
     
     for (int i = 0; i < m; i++) {
       clients.add(new ClientHarness(port, idleTimeout, echo)); 
-      //new FakeClient("/", port);
+//      new FakeClient("/", port, numBytes, new FakeClientCallback() {
+//        @Override public void connected() {
+//          log("fc: connected\n");
+//        }
+//
+//        @Override public void disconnected() {
+//          log("fc: disconnected\n");
+//        }
+//
+//        @Override
+//        public void received(int messages) {
+//          log("fc: received %d\n", messages);
+//        }
+//      });
     }
     
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.connected.get() == m);

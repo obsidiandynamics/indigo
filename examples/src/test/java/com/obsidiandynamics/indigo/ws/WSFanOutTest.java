@@ -12,6 +12,7 @@ import org.eclipse.jetty.util.thread.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.ws.fake.*;
 import com.obsidiandynamics.indigo.ws.jetty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
@@ -46,6 +47,14 @@ public final class WSFanOutTest implements TestSupport {
     test(N, M, ECHO, BYTES, CYCLES,
          UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
          UndertowClientHarness.factory(PORT, IDLE_TIMEOUT, ECHO),
+         ThrowingRunnable::noOp);
+  }
+  
+  @Test
+  public void testUtFc() throws Exception {
+    test(N, M, ECHO, BYTES, CYCLES,
+         UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
+         FakeClientHarness.factory(PORT, BYTES),
          ThrowingRunnable::noOp);
   }
   
