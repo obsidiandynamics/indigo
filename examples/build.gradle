@@ -28,6 +28,9 @@ dependencies {
   compile 'com.owlike:genson:1.4'
   compile 'org.eclipse.jetty.websocket:websocket-server:9.4.5.v20170502'
   compile 'org.eclipse.jetty.websocket:websocket-client:9.4.5.v20170502'
+  compile 'io.undertow:undertow-core:1.4.12.Final'
+  compile 'io.undertow:undertow-websockets-jsr:1.4.12.Final'
+  
   testCompile project(':').sourceSets.test.output
   testCompile 'junit:junit:4.12'
   testCompile 'org.awaitility:awaitility:2.0.0'

@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.ws.jetty;
 
-public class EndpointConfig {
+public class JettyEndpointConfig {
   public int pingIntervalMillis;
   
   public long highWaterMark = Long.MAX_VALUE;

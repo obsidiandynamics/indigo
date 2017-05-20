@@ -1,8 +1,8 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.ws.jetty;
 
 import org.eclipse.jetty.websocket.api.*;
 
-public interface MessageListener {
+public interface JettyMessageListener {
   void onConnect(Session session);
   
   void onText(Session session, String message);

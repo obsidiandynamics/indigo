@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.ws.jetty;
 
 import static junit.framework.TestCase.*;
 
@@ -19,7 +19,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public final class WSServerFanoutTest implements TestSupport {
+public final class JettyFanOutTest implements TestSupport {
   private final class ServerHarness {
     final AtomicInteger connected = new AtomicInteger();
     final AtomicInteger closed = new AtomicInteger();
@@ -28,13 +28,13 @@ public final class WSServerFanoutTest implements TestSupport {
     
     final AtomicBoolean ping = new AtomicBoolean(true);
     
-    final WSServer server;
+    final JettyServer server;
     
-    private final EndpointManager manager;
+    private final JettyEndpointManager manager;
     private final WriteCallback writeCallback;
     
     ServerHarness(int port, int idleTimeout) throws Exception {
-      final MessageListener serverListener = new MessageListener() {
+      final JettyMessageListener serverListener = new JettyMessageListener() {
         @Override public void onConnect(Session session) {
           log("s: connected: %s\n", session.getRemoteAddress());
           connected.incrementAndGet();
@@ -79,10 +79,10 @@ public final class WSServerFanoutTest implements TestSupport {
         }
       };
       
-      manager = new EndpointManager(idleTimeout, new EndpointConfig() {{
+      manager = new JettyEndpointManager(idleTimeout, new JettyEndpointConfig() {{
         highWaterMark = Long.MAX_VALUE;
       }}, serverListener);
-      server = new WSServer(port, "/", manager);
+      server = new JettyServer(port, "/", manager);
       
       writeCallback = new WriteCallback() {
         @Override public void writeSuccess() {
@@ -97,7 +97,7 @@ public final class WSServerFanoutTest implements TestSupport {
     }
     
     void broadcast(byte[] payload) {
-      for (Endpoint endpoint : manager.getEndpoints()) {
+      for (JettyEndpoint endpoint : manager.getEndpoints()) {
         endpoint.send(ByteBuffer.wrap(payload), writeCallback);
       }
     }
@@ -114,7 +114,7 @@ public final class WSServerFanoutTest implements TestSupport {
     private final WriteCallback writeCallback;
     
     ClientHarness(HttpClient hc, int port, int idleTimeout, boolean echo) throws Exception {
-      final MessageListener clientListener = new MessageListener() {
+      final JettyMessageListener clientListener = new JettyMessageListener() {
         @Override public void onConnect(Session session) {
           log("c: connected: %s\n", session.getRemoteAddress());
           connected.set(true);
@@ -151,9 +151,8 @@ public final class WSServerFanoutTest implements TestSupport {
       
       final WebSocketClient client = new WebSocketClient(hc);
       client.setMaxIdleTimeout(idleTimeout);
-      //client.getPolicy().setInputBufferSize(28);
       client.start();
-      session = client.connect(Endpoint.clientOf(new EndpointConfig(), clientListener), URI.create("ws://localhost:" + port)).get();
+      session = client.connect(JettyEndpoint.clientOf(new JettyEndpointConfig(), clientListener), URI.create("ws://localhost:" + port)).get();
       writeCallback = new WriteCallback() {
         @Override public void writeSuccess() {
           sent.incrementAndGet();
@@ -189,7 +188,7 @@ public final class WSServerFanoutTest implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(1_000, 1, 0, false, 10);
+    test(100, 10, 0, false, 10);
   }
   
   private void test(int n, int m, int idleTimeout, boolean echo, int numBytes) throws Exception {
@@ -222,8 +221,6 @@ public final class WSServerFanoutTest implements TestSupport {
       }
     }).run();
 
-    System.out.println("send complete");
-    
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalReceived(clients) >= m * n);
     assertEquals(m * n, totalReceived(clients));
     
@@ -260,11 +257,5 @@ public final class WSServerFanoutTest implements TestSupport {
     }
 
     server.server.close();
-  }
-  
-  private ByteBuffer randomBytes(Random random, int len) {
-    final byte[] bytes = new byte[len];
-    random.nextBytes(bytes);
-    return ByteBuffer.wrap(bytes);
   }
 }

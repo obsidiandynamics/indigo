@@ -1,21 +1,21 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.ws.jetty;
 
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
 import org.eclipse.jetty.websocket.api.*;
 
-final class Endpoint extends WebSocketAdapter {
-  private final EndpointManager manager;
+public final class JettyEndpoint extends WebSocketAdapter {
+  private final JettyEndpointManager manager;
   
   private final AtomicLong backlog = new AtomicLong();
 
-  public Endpoint(EndpointManager manager) {
+  public JettyEndpoint(JettyEndpointManager manager) {
     this.manager = manager;
   }
   
-  public static Endpoint clientOf(EndpointConfig config, MessageListener listener) {
-    return new EndpointManager(0, config, listener).createEndpoint();
+  public static JettyEndpoint clientOf(JettyEndpointConfig config, JettyMessageListener listener) {
+    return new JettyEndpointManager(0, config, listener).createEndpoint();
   }
   
   @Override 
@@ -59,8 +59,6 @@ final class Endpoint extends WebSocketAdapter {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendBytes(payload, wrapCallback(callback));
-    } else {
-      //System.out.println("dropping due to HWM");
     }
   }
   
@@ -79,7 +77,7 @@ final class Endpoint extends WebSocketAdapter {
   }
   
   private boolean isBelowHWM() {
-    final EndpointConfig config = manager.getConfig();
+    final JettyEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
   }
 }

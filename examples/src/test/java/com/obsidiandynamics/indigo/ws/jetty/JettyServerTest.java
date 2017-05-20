@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.ws.jetty;
 
 import static junit.framework.TestCase.*;
 import static org.awaitility.Awaitility.*;
@@ -17,8 +17,8 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public final class WSServerTest implements TestSupport {
-  private WSServer server;
+public final class JettyServerTest implements TestSupport {
+  private JettyServer server;
 
   @After
   public void teardown() throws Exception {
@@ -85,7 +85,7 @@ public final class WSServerTest implements TestSupport {
       }
     };
     
-    server = new WSServer(port, "/", new WebSocketHandler() {
+    server = new JettyServer(port, "/", new WebSocketHandler() {
       @Override public void configure(WebSocketServletFactory factory) {
         factory.getPolicy().setIdleTimeout(1000);
         factory.setCreator(new WebSocketCreator() {
