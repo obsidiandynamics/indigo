@@ -59,6 +59,8 @@ final class Endpoint extends WebSocketAdapter {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendBytes(payload, wrapCallback(callback));
+    } else {
+      //System.out.println("dropping due to HWM");
     }
   }
   

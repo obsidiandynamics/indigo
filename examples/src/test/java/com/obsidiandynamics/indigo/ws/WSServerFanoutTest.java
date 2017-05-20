@@ -79,7 +79,10 @@ public final class WSServerFanoutTest implements TestSupport {
         }
       };
       
-      server = new WSServer(port, "/", manager = new EndpointManager(idleTimeout, new EndpointConfig(), serverListener));
+      manager = new EndpointManager(idleTimeout, new EndpointConfig() {{
+        highWaterMark = Long.MAX_VALUE;
+      }}, serverListener);
+      server = new WSServer(port, "/", manager);
       
       writeCallback = new WriteCallback() {
         @Override public void writeSuccess() {
@@ -93,9 +96,9 @@ public final class WSServerFanoutTest implements TestSupport {
       };
     }
     
-    void broadcast(ByteBuffer payload) {
+    void broadcast(byte[] payload) {
       for (Endpoint endpoint : manager.getEndpoints()) {
-        endpoint.send(payload, writeCallback);
+        endpoint.send(ByteBuffer.wrap(payload), writeCallback);
       }
     }
   }
@@ -148,6 +151,7 @@ public final class WSServerFanoutTest implements TestSupport {
       
       final WebSocketClient client = new WebSocketClient(hc);
       client.setMaxIdleTimeout(idleTimeout);
+      //client.getPolicy().setInputBufferSize(28);
       client.start();
       session = client.connect(Endpoint.clientOf(new EndpointConfig(), clientListener), URI.create("ws://localhost:" + port)).get();
       writeCallback = new WriteCallback() {
@@ -185,14 +189,17 @@ public final class WSServerFanoutTest implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(1_000_000, 1, 0, false, 1024);
+    test(1_000, 1, 0, false, 10);
   }
   
   private void test(int n, int m, int idleTimeout, boolean echo, int numBytes) throws Exception {
     final int port = 6667;
     final int httpClientThreads = 100;
     final boolean logTimings = true;
+    final int sendThreads = 10;
     final int waitScale = 1 + n * m / 1_000_000;
+    
+    if (n % sendThreads != 0) throw new IllegalArgumentException("n must be a whole multiple of sendThreads");
 
     final ServerHarness server = new ServerHarness(port, idleTimeout);
     final List<ClientHarness> clients = new ArrayList<>(m);
@@ -206,13 +213,16 @@ public final class WSServerFanoutTest implements TestSupport {
     assertEquals(m, totalConnected(clients));
 
     final byte[] bytes = new byte[numBytes];
-    final ByteBuffer buf = ByteBuffer.wrap(bytes);
-    final Random random = new Random();
+    new Random().nextBytes(bytes);
     final long start = System.currentTimeMillis();
-    for (int i = 0; i < n; i++) {
-      random.nextBytes(bytes);
-      server.broadcast(buf);
-    }
+    final int lim = n / sendThreads;
+    ParallelJob.blocking(sendThreads, t -> {
+      for (int i = 0; i < lim; i++) {
+        server.broadcast(bytes);
+      }
+    }).run();
+
+    System.out.println("send complete");
     
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalReceived(clients) >= m * n);
     assertEquals(m * n, totalReceived(clients));
@@ -250,5 +260,11 @@ public final class WSServerFanoutTest implements TestSupport {
     }
 
     server.server.close();
+  }
+  
+  private ByteBuffer randomBytes(Random random, int len) {
+    final byte[] bytes = new byte[len];
+    random.nextBytes(bytes);
+    return ByteBuffer.wrap(bytes);
   }
 }
