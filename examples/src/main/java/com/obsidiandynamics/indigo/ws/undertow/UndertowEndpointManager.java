@@ -6,20 +6,22 @@ import java.util.concurrent.*;
 
 import org.xnio.*;
 
+import com.obsidiandynamics.indigo.ws.*;
+
 import io.undertow.websockets.*;
 import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.*;
 
-public final class UndertowEndpointManager implements WebSocketConnectionCallback {
+public final class UndertowEndpointManager implements WebSocketConnectionCallback, WSEndpointManager<UndertowEndpoint> {
   private static final boolean NO_DELAY = false;
   
   private final UndertowEndpointConfig config;
   
-  private final UndertowMessageListener listener;
+  private final WSListener<UndertowEndpoint> listener;
   
   private final Set<UndertowEndpoint> endpoints = new CopyOnWriteArraySet<>();
   
-  public UndertowEndpointManager(UndertowEndpointConfig config, UndertowMessageListener listener) {
+  public UndertowEndpointManager(UndertowEndpointConfig config, WSListener<UndertowEndpoint> listener) {
     this.config = config;
     this.listener = listener;
   }
@@ -39,11 +41,11 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
       e.printStackTrace();
     }
     endpoints.add(endpoint);
-    listener.onConnect(endpoint, channel);
+    listener.onConnect(endpoint);
     return endpoint;
   }
   
-  UndertowMessageListener getMessageListener() {
+  WSListener<UndertowEndpoint> getListener() {
     return listener;
   }
   
@@ -51,7 +53,8 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
     return config;
   }
   
-  Collection<UndertowEndpoint> getEndpoints() {
+  @Override
+  public Collection<UndertowEndpoint> getEndpoints() {
     return endpoints;
   }
 }

@@ -6,16 +6,18 @@ import java.util.concurrent.*;
 import org.eclipse.jetty.websocket.server.*;
 import org.eclipse.jetty.websocket.servlet.*;
 
-public final class JettyEndpointManager extends WebSocketHandler {
+import com.obsidiandynamics.indigo.ws.*;
+
+public final class JettyEndpointManager extends WebSocketHandler implements WSEndpointManager<JettyEndpoint> {
   private final int idleTimeoutMillis;
   
   private final JettyEndpointConfig config;
   
-  private final JettyMessageListener listener;
+  private final  WSListener<JettyEndpoint> listener;
   
   private final Set<JettyEndpoint> endpoints = new CopyOnWriteArraySet<>();
 
-  public JettyEndpointManager(int idleTimeoutMillis, JettyEndpointConfig config, JettyMessageListener listener) {
+  public JettyEndpointManager(int idleTimeoutMillis, JettyEndpointConfig config, WSListener<JettyEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;
@@ -40,7 +42,7 @@ public final class JettyEndpointManager extends WebSocketHandler {
     return endpoint;
   }
   
-  JettyMessageListener getMessageListener() {
+  WSListener<JettyEndpoint> getListener() {
     return listener;
   }
   
@@ -48,7 +50,8 @@ public final class JettyEndpointManager extends WebSocketHandler {
     return config;
   }
   
-  Collection<JettyEndpoint> getEndpoints() {
+  @Override
+  public Collection<JettyEndpoint> getEndpoints() {
     return endpoints;
   }
 }

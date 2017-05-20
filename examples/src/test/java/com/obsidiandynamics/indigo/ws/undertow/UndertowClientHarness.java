@@ -22,35 +22,35 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
   private final XnioWorker worker;
   
   UndertowClientHarness(int port, int idleTimeout, boolean echo) throws Exception {
-    final UndertowMessageListener clientListener = new UndertowMessageListener() {
-      @Override public void onConnect(UndertowEndpoint endpoint, WebSocketChannel channel) {
+    final WSListener<UndertowEndpoint> clientListener = new WSListener<UndertowEndpoint>() {
+      @Override public void onConnect(UndertowEndpoint endpoint) {
         log("c: connected: %s\n", channel.getSourceAddress());
         connected.set(true);
       }
 
-      @Override public void onText(WebSocketChannel channel, BufferedTextMessage message) {
+      @Override public void onText(UndertowEndpoint endpoint, String message) {
         log("c: received: %s\n", message);
         received.incrementAndGet();
         if (echo) {
-          send(ByteBuffer.wrap(message.getData().getBytes()));
+          send(ByteBuffer.wrap(message.getBytes()));
         }
       }
 
       @Override
-      public void onBinary(WebSocketChannel channel, BufferedBinaryMessage message) {
+      public void onBinary(UndertowEndpoint endpoint, ByteBuffer message) {
         log("c: received\n");
         received.incrementAndGet();
         if (echo) {
-          send(WebSockets.mergeBuffers(message.getData().getResource()));
+          send(message);
         }
       }
       
-      @Override public void onClose(WebSocketChannel channel, int statusCode, String reason) {
+      @Override public void onClose(UndertowEndpoint endpoint, int statusCode, String reason) {
         log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
         closed.set(true);
       }
       
-      @Override public void onError(WebSocketChannel channel, Throwable cause) {
+      @Override public void onError(UndertowEndpoint endpoint, Throwable cause) {
         log("c: socket error\n");
         System.err.println("client socket error");
         cause.printStackTrace();

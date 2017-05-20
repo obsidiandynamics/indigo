@@ -16,13 +16,13 @@ public final class JettyClientHarness extends ClientHarness implements TestSuppo
   private final WriteCallback writeCallback;
   
   JettyClientHarness(HttpClient httpClient, int port, int idleTimeout, boolean echo) throws Exception {
-    final JettyMessageListener clientListener = new JettyMessageListener() {
-      @Override public void onConnect(JettyEndpoint endpoint, Session session) {
-        log("c: connected: %s\n", session.getRemoteAddress());
+    final WSListener<JettyEndpoint> clientListener = new WSListener<JettyEndpoint>() {
+      @Override public void onConnect(JettyEndpoint endpoint) {
+        log("c: connected: %s\n", endpoint.getRemote().getInetSocketAddress());
         connected.set(true);
       }
 
-      @Override public void onText(Session session, String message) {
+      @Override public void onText(JettyEndpoint endpoint, String message) {
         log("c: received: %s\n", message);
         received.incrementAndGet();
         if (echo) {
@@ -31,20 +31,20 @@ public final class JettyClientHarness extends ClientHarness implements TestSuppo
       }
 
       @Override
-      public void onBinary(Session session, byte[] payload, int offset, int len) {
-        log("c: received %d bytes\n", len);
+      public void onBinary(JettyEndpoint endpoint, ByteBuffer message) {
+        log("c: received %d bytes\n", message.limit());
         received.incrementAndGet();
         if (echo) {
-          send(ByteBuffer.wrap(payload, offset, len));
+          send(message);
         }
       }
       
-      @Override public void onClose(Session session, int statusCode, String reason) {
+      @Override public void onClose(JettyEndpoint endpoint, int statusCode, String reason) {
         log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
         closed.set(true);
       }
       
-      @Override public void onError(Session session, Throwable cause) {
+      @Override public void onError(JettyEndpoint endpoint, Throwable cause) {
         log("c: socket error\n");
         System.err.println("client socket error");
         cause.printStackTrace();

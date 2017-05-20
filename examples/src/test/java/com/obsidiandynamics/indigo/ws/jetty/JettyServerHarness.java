@@ -19,31 +19,31 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
   private final WriteCallback writeCallback;
   
   JettyServerHarness(int port, int idleTimeout) throws Exception {
-    final JettyMessageListener serverListener = new JettyMessageListener() {
-      @Override public void onConnect(JettyEndpoint endpoint, Session session) {
-        log("s: connected: %s\n", session.getRemoteAddress());
+    final WSListener<JettyEndpoint> serverListener = new WSListener<JettyEndpoint>() {
+      @Override public void onConnect(JettyEndpoint endpoint) {
+        log("s: connected: %s\n", endpoint.getRemote().getInetSocketAddress());
         connected.incrementAndGet();
         keepAlive(endpoint, ping, idleTimeout);
       }
 
-      @Override public void onText(Session session, String message) {
+      @Override public void onText(JettyEndpoint endpoint, String message) {
         log("s: received: %s\n", message);
         received.incrementAndGet();
       }
 
       @Override
-      public void onBinary(Session session, byte[] payload, int offset, int len) {
-        log("s: received %d bytes\n", len);
+      public void onBinary(JettyEndpoint endpoint, ByteBuffer message) {
+        log("s: received %d bytes\n", message.limit());
         received.incrementAndGet();
       }
       
-      @Override public void onClose(Session session, int statusCode, String reason) {
+      @Override public void onClose(JettyEndpoint endpoint, int statusCode, String reason) {
         log("s: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
         closed.incrementAndGet();
         ping.set(false);
       }
       
-      @Override public void onError(Session session, Throwable cause) {
+      @Override public void onError(JettyEndpoint endpoint, Throwable cause) {
         log("s: socket error\n");
         System.err.println("server socket error");
         cause.printStackTrace();

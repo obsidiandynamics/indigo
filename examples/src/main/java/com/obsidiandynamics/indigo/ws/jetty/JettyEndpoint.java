@@ -6,7 +6,9 @@ import java.util.concurrent.atomic.*;
 
 import org.eclipse.jetty.websocket.api.*;
 
-public final class JettyEndpoint extends WebSocketAdapter implements Closeable {
+import com.obsidiandynamics.indigo.ws.*;
+
+public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint {
   private final JettyEndpointManager manager;
   
   private final AtomicLong backlog = new AtomicLong();
@@ -15,38 +17,39 @@ public final class JettyEndpoint extends WebSocketAdapter implements Closeable {
     this.manager = manager;
   }
   
-  public static JettyEndpoint clientOf(JettyEndpointConfig config, JettyMessageListener listener) {
+  public static JettyEndpoint clientOf(JettyEndpointConfig config, WSListener<JettyEndpoint> listener) {
     return new JettyEndpointManager(0, config, listener).createEndpoint();
   }
   
   @Override 
   public void onWebSocketConnect(Session session) {
     super.onWebSocketConnect(session);
-    manager.getMessageListener().onConnect(this, session);
+    manager.getListener().onConnect(this);
   }
 
   @Override 
   public void onWebSocketText(String message) {
     super.onWebSocketText(message);
-    manager.getMessageListener().onText(getSession(), message);
+    manager.getListener().onText(this, message);
   }
 
   @Override
   public void onWebSocketBinary(byte[] payload, int offset, int len) {
     super.onWebSocketBinary(payload, offset, len);
-    manager.getMessageListener().onBinary(getSession(), payload, offset, len);
+    final ByteBuffer message = ByteBuffer.wrap(payload, offset, len);
+    manager.getListener().onBinary(this, message);
   }
   
   @Override 
   public void onWebSocketClose(int statusCode, String reason) {
     super.onWebSocketClose(statusCode, reason);
-    manager.getMessageListener().onClose(getSession(), statusCode, reason);
+    manager.getListener().onClose(this, statusCode, reason);
   }
   
   @Override 
   public void onWebSocketError(Throwable cause) {
     super.onWebSocketError(cause);
-    manager.getMessageListener().onError(getSession(), cause);
+    manager.getListener().onError(this, cause);
   }
   
   public void send(String payload, WriteCallback callback) {

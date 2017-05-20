@@ -4,9 +4,11 @@ import java.io.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
+import com.obsidiandynamics.indigo.ws.*;
+
 import io.undertow.websockets.core.*;
 
-public final class UndertowEndpoint extends AbstractReceiveListener implements Closeable {
+public final class UndertowEndpoint extends AbstractReceiveListener implements WSEndpoint {
   private final UndertowEndpointManager manager;
   
   private final WebSocketChannel channel;
@@ -18,31 +20,31 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements C
     this.channel = channel;
   }
   
-  public static UndertowEndpoint clientOf(WebSocketChannel channel, UndertowEndpointConfig config, UndertowMessageListener listener) {
+  public static UndertowEndpoint clientOf(WebSocketChannel channel, UndertowEndpointConfig config, WSListener<UndertowEndpoint> listener) {
     return new UndertowEndpointManager(config, listener).createEndpoint(channel);
   }
   
   @Override
   protected void onFullTextMessage(final WebSocketChannel channel, BufferedTextMessage message) throws IOException {
-    manager.getMessageListener().onText(channel, message);
+    manager.getListener().onText(this, message.getData());
     super.onFullTextMessage(channel, message);
   }
 
   @Override
   protected void onFullBinaryMessage(final WebSocketChannel channel, BufferedBinaryMessage message) throws IOException {
-    manager.getMessageListener().onBinary(channel, message);
+    manager.getListener().onBinary(this, WebSockets.mergeBuffers(message.getData().getResource()));
     super.onFullBinaryMessage(channel, message);
   }
 
   @Override
   protected void onCloseMessage(CloseMessage message, WebSocketChannel channel) {
-    manager.getMessageListener().onClose(channel, message.getCode(), message.getReason());
+    manager.getListener().onClose(this, message.getCode(), message.getReason());
     super.onCloseMessage(message, channel);
   }
   
   @Override
   protected void onError(WebSocketChannel channel, Throwable cause) {
-    manager.getMessageListener().onError(channel, cause);
+    manager.getListener().onError(this, cause);
     super.onError(channel, cause);
   }
   
@@ -83,6 +85,10 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements C
   private boolean isBelowHWM() {
     final UndertowEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
+  }
+  
+  public WebSocketChannel getChannel() {
+    return channel;
   }
   
   public void flush() {
