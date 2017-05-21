@@ -95,9 +95,9 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     channel.flush();
   }
 
-  public void sendPong() throws IOException {
+  public void sendPing() throws IOException {
     if (channel.isOpen()) {
-      WebSockets.sendPongBlocking(ByteBuffer.allocate(0), channel);
+      WebSockets.sendPing(ByteBuffer.allocate(0), channel, null);
     }
   }
 

@@ -93,11 +93,11 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
   }
 
   @Override
-  public void sendPong(JettyEndpoint endpoint) throws IOException {
+  public void sendPing(JettyEndpoint endpoint) throws IOException {
     try {
-      endpoint.sendPong();
+      endpoint.sendPing();
     } catch (WebSocketException e) {
-      log("pong skipped\n");
+      log("ping skipped\n");
       return;
     }
   }

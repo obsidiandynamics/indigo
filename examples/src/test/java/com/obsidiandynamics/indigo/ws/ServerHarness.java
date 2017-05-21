@@ -17,13 +17,13 @@ public abstract class ServerHarness<E> extends BaseHarness {
   
   public abstract void flush(List<E> endpoints) throws IOException;
   
-  public abstract void sendPong(E endpoint) throws IOException;
+  public abstract void sendPing(E endpoint) throws IOException;
   
   protected final void keepAlive(E endpoint, AtomicBoolean ping, int idleTimeout) {
     if (idleTimeout != 0) Threads.asyncDaemon(() -> {
       while (ping.get()) {
         try {
-          sendPong(endpoint);
+          sendPing(endpoint);
         } catch (IOException e) {
           e.printStackTrace();
         }

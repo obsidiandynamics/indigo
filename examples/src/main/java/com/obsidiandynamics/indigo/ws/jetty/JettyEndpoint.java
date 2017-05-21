@@ -89,8 +89,8 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
     getRemote().flush();
   }
   
-  public void sendPong() throws IOException {
-    getRemote().sendPong(ByteBuffer.allocate(0));
+  public void sendPing() throws IOException {
+    getRemote().sendPing(ByteBuffer.allocate(0));
   }
 
   @Override

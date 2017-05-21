@@ -92,8 +92,8 @@ public final class NettyServerHarness extends ServerHarness<NettyEndpoint> imple
   }
 
   @Override
-  public void sendPong(NettyEndpoint endpoint) {
-    endpoint.sendPong();
+  public void sendPing(NettyEndpoint endpoint) {
+    endpoint.sendPing();
   }
   
   public static ThrowingFactory<NettyServerHarness> factory(int port, int idleTimeout) {

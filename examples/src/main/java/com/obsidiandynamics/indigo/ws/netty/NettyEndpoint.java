@@ -58,8 +58,8 @@ public final class NettyEndpoint implements WSEndpoint {
     return backlog.get() < config.highWaterMark;
   }
   
-  public void sendPong() {
-    context.channel().writeAndFlush(new PongWebSocketFrame());
+  public void sendPing() {
+    context.channel().writeAndFlush(new PingWebSocketFrame());
   }
   
   public void flush() {

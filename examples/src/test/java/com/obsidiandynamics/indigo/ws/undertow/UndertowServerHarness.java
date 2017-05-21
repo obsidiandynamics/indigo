@@ -97,11 +97,11 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
   }
 
   @Override
-  public void sendPong(UndertowEndpoint endpoint) throws IOException {
+  public void sendPing(UndertowEndpoint endpoint) throws IOException {
     try {
-      endpoint.sendPong();
+      endpoint.sendPing();
     } catch (WebSocketException e) {
-      log("pong skipped\n");
+      log("ping skipped\n");
       return;
     }
   }
