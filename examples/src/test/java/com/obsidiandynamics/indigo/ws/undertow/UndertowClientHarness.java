@@ -39,7 +39,8 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
       @Override
       public void onBinary(UndertowEndpoint endpoint, ByteBuffer message) {
         log("c: received\n");
-        received.incrementAndGet();
+        final int r = received.incrementAndGet();
+        if (WSFanOutTest.LOG_1K && r % 1000 == 0) System.out.println("c: received " + received);
         if (echo) {
           send(message);
         }
@@ -64,22 +65,20 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
                                              .set(Options.WORKER_TASK_CORE_THREADS, 1)
                                              .set(Options.WORKER_TASK_MAX_THREADS, 1)
                                              .set(Options.TCP_NODELAY, true)
-                                             .set(Options.CORK, true)
+                                             //.set(Options.CORK, true)
                                              .getMap());
-    final ByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
+    final ByteBufferPool pool = new DefaultByteBufferPool(false, 8192);
     channel = WebSocketClient.connectionBuilder(worker, pool, URI.create("ws://127.0.0.1:" + port + "/"))
         .connect().get();
     channel.getReceiveSetter().set(UndertowEndpoint.clientOf(channel, new UndertowEndpointConfig(), clientListener));
     channel.resumeReceives();
     
     writeCallback = new WebSocketCallback<Void>() {
-      @Override
-      public void complete(WebSocketChannel channel, Void context) {
+      @Override public void complete(WebSocketChannel channel, Void context) {
         sent.incrementAndGet();
       }
 
-      @Override
-      public void onError(WebSocketChannel channel, Void context, Throwable throwable) {
+      @Override public void onError(WebSocketChannel channel, Void context, Throwable throwable) {
         System.err.println("client write error");
         throwable.printStackTrace();
       }

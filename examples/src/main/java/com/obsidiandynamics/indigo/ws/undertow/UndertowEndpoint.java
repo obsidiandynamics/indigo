@@ -55,7 +55,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     }
   }
   
-  public void send(ByteBuffer payload, WebSocketCallback<Void> callback) {
+  public synchronized void send(ByteBuffer payload, WebSocketCallback<Void> callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendBinary(payload, channel, wrapCallback(callback));

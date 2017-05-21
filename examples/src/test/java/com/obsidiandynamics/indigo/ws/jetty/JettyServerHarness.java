@@ -57,7 +57,8 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
     
     writeCallback = new WriteCallback() {
       @Override public void writeSuccess() {
-        sent.incrementAndGet();
+        final int s = sent.incrementAndGet();
+        if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
       }
       
       @Override public void writeFailed(Throwable x) {
@@ -96,7 +97,7 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
     try {
       endpoint.sendPong();
     } catch (WebSocketException e) {
-      log("ping skipped\n");
+      log("pong skipped\n");
       return;
     }
   }

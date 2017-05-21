@@ -138,6 +138,7 @@ public final class JettyServerTest implements TestSupport {
     clientSession.close();
     
     await().atMost(10, TimeUnit.SECONDS).until(() -> serverClosed.get() && clientClosed.get());
+    await().atMost(10, TimeUnit.SECONDS).until(() -> clientReceived.get() == n);
     
     assertTrue(serverConnected.get());
     assertEquals(n, serverReceived.get());

@@ -34,7 +34,7 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
   }
   
   UndertowEndpoint createEndpoint(WebSocketChannel channel) {
-    final UndertowEndpoint endpoint = new UndertowEndpoint(UndertowEndpointManager.this, channel);
+    final UndertowEndpoint endpoint = new UndertowEndpoint(this, channel);
     try {
       channel.setOption(Options.TCP_NODELAY, NO_DELAY);
     } catch (IOException e) {

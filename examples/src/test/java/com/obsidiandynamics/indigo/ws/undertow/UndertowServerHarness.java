@@ -60,7 +60,8 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
     writeCallback = new WebSocketCallback<Void>() {
       @Override
       public void complete(WebSocketChannel channel, Void context) {
-        sent.incrementAndGet();
+        final int s = sent.incrementAndGet();
+        if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
       }
 
       @Override
@@ -94,18 +95,18 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
   public void close() throws Exception {
     server.close();
   }
-  
-  public static ThrowingFactory<UndertowServerHarness> factory(int port, int idleTimeout) {
-    return () -> new UndertowServerHarness(port, idleTimeout);
-  }
 
   @Override
   public void sendPong(UndertowEndpoint endpoint) throws IOException {
     try {
       endpoint.sendPong();
     } catch (WebSocketException e) {
-      log("ping skipped\n");
+      log("pong skipped\n");
       return;
     }
+  }
+  
+  public static ThrowingFactory<UndertowServerHarness> factory(int port, int idleTimeout) {
+    return () -> new UndertowServerHarness(port, idleTimeout);
   }
 }

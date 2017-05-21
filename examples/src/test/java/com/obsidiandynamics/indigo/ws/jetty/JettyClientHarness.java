@@ -24,7 +24,8 @@ public final class JettyClientHarness extends ClientHarness implements TestSuppo
 
       @Override public void onText(JettyEndpoint endpoint, String message) {
         log("c: received: %s\n", message);
-        received.incrementAndGet();
+        final int r = received.incrementAndGet();
+        if (WSFanOutTest.LOG_1K && r % 1000 == 0) System.out.println("c: received " + received);
         if (echo) {
           send(ByteBuffer.wrap(message.getBytes()));
         }

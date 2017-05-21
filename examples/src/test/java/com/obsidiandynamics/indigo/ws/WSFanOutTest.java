@@ -14,9 +14,14 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.ws.fake.*;
 import com.obsidiandynamics.indigo.ws.jetty.*;
+import com.obsidiandynamics.indigo.ws.netty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class WSFanOutTest implements TestSupport {
+  private static boolean LOG_TIMINGS = true;
+  public static boolean LOG_1K = true;
+  private static boolean LOG_PHASES = true;
+  
   private static final int PORT = 6667;
   private static final int IDLE_TIMEOUT = 0;
   
@@ -40,6 +45,14 @@ public final class WSFanOutTest implements TestSupport {
   
   private static int totalSent(List<ClientHarness> clients) {
     return clients.stream().mapToInt(c -> c.sent.get()).sum();
+  }
+  
+  @Test
+  public void testNtUt() throws Exception {
+    test(N, M, ECHO, BYTES, CYCLES,
+         NettyServerHarness.factory(PORT, IDLE_TIMEOUT),
+         UndertowClientHarness.factory(PORT, IDLE_TIMEOUT, ECHO),
+         ThrowingRunnable::noOp);
   }
   
   @Test
@@ -101,7 +114,6 @@ public final class WSFanOutTest implements TestSupport {
                         ThrowingFactory<? extends ServerHarness<E>> serverHarnessFactory,
                         ThrowingFactory<? extends ClientHarness> clientHarnessFactory,
                         ThrowingRunnable cleanup) throws Exception {
-    final boolean logTimings = true;
     final int sendThreads = 1;
     final int waitScale = 1 + n * m / 1_000_000;
     
@@ -111,7 +123,8 @@ public final class WSFanOutTest implements TestSupport {
     for (int i = 0; i < m; i++) {
       clients.add(clientHarnessFactory.create()); 
     }
-    
+
+    if (LOG_PHASES) System.out.println("s: awaiting server.conneted");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.connected.get() == m);
 
     assertEquals(m, server.connected.get());
@@ -124,8 +137,10 @@ public final class WSFanOutTest implements TestSupport {
     final List<E> endpoints = server.getEndpoints();
     ParallelJob.blockingSlice(endpoints, sendThreads, sublist -> {
       for (int i = 0; i < n; i++) {
+        if (LOG_1K && i % 1000 == 0) System.out.println("s: queued " + i);
         server.broadcast(sublist, bytes);
       }
+      if (LOG_PHASES) System.out.println("s: flushing");
       for (int i = 0; i < n; i++) {
         try {
           server.flush(sublist);
@@ -135,12 +150,15 @@ public final class WSFanOutTest implements TestSupport {
       }
     }).run();
 
+    if (LOG_PHASES) System.out.println("s: awaiting server.sent");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.sent.get() >= m * n);
     assertEquals(m * n, server.sent.get());
-    
+
+    if (LOG_PHASES) System.out.println("s: awaiting client.received");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalReceived(clients) >= m * n);
     assertEquals(m * n, totalReceived(clients));
-    
+
+    if (LOG_PHASES) System.out.println("s: awaiting client.sent");
     if (echo) {
       Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalSent(clients) >= m * n);
       assertEquals(m * n, totalSent(clients));
@@ -148,7 +166,7 @@ public final class WSFanOutTest implements TestSupport {
       assertEquals(0, totalSent(clients));
     }
     
-    if (logTimings) {
+    if (LOG_TIMINGS) {
       final long tookMillis = System.currentTimeMillis() - start;
       final float ratePerSec = 1000f * n * m / tookMillis * (echo ? 2 : 1);
       final float bandwidthMpbs = ratePerSec * numBytes / (1 << 20);
@@ -159,14 +177,17 @@ public final class WSFanOutTest implements TestSupport {
     for (ClientHarness client : clients) {
       client.close();
     }
-    
+
+    if (LOG_PHASES) System.out.println("s: awaiting server.closed");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.closed.get() == m);
     assertEquals(m, server.closed.get());
 
+    if (LOG_PHASES) System.out.println("s: awaiting client.closed");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalClosed(clients) == m);
     assertEquals(m, totalClosed(clients));
 
     if (echo) {
+      if (LOG_PHASES) System.out.println("s: awaiting server.received");
       Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.received.get() == m * n);
       assertEquals(m * n, server.received.get());
     } else {
