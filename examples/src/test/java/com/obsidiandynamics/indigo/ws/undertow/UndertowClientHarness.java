@@ -7,7 +7,6 @@ import java.nio.*;
 import org.xnio.*;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.connector.*;
@@ -19,9 +18,8 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
   private final WebSocketChannel channel;
   
   private final WebSocketCallback<Void> writeCallback;
-  private final XnioWorker worker;
   
-  UndertowClientHarness(int port, int idleTimeout, boolean echo) throws Exception {
+  UndertowClientHarness(XnioWorker worker, int port, int idleTimeout, boolean echo) throws Exception {
     final WSListener<UndertowEndpoint> clientListener = new WSListener<UndertowEndpoint>() {
       @Override public void onConnect(UndertowEndpoint endpoint) {
         log("c: connected: %s\n", channel.getSourceAddress());
@@ -58,15 +56,6 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
       }
     };
     
-    worker = Xnio.getInstance().createWorker(OptionMap.builder()
-                                             .set(Options.WORKER_IO_THREADS, 1)
-                                             .set(Options.CONNECTION_HIGH_WATER, 1000000)
-                                             .set(Options.CONNECTION_LOW_WATER, 1000000)
-                                             .set(Options.WORKER_TASK_CORE_THREADS, 1)
-                                             .set(Options.WORKER_TASK_MAX_THREADS, 1)
-                                             .set(Options.TCP_NODELAY, true)
-                                             //.set(Options.CORK, true)
-                                             .getMap());
     final ByteBufferPool pool = new DefaultByteBufferPool(false, 8192);
     channel = WebSocketClient.connectionBuilder(worker, pool, URI.create("ws://127.0.0.1:" + port + "/"))
         .connect().get();
@@ -92,13 +81,9 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
   @Override
   public void close() throws IOException {
     channel.sendClose();
-    Threads.asyncDaemon(() -> {
-      TestSupport.sleep(1000);
-      worker.shutdown();
-    }, "WorkerTerminator");
   }
   
-  public static ThrowingFactory<UndertowClientHarness> factory(int port, int idleTimeout, boolean echo) {
-    return () -> new UndertowClientHarness(port, idleTimeout, echo);
+  public static ThrowingFactory<UndertowClientHarness> factory(XnioWorker worker, int port, int idleTimeout, boolean echo) {
+    return () -> new UndertowClientHarness(worker, port, idleTimeout, echo);
   }
 }

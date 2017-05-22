@@ -10,6 +10,7 @@ import org.awaitility.*;
 import org.eclipse.jetty.client.*;
 import org.eclipse.jetty.util.thread.*;
 import org.junit.*;
+import org.xnio.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.ws.fake.*;
@@ -25,11 +26,12 @@ public final class WSFanOutTest implements TestSupport {
   private static final int PORT = 6667;
   private static final int IDLE_TIMEOUT = 0;
   
-  private static final int N = 100;          // number of outgoing messages per connection
-  private static final int M = 10;           // number of connections
-  private static final boolean ECHO = false; // whether the client should respond to a broadcast
-  private static final int BYTES = 16;       // bytes per message
-  private static final int CYCLES = 1;       // number of repeats
+  private static final int N = 100;           // number of outgoing messages per connection
+  private static final int M = 10;            // number of connections
+  private static final boolean ECHO = false;  // whether the client should respond to a broadcast
+  private static final int BYTES = 16;        // bytes per message
+  private static final int CYCLES = 1;        // number of repeats
+  private static final boolean FLUSH = false; // whether the messages should be flushed on the server after enqueuing
   
   private static int totalConnected(List<ClientHarness> clients) {
     return clients.stream().mapToInt(c -> c.connected.get() ? 1 : 0).sum();
@@ -47,20 +49,33 @@ public final class WSFanOutTest implements TestSupport {
     return clients.stream().mapToInt(c -> c.sent.get()).sum();
   }
   
+  private static XnioWorker getXnioWorker() throws IllegalArgumentException, IOException {
+    return Xnio.getInstance().createWorker(OptionMap.builder()
+                                           .set(Options.WORKER_IO_THREADS, Runtime.getRuntime().availableProcessors())
+                                           .set(Options.CONNECTION_HIGH_WATER, 1000000)
+                                           .set(Options.CONNECTION_LOW_WATER, 1000000)
+                                           .set(Options.WORKER_TASK_CORE_THREADS, 100)
+                                           .set(Options.WORKER_TASK_MAX_THREADS, 10_000)
+                                           .set(Options.TCP_NODELAY, true)
+                                           .getMap());
+  }
+  
   @Test
   public void testNtUt() throws Exception {
+    final XnioWorker worker = getXnioWorker();
     test(N, M, ECHO, BYTES, CYCLES,
          NettyServerHarness.factory(PORT, IDLE_TIMEOUT),
-         UndertowClientHarness.factory(PORT, IDLE_TIMEOUT, ECHO),
-         ThrowingRunnable::noOp);
+         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
+         worker::shutdown);
   }
   
   @Test
   public void testUtUt() throws Exception {
+    final XnioWorker worker = getXnioWorker();
     test(N, M, ECHO, BYTES, CYCLES,
          UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
-         UndertowClientHarness.factory(PORT, IDLE_TIMEOUT, ECHO),
-         ThrowingRunnable::noOp);
+         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
+         worker::shutdown);
   }
   
   @Test
@@ -95,10 +110,11 @@ public final class WSFanOutTest implements TestSupport {
   
   @Test
   public void testJtUt() throws Exception {
+    final XnioWorker worker = getXnioWorker();
     test(N, M, ECHO, BYTES, CYCLES,
          JettyServerHarness.factory(PORT, IDLE_TIMEOUT),
-         UndertowClientHarness.factory(PORT, IDLE_TIMEOUT, ECHO),
-         ThrowingRunnable::noOp);
+         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
+         worker::shutdown);
   }
   
   private <E> void test(int n, int m, boolean echo, int numBytes, int cycles,
@@ -140,15 +156,17 @@ public final class WSFanOutTest implements TestSupport {
         if (LOG_1K && i % 1000 == 0) System.out.println("s: queued " + i);
         server.broadcast(sublist, bytes);
       }
-      if (LOG_PHASES) System.out.println("s: flushing");
-      for (int i = 0; i < n; i++) {
-        try {
-          server.flush(sublist);
-        } catch (IOException e) {
-          e.printStackTrace();
+      if (FLUSH) {
+        if (LOG_PHASES) System.out.println("s: flushing");
+        for (int i = 0; i < n; i++) {
+          try {
+            server.flush(sublist);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
         }
+        if (LOG_PHASES) System.out.println("s: flushed");
       }
-      if (LOG_PHASES) System.out.println("s: flushed");
     }).run();
 
     if (LOG_PHASES) System.out.println("s: awaiting server.sent");
