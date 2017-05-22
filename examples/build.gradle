@@ -36,6 +36,7 @@ dependencies {
   testCompile project(':').sourceSets.test.output
   testCompile 'junit:junit:4.12'
   testCompile 'org.awaitility:awaitility:2.0.0'
+  testCompile 'org.mockito:mockito-all:1.9.5'
   testRuntime 'org.slf4j:slf4j-log4j12:1.7.6'
   testRuntime 'log4j:log4j:1.2.17'
 }

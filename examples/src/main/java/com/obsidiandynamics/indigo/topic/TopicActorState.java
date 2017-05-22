@@ -15,7 +15,7 @@ final class TopicActorState {
     this.topic = topic;
   }
   
-  void subscribe(Topic topic, Subscriber subscriber) {
+  boolean subscribe(Topic topic, Subscriber subscriber) {
     final Set<Subscriber> subscriberSet;
     final Set<Subscriber> existingSet = subscribers.get(topic);
     if (existingSet != null) {
@@ -23,18 +23,20 @@ final class TopicActorState {
     } else {
       subscribers.put(topic, subscriberSet = new HashSet<>());
     }
-    subscriberSet.add(subscriber);
+    return subscriberSet.add(subscriber);
   }
   
   boolean unsubscribe(Topic topic, Subscriber subscriber) {
     final Set<Subscriber> subscriberSet = subscribers.get(topic);
     if (subscriberSet != null) {
-      subscriberSet.remove(subscriber);
+      final boolean removed = subscriberSet.remove(subscriber);
       if (subscriberSet.isEmpty()) {
         subscribers.remove(topic);
       }
+      return removed;
+    } else {
+      return false;
     }
-    return subscribers.isEmpty();
   }
 
   @Override

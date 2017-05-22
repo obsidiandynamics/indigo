@@ -1,23 +1,31 @@
 package com.obsidiandynamics.indigo.topic;
 
 import static junit.framework.TestCase.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.*;
 
 import org.junit.*;
+import org.mockito.*;
 
 import com.obsidiandynamics.indigo.*;
 
 public final class TopicActorTest {
   private ActorSystem system;
   
+  private TopicWatcher topicWatcher;
+  
   @Before
   public void setup() {
+    topicWatcher = mock(TopicWatcher.class);
     system = ActorSystem.create()
     .addExecutor(r -> r.run()).named("current_thread")
     .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig() {{
       executorName = "current_thread";
+      topicWatcher = TopicActorTest.this.topicWatcher;
     }}));
   }
   
@@ -26,12 +34,29 @@ public final class TopicActorTest {
     system.shutdownQuietly();
   }
   
+  @SuppressWarnings("unchecked")
+  private static <T> T notNull() {
+    return (T) Mockito.notNull();
+  }
+  
+  private static void verifyInOrder(Object mock, Consumer<InOrder> test) {
+    final InOrder inOrder = inOrder(mock);
+    test.accept(inOrder);
+    inOrder.verifyNoMoreInteractions();
+  }
+  
   @Test
   public void testNonInterfering() throws InterruptedException, ExecutionException {
     final List<Delivery> aList = new ArrayList<>();
     final List<Delivery> bList = new ArrayList<>();
     subscribe("a", aList::add).get();
     subscribe("b", bList::add).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("b")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("b")), notNull());
+    });
     publish("a", "hello").get();
     publish("b", "barev").get();
     assertEquals(1, aList.size());
@@ -46,11 +71,30 @@ public final class TopicActorTest {
     final List<Delivery> a2List = new ArrayList<>();
     subscribe("a", a1List::add).get();
     subscribe("a", a2List::add).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher, times(2)).subscribed(notNull(), eq(Topic.of("a")), notNull());
+    });
     publish("a", "hello").get();
     assertEquals(1, a1List.size());
     assertEquals(1, a2List.size());
     assertEquals("hello", a1List.get(0).getPayload());
     assertEquals("hello", a2List.get(0).getPayload());
+  }
+  
+  @Test
+  public void testDuplicateSubscribers() throws InterruptedException, ExecutionException {
+    final List<Delivery> aList = new ArrayList<>();
+    final Subscriber sub = aList::add;
+    subscribe("a", sub).get();
+    subscribe("a", sub).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
+    });
+    publish("a", "hello").get();
+    assertEquals(1, aList.size());
+    assertEquals("hello", aList.get(0).getPayload());
   }
   
   @Test
@@ -66,6 +110,14 @@ public final class TopicActorTest {
     subscribe("a", aList::add).get();
     subscribe("a/b", abList::add).get();
     subscribe("a/b/c", abcList::add).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b/c")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b/c")), notNull());
+    });
     publish("a", "hello").get();
     publish("a/b", "barev").get();
     publish("a/b/c", "ciao").get();
@@ -85,6 +137,12 @@ public final class TopicActorTest {
     subscribe("#", xList::add).get();
     subscribe("a/b", abList::add).get();
     subscribe("a/#", axList::add).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("#")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/#")), notNull());
+    });
     publish("a", "hello").get();
     publish("a/b", "barev").get();
     assertEquals(2, xList.size());
@@ -111,6 +169,15 @@ public final class TopicActorTest {
     subscribe("+/c", xcList::add).get();
     subscribe("a/+", axList::add).get();
     subscribe("+/+", xxList::add).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/b")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/c")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/+")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/+")), notNull());
+    });
     publish("a", "hello").get();
     publish("a/b", "barev").get();
     publish("a/c", "ciao").get();

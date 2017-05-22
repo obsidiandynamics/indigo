@@ -66,6 +66,7 @@ public final class TopicActor implements Actor {
     final Topic subtopic = Topic.fromRef(m.from());
     if (LOG.isTraceEnabled()) LOG.trace("{} registering {}", a.self(), subtopic.lastPart());
     state.subtopics.put(subtopic.lastPart(), m.from());
+    config.topicWatcher.created(a, subtopic);
     a.reply(m).tell();
   }
   
@@ -80,6 +81,7 @@ public final class TopicActor implements Actor {
     final Topic subtopic = Topic.fromRef(m.from());
     if (LOG.isTraceEnabled()) LOG.trace("{} deregistering {}", a.self(), subtopic.lastPart());
     state.subtopics.remove(subtopic.lastPart());
+    config.topicWatcher.deleted(a, subtopic);
     if (state.subtopics.isEmpty()) {
       a.passivate();
     }
@@ -97,7 +99,8 @@ public final class TopicActor implements Actor {
     } else {
       if (LOG.isTraceEnabled()) LOG.trace("{} adding to {}", a.self(), subscribe.getTopic());
       // the request is for the current level or a '+' wildcard - subscribe and reply
-      state.subscribe(subscribe.getTopic(), subscribe.getSubscriber());
+      final boolean added = state.subscribe(subscribe.getTopic(), subscribe.getSubscriber());
+      if (added) config.topicWatcher.subscribed(a, subscribe.getTopic(), subscribe.getSubscriber());
       
       a.reply(m).tell(SubscribeResponse.instance());
     }
@@ -114,8 +117,9 @@ public final class TopicActor implements Actor {
     } else {
       if (LOG.isTraceEnabled()) LOG.trace("{} adding to {}", a.self(), unsubscribe.getTopic());
       // the request is for the current level or a '+' wildcard - subscribe and reply
-      final boolean empty = state.unsubscribe(unsubscribe.getTopic(), unsubscribe.getSubscriber());
-      if (empty) {
+      final boolean removed = state.unsubscribe(unsubscribe.getTopic(), unsubscribe.getSubscriber());
+      if (removed) config.topicWatcher.unsubscribed(a, unsubscribe.getTopic(), unsubscribe.getSubscriber());
+      if (state.subtopics.isEmpty()) {
         a.passivate();
       }
       
