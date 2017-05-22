@@ -83,7 +83,7 @@ public final class ActorSystem implements Endpoint {
   }
   
   private void registerStandardExecutors() {
-    useExecutor(ForkJoinPool.commonPool()).named(COMMON_EXECUTOR_NAME);
+    addExecutor(ForkJoinPool.commonPool()).named(COMMON_EXECUTOR_NAME);
   }
   
   String getIdAsHex() {
@@ -137,7 +137,7 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
-  public LocalExecutorBuilder useExecutor(Executor executor) {
+  public LocalExecutorBuilder addExecutor(Executor executor) {
     return new LocalExecutorBuilder(executor);
   }
   

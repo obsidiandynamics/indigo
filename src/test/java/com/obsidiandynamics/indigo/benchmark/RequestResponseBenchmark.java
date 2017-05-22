@@ -117,7 +117,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       }};
     }}
     .createActorSystem()
-    .useExecutor(summary.stats.executor).named("summary-stats")
+    .addExecutor(summary.stats.executor).named("summary-stats")
     .on(DRIVER).cue(DriverState::new, (a, m, s) -> {
       send(a, s.to, s, c, c.seedPairs, summary.stats);
     })

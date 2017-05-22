@@ -74,7 +74,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
       }};
     }}
     .createActorSystem()
-    .useExecutor(external).named("ext")
+    .addExecutor(external).named("ext")
     .on(TARGET)
     .cue(StatefulLambdaActor
          .<IntegerState>builder()

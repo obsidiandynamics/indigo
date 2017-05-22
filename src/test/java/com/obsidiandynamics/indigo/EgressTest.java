@@ -47,7 +47,7 @@ public final class EgressTest implements TestSupport {
     final Set<ActorRef> doneRuns = new HashSet<>();
     
     system
-    .useExecutor(EXECUTOR).named("custom")
+    .addExecutor(EXECUTOR).named("custom")
     .on(DRIVER).cue(IntegerState::new, (a, m, s) -> {
       egressMode(a.<Integer, Integer>egress(in -> {
         assertEquals(EXTERNAL, Thread.currentThread().getName());
@@ -92,7 +92,7 @@ public final class EgressTest implements TestSupport {
     final Set<Integer> received = new CopyOnWriteArraySet<>();
     
     system
-    .useExecutor(EXECUTOR).named("custom")
+    .addExecutor(EXECUTOR).named("custom")
     .ingress().times(runs).act((a, i) -> {
       egressMode(a.<Integer>egress(in -> received.add(in)), parallel)
       .withExecutor("custom")
@@ -118,7 +118,7 @@ public final class EgressTest implements TestSupport {
     final AtomicInteger received = new AtomicInteger();
     
     system
-    .useExecutor(EXECUTOR).named("custom")
+    .addExecutor(EXECUTOR).named("custom")
     .ingress().times(runs).act((a, i) -> {
       egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
       .withExecutor("custom")
@@ -144,7 +144,7 @@ public final class EgressTest implements TestSupport {
     final AtomicInteger received = new AtomicInteger();
     
     system
-    .useExecutor(EXECUTOR).named("custom")
+    .addExecutor(EXECUTOR).named("custom")
     .ingress().times(runs).act((a, i) -> {
       egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
       .withExecutor("custom")
@@ -171,7 +171,7 @@ public final class EgressTest implements TestSupport {
 
     system.getConfig().exceptionHandler = DRAIN;
     system
-    .useExecutor(EXECUTOR).named("custom")
+    .addExecutor(EXECUTOR).named("custom")
     .ingress(a -> {
       egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
       .withExecutor("custom")
@@ -205,7 +205,7 @@ public final class EgressTest implements TestSupport {
     final AtomicInteger received = new AtomicInteger();
     
     system
-    .useExecutor(EXECUTOR).named("custom")
+    .addExecutor(EXECUTOR).named("custom")
     .ingress().times(runs).act((a, i) -> {
       egressMode(a.egress(() -> received.incrementAndGet()), parallel)
       .withExecutor("custom")
@@ -266,7 +266,7 @@ public final class EgressTest implements TestSupport {
 
     system.getConfig().exceptionHandler = DRAIN;
     system
-    .useExecutor(EXECUTOR).named("custom")
+    .addExecutor(EXECUTOR).named("custom")
     .ingress(a -> {
       egressMode(a.egress(() -> received.incrementAndGet()), parallel)
       .withExecutor("custom")

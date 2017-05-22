@@ -133,7 +133,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
       }};
     }}
     .createActorSystem()
-    .useExecutor(summary.stats.executor).named("summary-stats")
+    .addExecutor(summary.stats.executor).named("summary-stats")
     .on(DRIVER).cue(DriverState::new, (a, m, s) -> {
       switch (m.from().role()) {
         case ECHO:

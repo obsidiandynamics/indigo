@@ -19,8 +19,8 @@ public final class ExecutorRegistrationTest implements TestSupport {
   
   @Test(expected=DuplicateExecutorException.class)
   public void testDuplicateExecutorRegistration() {
-    system.useExecutor(ForkJoinPool.commonPool()).named("fjp");
-    system.useExecutor(ForkJoinPool.commonPool()).named("fjp");
+    system.addExecutor(ForkJoinPool.commonPool()).named("fjp");
+    system.addExecutor(ForkJoinPool.commonPool()).named("fjp");
   }
   
   @Test(expected=NoSuchExecutorException.class)

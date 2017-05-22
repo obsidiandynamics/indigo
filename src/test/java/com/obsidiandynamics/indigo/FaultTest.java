@@ -43,7 +43,7 @@ public final class FaultTest implements TestSupport {
     final ExecutorService external = Executors.newSingleThreadExecutor();
     final ActorSystem system = system(1)
     .createActorSystem()
-    .useExecutor(external).named("ext")
+    .addExecutor(external).named("ext")
     .on(SINK)
     .cue(StatelessLambdaActor.builder()
          .activated(a -> {
@@ -183,7 +183,7 @@ public final class FaultTest implements TestSupport {
 
     final ActorSystem system = system(actorBias)
     .createActorSystem()
-    .useExecutor(external).named("ext")
+    .addExecutor(external).named("ext")
     .on(SINK)
     .cue(StatelessLambdaActor.builder()
          .activated(a -> {
@@ -366,7 +366,7 @@ public final class FaultTest implements TestSupport {
 
     final ActorSystem system = system(actorBias)
     .createActorSystem()
-    .useExecutor(external).named("ext")
+    .addExecutor(external).named("ext")
     .on(SINK)
     .cue(StatelessLambdaActor.builder()
          .activated(a -> {
@@ -455,7 +455,7 @@ public final class FaultTest implements TestSupport {
     
     final ActorSystem system = system(actorBias)
     .createActorSystem()
-    .useExecutor(external).named("ext")
+    .addExecutor(external).named("ext")
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
@@ -511,7 +511,7 @@ public final class FaultTest implements TestSupport {
     
     final ActorSystem system = system(actorBias)
     .createActorSystem()
-    .useExecutor(external).named("ext")
+    .addExecutor(external).named("ext")
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
@@ -564,7 +564,7 @@ public final class FaultTest implements TestSupport {
     
     final ActorSystem system = system(actorBias)
     .createActorSystem()
-    .useExecutor(external).named("ext")
+    .addExecutor(external).named("ext")
     .ingress().times(n).act((a, i) -> {
       final Diagnostics d = a.diagnostics();
       d.trace("act %d", i);
