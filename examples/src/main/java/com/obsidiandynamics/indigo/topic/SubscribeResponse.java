@@ -5,7 +5,7 @@ public final class SubscribeResponse {
   
   static SubscribeResponse instance() { return INSTANCE; }
   
-  SubscribeResponse() {}
+  private SubscribeResponse() {}
 
   @Override
   public String toString() {

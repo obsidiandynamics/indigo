@@ -5,7 +5,7 @@ public final class PublishResponse {
   
   static PublishResponse instance() { return INSTANCE; }
   
-  PublishResponse() {}
+  private PublishResponse() {}
 
   @Override
   public String toString() {

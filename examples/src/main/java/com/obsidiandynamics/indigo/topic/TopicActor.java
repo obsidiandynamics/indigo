@@ -27,7 +27,7 @@ public final class TopicActor implements Actor {
     if (! current.isRoot()) {
       final Topic parent = current.parent();
       if (parent != null) {
-        a.to(parent.asRef()).ask(ActivateSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
+        a.to(parent.asRef()).ask(CreateSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
       }
     }
   }
@@ -39,7 +39,7 @@ public final class TopicActor implements Actor {
     if (! current.isRoot()) {
       final Topic parent = current.parent();
       if (parent != null) {
-        a.to(parent.asRef()).ask(PassivateSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
+        a.to(parent.asRef()).ask(DeleteSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
       }
     }
   }
@@ -50,8 +50,8 @@ public final class TopicActor implements Actor {
     .when(Subscribe.class).then(b -> subscribe(a, m))
     .when(Unsubscribe.class).then(b -> unsubscribe(a, m))
     .when(Publish.class).then(b -> publish(a, m))
-    .when(ActivateSubtopic.class).then(b -> activateSubtopic(a, m))
-    .when(PassivateSubtopic.class).then(b -> passivateSubtopic(a, m))
+    .when(CreateSubtopic.class).then(b -> createSubtopic(a, m))
+    .when(DeleteSubtopic.class).then(b -> deleteSubtopic(a, m))
     .otherwise(a::messageFault);
   }
   
@@ -62,7 +62,7 @@ public final class TopicActor implements Actor {
    *  @param a
    *  @param m
    */
-  private void activateSubtopic(Activation a, Message m) {
+  private void createSubtopic(Activation a, Message m) {
     final Topic subtopic = Topic.fromRef(m.from());
     if (LOG.isTraceEnabled()) LOG.trace("{} registering {}", a.self(), subtopic.lastPart());
     state.subtopics.put(subtopic.lastPart(), m.from());
@@ -77,7 +77,7 @@ public final class TopicActor implements Actor {
    *  @param a
    *  @param m
    */
-  private void passivateSubtopic(Activation a, Message m) {
+  private void deleteSubtopic(Activation a, Message m) {
     final Topic subtopic = Topic.fromRef(m.from());
     if (LOG.isTraceEnabled()) LOG.trace("{} deregistering {}", a.self(), subtopic.lastPart());
     state.subtopics.remove(subtopic.lastPart());
