@@ -15,7 +15,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   
   private final AtomicLong backlog = new AtomicLong();
 
-  public UndertowEndpoint(UndertowEndpointManager manager, WebSocketChannel channel) {
+  UndertowEndpoint(UndertowEndpointManager manager, WebSocketChannel channel) {
     this.manager = manager;
     this.channel = channel;
   }

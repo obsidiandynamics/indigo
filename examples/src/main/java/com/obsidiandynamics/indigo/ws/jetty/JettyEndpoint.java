@@ -13,7 +13,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   
   private final AtomicLong backlog = new AtomicLong();
 
-  public JettyEndpoint(JettyEndpointManager manager) {
+  JettyEndpoint(JettyEndpointManager manager) {
     this.manager = manager;
   }
   
