@@ -130,33 +130,51 @@ public final class TopicActorTest {
   }
   
   @Test
-  public void testHierarchyMultiWildcard() throws InterruptedException, ExecutionException {
+  public void testHierarchyMultiLevelWildcard() throws InterruptedException, ExecutionException {
     final List<Delivery> xList = new ArrayList<>();
     final List<Delivery> abList = new ArrayList<>();
     final List<Delivery> axList = new ArrayList<>();
+    final List<Delivery> cList = new ArrayList<>();
+    final List<Delivery> cxList = new ArrayList<>();
     subscribe("#", xList::add).get();
     subscribe("a/b", abList::add).get();
     subscribe("a/#", axList::add).get();
+    subscribe("c", cList::add).get();
+    subscribe("c/#", cxList::add).get();
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("#")), notNull());
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/#")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("c")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c/#")), notNull());
     });
     publish("a", "hello").get();
     publish("a/b", "barev").get();
-    assertEquals(2, xList.size());
+    publish("c", "ciao").get();
+    publish("c/p", "privet").get();
+    publish("c/p/b", "privet vsem").get();
+    assertEquals(5, xList.size());
     assertEquals(1, abList.size());
     assertEquals(1, abList.size());
     assertEquals(1, axList.size());
+    assertEquals(1, cList.size());
+    assertEquals(2, cxList.size());
     assertEquals("hello", xList.get(0).getPayload());
     assertEquals("barev", xList.get(1).getPayload());
+    assertEquals("ciao", xList.get(2).getPayload());
+    assertEquals("privet", xList.get(3).getPayload());
+    assertEquals("privet vsem", xList.get(4).getPayload());
     assertEquals("barev", abList.get(0).getPayload());
     assertEquals("barev", axList.get(0).getPayload());
+    assertEquals("ciao", cList.get(0).getPayload());
+    assertEquals("privet", cxList.get(0).getPayload());
+    assertEquals("privet vsem", cxList.get(1).getPayload());
   }
   
   @Test
-  public void testHierarchySingleWildcard() throws InterruptedException, ExecutionException {
+  public void testHierarchySingleLevelWildcard() throws InterruptedException, ExecutionException {
     final List<Delivery> xList = new ArrayList<>();
     final List<Delivery> abList = new ArrayList<>();
     final List<Delivery> xbList = new ArrayList<>();
