@@ -85,7 +85,7 @@ public final class WSFanOutTest implements TestSupport {
   @Test
   public void testUtJt() throws Exception {
     final HttpClient httpClient = new HttpClient();
-    httpClient.setExecutor(new QueuedThreadPool(100));
+    httpClient.setExecutor(new QueuedThreadPool(10_000, 100));
     httpClient.start();
     test(N, M, ECHO, BYTES, CYCLES,
          UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
@@ -148,6 +148,7 @@ public final class WSFanOutTest implements TestSupport {
           e.printStackTrace();
         }
       }
+      if (LOG_PHASES) System.out.println("s: flushed");
     }).run();
 
     if (LOG_PHASES) System.out.println("s: awaiting server.sent");
