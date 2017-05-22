@@ -26,17 +26,6 @@ public final class TopicActorTest {
   }
   
   @Test
-  public void testBasicRoot() throws InterruptedException, ExecutionException {
-    final int n = 10;
-    final List<Delivery> received = new CopyOnWriteArrayList<>();
-    subscribe("", received::add).get();
-    for (int i = 0; i < n; i++) publish("", "hello");
-    awaitMinSize(received, n);
-    assertEquals(n, received.size());
-    assertEquals("hello", received.get(0).getPayload());
-  }
-  
-  @Test
   public void testNonInterfering() throws InterruptedException, ExecutionException {
     final List<Delivery> aList = new CopyOnWriteArrayList<>();
     final List<Delivery> bList = new CopyOnWriteArrayList<>();
@@ -73,10 +62,10 @@ public final class TopicActorTest {
   }
   
   @Test
-  public void testHierarchy() throws InterruptedException, ExecutionException {
+  public void testHierarchyMultiWildcard() throws InterruptedException, ExecutionException {
     final List<Delivery> aList = new CopyOnWriteArrayList<>(); // should also get b's messages
     final List<Delivery> bList = new CopyOnWriteArrayList<>();
-    subscribe("a", aList::add).get();
+    subscribe("#", aList::add).get();
     subscribe("a/b", bList::add).get();
     publish("a", "hello").get();
     publish("a/b", "barev").get();
@@ -87,6 +76,39 @@ public final class TopicActorTest {
     assertEquals("hello", aList.get(0).getPayload());
     assertEquals("barev", aList.get(1).getPayload());
     assertEquals("barev", bList.get(0).getPayload());
+  }
+  
+  @Test
+  public void testHierarchySingleWildcard() throws InterruptedException, ExecutionException {
+    final List<Delivery> xList = new CopyOnWriteArrayList<>();
+    final List<Delivery> abList = new CopyOnWriteArrayList<>();
+    final List<Delivery> xbList = new CopyOnWriteArrayList<>();
+    final List<Delivery> xcList = new CopyOnWriteArrayList<>();
+    final List<Delivery> axList = new CopyOnWriteArrayList<>();
+    subscribe("+", xList::add).get();
+    subscribe("a/b", abList::add).get();
+    subscribe("+/b", xbList::add).get();
+    subscribe("+/c", xcList::add).get();
+    subscribe("a/+", axList::add).get();
+    publish("a", "hello").get();
+    publish("a/b", "barev").get();
+    publish("a/c", "ciao").get();
+    awaitMinSize(xList, 1);
+    awaitMinSize(xbList, 1);
+    awaitMinSize(abList, 1);
+    awaitMinSize(xcList, 1);
+    awaitMinSize(axList, 2);
+    assertEquals(1, xList.size());
+    assertEquals(1, abList.size());
+    assertEquals(1, xbList.size());
+    assertEquals(1, xcList.size());
+    assertEquals(2, axList.size());
+    assertEquals("hello", xList.get(0).getPayload());
+    assertEquals("barev", abList.get(0).getPayload());
+    assertEquals("barev", xbList.get(0).getPayload());
+    assertEquals("ciao", xcList.get(0).getPayload());
+    assertEquals("barev", axList.get(0).getPayload());
+    assertEquals("ciao", axList.get(1).getPayload());
   }
   
   private void awaitMinSize(Collection<?> col, int size) {
