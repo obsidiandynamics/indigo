@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.benchmark;
 
 import java.util.*;
 
-interface Spec {
+public interface Spec {
   void init();
   
   LogConfig getLog();

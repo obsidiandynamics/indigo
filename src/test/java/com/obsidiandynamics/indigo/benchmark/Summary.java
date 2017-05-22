@@ -7,9 +7,9 @@ import java.util.concurrent.*;
 
 import org.apache.commons.math3.stat.descriptive.*;
 
-final class Summary {
-  long timedOps = 0;
-  long avgTime = 0;
+public final class Summary {
+  public long timedOps = 0;
+  public long avgTime = 0;
   final Stats stats = new Stats();
 
   void compute(Collection<? extends Elapsed> states, int actors) {
