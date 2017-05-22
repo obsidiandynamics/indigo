@@ -140,7 +140,7 @@ public final class WSFanOutTest implements TestSupport {
       clients.add(clientHarnessFactory.create()); 
     }
 
-    if (LOG_PHASES) System.out.println("s: awaiting server.conneted");
+    if (LOG_PHASES) System.out.println("s: awaiting server.connected");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.connected.get() == m);
 
     assertEquals(m, server.connected.get());

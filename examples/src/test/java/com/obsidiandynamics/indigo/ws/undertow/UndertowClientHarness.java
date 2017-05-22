@@ -56,7 +56,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
       }
     };
     
-    final ByteBufferPool pool = new DefaultByteBufferPool(false, 8192);
+    final ByteBufferPool pool = new DefaultByteBufferPool(false, 65536);
     channel = WebSocketClient.connectionBuilder(worker, pool, URI.create("ws://127.0.0.1:" + port + "/"))
         .connect().get();
     channel.getReceiveSetter().set(UndertowEndpoint.clientOf(channel, new UndertowEndpointConfig(), clientListener));
