@@ -30,9 +30,6 @@ public final class NettyEndpoint implements WSEndpoint {
       final ByteBuf buf = Unpooled.wrappedBuffer(payload);
       final ChannelFuture f = context.channel().writeAndFlush(new BinaryWebSocketFrame(buf));
       f.addListener(wrapCallback(callback));
-      //f.syncUninterruptibly();
-      //context.flush();
-      //context.channel().flush();
     }
   }
   
@@ -41,8 +38,6 @@ public final class NettyEndpoint implements WSEndpoint {
       backlog.incrementAndGet();
       final ChannelFuture f = context.channel().writeAndFlush(new TextWebSocketFrame(payload));
       f.addListener(wrapCallback(callback));
-      //context.flush();
-      //context.channel().flush();
     }
   }
   

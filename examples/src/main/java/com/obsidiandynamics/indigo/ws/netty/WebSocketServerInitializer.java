@@ -90,7 +90,5 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
         }
       }
     });
-    pipeline.addLast(new WebSocketIndexPageHandler(contextPath));
-    pipeline.addLast(new WebSocketFrameHandler());
   }
 }

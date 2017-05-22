@@ -17,10 +17,6 @@ public final class NettyServer implements AutoCloseable {
     workerGroup = new NioEventLoopGroup();
     
     final ServerBootstrap b = new ServerBootstrap();
-//    b.childOption(ChannelOption.TCP_NODELAY, true);
-//    b.childOption(ChannelOption.SO_SNDBUF, 1048576);
-//    b.childOption(ChannelOption.SO_RCVBUF, 1048576);
-//    b.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(10, 10000000));
     b.group(bossGroup, workerGroup)
     .channel(NioServerSocketChannel.class)
     .handler(new LoggingHandler(LogLevel.INFO))
