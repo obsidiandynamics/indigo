@@ -1,8 +1,6 @@
 package com.obsidiandynamics.indigo.topic;
 
-import static java.util.concurrent.TimeUnit.*;
 import static junit.framework.TestCase.*;
-import static org.awaitility.Awaitility.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -17,7 +15,10 @@ public final class TopicActorTest {
   @Before
   public void setup() {
     system = ActorSystem.create()
-    .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig()));
+    .addExecutor(r -> r.run()).named("current_thread")
+    .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig() {{
+      executorName = "current_thread";
+    }}));
   }
   
   @After
@@ -27,14 +28,12 @@ public final class TopicActorTest {
   
   @Test
   public void testNonInterfering() throws InterruptedException, ExecutionException {
-    final List<Delivery> aList = new CopyOnWriteArrayList<>();
-    final List<Delivery> bList = new CopyOnWriteArrayList<>();
+    final List<Delivery> aList = new ArrayList<>();
+    final List<Delivery> bList = new ArrayList<>();
     subscribe("a", aList::add).get();
     subscribe("b", bList::add).get();
-    publish("a", "hello");
-    publish("b", "barev");
-    awaitMinSize(aList, 1);
-    awaitMinSize(bList, 1);
+    publish("a", "hello").get();
+    publish("b", "barev").get();
     assertEquals(1, aList.size());
     assertEquals(1, bList.size());
     assertEquals("hello", aList.get(0).getPayload());
@@ -43,13 +42,11 @@ public final class TopicActorTest {
   
   @Test
   public void testMultipleSubscribers() throws InterruptedException, ExecutionException {
-    final List<Delivery> a1List = new CopyOnWriteArrayList<>();
-    final List<Delivery> a2List = new CopyOnWriteArrayList<>();
+    final List<Delivery> a1List = new ArrayList<>();
+    final List<Delivery> a2List = new ArrayList<>();
     subscribe("a", a1List::add).get();
     subscribe("a", a2List::add).get();
-    publish("a", "hello");
-    awaitMinSize(a1List, 1);
-    awaitMinSize(a2List, 1);
+    publish("a", "hello").get();
     assertEquals(1, a1List.size());
     assertEquals(1, a2List.size());
     assertEquals("hello", a1List.get(0).getPayload());
@@ -62,59 +59,77 @@ public final class TopicActorTest {
   }
   
   @Test
-  public void testHierarchyMultiWildcard() throws InterruptedException, ExecutionException {
-    final List<Delivery> aList = new CopyOnWriteArrayList<>(); // should also get b's messages
-    final List<Delivery> bList = new CopyOnWriteArrayList<>();
-    subscribe("#", aList::add).get();
-    subscribe("a/b", bList::add).get();
+  public void testHierarchyBasic() throws InterruptedException, ExecutionException {
+    final List<Delivery> aList = new ArrayList<>();
+    final List<Delivery> abList = new ArrayList<>();
+    final List<Delivery> abcList = new ArrayList<>();
+    subscribe("a", aList::add).get();
+    subscribe("a/b", abList::add).get();
+    subscribe("a/b/c", abcList::add).get();
     publish("a", "hello").get();
     publish("a/b", "barev").get();
-    awaitMinSize(aList, 2);
-    awaitMinSize(bList, 1);
-    assertEquals(2, aList.size());
-    assertEquals(1, bList.size());
+    publish("a/b/c", "ciao").get();
+    assertEquals(1, aList.size());
+    assertEquals(1, abList.size());
+    assertEquals(1, abcList.size());
     assertEquals("hello", aList.get(0).getPayload());
-    assertEquals("barev", aList.get(1).getPayload());
-    assertEquals("barev", bList.get(0).getPayload());
+    assertEquals("barev", abList.get(0).getPayload());
+    assertEquals("ciao", abcList.get(0).getPayload());
+  }
+  
+  @Test
+  public void testHierarchyMultiWildcard() throws InterruptedException, ExecutionException {
+    final List<Delivery> xList = new ArrayList<>();
+    final List<Delivery> abList = new ArrayList<>();
+    final List<Delivery> axList = new ArrayList<>();
+    subscribe("#", xList::add).get();
+    subscribe("a/b", abList::add).get();
+    subscribe("a/#", axList::add).get();
+    publish("a", "hello").get();
+    publish("a/b", "barev").get();
+    assertEquals(2, xList.size());
+    assertEquals(1, abList.size());
+    assertEquals(1, abList.size());
+    assertEquals(1, axList.size());
+    assertEquals("hello", xList.get(0).getPayload());
+    assertEquals("barev", xList.get(1).getPayload());
+    assertEquals("barev", abList.get(0).getPayload());
+    assertEquals("barev", axList.get(0).getPayload());
   }
   
   @Test
   public void testHierarchySingleWildcard() throws InterruptedException, ExecutionException {
-    final List<Delivery> xList = new CopyOnWriteArrayList<>();
-    final List<Delivery> abList = new CopyOnWriteArrayList<>();
-    final List<Delivery> xbList = new CopyOnWriteArrayList<>();
-    final List<Delivery> xcList = new CopyOnWriteArrayList<>();
-    final List<Delivery> axList = new CopyOnWriteArrayList<>();
+    final List<Delivery> xList = new ArrayList<>();
+    final List<Delivery> abList = new ArrayList<>();
+    final List<Delivery> xbList = new ArrayList<>();
+    final List<Delivery> xcList = new ArrayList<>();
+    final List<Delivery> axList = new ArrayList<>();
+    final List<Delivery> xxList = new ArrayList<>();
     subscribe("+", xList::add).get();
     subscribe("a/b", abList::add).get();
     subscribe("+/b", xbList::add).get();
     subscribe("+/c", xcList::add).get();
     subscribe("a/+", axList::add).get();
+    subscribe("+/+", xxList::add).get();
     publish("a", "hello").get();
     publish("a/b", "barev").get();
     publish("a/c", "ciao").get();
-    awaitMinSize(xList, 1);
-    awaitMinSize(xbList, 1);
-    awaitMinSize(abList, 1);
-    awaitMinSize(xcList, 1);
-    awaitMinSize(axList, 2);
     assertEquals(1, xList.size());
     assertEquals(1, abList.size());
     assertEquals(1, xbList.size());
     assertEquals(1, xcList.size());
     assertEquals(2, axList.size());
+    assertEquals(2, xxList.size());
     assertEquals("hello", xList.get(0).getPayload());
     assertEquals("barev", abList.get(0).getPayload());
     assertEquals("barev", xbList.get(0).getPayload());
     assertEquals("ciao", xcList.get(0).getPayload());
     assertEquals("barev", axList.get(0).getPayload());
     assertEquals("ciao", axList.get(1).getPayload());
+    assertEquals("barev", xxList.get(0).getPayload());
+    assertEquals("ciao", xxList.get(1).getPayload());
   }
   
-  private void awaitMinSize(Collection<?> col, int size) {
-    await().atMost(10, SECONDS).until(() -> col.size() >= size);
-  }
-
   private CompletableFuture<SubscribeResponse> subscribe(String topic, Subscriber subscriber) {
     return system.ask(ActorRef.of(TopicActor.ROLE), new Subscribe(Topic.of(topic), subscriber));
   }

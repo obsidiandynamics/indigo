@@ -22,27 +22,36 @@ public final class TopicActor implements Actor {
   @Override
   public void activated(Activation a) {
     if (LOG.isTraceEnabled()) LOG.trace("{} activating", a.self());
-    final String selfKey = a.self().key();
-    final Topic topic = selfKey != null ? Topic.of(selfKey) : Topic.root();
-    state = new TopicActorState(selfKey != null ? Topic.of(selfKey) : Topic.root());
-    if (selfKey != null) {
-      final Topic parent = topic.parent();
-      final String parentKey = parent.isRoot() ? null : parent.toString();
-      a.to(ActorRef.of(ROLE, parentKey)).ask(ActivateSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
+    final Topic current = Topic.fromRef(a.self());
+    state = new TopicActorState(current);
+    if (! current.isRoot()) {
+      final Topic parent = current.parent();
+      if (parent != null) {
+        a.to(parent.asRef()).ask(ActivateSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
+      }
     }
   }
   
   @Override
   public void passivated(Activation a) {
     if (LOG.isTraceEnabled()) LOG.trace("{} passivating", a.self());
+    final Topic current = Topic.fromRef(a.self());
+    if (! current.isRoot()) {
+      final Topic parent = current.parent();
+      if (parent != null) {
+        a.to(parent.asRef()).ask(PassivateSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
+      }
+    }
   }
-
+  
   @Override
   public void act(Activation a, Message m) {
     m.select()
     .when(Subscribe.class).then(b -> subscribe(a, m))
+    .when(Unsubscribe.class).then(b -> unsubscribe(a, m))
     .when(Publish.class).then(b -> publish(a, m))
     .when(ActivateSubtopic.class).then(b -> activateSubtopic(a, m))
+    .when(PassivateSubtopic.class).then(b -> passivateSubtopic(a, m))
     .otherwise(a::messageFault);
   }
   
@@ -54,27 +63,35 @@ public final class TopicActor implements Actor {
    *  @param m
    */
   private void activateSubtopic(Activation a, Message m) {
-    final Topic subtopic = Topic.of(m.from().key());
-    final ActorRef subtopicRef = ActorRef.of(ROLE, subtopic.toString());
+    final Topic subtopic = Topic.fromRef(m.from());
     if (LOG.isTraceEnabled()) LOG.trace("{} registering {}", a.self(), subtopic.lastPart());
-    state.subtopics.put(subtopic.lastPart(), subtopicRef);
+    state.subtopics.put(subtopic.lastPart(), m.from());
+    a.reply(m).tell();
+  }
+  
+  /**
+   *  Called by the child of this actor during its passivation, thereby deregistering itself
+   *  from its parent. If there are no subtopics left, this actor will do the same.
+   *  
+   *  @param a
+   *  @param m
+   */
+  private void passivateSubtopic(Activation a, Message m) {
+    final Topic subtopic = Topic.fromRef(m.from());
+    if (LOG.isTraceEnabled()) LOG.trace("{} deregistering {}", a.self(), subtopic.lastPart());
+    state.subtopics.remove(subtopic.lastPart());
+    if (state.subtopics.isEmpty()) {
+      a.passivate();
+    }
     a.reply(m).tell();
   }
   
   private void subscribe(Activation a, Message m) {
     final Subscribe subscribe = m.body();
     if (LOG.isTraceEnabled()) LOG.trace("{} processing subscribe to {}", a.self(), subscribe.getTopic());
-    if (isDeeper(subscribe.getTopic()) && ! nextTopicPart(subscribe.getTopic()).equals(Topic.SL_WILDCARD)) {
+    final ActorRef subtopicRef = resolveDeepTopicRef(subscribe.getTopic());
+    if (subtopicRef != null) {
       // the request is for a subtopic - delegate down
-      final String next = nextTopicPart(subscribe.getTopic());
-      final ActorRef subtopicRef;
-      final ActorRef existingNextRef = state.subtopics.get(next);
-      if (existingNextRef != null) {
-        subtopicRef = existingNextRef;
-      } else {
-        final Topic subtopic = state.topic.append(next);
-        subtopicRef = ActorRef.of(ROLE, subtopic.toString());
-      }
       if (LOG.isTraceEnabled()) LOG.trace("{} delegating to {}", a.self(), subtopicRef);
       a.forward(m).to(subtopicRef);
     } else {
@@ -83,6 +100,44 @@ public final class TopicActor implements Actor {
       state.subscribe(subscribe.getTopic(), subscribe.getSubscriber());
       
       a.reply(m).tell(SubscribeResponse.instance());
+    }
+  }
+  
+  private void unsubscribe(Activation a, Message m) {
+    final Unsubscribe unsubscribe = m.body();
+    if (LOG.isTraceEnabled()) LOG.trace("{} processing unsubscribe from {}", a.self(), unsubscribe.getTopic());
+    final ActorRef subtopicRef = resolveDeepTopicRef(unsubscribe.getTopic());
+    if (subtopicRef != null) {
+      // the request is for a subtopic - delegate down
+      if (LOG.isTraceEnabled()) LOG.trace("{} delegating to {}", a.self(), subtopicRef);
+      a.forward(m).to(subtopicRef);
+    } else {
+      if (LOG.isTraceEnabled()) LOG.trace("{} adding to {}", a.self(), unsubscribe.getTopic());
+      // the request is for the current level or a '+' wildcard - subscribe and reply
+      final boolean empty = state.unsubscribe(unsubscribe.getTopic(), unsubscribe.getSubscriber());
+      if (empty) {
+        a.passivate();
+      }
+      
+      a.reply(m).tell(UnsubscribeResponse.instance());
+    }
+  }
+  
+  private ActorRef resolveDeepTopicRef(Topic topic) {
+    if (isDeeper(topic) && ! nextTopicPart(topic).equals(Topic.SL_WILDCARD)) {
+      // the request is for a subtopic - delegate down
+      final String next = nextTopicPart(topic);
+      final ActorRef subtopicRef;
+      final ActorRef existingNextRef = state.subtopics.get(next);
+      if (existingNextRef != null) {
+        subtopicRef = existingNextRef;
+      } else {
+        final Topic subtopic = state.topic.append(next);
+        subtopicRef = subtopic.asRef();
+      }
+      return subtopicRef;
+    } else {
+      return null;
     }
   }
   
@@ -123,14 +178,6 @@ public final class TopicActor implements Actor {
       a.reply(m).tell(PublishResponse.instance());
     }
   }
-  
-//  private boolean isRoot() {
-//    return state.topic.isRoot();
-//  }
-//  
-//  private String currentPart(Topic topic) {
-//    return topic.getParts()[state.topic.length() - 1];
-//  }
   
   private String nextTopicPart(Topic topic) {
     return topic.getParts()[state.topic.length()];

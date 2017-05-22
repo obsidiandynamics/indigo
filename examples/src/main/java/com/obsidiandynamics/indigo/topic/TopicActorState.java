@@ -26,7 +26,7 @@ final class TopicActorState {
     subscriberSet.add(subscriber);
   }
   
-  void unsubscribe(Topic topic, Subscriber subscriber) {
+  boolean unsubscribe(Topic topic, Subscriber subscriber) {
     final Set<Subscriber> subscriberSet = subscribers.get(topic);
     if (subscriberSet != null) {
       subscriberSet.remove(subscriber);
@@ -34,6 +34,7 @@ final class TopicActorState {
         subscribers.remove(topic);
       }
     }
+    return subscribers.isEmpty();
   }
 
   @Override

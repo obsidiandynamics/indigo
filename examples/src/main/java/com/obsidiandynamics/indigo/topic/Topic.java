@@ -2,6 +2,8 @@ package com.obsidiandynamics.indigo.topic;
 
 import java.util.*;
 
+import com.obsidiandynamics.indigo.*;
+
 public final class Topic {
   static final String SEPARATOR = "/";
   static final String SL_WILDCARD = "+";
@@ -59,6 +61,14 @@ public final class Topic {
   
   static Topic root() {
     return new Topic(new String[0]);
+  }
+  
+  ActorRef asRef() {
+    return ActorRef.of(TopicActor.ROLE, isRoot() ? null : toString());
+  }
+  
+  static Topic fromRef(ActorRef ref) {
+    return ref.key() != null ? of(ref.key()) : root();
   }
   
   Topic parent() {
