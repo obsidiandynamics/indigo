@@ -40,6 +40,11 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   protected void onCloseMessage(CloseMessage message, WebSocketChannel channel) {
     manager.getListener().onClose(this, message.getCode(), message.getReason());
     super.onCloseMessage(message, channel);
+    if (channel.isCloseFrameSent()) {
+      try {
+        channel.close();
+      } catch (IOException e) {}
+    }
   }
   
   @Override
