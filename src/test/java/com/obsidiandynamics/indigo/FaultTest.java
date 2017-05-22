@@ -92,6 +92,47 @@ public final class FaultTest implements TestSupport {
   }
   
   @Test
+  public void testPropagationOnActivation() {
+    final AtomicBoolean propagated = new AtomicBoolean();
+    final ActorSystem system = system(1)
+    .createActorSystem()
+    .on(SINK)
+    .cue(StatelessLambdaActor.builder()
+         .activated(a -> {
+           log("activating\n");
+           a.egress(() -> {
+             throw new TestException("test fault"); 
+           })
+           .onFault(a::propagateFault)
+           .onResponse(r -> {
+             fail("Unexpected response\n");
+           });
+         })
+         .act((a, m) -> {
+           fail("Unexpected act\n");
+         })
+         .passivated(a -> {
+           fail("Unexpected passivation\n");
+         })
+    )
+    .ingress(a -> { 
+      a.to(ActorRef.of(SINK)).ask()
+      .onFault(f -> {
+        log("fault detected");
+        propagated.set(true);
+        assertNotNull(f.getReason());
+        assertEquals(TestException.class, f.getReason().getClass());
+      })
+      .onResponse(r -> {
+        fail("Unexpected response\n");
+      });
+    });
+    system.shutdownQuietly();
+    
+    assertTrue(propagated.get());
+  }
+  
+  @Test
   public void testOnSyncActivationUnbiased() {
     testOnActivation(attempts -> false, 100 * SCALE, 1, false);
   }

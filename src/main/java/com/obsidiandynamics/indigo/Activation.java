@@ -109,6 +109,10 @@ public abstract class Activation {
     faultReason = reason;
   }
   
+  public final void propagateFault(Fault fault) {
+    fault(fault.getReason());
+  }
+  
   public final void messageFault(Object body) {
     fault(body != null ? "Cannot handle message body of type " + body.getClass().getName() : "Cannot handle null message body");
   }
