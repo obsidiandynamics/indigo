@@ -25,6 +25,7 @@ public final class TopicActor implements Actor {
     final Topic current = Topic.fromRef(a.self());
     state = new TopicActorState(current);
     if (! current.isRoot()) {
+      config.topicWatcher.created(a, current);
       final Topic parent = current.parent();
       if (parent != null) {
         a.to(parent.asRef()).ask(CreateSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
@@ -37,6 +38,7 @@ public final class TopicActor implements Actor {
     if (LOG.isTraceEnabled()) LOG.trace("{} passivating", a.self());
     final Topic current = Topic.fromRef(a.self());
     if (! current.isRoot()) {
+      config.topicWatcher.deleted(a, current);
       final Topic parent = current.parent();
       if (parent != null) {
         a.to(parent.asRef()).ask(DeleteSubtopic.instance()).onFault(a::propagateFault).onResponse(r -> {});
@@ -66,7 +68,6 @@ public final class TopicActor implements Actor {
     final Topic subtopic = Topic.fromRef(m.from());
     if (LOG.isTraceEnabled()) LOG.trace("{} creating {}", a.self(), subtopic.lastPart());
     state.subtopics.put(subtopic.lastPart(), m.from());
-    config.topicWatcher.created(a, subtopic);
     a.reply(m).tell();
   }
   
@@ -81,8 +82,7 @@ public final class TopicActor implements Actor {
     final Topic subtopic = Topic.fromRef(m.from());
     if (LOG.isTraceEnabled()) LOG.trace("{} deleting {}", a.self(), subtopic.lastPart());
     state.subtopics.remove(subtopic.lastPart());
-    config.topicWatcher.deleted(a, subtopic);
-    if (state.subtopics.isEmpty()) {
+    if (state.subtopics.isEmpty() && state.subscribers.isEmpty()) {
       a.passivate();
     }
     a.reply(m).tell();
@@ -115,11 +115,11 @@ public final class TopicActor implements Actor {
       if (LOG.isTraceEnabled()) LOG.trace("{} delegating to {}", a.self(), subtopicRef);
       a.forward(m).to(subtopicRef);
     } else {
-      if (LOG.isTraceEnabled()) LOG.trace("{} adding to {}", a.self(), unsubscribe.getTopic());
+      if (LOG.isTraceEnabled()) LOG.trace("{} removing from {}", a.self(), unsubscribe.getTopic());
       // the request is for the current level or a '+' wildcard - subscribe and reply
       final boolean removed = state.unsubscribe(unsubscribe.getTopic(), unsubscribe.getSubscriber());
       if (removed) config.topicWatcher.unsubscribed(a, unsubscribe.getTopic(), unsubscribe.getSubscriber());
-      if (state.subtopics.isEmpty()) {
+      if (state.subtopics.isEmpty() && state.subscribers.isEmpty()) {
         a.passivate();
       }
       

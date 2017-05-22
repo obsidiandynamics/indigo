@@ -215,8 +215,219 @@ public final class TopicActorTest {
     assertEquals("ciao", xxList.get(1).getPayload());
   }
   
+  @Test
+  public void testHierarchyUnsubscribeBottomUp() throws InterruptedException, ExecutionException {
+    final List<Delivery> list = new ArrayList<>();
+    final Subscriber sub = list::add;
+    subscribe("a0", sub).get();
+    subscribe("a1", sub).get();
+    subscribe("a0/b0", sub).get();
+    subscribe("a0/b1", sub).get();
+    subscribe("a0/b0/c0", sub).get();
+    
+    publishSelf("a0").get();
+    publishSelf("a1").get();
+    publishSelf("a0/b0").get();
+    publishSelf("a0/b1").get();
+    publishSelf("a0/b0/c0").get();
+    assertEquals(5, list.size());
+    assertEquals(5, new HashSet<>(list).size());
+    
+    unsubscribe("a0/b0/c0", sub).get();
+    unsubscribe("a0/b1", sub).get();
+    unsubscribe("a0/b0", sub).get();
+    unsubscribe("a1", sub).get();
+    unsubscribe("a0", sub).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a1")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a1")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0")));
+    });
+    
+    list.clear();
+    publishSelf("a0").get();
+    publishSelf("a1").get();
+    publishSelf("a0/b0").get();
+    publishSelf("a0/b1").get();
+    publishSelf("a0/b0/c0").get();
+    assertEquals(0, list.size());
+  }
+  
+  @Test
+  public void testHierarchyUnsubscribeTopDown() throws InterruptedException, ExecutionException {
+    final List<Delivery> list = new ArrayList<>();
+    final Subscriber sub = list::add;
+    subscribe("a0", sub).get();
+    subscribe("a1", sub).get();
+    subscribe("a0/b0", sub).get();
+    subscribe("a0/b1", sub).get();
+    subscribe("a0/b0/c0", sub).get();
+    
+    publishSelf("a0").get();
+    publishSelf("a1").get();
+    publishSelf("a0/b0").get();
+    publishSelf("a0/b1").get();
+    publishSelf("a0/b0/c0").get();
+    assertEquals(5, list.size());
+    assertEquals(5, new HashSet<>(list).size());
+    
+    unsubscribe("a0", sub).get();
+    unsubscribe("a1", sub).get();
+    unsubscribe("a0/b0", sub).get();
+    unsubscribe("a0/b1", sub).get();
+    unsubscribe("a0/b0/c0", sub).get();
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a1")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a1")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0")));
+    });
+    
+    list.clear();
+    publishSelf("a0").get();
+    publishSelf("a1").get();
+    publishSelf("a0/b0").get();
+    publishSelf("a0/b1").get();
+    publishSelf("a0/b0/c0").get();
+    assertEquals(0, list.size());
+  }
+  
+  @Test
+  public void testHierarchyUnsubscribeMultiLevelWildcard() throws InterruptedException, ExecutionException {
+    final List<Delivery> list = new ArrayList<>();
+    final Subscriber sub = list::add;
+    subscribe("#", sub).get();
+    subscribe("a/b", sub).get();
+    subscribe("a/#", sub).get();
+    subscribe("c", sub).get();
+    subscribe("c/#", sub).get();
+    
+    publishSelf("a").get();
+    assertEquals(1, list.size());
+    publishSelf("a/b").get();
+    assertEquals(4, list.size());
+    publishSelf("c").get();
+    assertEquals(6, list.size());
+    publishSelf("c/d").get();
+    assertEquals(8, list.size());
+    
+    unsubscribe("#", sub).get();
+    unsubscribe("a/b", sub).get();
+    unsubscribe("a/#", sub).get();
+    unsubscribe("c", sub).get();
+    unsubscribe("c/#", sub).get();
+    
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("#")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/#")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("c")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c/#")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("#")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/b")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/#")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("c")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("c/#")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("c")));
+    });
+    
+    list.clear();
+    publishSelf("a").get();
+    publishSelf("a/b").get();
+    publishSelf("c").get();
+    publishSelf("c/d").get();
+    assertEquals(0, list.size());
+  }
+  
+  @Test
+  public void testHierarchyUnsubscribeSingleLevelWildcard() throws InterruptedException, ExecutionException {
+    final List<Delivery> list = new ArrayList<>();
+    final Subscriber sub = list::add;
+    subscribe("+", sub).get();
+    subscribe("a/b", sub).get();
+    subscribe("+/b", sub).get();
+    subscribe("+/c", sub).get();
+    subscribe("a/+", sub).get();
+    subscribe("+/+", sub).get();
+
+    unsubscribe("+", sub).get();
+    unsubscribe("a/b", sub).get();
+    unsubscribe("+/b", sub).get();
+    unsubscribe("+/c", sub).get();
+    unsubscribe("a/+", sub).get();
+    unsubscribe("+/+", sub).get();
+    
+    verifyInOrder(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/b")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/c")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/+")), notNull());
+      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/+")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/b")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+/b")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+/c")), notNull());
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/+")), notNull());
+      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+/+")), notNull());
+    });
+    
+    publishSelf("a").get();
+    publishSelf("a/b").get();
+    publishSelf("a/c").get();
+    assertEquals(0, list.size());
+  }
+  
   private CompletableFuture<SubscribeResponse> subscribe(String topic, Subscriber subscriber) {
     return system.ask(ActorRef.of(TopicActor.ROLE), new Subscribe(Topic.of(topic), subscriber));
+  }
+  
+  private CompletableFuture<UnsubscribeResponse> unsubscribe(String topic, Subscriber subscriber) {
+    return system.ask(ActorRef.of(TopicActor.ROLE), new Unsubscribe(Topic.of(topic), subscriber));
+  }
+  
+  private CompletableFuture<PublishResponse> publishSelf(String topic) {
+    return publish(topic, topic);
   }
   
   private CompletableFuture<PublishResponse> publish(String topic, Object payload) {
