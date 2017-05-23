@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.netty.channel.*;
@@ -96,7 +97,7 @@ public final class NettyServerHarness extends ServerHarness<NettyEndpoint> imple
     endpoint.sendPing();
   }
   
-  public static ThrowingFactory<NettyServerHarness> factory(int port, int idleTimeout) {
+  public static ThrowingSupplier<NettyServerHarness> factory(int port, int idleTimeout) {
     return () -> new NettyServerHarness(port, idleTimeout);
   }
 }

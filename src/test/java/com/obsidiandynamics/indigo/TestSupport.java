@@ -33,6 +33,13 @@ public interface TestSupport {
     return took / 1_000_000l;
   }
   
+  static long tookThrowing(ThrowingRunnable r) throws Exception {
+    final long started = System.nanoTime();
+    r.run();
+    final long took = System.nanoTime() - started;
+    return took / 1_000_000l;
+  }
+  
   static void sleep(long millis) {
     try {
       Thread.sleep(millis);

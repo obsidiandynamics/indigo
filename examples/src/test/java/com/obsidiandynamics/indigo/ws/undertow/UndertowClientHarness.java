@@ -7,6 +7,7 @@ import java.nio.*;
 import org.xnio.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.connector.*;
@@ -83,7 +84,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
     channel.sendClose();
   }
   
-  public static ThrowingFactory<UndertowClientHarness> factory(XnioWorker worker, int port, int idleTimeout, boolean echo) {
+  public static ThrowingSupplier<UndertowClientHarness> factory(XnioWorker worker, int port, int idleTimeout, boolean echo) {
     return () -> new UndertowClientHarness(worker, port, idleTimeout, echo);
   }
 }

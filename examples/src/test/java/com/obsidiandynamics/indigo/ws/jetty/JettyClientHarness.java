@@ -8,6 +8,7 @@ import org.eclipse.jetty.websocket.api.*;
 import org.eclipse.jetty.websocket.client.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class JettyClientHarness extends ClientHarness implements TestSupport {
@@ -77,7 +78,7 @@ public final class JettyClientHarness extends ClientHarness implements TestSuppo
     session.close();
   }
   
-  public static ThrowingFactory<JettyClientHarness> factory(HttpClient httpClient, int port, int idleTimeout, boolean echo) {
+  public static ThrowingSupplier<JettyClientHarness> factory(HttpClient httpClient, int port, int idleTimeout, boolean echo) {
     return () -> new JettyClientHarness(httpClient, port, idleTimeout, echo);
   }
 }

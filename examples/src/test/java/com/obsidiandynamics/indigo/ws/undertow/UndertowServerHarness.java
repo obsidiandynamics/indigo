@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.*;
 import org.eclipse.jetty.websocket.api.WebSocketException;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.websockets.core.*;
@@ -106,7 +107,7 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
     }
   }
   
-  public static ThrowingFactory<UndertowServerHarness> factory(int port, int idleTimeout) {
+  public static ThrowingSupplier<UndertowServerHarness> factory(int port, int idleTimeout) {
     return () -> new UndertowServerHarness(port, idleTimeout);
   }
 }

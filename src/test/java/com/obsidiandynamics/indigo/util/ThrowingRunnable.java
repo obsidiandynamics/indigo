@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.util;
 
 @FunctionalInterface
 public interface ThrowingRunnable {

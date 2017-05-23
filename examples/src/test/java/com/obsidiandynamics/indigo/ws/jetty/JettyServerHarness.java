@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.*;
 import org.eclipse.jetty.websocket.api.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class JettyServerHarness extends ServerHarness<JettyEndpoint> implements TestSupport {
@@ -102,7 +103,7 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
     }
   }
   
-  public static ThrowingFactory<JettyServerHarness> factory(int port, int idleTimeout) {
+  public static ThrowingSupplier<JettyServerHarness> factory(int port, int idleTimeout) {
     return () -> new JettyServerHarness(port, idleTimeout);
   }
 }

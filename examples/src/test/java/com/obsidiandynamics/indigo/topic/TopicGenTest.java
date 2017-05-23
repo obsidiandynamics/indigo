@@ -37,6 +37,9 @@ public class TopicGenTest {
     assertEquals(Arrays.asList(new Interest(Topic.of("#"), 3)), gen.getMultiLevelWildcardInterests());
   }
   
+  /**
+   *  Tests a three-level structure with different types of subscribers.
+   */
   @Test
   public void test3Level() {
     final TopicGen gen = TopicGen.builder()

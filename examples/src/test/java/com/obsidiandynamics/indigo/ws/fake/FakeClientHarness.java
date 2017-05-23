@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class FakeClientHarness extends ClientHarness implements TestSupport {
@@ -33,7 +34,7 @@ public final class FakeClientHarness extends ClientHarness implements TestSuppor
     client.close();
   }
 
-  public static ThrowingFactory<FakeClientHarness> factory(int port, int expectedMessageSize) {
+  public static ThrowingSupplier<FakeClientHarness> factory(int port, int expectedMessageSize) {
     return () -> new FakeClientHarness(port, expectedMessageSize);
   }
 }

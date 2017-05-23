@@ -111,7 +111,15 @@ final class TopicGen {
       }
     }
     return new ArrayList<>(interests);
-  } 
+  }
+  
+  List<Interest> getAllInterests() {
+    final List<Interest> interests = new ArrayList<>();
+    interests.addAll(getExactInterests());
+    interests.addAll(getSingleLevelWildcardInterests());
+    interests.addAll(getMultiLevelWildcardInterests());
+    return interests;
+  }
   
   static final class TopicGenBuilder {
     private final List<List<TopicGenNode>> matrix = new ArrayList<>();

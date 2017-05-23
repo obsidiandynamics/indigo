@@ -13,6 +13,7 @@ import org.junit.*;
 import org.xnio.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.fake.*;
 import com.obsidiandynamics.indigo.ws.jetty.*;
 import com.obsidiandynamics.indigo.ws.netty.*;
@@ -123,8 +124,8 @@ public final class WSFanOutTest implements TestSupport {
   }
   
   private <E> void test(int n, int m, boolean echo, int numBytes, int cycles,
-                        ThrowingFactory<? extends ServerHarness<E>> serverHarnessFactory,
-                        ThrowingFactory<? extends ClientHarness> clientHarnessFactory,
+                        ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
+                        ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
                         ThrowingRunnable cleanup) throws Exception {
     for (int i = 0; i < cycles; i++) {
       test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory, cleanup);
@@ -132,8 +133,8 @@ public final class WSFanOutTest implements TestSupport {
   }
   
   private <E> void test(int n, int m, boolean echo, int numBytes,
-                        ThrowingFactory<? extends ServerHarness<E>> serverHarnessFactory,
-                        ThrowingFactory<? extends ClientHarness> clientHarnessFactory,
+                        ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
+                        ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
                         ThrowingRunnable cleanup) throws Exception {
     final int sendThreads = 1;
     final int waitScale = 1 + (int) (((long) n * (long) m) / 1_000_000_000l);
