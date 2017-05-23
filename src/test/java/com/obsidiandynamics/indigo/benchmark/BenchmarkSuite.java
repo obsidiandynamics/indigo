@@ -6,7 +6,7 @@ import com.obsidiandynamics.indigo.*;
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
  */
 public final class BenchmarkSuite {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     final LogConfig LOG = new LogConfig() {{
       summary = true;
     }};

@@ -43,7 +43,7 @@ public final class ThroughputBenchmark implements TestSupport {
   }  
   
   @Test
-  public void test() {
+  public void test() throws Exception {
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = 4;
@@ -125,7 +125,7 @@ public final class ThroughputBenchmark implements TestSupport {
     return summary;
   }
   
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     new Config() {{
       executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
       threads = Runtime.getRuntime().availableProcessors() * 1;

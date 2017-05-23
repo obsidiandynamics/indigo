@@ -9,9 +9,9 @@ public interface Spec {
   
   String describe();
   
-  Summary run();
+  Summary run() throws Exception;
   
-  default Summary test() {
+  default Summary test() throws Exception {
     final LogConfig log = getLog();
     init();
     if (log.summary) log.out.println(describe());
@@ -20,7 +20,7 @@ public interface Spec {
     return summary;
   }
   
-  default Summary testPercentile(int discard, int keep, double percentile, Comparator<? super Summary> comparator) {
+  default Summary testPercentile(int discard, int keep, double percentile, Comparator<? super Summary> comparator) throws Exception {
     init();
     for (int i = 0; i < discard; i++) {
       run();

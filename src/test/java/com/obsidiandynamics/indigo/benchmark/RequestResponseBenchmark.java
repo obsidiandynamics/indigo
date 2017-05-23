@@ -78,7 +78,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
   private static final String TIMER = "timer";
   
   @Test
-  public void test() {
+  public void test() throws Exception {
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors();
       actors = 4;
@@ -174,7 +174,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
     };
   }
   
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     new Config() {{
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 2;
