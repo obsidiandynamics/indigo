@@ -71,11 +71,16 @@ public final class WSFanOutTest implements TestSupport {
   
   @Test
   public void testUtUt() throws Exception {
-    final XnioWorker worker = getXnioWorker();
-    test(N, M, ECHO, BYTES, CYCLES,
-         UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
-         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
-         worker::shutdown);
+    try {
+      final XnioWorker worker = getXnioWorker();
+      test(N, M, ECHO, BYTES, CYCLES,
+           UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
+           UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
+           worker::shutdown);
+      
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
   }
   
   @Test
@@ -131,7 +136,7 @@ public final class WSFanOutTest implements TestSupport {
                         ThrowingFactory<? extends ClientHarness> clientHarnessFactory,
                         ThrowingRunnable cleanup) throws Exception {
     final int sendThreads = 1;
-    final int waitScale = 1 + n * m / 1_000_000;
+    final int waitScale = 1 + (int) (((long) n * (long) m) / 1_000_000_000l);
     
     final ServerHarness<E> server = serverHarnessFactory.create();
     final List<ClientHarness> clients = new ArrayList<>(m);
