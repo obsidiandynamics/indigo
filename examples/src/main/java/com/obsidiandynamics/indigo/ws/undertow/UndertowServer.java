@@ -17,6 +17,7 @@ public final class UndertowServer implements AutoCloseable {
     
     final XnioWorker worker = Xnio.getInstance().createWorker(OptionMap.builder()
                                                               .set(Options.WORKER_IO_THREADS, ioThreads)
+                                                              .set(Options.THREAD_DAEMON, true)
                                                               .set(Options.WORKER_TASK_CORE_THREADS, coreWorkerThreads)
                                                               .set(Options.WORKER_TASK_MAX_THREADS, maxWorkerThreads)
                                                               .set(Options.TCP_NODELAY, true)
@@ -24,8 +25,6 @@ public final class UndertowServer implements AutoCloseable {
     
     server = Undertow.builder()
         .setWorker(worker)
-        //.setSocketOption(Options.SEND_BUFFER, 100000)
-        //.setServerOption(Options.CORK, true)
         .addHttpListener(port, "localhost")
         .setHandler(path().addPrefixPath(contextPath, websocket(connCallback)))
         .build();

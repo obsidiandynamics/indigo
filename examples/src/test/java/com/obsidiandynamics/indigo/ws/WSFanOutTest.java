@@ -53,6 +53,7 @@ public final class WSFanOutTest implements TestSupport {
   private static XnioWorker getXnioWorker() throws IllegalArgumentException, IOException {
     return Xnio.getInstance().createWorker(OptionMap.builder()
                                            .set(Options.WORKER_IO_THREADS, Runtime.getRuntime().availableProcessors())
+                                           .set(Options.THREAD_DAEMON, true)
                                            .set(Options.CONNECTION_HIGH_WATER, 1000000)
                                            .set(Options.CONNECTION_LOW_WATER, 1000000)
                                            .set(Options.WORKER_TASK_CORE_THREADS, 100)
@@ -221,5 +222,10 @@ public final class WSFanOutTest implements TestSupport {
 
     server.close();
     cleanup.run();
+  }
+  
+  public static void main(String[] args) throws Exception {
+    BashInteractor.Ulimit.main(null);
+    new WSFanOutTest().testUtUt();
   }
 }
