@@ -22,9 +22,7 @@ public final class TopicActorTest {
   public void setup() {
     topicWatcher = mock(TopicWatcher.class);
     system = ActorSystem.create()
-    .addExecutor(r -> r.run()).named("current_thread")
     .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig() {{
-      executorName = "current_thread";
       topicWatcher = TopicActorTest.this.topicWatcher;
     }}));
   }

@@ -154,7 +154,7 @@ public final class TopicActor implements Actor {
         if (LOG.isTraceEnabled()) LOG.trace("{} matched {}", a.self(), entry.getKey());
         // subscribers match the exact topic in the publish command
         for (Subscriber subscriber : entry.getValue()) {
-          a.egress(subscriber::accept).withExecutor(config.executorName).tell(delivery);
+          subscriber.accept(delivery);
         }
       } else {
         if (LOG.isTraceEnabled()) LOG.trace("{} skipped {}", a.self(), entry.getKey());
