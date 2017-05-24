@@ -79,7 +79,6 @@ public final class WSFanOutTest implements TestSupport {
            UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
            UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
            worker::shutdown);
-      
     } catch (Throwable t) {
       t.printStackTrace();
     }
