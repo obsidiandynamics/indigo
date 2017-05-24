@@ -5,6 +5,7 @@ import static junit.framework.TestCase.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.*;
 import java.util.stream.*;
 
 import org.junit.*;
@@ -28,9 +29,55 @@ public final class TopicRouterBenchmark implements TestSupport {
     /* Derived fields. */
     long warmup;
     
+    List<Topic> leafTopics;
+    List<Interest> exactInterests;
+    List<Interest> singleLevelWildcardInterests;
+    List<Interest> multiLevelWildcardInterests;
+    List<Interest> interests;
+    List<BenchSubscriber> subscribers;
+    List<Topic> targetTopics;
+    int amplification;
+    
+    private boolean initialised;
+    
     @Override
     public void init() {
+      if (initialised) return;
+      
       warmup = (long) (n * warmupFrac);
+      
+      leafTopics = topicGen.getLeafTopics();
+      exactInterests = topicGen.getExactInterests();
+      singleLevelWildcardInterests = topicGen.getSingleLevelWildcardInterests();
+      multiLevelWildcardInterests = topicGen.getMultiLevelWildcardInterests();
+      interests = new ArrayList<>(exactInterests.size() + singleLevelWildcardInterests.size() + multiLevelWildcardInterests.size());
+      interests.addAll(exactInterests);
+      interests.addAll(singleLevelWildcardInterests);
+      interests.addAll(multiLevelWildcardInterests);
+      
+      subscribers = new ArrayList<>();
+      for (Interest interest : interests) {
+        for (int i = 0; i < interest.count; i++) {
+          subscribers.add(new BenchSubscriber(this, interest.topic));
+        }
+      }
+
+      targetTopics = exactInterests.stream().map(s -> s.topic).collect(Collectors.toList());
+      amplification = matchingSubscribers(targetTopics, subscribers);
+      
+      initialised = true;
+    }
+    
+    private static int matchingSubscribers(List<Topic> topics, List<BenchSubscriber> subscribers) {
+      int matching = 0;
+      for (BenchSubscriber subscriber : subscribers) {
+        for (Topic topic : topics) {
+          if (subscriber.topic.accepts(topic)) {
+            matching++;
+          }
+        }
+      }
+      return matching;
     }
 
     @Override
@@ -40,8 +87,16 @@ public final class TopicRouterBenchmark implements TestSupport {
 
     @Override
     public String describe() {
-      return String.format("%d threads, %,d messages, %.0f%% warmup fraction", 
-                           threads, n, warmupFrac * 100);
+      return String.format("%d threads, %,d messages, %.0f%% warmup fraction\n" + 
+                           "(~): %,d, (-): %,d, (+): %,d, (#): %,d, (><): %,d", 
+                           threads,
+                           n, 
+                           warmupFrac * 100,
+                           leafTopics.size(),
+                           exactInterests.size(),
+                           singleLevelWildcardInterests.size(),
+                           multiLevelWildcardInterests.size(),
+                           amplification);
     }
 
     @Override
@@ -52,62 +107,62 @@ public final class TopicRouterBenchmark implements TestSupport {
   
   static TopicGen tiny() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 0, 0).nodes(1))
+        .add(new TopicSpec(1, 1, 1).nodes(1))
         .build();
   }
   
   static TopicGen small() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen medium() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen large() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen jumbo() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen mriya() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
-        .add(new TopicSpec(1, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new TopicSpec(1, 1, 1).nodes(2))
+        .add(new TopicSpec(1, 1, 1).nodes(5))
         .build();
   }
   
@@ -119,6 +174,10 @@ public final class TopicRouterBenchmark implements TestSupport {
     BenchSubscriber(Config c, Topic topic) {
       this.c = c;
       this.topic = topic;
+    }
+    
+    void reset() {
+      received = 0;
     }
 
     @Override
@@ -153,13 +212,20 @@ public final class TopicRouterBenchmark implements TestSupport {
   
   @Test
   public void test() throws Exception {
+    test(TopicRouterBenchmark::tiny, 1000);
+    test(TopicRouterBenchmark::small, 100);
+    test(TopicRouterBenchmark::medium, 10);
+  }
+  
+  private void test(Supplier<TopicGen> topicGenSupplier, int n) throws Exception {
+    final int _n = n;
     new Config() {{
-      n = 100;
+      n = _n;
       threads = Runtime.getRuntime().availableProcessors();
       bias = 10;
-      topicGen = medium();
+      topicGen = topicGenSupplier.get();
       assertTopicOnDelivery = true;
-      warmupFrac = .05f;
+      warmupFrac = 0.05f;
       log = new LogConfig() {{
         summary = stages = LOG;
       }};
@@ -170,6 +236,9 @@ public final class TopicRouterBenchmark implements TestSupport {
     final BenchTopicWatcher watcher = new BenchTopicWatcher();
     final ActorSystem system = new ActorSystemConfig() {{
       parallelism = c.threads;
+      if (c.executorChoice != null) {
+        executor = c.executorChoice;
+      }
       defaultActorConfig = new ActorConfig() {{ 
         bias = c.bias; 
       }};
@@ -180,47 +249,53 @@ public final class TopicRouterBenchmark implements TestSupport {
     }}));
     
     final ActorRef routerRef = ActorRef.of(TopicActor.ROLE);
-    final List<BenchSubscriber> subscribers = new ArrayList<>();
-
-    final List<Topic> leafTopics = c.topicGen.getLeafTopics();
-    c.getLog().out.format("leaf topics: %,d\n", leafTopics.size());
-    c.getLog().out.format("interests: (-): %,d, (+): %,d, (#): %,d\n", 
-                          c.topicGen.getExactInterests().size(),
-                          c.topicGen.getSingleLevelWildcardInterests().size(),
-                          c.topicGen.getMultiLevelWildcardInterests().size());
-    
-    final List<Interest> interests = c.topicGen.getAllInterests();
-    for (Interest interest : interests) {
-      for (int i = 0; i < interest.count; i++) {
-        final BenchSubscriber subscriber = new BenchSubscriber(c, interest.topic);
-        subscribers.add(subscriber);
-        subscribe(system, routerRef, interest.topic, subscriber).get();
-      }
+    for (BenchSubscriber subscriber : c.subscribers) {
+      subscriber.reset();
+      subscribe(system, routerRef, subscriber.topic, subscriber).get();
     }
-    
-    assertEquals(subscribers.size(), watcher.subscribed.get());
+    system.drain(0);
+    assertEquals(c.subscribers.size(), watcher.subscribed.get());
+    assertEquals(c.exactInterests.size(), watcher.created.get());
 
+    final long o = c.n - c.warmup;
+    final long warmupReceived;
+    if (c.warmup != 0) {
+      if (c.log.stages) c.log.out.format("Warming up...\n");
+      for (int i = 0; i < c.warmup; i++) {
+        for (Topic topic : c.targetTopics) {
+          publish(system, routerRef, topic);
+        }
+      }
+      system.drain(0);
+      warmupReceived = c.subscribers.stream().collect(Collectors.summingLong(s -> s.received)).longValue();
+    } else {
+      warmupReceived = 0;
+    }
+
+    if (c.log.stages) c.log.out.format("Starting timed run...\n");
     final long took = TestSupport.tookThrowing(() -> {
-      for (int i = 0; i < c.n; i++) {
-        for (Topic leafTopic : leafTopics) {
-          publish(system, routerRef, leafTopic);
+      for (int i = 0; i < o; i++) {
+        for (Topic topic : c.targetTopics) {
+          publish(system, routerRef, topic);
         }
       }
       system.drain(0);
     });
     
-    final long totalReceived = subscribers.stream().collect(Collectors.summingLong(s -> s.received)).longValue();
-    assertEquals(c.n * leafTopics.size(), totalReceived);
+    final long totalReceived = c.subscribers.stream().collect(Collectors.summingLong(s -> s.received)).longValue();
+    assertEquals(c.n * c.amplification, totalReceived);
     
-    for (BenchSubscriber subscriber : subscribers) {
+    for (BenchSubscriber subscriber : c.subscribers) {
       unsubscribe(system, routerRef, subscriber.topic, subscriber).get();
     }
-    assertEquals(subscribers.size(), watcher.unsubscribed.get());
-    
+    assertEquals(c.subscribers.size(), watcher.unsubscribed.get());
+
     system.shutdown();
+
+    assertEquals(c.exactInterests.size(), watcher.deleted.get());
     
     final Summary summary = new Summary();
-    summary.timedOps = c.n * leafTopics.size();
+    summary.timedOps = totalReceived - warmupReceived;
     summary.avgTime = took;
     return summary;
   }
@@ -235,5 +310,21 @@ public final class TopicRouterBenchmark implements TestSupport {
   
   private static CompletableFuture<UnsubscribeResponse> unsubscribe(ActorSystem system, ActorRef routerRef, Topic topic, Subscriber subscriber) {
     return system.ask(routerRef, new Unsubscribe(topic, subscriber));
+  }
+  
+  public static void main(String[] args) throws Exception {
+    new Config() {{
+      executorChoice = ActorSystemConfig.ExecutorChoice.AUTO;
+      n = 1000;
+      warmupFrac = .05f;
+      threads = Runtime.getRuntime().availableProcessors();
+      bias = 10;
+      topicGen = large();
+      assertTopicOnDelivery = false;
+      warmupFrac = .05f;
+      log = new LogConfig() {{
+        summary = true;
+      }};
+    }}.testPercentile(3, 5, 50, Summary::byThroughput);
   }
 }
