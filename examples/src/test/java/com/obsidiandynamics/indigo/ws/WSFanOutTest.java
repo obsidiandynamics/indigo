@@ -128,14 +128,14 @@ public final class WSFanOutTest implements TestSupport {
                         ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
                         ThrowingRunnable cleanup) throws Exception {
     for (int i = 0; i < cycles; i++) {
-      test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory, cleanup);
+      test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory);
     }
+    cleanup.run();
   }
   
   private <E> void test(int n, int m, boolean echo, int numBytes,
                         ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
-                        ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
-                        ThrowingRunnable cleanup) throws Exception {
+                        ThrowingSupplier<? extends ClientHarness> clientHarnessFactory) throws Exception {
     final int sendThreads = 1;
     final int waitScale = 1 + (int) (((long) n * (long) m) / 1_000_000_000l);
     
@@ -220,7 +220,6 @@ public final class WSFanOutTest implements TestSupport {
     }
 
     server.close();
-    cleanup.run();
   }
   
   public static void main(String[] args) throws Exception {
