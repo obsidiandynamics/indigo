@@ -32,7 +32,7 @@ public final class WSFanOutTest implements TestSupport {
   private static final boolean ECHO = false;  // whether the client should respond to a broadcast
   private static final int BYTES = 16;        // bytes per message
   private static final int CYCLES = 1;        // number of repeats
-  private static final boolean FLUSH = false; // whether the messages should be flushed on the server after enqueuing
+  private static final boolean FLUSH = false; // flush on the server after enqueuing (if 'nodelay' is disabled)
   
   private static final int UT_CLIENT_BUFFER_SIZE = Math.max(1024, BYTES);
   
