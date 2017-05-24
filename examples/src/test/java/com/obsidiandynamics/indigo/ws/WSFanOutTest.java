@@ -21,7 +21,7 @@ import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class WSFanOutTest implements TestSupport {
   private static boolean LOG_TIMINGS = true;
-  public static boolean LOG_1K = true;
+  public static boolean LOG_1K = false;
   private static boolean LOG_PHASES = true;
   
   private static final int PORT = 6667;
@@ -33,6 +33,8 @@ public final class WSFanOutTest implements TestSupport {
   private static final int BYTES = 16;        // bytes per message
   private static final int CYCLES = 1;        // number of repeats
   private static final boolean FLUSH = false; // whether the messages should be flushed on the server after enqueuing
+  
+  private static final int UT_CLIENT_BUFFER_SIZE = Math.max(1024, BYTES);
   
   private static int totalConnected(List<ClientHarness> clients) {
     return clients.stream().mapToInt(c -> c.connected.get() ? 1 : 0).sum();
@@ -54,8 +56,8 @@ public final class WSFanOutTest implements TestSupport {
     return Xnio.getInstance().createWorker(OptionMap.builder()
                                            .set(Options.WORKER_IO_THREADS, Runtime.getRuntime().availableProcessors())
                                            .set(Options.THREAD_DAEMON, true)
-                                           .set(Options.CONNECTION_HIGH_WATER, 1000000)
-                                           .set(Options.CONNECTION_LOW_WATER, 1000000)
+                                           .set(Options.CONNECTION_HIGH_WATER, 1_000_000)
+                                           .set(Options.CONNECTION_LOW_WATER, 1_000_000)
                                            .set(Options.WORKER_TASK_CORE_THREADS, 100)
                                            .set(Options.WORKER_TASK_MAX_THREADS, 10_000)
                                            .set(Options.TCP_NODELAY, true)
@@ -67,7 +69,7 @@ public final class WSFanOutTest implements TestSupport {
     final XnioWorker worker = getXnioWorker();
     test(N, M, ECHO, BYTES, CYCLES,
          NettyServerHarness.factory(PORT, IDLE_TIMEOUT),
-         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
+         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
          worker::shutdown);
   }
   
@@ -77,7 +79,7 @@ public final class WSFanOutTest implements TestSupport {
       final XnioWorker worker = getXnioWorker();
       test(N, M, ECHO, BYTES, CYCLES,
            UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
-           UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
+           UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
            worker::shutdown);
     } catch (Throwable t) {
       t.printStackTrace();
@@ -119,7 +121,7 @@ public final class WSFanOutTest implements TestSupport {
     final XnioWorker worker = getXnioWorker();
     test(N, M, ECHO, BYTES, CYCLES,
          JettyServerHarness.factory(PORT, IDLE_TIMEOUT),
-         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, ECHO),
+         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
          worker::shutdown);
   }
   

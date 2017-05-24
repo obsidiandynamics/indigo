@@ -20,7 +20,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
   
   private final WebSocketCallback<Void> writeCallback;
   
-  UndertowClientHarness(XnioWorker worker, int port, int idleTimeout, boolean echo) throws Exception {
+  UndertowClientHarness(XnioWorker worker, int port, int idleTimeout, int bufferSize, boolean echo) throws Exception {
     final WSListener<UndertowEndpoint> clientListener = new WSListener<UndertowEndpoint>() {
       @Override public void onConnect(UndertowEndpoint endpoint) {
         log("c: connected: %s\n", channel.getSourceAddress());
@@ -35,8 +35,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
         }
       }
 
-      @Override
-      public void onBinary(UndertowEndpoint endpoint, ByteBuffer message) {
+      @Override public void onBinary(UndertowEndpoint endpoint, ByteBuffer message) {
         log("c: received\n");
         final int r = received.incrementAndGet();
         if (WSFanOutTest.LOG_1K && r % 1000 == 0) System.out.println("c: received " + received);
@@ -57,7 +56,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
       }
     };
     
-    final ByteBufferPool pool = new DefaultByteBufferPool(false, 65536);
+    final ByteBufferPool pool = new DefaultByteBufferPool(false, bufferSize);
     channel = WebSocketClient.connectionBuilder(worker, pool, URI.create("ws://127.0.0.1:" + port + "/"))
         .connect().get();
     channel.getReceiveSetter().set(UndertowEndpoint.clientOf(channel, new UndertowEndpointConfig(), clientListener));
@@ -84,7 +83,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
     channel.sendClose();
   }
   
-  public static ThrowingSupplier<UndertowClientHarness> factory(XnioWorker worker, int port, int idleTimeout, boolean echo) {
-    return () -> new UndertowClientHarness(worker, port, idleTimeout, echo);
+  public static ThrowingSupplier<UndertowClientHarness> factory(XnioWorker worker, int port, int idleTimeout, int bufferSize, boolean echo) {
+    return () -> new UndertowClientHarness(worker, port, idleTimeout, bufferSize, echo);
   }
 }

@@ -52,9 +52,6 @@ public final class BashInteractor {
     public static void main(String[] args) {
       System.out.println("$ ulimit -Sa");
       BashInteractor.execute("ulimit -Sa", true, System.out::print);
-      System.out.println();
-      System.out.println("$ ulimit -Ha");
-      BashInteractor.execute("ulimit -Ha", true, System.out::print);
     }
   }
 }
