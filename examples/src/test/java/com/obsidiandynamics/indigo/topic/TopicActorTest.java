@@ -13,7 +13,35 @@ import org.mockito.*;
 
 import com.obsidiandynamics.indigo.*;
 
-public final class TopicActorTest {
+public final class TopicActorTest implements TestSupport {
+  private static final class ProxyWatcher implements TopicWatcher, TestSupport {
+    private final TopicWatcher delegate;
+    
+    ProxyWatcher(TopicWatcher delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override public void created(Activation a, Topic topic) {
+      log("created(%s, %s)\n", a, topic);
+      delegate.created(a, topic);
+    }
+
+    @Override public void deleted(Activation a, Topic topic) {
+      log("deleted(%s, %s)\n", a, topic);
+      delegate.deleted(a, topic);
+    }
+
+    @Override public void subscribed(Activation a, Topic topic, Subscriber subscriber) {
+      log("subscribed(%s, %s, %s)\n", a, topic, subscriber);
+      delegate.subscribed(a, topic, subscriber);
+    }
+
+    @Override public void unsubscribed(Activation a, Topic topic, Subscriber subscriber) {
+      log("unsubscribed(%s, %s, %s)\n", a, topic, subscriber);
+      delegate.unsubscribed(a, topic, subscriber);
+    }
+  }
+  
   private ActorSystem system;
   
   private TopicWatcher topicWatcher;
@@ -23,7 +51,7 @@ public final class TopicActorTest {
     topicWatcher = mock(TopicWatcher.class);
     system = ActorSystem.create()
     .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig() {{
-      topicWatcher = TopicActorTest.this.topicWatcher;
+      topicWatcher = new ProxyWatcher(TopicActorTest.this.topicWatcher);
     }}));
   }
   
@@ -47,8 +75,8 @@ public final class TopicActorTest {
   public void testNonInterfering() throws InterruptedException, ExecutionException {
     final List<Delivery> aList = new ArrayList<>();
     final List<Delivery> bList = new ArrayList<>();
-    subscribe("a", aList::add).get();
-    subscribe("b", bList::add).get();
+    subscribe("a", aList::add);
+    subscribe("b", bList::add);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
@@ -67,8 +95,8 @@ public final class TopicActorTest {
   public void testMultipleSubscribers() throws InterruptedException, ExecutionException {
     final List<Delivery> a1List = new ArrayList<>();
     final List<Delivery> a2List = new ArrayList<>();
-    subscribe("a", a1List::add).get();
-    subscribe("a", a2List::add).get();
+    subscribe("a", a1List::add);
+    subscribe("a", a2List::add);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
       inOrder.verify(topicWatcher, times(2)).subscribed(notNull(), eq(Topic.of("a")), notNull());
@@ -84,8 +112,8 @@ public final class TopicActorTest {
   public void testDuplicateSubscribers() throws InterruptedException, ExecutionException {
     final List<Delivery> aList = new ArrayList<>();
     final Subscriber sub = aList::add;
-    subscribe("a", sub).get();
-    subscribe("a", sub).get();
+    subscribe("a", sub);
+    subscribe("a", sub);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
@@ -105,9 +133,9 @@ public final class TopicActorTest {
     final List<Delivery> aList = new ArrayList<>();
     final List<Delivery> abList = new ArrayList<>();
     final List<Delivery> abcList = new ArrayList<>();
-    subscribe("a", aList::add).get();
-    subscribe("a/b", abList::add).get();
-    subscribe("a/b/c", abcList::add).get();
+    subscribe("a", aList::add);
+    subscribe("a/b", abList::add);
+    subscribe("a/b/c", abcList::add);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
@@ -134,11 +162,11 @@ public final class TopicActorTest {
     final List<Delivery> axList = new ArrayList<>();
     final List<Delivery> cList = new ArrayList<>();
     final List<Delivery> cxList = new ArrayList<>();
-    subscribe("#", xList::add).get();
-    subscribe("a/b", abList::add).get();
-    subscribe("a/#", axList::add).get();
-    subscribe("c", cList::add).get();
-    subscribe("c/#", cxList::add).get();
+    subscribe("#", xList::add);
+    subscribe("a/b", abList::add);
+    subscribe("a/#", axList::add);
+    subscribe("c", cList::add);
+    subscribe("c/#", cxList::add);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("#")), notNull());
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
@@ -179,12 +207,12 @@ public final class TopicActorTest {
     final List<Delivery> xcList = new ArrayList<>();
     final List<Delivery> axList = new ArrayList<>();
     final List<Delivery> xxList = new ArrayList<>();
-    subscribe("+", xList::add).get();
-    subscribe("a/b", abList::add).get();
-    subscribe("+/b", xbList::add).get();
-    subscribe("+/c", xcList::add).get();
-    subscribe("a/+", axList::add).get();
-    subscribe("+/+", xxList::add).get();
+    subscribe("+", xList::add);
+    subscribe("a/b", abList::add);
+    subscribe("+/b", xbList::add);
+    subscribe("+/c", xcList::add);
+    subscribe("a/+", axList::add);
+    subscribe("+/+", xxList::add);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+")), notNull());
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
@@ -217,11 +245,11 @@ public final class TopicActorTest {
   public void testHierarchyUnsubscribeBottomUp() throws InterruptedException, ExecutionException {
     final List<Delivery> list = new ArrayList<>();
     final Subscriber sub = list::add;
-    subscribe("a0", sub).get();
-    subscribe("a1", sub).get();
-    subscribe("a0/b0", sub).get();
-    subscribe("a0/b1", sub).get();
-    subscribe("a0/b0/c0", sub).get();
+    subscribe("a0", sub);
+    subscribe("a1", sub);
+    subscribe("a0/b0", sub);
+    subscribe("a0/b1", sub);
+    subscribe("a0/b0/c0", sub);
     
     publishSelf("a0").get();
     publishSelf("a1").get();
@@ -231,11 +259,11 @@ public final class TopicActorTest {
     assertEquals(5, list.size());
     assertEquals(5, new HashSet<>(list).size());
     
-    unsubscribe("a0/b0/c0", sub).get();
-    unsubscribe("a0/b1", sub).get();
-    unsubscribe("a0/b0", sub).get();
-    unsubscribe("a1", sub).get();
-    unsubscribe("a0", sub).get();
+    unsubscribe("a0/b0/c0", sub);
+    unsubscribe("a0/b1", sub);
+    unsubscribe("a0/b0", sub);
+    unsubscribe("a1", sub);
+    unsubscribe("a0", sub);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0")), notNull());
@@ -272,11 +300,11 @@ public final class TopicActorTest {
   public void testHierarchyUnsubscribeTopDown() throws InterruptedException, ExecutionException {
     final List<Delivery> list = new ArrayList<>();
     final Subscriber sub = list::add;
-    subscribe("a0", sub).get();
-    subscribe("a1", sub).get();
-    subscribe("a0/b0", sub).get();
-    subscribe("a0/b1", sub).get();
-    subscribe("a0/b0/c0", sub).get();
+    subscribe("a0", sub);
+    subscribe("a1", sub);
+    subscribe("a0/b0", sub);
+    subscribe("a0/b1", sub);
+    subscribe("a0/b0/c0", sub);
     
     publishSelf("a0").get();
     publishSelf("a1").get();
@@ -286,11 +314,11 @@ public final class TopicActorTest {
     assertEquals(5, list.size());
     assertEquals(5, new HashSet<>(list).size());
     
-    unsubscribe("a0", sub).get();
-    unsubscribe("a1", sub).get();
-    unsubscribe("a0/b0", sub).get();
-    unsubscribe("a0/b1", sub).get();
-    unsubscribe("a0/b0/c0", sub).get();
+    unsubscribe("a0", sub);
+    unsubscribe("a1", sub);
+    unsubscribe("a0/b0", sub);
+    unsubscribe("a0/b1", sub);
+    unsubscribe("a0/b0/c0", sub);
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0")), notNull());
@@ -327,11 +355,11 @@ public final class TopicActorTest {
   public void testHierarchyUnsubscribeMultiLevelWildcard() throws InterruptedException, ExecutionException {
     final List<Delivery> list = new ArrayList<>();
     final Subscriber sub = list::add;
-    subscribe("#", sub).get();
-    subscribe("a/b", sub).get();
-    subscribe("a/#", sub).get();
-    subscribe("c", sub).get();
-    subscribe("c/#", sub).get();
+    subscribe("#", sub);
+    subscribe("a/b", sub);
+    subscribe("a/#", sub);
+    subscribe("c", sub);
+    subscribe("c/#", sub);
     
     publishSelf("a").get();
     assertEquals(1, list.size());
@@ -342,14 +370,15 @@ public final class TopicActorTest {
     publishSelf("c/d").get();
     assertEquals(8, list.size());
     
-    unsubscribe("#", sub).get();
-    unsubscribe("a/b", sub).get();
-    unsubscribe("a/#", sub).get();
-    unsubscribe("c", sub).get();
-    unsubscribe("c/#", sub).get();
+    unsubscribe("#", sub);
+    unsubscribe("a/b", sub);
+    unsubscribe("a/#", sub);
+    unsubscribe("c", sub);
+    unsubscribe("c/#", sub);
     
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("#")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/#")), notNull());
@@ -378,22 +407,23 @@ public final class TopicActorTest {
   public void testHierarchyUnsubscribeSingleLevelWildcard() throws InterruptedException, ExecutionException {
     final List<Delivery> list = new ArrayList<>();
     final Subscriber sub = list::add;
-    subscribe("+", sub).get();
-    subscribe("a/b", sub).get();
-    subscribe("+/b", sub).get();
-    subscribe("+/c", sub).get();
-    subscribe("a/+", sub).get();
-    subscribe("+/+", sub).get();
+    subscribe("+", sub);
+    subscribe("a/b", sub);
+    subscribe("+/b", sub);
+    subscribe("+/c", sub);
+    subscribe("a/+", sub);
+    subscribe("+/+", sub);
 
-    unsubscribe("+", sub).get();
-    unsubscribe("a/b", sub).get();
-    unsubscribe("+/b", sub).get();
-    unsubscribe("+/c", sub).get();
-    unsubscribe("a/+", sub).get();
-    unsubscribe("+/+", sub).get();
+    unsubscribe("+", sub);
+    unsubscribe("a/b", sub);
+    unsubscribe("+/b", sub);
+    unsubscribe("+/c", sub);
+    unsubscribe("a/+", sub);
+    unsubscribe("+/+", sub);
     
     verifyInOrder(topicWatcher, inOrder -> {
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+")), notNull());
+      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
       inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
       inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/b")), notNull());
@@ -416,12 +446,16 @@ public final class TopicActorTest {
     assertEquals(0, list.size());
   }
   
-  private CompletableFuture<SubscribeResponse> subscribe(String topic, Subscriber subscriber) {
-    return system.ask(ActorRef.of(TopicActor.ROLE), new Subscribe(Topic.of(topic), subscriber));
+  private void subscribe(String topic, Subscriber subscriber) throws InterruptedException, ExecutionException {
+    final CompletableFuture<?> f = system.ask(ActorRef.of(TopicActor.ROLE), new Subscribe(Topic.of(topic), subscriber));
+    f.get();
+    system.drain(0);
   }
   
-  private CompletableFuture<UnsubscribeResponse> unsubscribe(String topic, Subscriber subscriber) {
-    return system.ask(ActorRef.of(TopicActor.ROLE), new Unsubscribe(Topic.of(topic), subscriber));
+  private void unsubscribe(String topic, Subscriber subscriber) throws InterruptedException, ExecutionException {
+    final CompletableFuture<?> f =  system.ask(ActorRef.of(TopicActor.ROLE), new Unsubscribe(Topic.of(topic), subscriber));
+    f.get();
+    system.drain(0);
   }
   
   private CompletableFuture<PublishResponse> publishSelf(String topic) {
