@@ -135,6 +135,9 @@ public final class WSFanOutTest implements TestSupport {
                                               ThrowingRunnable cleanup) throws Exception {
     for (int i = 0; i < cycles; i++) {
       test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory);
+      if (LOG_PHASES && i < cycles - 1) {
+        System.out.println("_");
+      }
     }
     cleanup.run();
   }
@@ -163,6 +166,8 @@ public final class WSFanOutTest implements TestSupport {
     final long start = System.currentTimeMillis();
     
     final List<E> endpoints = server.getEndpoints();
+
+    if (LOG_PHASES) System.out.println("s: sending");
     ParallelJob.blockingSlice(endpoints, sendThreads, sublist -> {
       for (int i = 0; i < n; i++) {
         if (LOG_1K && i % 1000 == 0) System.out.println("s: queued " + i);
