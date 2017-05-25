@@ -162,7 +162,7 @@ public final class WSFanOutTest implements TestSupport {
     for (int i = 0; i < cycles; i++) {
       test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory);
       if (LOG_PHASES && i < cycles - 1) {
-        LOG_STREAM.format("_");
+        LOG_STREAM.format("_\n");
       }
     }
     cleanup.run();
@@ -199,11 +199,13 @@ public final class WSFanOutTest implements TestSupport {
       for (int i = 0; i < n; i++) {
         if (LOG_1K && i % 1000 == 0) LOG_STREAM.format("s: queued %d\n", i);
         server.broadcast(sublist, bytes);
-        sent += sublist.size();
         
-        if (BACKLOG_LWM != 0 && sent > BACKLOG_LWM) {
-          sent = 0;
-          throttle(endpoints, BACKLOG_LWM);
+        if (BACKLOG_LWM != 0) {
+          sent += sublist.size();
+          if (sent > BACKLOG_LWM) {
+            sent = 0;
+            throttle(endpoints, BACKLOG_LWM);
+          }
         }
       }
       
