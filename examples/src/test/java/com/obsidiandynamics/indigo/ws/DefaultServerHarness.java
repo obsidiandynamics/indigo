@@ -12,7 +12,7 @@ final class DefaultServerHarness<E extends WSEndpoint<E>> extends ServerHarness<
   private final WSServer<E> server;
   private final SendCallback<E> writeCallback;
   
-  DefaultServerHarness(WSConfig config, WSServerFactory<E> factory) throws Exception {
+  DefaultServerHarness(WSConfig config, WSServerFactory<E> factory, ServerProgress progress) throws Exception {
     final EndpointListener<E> serverListener = new EndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
         log("s: connected %s\n", endpoint.getRemoteAddress());
@@ -46,7 +46,8 @@ final class DefaultServerHarness<E extends WSEndpoint<E>> extends ServerHarness<
     
     writeCallback = new SendCallback<E>() {
       @Override public void onComplete(E endpoint) {
-        final int s = sent.incrementAndGet();
+        final long s = sent.getAndIncrement();
+        if (s % 1000 == 0) progress.update(DefaultServerHarness.this, s);
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.format("s: confirmed %,d\n", s);
       }
 

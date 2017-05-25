@@ -5,6 +5,7 @@ import static junit.framework.TestCase.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import org.awaitility.*;
 import org.eclipse.jetty.client.*;
@@ -23,6 +24,8 @@ public final class WSFanOutTest implements TestSupport {
   private static boolean LOG_TIMINGS = true;
   public static boolean LOG_1K = false;
   private static boolean LOG_PHASES = true;
+  private static boolean LOG_PROGRESS = true;
+  private static final int PROGRESS_INTERVAL = 5_000;
   
   private static final int PORT = 6667;
   private static final int IDLE_TIMEOUT = 0;
@@ -34,7 +37,7 @@ public final class WSFanOutTest implements TestSupport {
   private static final int CYCLES = 1;        // number of repeats
   private static final boolean FLUSH = false; // flush on the server after enqueuing (if 'nodelay' is disabled)
   
-  private static final int BACKLOG_LWM = 1_000_000;
+  private static final int BACKLOG_HWM = 1_000_000;
   
   private static final int UT_CLIENT_BUFFER_SIZE = Math.max(1024, BYTES);
   
@@ -46,12 +49,12 @@ public final class WSFanOutTest implements TestSupport {
     return clients.stream().mapToInt(c -> c.closed.get() ? 1 : 0).sum();
   }
   
-  private static int totalReceived(List<ClientHarness> clients) {
-    return clients.stream().mapToInt(c -> c.received.get()).sum();
+  private static long totalReceived(List<ClientHarness> clients) {
+    return clients.stream().mapToLong(c -> c.received.get()).sum();
   }
   
-  private static int totalSent(List<ClientHarness> clients) {
-    return clients.stream().mapToInt(c -> c.sent.get()).sum();
+  private static long totalSent(List<ClientHarness> clients) {
+    return clients.stream().mapToLong(c -> c.sent.get()).sum();
   }
   
   private static XnioWorker getXnioWorker() throws IllegalArgumentException, IOException {
@@ -62,17 +65,16 @@ public final class WSFanOutTest implements TestSupport {
                                            .set(Options.CONNECTION_LOW_WATER, 1_000_000)
                                            .set(Options.WORKER_TASK_CORE_THREADS, 100)
                                            .set(Options.WORKER_TASK_MAX_THREADS, 10_000)
-//                                           .set(Options.RECEIVE_BUFFER, 1024)
                                            .set(Options.TCP_NODELAY, true)
                                            .getMap());
   }
   
-  private static <E extends WSEndpoint<E>> ThrowingSupplier<DefaultServerHarness<E>> serverHarnessFactory(WSServerFactory<E> serverFactory) throws Exception {
-    return () -> new DefaultServerHarness<>(new WSConfig() {{
+  private static <E extends WSEndpoint<E>> ServerHarnessFactory<DefaultServerHarness<E>> serverHarnessFactory(WSServerFactory<E> serverFactory) throws Exception {
+    return progress -> new DefaultServerHarness<>(new WSConfig() {{
       port = PORT;
       contextPath = "/";
       idleTimeoutMillis = IDLE_TIMEOUT;
-    }}, serverFactory);
+    }}, serverFactory, progress);
   }
   
   @Test
@@ -132,31 +134,42 @@ public final class WSFanOutTest implements TestSupport {
          worker::shutdown);
   }
   
-  private void throttle(List<? extends WSEndpoint<?>> endpoints, int backlogLwm) {
+  private void throttle(AtomicBoolean throttleInProgress, List<? extends WSEndpoint<?>> endpoints, int backlogHwm) {
     boolean logged = false;
+    int waits = 0;
     for (;;) {
-      long totalBacklog = 0;
+      long minTotalBacklog = 0;
+      boolean overflow = false;
       inner: for (WSEndpoint<?> endpoint : endpoints) {
-        totalBacklog += endpoint.getBacklog();
-        if (totalBacklog > backlogLwm) {
+        minTotalBacklog += endpoint.getBacklog();
+        if (minTotalBacklog > backlogHwm) {
+          overflow = true;
           break inner;
         }
       }
       
-      if (totalBacklog > backlogLwm) {
+      if (overflow) {
+        throttleInProgress.set(true);
         if (LOG_PHASES && ! logged) {
-          LOG_STREAM.format("s: throttling, backlog is at least %,d\n", totalBacklog);
+          LOG_STREAM.format("s: throttling", minTotalBacklog);
           logged = true;
         }
-        Thread.yield();
-      } else {
+        if (logged && ++waits % 1000 == 0) {
+          LOG_STREAM.format(".");
+        }
+        TestSupport.sleep(1);
+      } else if (minTotalBacklog < backlogHwm / 2) {
+        if (logged) {
+          LOG_STREAM.format("\n");
+          throttleInProgress.set(false);
+        }
         break;
       }
     }
   }
   
   private <E extends WSEndpoint<E>> void test(int n, int m, boolean echo, int numBytes, int cycles,
-                                              ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
+                                              ServerHarnessFactory<? extends ServerHarness<E>> serverHarnessFactory,
                                               ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
                                               ThrowingRunnable cleanup) throws Exception {
     for (int i = 0; i < cycles; i++) {
@@ -169,13 +182,51 @@ public final class WSFanOutTest implements TestSupport {
   }
   
   private <E extends WSEndpoint<E>> void test(int n, int m, boolean echo, int numBytes,
-                                              ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
+                                              ServerHarnessFactory<? extends ServerHarness<E>> serverHarnessFactory,
                                               ThrowingSupplier<? extends ClientHarness> clientHarnessFactory) throws Exception {
     final int sendThreads = 1;
     final int waitScale = 1 + (int) (((long) n * (long) m) / 1_000_000_000l);
-    
-    final ServerHarness<E> server = serverHarnessFactory.create();
     final List<ClientHarness> clients = new ArrayList<>(m);
+    final AtomicBoolean throttleInProgress = new AtomicBoolean();
+    
+    final ServerProgress progress = new ServerProgress() {
+      private long firstUpdate;
+      private long lastUpdate;
+      private long lastSent;
+      private long lastReceived;
+      @Override public void update(ServerHarness<?> server, long sent) {
+        if (! LOG_PROGRESS) return;
+        
+        final long now = System.currentTimeMillis();
+        if (sent == 0) {
+          firstUpdate = lastUpdate = now;
+          return;
+        }
+        
+        final long timeDelta = now - lastUpdate;
+        if (timeDelta < PROGRESS_INTERVAL) return;
+        
+        final long time = now - firstUpdate;
+        final long received = totalReceived(clients);
+        sent = server.sent.get();
+        final long txDelta = sent - lastSent;
+        final long rxDelta = received - lastReceived;
+        final float txAverageRate = 1000f * sent / time;
+        final float txCurrentRate = 1000f * txDelta / timeDelta;
+        final float rxAverageRate = 1000f * received / time;
+        final float rxCurrentRate = 1000f * rxDelta / timeDelta;
+        lastUpdate = now;
+        lastSent = sent;
+        lastReceived = received;
+        
+        if (! throttleInProgress.get()) {
+          LOG_STREAM.format("> tx: %,d, cur: %,.0f/s, avg: %,.0f/s\n", sent, txCurrentRate, txAverageRate);
+          LOG_STREAM.format("< rx: %,d, cur: %,.0f/s, avg: %,.0f/s\n", received, rxCurrentRate, rxAverageRate);
+        }
+      }
+    };
+    
+    final ServerHarness<E> server = serverHarnessFactory.create(progress);
     
     for (int i = 0; i < m; i++) {
       clients.add(clientHarnessFactory.create()); 
@@ -200,11 +251,11 @@ public final class WSFanOutTest implements TestSupport {
         if (LOG_1K && i % 1000 == 0) LOG_STREAM.format("s: queued %d\n", i);
         server.broadcast(sublist, bytes);
         
-        if (BACKLOG_LWM != 0) {
+        if (BACKLOG_HWM != 0) {
           sent += sublist.size();
-          if (sent > BACKLOG_LWM) {
+          if (sent > BACKLOG_HWM) {
             sent = 0;
-            throttle(endpoints, BACKLOG_LWM);
+            throttle(throttleInProgress, endpoints, BACKLOG_HWM);
           }
         }
       }

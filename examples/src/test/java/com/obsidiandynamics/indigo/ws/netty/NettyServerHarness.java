@@ -56,7 +56,7 @@ public final class NettyServerHarness extends ServerHarness<NettyEndpoint> imple
     
     writeCallback = new SendCallback<NettyEndpoint>() {
       @Override public void onComplete(NettyEndpoint endpoint) {
-        final int s = sent.incrementAndGet();
+        final long s = sent.incrementAndGet();
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
       }
 

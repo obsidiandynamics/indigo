@@ -8,8 +8,8 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class ServerHarness<E extends WSEndpoint<E>> extends BaseHarness {
-  public final AtomicInteger connected = new AtomicInteger();
-  public final AtomicInteger closed = new AtomicInteger();
+  public final AtomicLong connected = new AtomicLong();
+  public final AtomicLong closed = new AtomicLong();
   
   public abstract List<E> getEndpoints();
   

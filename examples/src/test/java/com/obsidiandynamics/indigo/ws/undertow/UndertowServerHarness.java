@@ -55,7 +55,7 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
     
     writeCallback = new SendCallback<UndertowEndpoint>() {
       @Override public void onComplete(UndertowEndpoint endpoint) {
-        final int s = sent.incrementAndGet();
+        final long s = sent.incrementAndGet();
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
       }
 

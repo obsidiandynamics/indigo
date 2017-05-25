@@ -37,7 +37,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
 
       @Override public void onBinary(UndertowEndpoint endpoint, ByteBuffer message) {
         log("c: received\n");
-        final int r = received.incrementAndGet();
+        final long r = received.incrementAndGet();
         if (WSFanOutTest.LOG_1K && r % 1000 == 0) System.out.println("c: received " + received);
         if (echo) {
           send(message);

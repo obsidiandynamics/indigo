@@ -56,7 +56,7 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
     
     writeCallback = new SendCallback<JettyEndpoint>() {
       @Override public void onComplete(JettyEndpoint endpoint) {
-        final int s = sent.incrementAndGet();
+        final long s = sent.incrementAndGet();
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
       }
 
