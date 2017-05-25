@@ -10,11 +10,11 @@ import io.netty.channel.*;
 public final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
   private final NettyEndpointConfig config;
   
-  private final WSListener<NettyEndpoint> listener;
+  private final EndpointListener<? super NettyEndpoint> listener;
   
   private final Map<ChannelHandlerContext, NettyEndpoint> endpoints = new ConcurrentHashMap<>();
   
-  public NettyEndpointManager(NettyEndpointConfig config, WSListener<NettyEndpoint> listener) {
+  public NettyEndpointManager(NettyEndpointConfig config, EndpointListener<? super NettyEndpoint> listener) {
     this.config = config;
     this.listener = listener;
   }
@@ -34,7 +34,7 @@ public final class NettyEndpointManager implements WSEndpointManager<NettyEndpoi
     return endpoints.remove(context);
   }
   
-  WSListener<NettyEndpoint> getListener() {
+  EndpointListener<? super NettyEndpoint> getListener() {
     return listener;
   }
   

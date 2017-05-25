@@ -5,8 +5,6 @@ import java.nio.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import org.eclipse.jetty.websocket.api.*;
-
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
@@ -17,10 +15,10 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
   private final JettyServer server;
   
   private final JettyEndpointManager manager;
-  private final WriteCallback writeCallback;
+  private final SendCallback<JettyEndpoint> writeCallback;
   
   JettyServerHarness(int port, int idleTimeout) throws Exception {
-    final WSListener<JettyEndpoint> serverListener = new WSListener<JettyEndpoint>() {
+    final EndpointListener<JettyEndpoint> serverListener = new EndpointListener<JettyEndpoint>() {
       @Override public void onConnect(JettyEndpoint endpoint) {
         log("s: connected: %s\n", endpoint.getRemote().getInetSocketAddress());
         connected.incrementAndGet();
@@ -56,15 +54,15 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
     }}, serverListener);
     server = new JettyServer(port, "/", manager);
     
-    writeCallback = new WriteCallback() {
-      @Override public void writeSuccess() {
+    writeCallback = new SendCallback<JettyEndpoint>() {
+      @Override public void onComplete(JettyEndpoint endpoint) {
         final int s = sent.incrementAndGet();
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
       }
-      
-      @Override public void writeFailed(Throwable x) {
+
+      @Override public void onError(JettyEndpoint endpoint, Throwable throwable) {
         System.err.println("server write error");
-        x.printStackTrace();
+        throwable.printStackTrace();
       }
     };
   }
@@ -94,13 +92,8 @@ public final class JettyServerHarness extends ServerHarness<JettyEndpoint> imple
   }
 
   @Override
-  public void sendPing(JettyEndpoint endpoint) throws IOException {
-    try {
-      endpoint.sendPing();
-    } catch (WebSocketException e) {
-      log("ping skipped\n");
-      return;
-    }
+  public void sendPing(JettyEndpoint endpoint) {
+    endpoint.sendPing();
   }
   
   public static ThrowingSupplier<JettyServerHarness> factory(int port, int idleTimeout) {

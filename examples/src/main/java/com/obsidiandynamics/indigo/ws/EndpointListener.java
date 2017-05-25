@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.ws;
 
 import java.nio.*;
 
-public interface WSListener<E extends WSEndpoint> {
+public interface EndpointListener<E extends WSEndpoint<E>> {
   void onConnect(E endpoint);
   
   void onText(E endpoint, String message);

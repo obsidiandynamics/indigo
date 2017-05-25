@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo.ws.jetty;
 
 import java.io.*;
+import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
@@ -8,7 +9,9 @@ import org.eclipse.jetty.websocket.api.*;
 
 import com.obsidiandynamics.indigo.ws.*;
 
-public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint {
+public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint<JettyEndpoint> {
+  private static final byte[] ZERO_ARRAY = new byte[0];
+  
   private final JettyEndpointManager manager;
   
   private final AtomicLong backlog = new AtomicLong();
@@ -17,7 +20,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
     this.manager = manager;
   }
   
-  public static JettyEndpoint clientOf(JettyEndpointConfig config, WSListener<JettyEndpoint> listener) {
+  public static JettyEndpoint clientOf(JettyEndpointConfig config, EndpointListener<JettyEndpoint> listener) {
     return new JettyEndpointManager(0, config, listener).createEndpoint();
   }
   
@@ -52,30 +55,32 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
     manager.getListener().onError(this, cause);
   }
   
-  public void send(String payload, WriteCallback callback) {
+  @Override
+  public void send(String payload, SendCallback<? super JettyEndpoint> callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendString(payload, wrapCallback(callback));
     }
   }
   
-  public void send(ByteBuffer payload, WriteCallback callback) {
+  @Override
+  public void send(ByteBuffer payload, SendCallback<? super JettyEndpoint> callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendBytes(payload, wrapCallback(callback));
     }
   }
   
-  private WriteCallback wrapCallback(WriteCallback callback) {
+  private WriteCallback wrapCallback(SendCallback<? super JettyEndpoint> callback) {
     return new WriteCallback() {
       @Override public void writeSuccess() {
         backlog.decrementAndGet();
-        if (callback != null) callback.writeSuccess();
+        if (callback != null) callback.onComplete(JettyEndpoint.this);
       }
 
-      @Override public void writeFailed(Throwable x) {
+      @Override public void writeFailed(Throwable cause) {
         backlog.decrementAndGet();
-        if (callback != null) callback.writeFailed(x);
+        if (callback != null) callback.onError(JettyEndpoint.this, cause);
       }
     };
   }
@@ -85,16 +90,26 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
     return backlog.get() < config.highWaterMark;
   }
   
+  @Override
   public void flush() throws IOException {
     getRemote().flush();
   }
   
-  public void sendPing() throws IOException {
-    getRemote().sendPing(ByteBuffer.allocate(0));
+  public void sendPing() {
+    try {
+      getRemote().sendPing(ByteBuffer.wrap(ZERO_ARRAY));
+    } catch (IOException e) {
+      throw new RuntimeException(e); // sendPing() is async; it shouldn't throw an IOException
+    }
   }
 
   @Override
   public void close() throws IOException {
     getSession().close();
+  }
+
+  @Override
+  public InetSocketAddress getRemoteAddress() {
+    return getRemote().getInetSocketAddress();
   }
 }

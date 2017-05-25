@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo.ws.undertow;
 
 import java.io.*;
+import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
@@ -8,7 +9,7 @@ import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.websockets.core.*;
 
-public final class UndertowEndpoint extends AbstractReceiveListener implements WSEndpoint {
+public final class UndertowEndpoint extends AbstractReceiveListener implements WSEndpoint<UndertowEndpoint> {
   private final UndertowEndpointManager manager;
   
   private final WebSocketChannel channel;
@@ -20,7 +21,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     this.channel = channel;
   }
   
-  public static UndertowEndpoint clientOf(WebSocketChannel channel, UndertowEndpointConfig config, WSListener<UndertowEndpoint> listener) {
+  public static UndertowEndpoint clientOf(WebSocketChannel channel, UndertowEndpointConfig config, EndpointListener<UndertowEndpoint> listener) {
     return new UndertowEndpointManager(config, listener).createEndpoint(channel);
   }
   
@@ -53,35 +54,37 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     super.onError(channel, cause);
   }
   
-  public void send(String payload, WebSocketCallback<Void> callback) {
+  @Override
+  public void send(String payload, SendCallback<? super UndertowEndpoint> callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendText(payload, channel, wrapCallback(callback));
     }
   }
   
-  public synchronized void send(ByteBuffer payload, WebSocketCallback<Void> callback) {
+  @Override
+  public void send(ByteBuffer payload, SendCallback<? super UndertowEndpoint> callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendBinary(payload, channel, wrapCallback(callback));
     }
   }
   
-  private WebSocketCallback<Void> wrapCallback(WebSocketCallback<Void> callback) {
+  private WebSocketCallback<Void> wrapCallback(SendCallback<? super UndertowEndpoint> callback) {
     return new WebSocketCallback<Void>() {
       private final AtomicBoolean onceOnly = new AtomicBoolean();
       
       @Override public void complete(WebSocketChannel channel, Void context) {
         if (onceOnly.compareAndSet(false, true)) {
           backlog.decrementAndGet();
-          if (callback != null) callback.complete(channel, context);
+          if (callback != null) callback.onComplete(UndertowEndpoint.this);
         }
       }
 
-      @Override public void onError(WebSocketChannel channel, Void context, Throwable throwable) {
+      @Override public void onError(WebSocketChannel channel, Void context, Throwable cause) {
         if (onceOnly.compareAndSet(false, true)) {
           backlog.decrementAndGet();
-          if (callback != null) callback.onError(channel, context, throwable);
+          if (callback != null) callback.onError(UndertowEndpoint.this, cause);
         }
       }
     };
@@ -96,11 +99,13 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     return channel;
   }
   
+  @Override
   public void flush() {
     channel.flush();
   }
 
-  public void sendPing() throws IOException {
+  @Override
+  public void sendPing() {
     if (channel.isOpen()) {
       WebSockets.sendPing(ByteBuffer.allocate(0), channel, null);
     }
@@ -109,5 +114,10 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   @Override
   public void close() throws IOException {
     channel.sendClose();
+  }
+
+  @Override
+  public InetSocketAddress getRemoteAddress() {
+    return channel.getSourceAddress();
   }
 }

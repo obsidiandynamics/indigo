@@ -13,15 +13,15 @@ import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.*;
 
 public final class UndertowEndpointManager implements WebSocketConnectionCallback, WSEndpointManager<UndertowEndpoint> {
-  private static final boolean NO_DELAY = false;
+  private static final boolean NODELAY = true;
   
   private final UndertowEndpointConfig config;
   
-  private final WSListener<UndertowEndpoint> listener;
+  private final EndpointListener<? super UndertowEndpoint> listener;
   
   private final Set<UndertowEndpoint> endpoints = new CopyOnWriteArraySet<>();
   
-  public UndertowEndpointManager(UndertowEndpointConfig config, WSListener<UndertowEndpoint> listener) {
+  public UndertowEndpointManager(UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
     this.config = config;
     this.listener = listener;
   }
@@ -36,7 +36,7 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
   UndertowEndpoint createEndpoint(WebSocketChannel channel) {
     final UndertowEndpoint endpoint = new UndertowEndpoint(this, channel);
     try {
-      channel.setOption(Options.TCP_NODELAY, NO_DELAY);
+      channel.setOption(Options.TCP_NODELAY, NODELAY);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -45,7 +45,7 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
     return endpoint;
   }
   
-  WSListener<UndertowEndpoint> getListener() {
+  EndpointListener<? super UndertowEndpoint> getListener() {
     return listener;
   }
   

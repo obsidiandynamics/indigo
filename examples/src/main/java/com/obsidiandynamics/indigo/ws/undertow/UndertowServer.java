@@ -4,13 +4,16 @@ import static io.undertow.Handlers.*;
 
 import org.xnio.*;
 
-import io.undertow.*;
-import io.undertow.websockets.*;
+import com.obsidiandynamics.indigo.ws.*;
 
-public final class UndertowServer implements AutoCloseable {
+import io.undertow.*;
+
+public final class UndertowServer implements WSServer<UndertowEndpoint> {
   private final Undertow server;
+  private final UndertowEndpointManager manager;
   
-  public UndertowServer(int port, String contextPath, WebSocketConnectionCallback connCallback) throws Exception {
+  public UndertowServer(int port, String contextPath, UndertowEndpointManager manager) throws Exception {
+    this.manager = manager;
     final int ioThreads = Runtime.getRuntime().availableProcessors();
     final int coreWorkerThreads = 100;
     final int maxWorkerThreads = coreWorkerThreads * 100;
@@ -26,7 +29,7 @@ public final class UndertowServer implements AutoCloseable {
     server = Undertow.builder()
         .setWorker(worker)
         .addHttpListener(port, "localhost")
-        .setHandler(path().addPrefixPath(contextPath, websocket(connCallback)))
+        .setHandler(path().addPrefixPath(contextPath, websocket(manager)))
         .build();
         server.start();
   }
@@ -34,5 +37,19 @@ public final class UndertowServer implements AutoCloseable {
   @Override
   public void close() throws Exception {
     server.stop();
+  }
+
+  @Override
+  public UndertowEndpointManager getEndpointManager() {
+    return manager;
+  }
+  
+  public static WSServerFactory<UndertowEndpoint> factory() {
+    return (config, listener) -> {
+      final UndertowEndpointManager manager = new UndertowEndpointManager(new UndertowEndpointConfig() {{
+        highWaterMark = config.highWaterMark;
+      }}, listener);
+      return new UndertowServer(config.port, config.contextPath, manager);
+    };
   }
 }

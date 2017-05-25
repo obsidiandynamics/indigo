@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.ws.netty;
 
+import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
@@ -10,7 +11,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.concurrent.*;
 
-public final class NettyEndpoint implements WSEndpoint {
+public final class NettyEndpoint implements WSEndpoint<NettyEndpoint> {
   private final NettyEndpointManager manager;
   private final ChannelHandlerContext context;
   private final AtomicLong backlog = new AtomicLong();
@@ -24,7 +25,8 @@ public final class NettyEndpoint implements WSEndpoint {
     return context;
   }
   
-  public void send(ByteBuffer payload, GenericFutureListener<ChannelFuture> callback) {
+  @Override
+  public void send(ByteBuffer payload, SendCallback<? super NettyEndpoint> callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       final ByteBuf buf = Unpooled.wrappedBuffer(payload);
@@ -33,7 +35,8 @@ public final class NettyEndpoint implements WSEndpoint {
     }
   }
   
-  public void send(String payload, GenericFutureListener<ChannelFuture> callback) {
+  @Override
+  public void send(String payload, SendCallback<? super NettyEndpoint> callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       final ChannelFuture f = context.channel().writeAndFlush(new TextWebSocketFrame(payload));
@@ -41,10 +44,16 @@ public final class NettyEndpoint implements WSEndpoint {
     }
   }
   
-  private GenericFutureListener<ChannelFuture> wrapCallback(GenericFutureListener<ChannelFuture> callback) {
+  private GenericFutureListener<ChannelFuture> wrapCallback(SendCallback<? super NettyEndpoint> callback) {
     return f -> {
       backlog.decrementAndGet();
-      if (callback != null) callback.operationComplete(f);
+      if (callback != null) {
+        if (f.isSuccess()) {
+          callback.onComplete(this);
+        } else {
+          callback.onError(this, f.cause());
+        }
+      }
     };
   }
   
@@ -53,10 +62,12 @@ public final class NettyEndpoint implements WSEndpoint {
     return backlog.get() < config.highWaterMark;
   }
   
+  @Override
   public void sendPing() {
     context.channel().writeAndFlush(new PingWebSocketFrame());
   }
   
+  @Override
   public void flush() {
     context.channel().flush();
   }
@@ -65,5 +76,10 @@ public final class NettyEndpoint implements WSEndpoint {
   public void close() throws Exception {
     manager.remove(context);
     context.close().get();
+  }
+
+  @Override
+  public InetSocketAddress getRemoteAddress() {
+    return (InetSocketAddress) context.channel().remoteAddress();
   }
 }

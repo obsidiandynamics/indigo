@@ -21,7 +21,7 @@ public final class UndertowClientHarness extends ClientHarness implements TestSu
   private final WebSocketCallback<Void> writeCallback;
   
   UndertowClientHarness(XnioWorker worker, int port, int idleTimeout, int bufferSize, boolean echo) throws Exception {
-    final WSListener<UndertowEndpoint> clientListener = new WSListener<UndertowEndpoint>() {
+    final EndpointListener<UndertowEndpoint> clientListener = new EndpointListener<UndertowEndpoint>() {
       @Override public void onConnect(UndertowEndpoint endpoint) {
         log("c: connected: %s\n", channel.getSourceAddress());
         connected.set(true);

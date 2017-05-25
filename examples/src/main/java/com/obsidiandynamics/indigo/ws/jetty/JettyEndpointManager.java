@@ -13,11 +13,11 @@ public final class JettyEndpointManager extends WebSocketHandler implements WSEn
   
   private final JettyEndpointConfig config;
   
-  private final  WSListener<JettyEndpoint> listener;
+  private final EndpointListener<? super JettyEndpoint> listener;
   
   private final Set<JettyEndpoint> endpoints = new CopyOnWriteArraySet<>();
 
-  public JettyEndpointManager(int idleTimeoutMillis, JettyEndpointConfig config, WSListener<JettyEndpoint> listener) {
+  public JettyEndpointManager(int idleTimeoutMillis, JettyEndpointConfig config, EndpointListener<? super JettyEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;
@@ -42,7 +42,7 @@ public final class JettyEndpointManager extends WebSocketHandler implements WSEn
     return endpoint;
   }
   
-  WSListener<JettyEndpoint> getListener() {
+  EndpointListener<? super JettyEndpoint> getListener() {
     return listener;
   }
   

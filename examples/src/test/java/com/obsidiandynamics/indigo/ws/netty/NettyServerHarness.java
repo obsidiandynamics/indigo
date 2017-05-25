@@ -9,19 +9,16 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-import io.netty.channel.*;
-import io.netty.util.concurrent.*;
-
 public final class NettyServerHarness extends ServerHarness<NettyEndpoint> implements TestSupport {
   private final AtomicBoolean ping = new AtomicBoolean(true);
   
   private final NettyServer server;
   
   private final NettyEndpointManager manager;
-  private final GenericFutureListener<ChannelFuture> writeCallback;
+  private final SendCallback<NettyEndpoint> writeCallback;
   
   NettyServerHarness(int port, int idleTimeout) throws Exception {
-    final WSListener<NettyEndpoint> serverListener = new WSListener<NettyEndpoint>() {
+    final EndpointListener<NettyEndpoint> serverListener = new EndpointListener<NettyEndpoint>() {
       @Override public void onConnect(NettyEndpoint endpoint) {
         log("s: connected: %s\n", endpoint.getContext().channel().remoteAddress());
         connected.incrementAndGet();
@@ -57,13 +54,15 @@ public final class NettyServerHarness extends ServerHarness<NettyEndpoint> imple
     }}, serverListener);
     server = new NettyServer(port, "/", manager);
     
-    writeCallback = f -> {
-      if (f.isSuccess()) {
+    writeCallback = new SendCallback<NettyEndpoint>() {
+      @Override public void onComplete(NettyEndpoint endpoint) {
         final int s = sent.incrementAndGet();
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
-      } else {
+      }
+
+      @Override public void onError(NettyEndpoint endpoint, Throwable throwable) {
         System.err.println("server write error");
-        f.cause().printStackTrace();
+        throwable.printStackTrace();
       }
     };
   }

@@ -1,17 +1,12 @@
 package com.obsidiandynamics.indigo.ws.undertow;
 
-import java.io.*;
 import java.nio.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import org.eclipse.jetty.websocket.api.WebSocketException;
-
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
-
-import io.undertow.websockets.core.*;
 
 public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint> implements TestSupport {
   private final AtomicBoolean ping = new AtomicBoolean(true);
@@ -19,10 +14,10 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
   private final UndertowServer server;
   
   private final UndertowEndpointManager manager;
-  private final WebSocketCallback<Void> writeCallback;
+  private final SendCallback<UndertowEndpoint> writeCallback;
 
   UndertowServerHarness(int port, int idleTimeout) throws Exception {
-    final WSListener<UndertowEndpoint> serverListener = new WSListener<UndertowEndpoint>() {
+    final EndpointListener<UndertowEndpoint> serverListener = new EndpointListener<UndertowEndpoint>() {
       @Override public void onConnect(UndertowEndpoint endpoint) {
         log("s: connected %s\n", endpoint.getChannel().getSourceAddress());
         connected.incrementAndGet();
@@ -58,15 +53,13 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
     }}, serverListener);
     server = new UndertowServer(port, "/", manager);
     
-    writeCallback = new WebSocketCallback<Void>() {
-      @Override
-      public void complete(WebSocketChannel channel, Void context) {
+    writeCallback = new SendCallback<UndertowEndpoint>() {
+      @Override public void onComplete(UndertowEndpoint endpoint) {
         final int s = sent.incrementAndGet();
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
       }
 
-      @Override
-      public void onError(WebSocketChannel channel, Void context, Throwable throwable) {
+      @Override public void onError(UndertowEndpoint endpoint, Throwable throwable) {
         System.err.println("server write error");
         throwable.printStackTrace();
       }
@@ -98,13 +91,8 @@ public final class UndertowServerHarness extends ServerHarness<UndertowEndpoint>
   }
 
   @Override
-  public void sendPing(UndertowEndpoint endpoint) throws IOException {
-    try {
-      endpoint.sendPing();
-    } catch (WebSocketException e) {
-      log("ping skipped\n");
-      return;
-    }
+  public void sendPing(UndertowEndpoint endpoint) {
+    endpoint.sendPing();
   }
   
   public static ThrowingSupplier<UndertowServerHarness> factory(int port, int idleTimeout) {

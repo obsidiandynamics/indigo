@@ -17,7 +17,7 @@ public final class JettyClientHarness extends ClientHarness implements TestSuppo
   private final WriteCallback writeCallback;
   
   JettyClientHarness(HttpClient httpClient, int port, int idleTimeout, boolean echo) throws Exception {
-    final WSListener<JettyEndpoint> clientListener = new WSListener<JettyEndpoint>() {
+    final EndpointListener<JettyEndpoint> clientListener = new EndpointListener<JettyEndpoint>() {
       @Override public void onConnect(JettyEndpoint endpoint) {
         log("c: connected: %s\n", endpoint.getRemote().getInetSocketAddress());
         connected.set(true);

@@ -64,32 +64,36 @@ public final class WSFanOutTest implements TestSupport {
                                            .getMap());
   }
   
+  private static <E extends WSEndpoint<E>> ThrowingSupplier<DefaultServerHarness<E>> serverHarnessFactory(WSServerFactory<E> serverFactory) throws Exception {
+    return () -> new DefaultServerHarness<>(new WSConfig() {{
+      port = PORT;
+      contextPath = "/";
+      idleTimeoutMillis = IDLE_TIMEOUT;
+    }}, serverFactory);
+  }
+  
   @Test
   public void testNtUt() throws Exception {
     final XnioWorker worker = getXnioWorker();
     test(N, M, ECHO, BYTES, CYCLES,
-         NettyServerHarness.factory(PORT, IDLE_TIMEOUT),
+         serverHarnessFactory(NettyServer.factory()),
          UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
          worker::shutdown);
   }
   
   @Test
   public void testUtUt() throws Exception {
-    try {
-      final XnioWorker worker = getXnioWorker();
-      test(N, M, ECHO, BYTES, CYCLES,
-           UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
-           UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
-           worker::shutdown);
-    } catch (Throwable t) {
-      t.printStackTrace();
-    }
+    final XnioWorker worker = getXnioWorker();
+    test(N, M, ECHO, BYTES, CYCLES,
+         serverHarnessFactory(UndertowServer.factory()),
+         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
+         worker::shutdown);
   }
   
   @Test
   public void testUtFc() throws Exception {
     test(N, M, ECHO, BYTES, CYCLES,
-         UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
+         serverHarnessFactory(UndertowServer.factory()),
          FakeClientHarness.factory(PORT, BYTES),
          ThrowingRunnable::noOp);
   }
@@ -100,7 +104,7 @@ public final class WSFanOutTest implements TestSupport {
     httpClient.setExecutor(new QueuedThreadPool(100));
     httpClient.start();
     test(N, M, ECHO, BYTES, CYCLES,
-         JettyServerHarness.factory(PORT, IDLE_TIMEOUT),
+         serverHarnessFactory(JettyServer.factory()),
          JettyClientHarness.factory(httpClient, PORT, IDLE_TIMEOUT, ECHO),
          httpClient::stop);
   }
@@ -111,7 +115,7 @@ public final class WSFanOutTest implements TestSupport {
     httpClient.setExecutor(new QueuedThreadPool(10_000, 100));
     httpClient.start();
     test(N, M, ECHO, BYTES, CYCLES,
-         UndertowServerHarness.factory(PORT, IDLE_TIMEOUT),
+         serverHarnessFactory(UndertowServer.factory()),
          JettyClientHarness.factory(httpClient, PORT, IDLE_TIMEOUT, ECHO),
          httpClient::stop);
   }
@@ -120,24 +124,24 @@ public final class WSFanOutTest implements TestSupport {
   public void testJtUt() throws Exception {
     final XnioWorker worker = getXnioWorker();
     test(N, M, ECHO, BYTES, CYCLES,
-         JettyServerHarness.factory(PORT, IDLE_TIMEOUT),
+         serverHarnessFactory(JettyServer.factory()),
          UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
          worker::shutdown);
   }
   
-  private <E> void test(int n, int m, boolean echo, int numBytes, int cycles,
-                        ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
-                        ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
-                        ThrowingRunnable cleanup) throws Exception {
+  private <E extends WSEndpoint<E>> void test(int n, int m, boolean echo, int numBytes, int cycles,
+                                              ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
+                                              ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
+                                              ThrowingRunnable cleanup) throws Exception {
     for (int i = 0; i < cycles; i++) {
       test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory);
     }
     cleanup.run();
   }
   
-  private <E> void test(int n, int m, boolean echo, int numBytes,
-                        ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
-                        ThrowingSupplier<? extends ClientHarness> clientHarnessFactory) throws Exception {
+  private <E extends WSEndpoint<E>> void test(int n, int m, boolean echo, int numBytes,
+                                              ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
+                                              ThrowingSupplier<? extends ClientHarness> clientHarnessFactory) throws Exception {
     final int sendThreads = 1;
     final int waitScale = 1 + (int) (((long) n * (long) m) / 1_000_000_000l);
     
