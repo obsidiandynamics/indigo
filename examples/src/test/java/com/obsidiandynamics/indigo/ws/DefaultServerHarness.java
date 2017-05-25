@@ -47,7 +47,7 @@ final class DefaultServerHarness<E extends WSEndpoint<E>> extends ServerHarness<
     writeCallback = new SendCallback<E>() {
       @Override public void onComplete(E endpoint) {
         final int s = sent.incrementAndGet();
-        if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.println("s: confirmed " + s);
+        if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.format("s: confirmed %,d\n", s);
       }
 
       @Override public void onError(E endpoint, Throwable throwable) {
