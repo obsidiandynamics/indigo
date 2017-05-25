@@ -112,4 +112,9 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint<
   public InetSocketAddress getRemoteAddress() {
     return getRemote().getInetSocketAddress();
   }
+
+  @Override
+  public long getBacklog() {
+    return backlog.get();
+  }
 }

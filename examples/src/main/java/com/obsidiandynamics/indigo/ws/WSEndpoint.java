@@ -44,4 +44,11 @@ public interface WSEndpoint<E extends WSEndpoint<E>> extends AutoCloseable {
    *  @return
    */
   InetSocketAddress getRemoteAddress();
+  
+  /**
+   *  Obtains the send backlog - the number of messages sent but yet to be confirmed.
+   *  
+   *  @return The number of backlogged messages.
+   */
+  long getBacklog();
 }

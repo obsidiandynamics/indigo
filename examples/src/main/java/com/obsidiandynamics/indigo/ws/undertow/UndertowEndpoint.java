@@ -120,4 +120,9 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   public InetSocketAddress getRemoteAddress() {
     return channel.getSourceAddress();
   }
+
+  @Override
+  public long getBacklog() {
+    return backlog.get();
+  }
 }

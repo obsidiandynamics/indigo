@@ -34,6 +34,8 @@ public final class WSFanOutTest implements TestSupport {
   private static final int CYCLES = 1;        // number of repeats
   private static final boolean FLUSH = false; // flush on the server after enqueuing (if 'nodelay' is disabled)
   
+  private static final int BACKLOG_LWM = 1_000_000;
+  
   private static final int UT_CLIENT_BUFFER_SIZE = Math.max(1024, BYTES);
   
   private static int totalConnected(List<ClientHarness> clients) {
@@ -60,6 +62,7 @@ public final class WSFanOutTest implements TestSupport {
                                            .set(Options.CONNECTION_LOW_WATER, 1_000_000)
                                            .set(Options.WORKER_TASK_CORE_THREADS, 100)
                                            .set(Options.WORKER_TASK_MAX_THREADS, 10_000)
+//                                           .set(Options.RECEIVE_BUFFER, 1024)
                                            .set(Options.TCP_NODELAY, true)
                                            .getMap());
   }
@@ -129,6 +132,29 @@ public final class WSFanOutTest implements TestSupport {
          worker::shutdown);
   }
   
+  private void throttle(List<? extends WSEndpoint<?>> endpoints, int backlogLwm) {
+    boolean logged = false;
+    for (;;) {
+      long totalBacklog = 0;
+      inner: for (WSEndpoint<?> endpoint : endpoints) {
+        totalBacklog += endpoint.getBacklog();
+        if (totalBacklog > backlogLwm) {
+          break inner;
+        }
+      }
+      
+      if (totalBacklog > backlogLwm) {
+        if (LOG_PHASES && ! logged) {
+          LOG_STREAM.format("s: throttling, backlog is at least %,d\n", totalBacklog);
+          logged = true;
+        }
+        Thread.yield();
+      } else {
+        break;
+      }
+    }
+  }
+  
   private <E extends WSEndpoint<E>> void test(int n, int m, boolean echo, int numBytes, int cycles,
                                               ThrowingSupplier<? extends ServerHarness<E>> serverHarnessFactory,
                                               ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
@@ -136,7 +162,7 @@ public final class WSFanOutTest implements TestSupport {
     for (int i = 0; i < cycles; i++) {
       test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory);
       if (LOG_PHASES && i < cycles - 1) {
-        System.out.println("_");
+        LOG_STREAM.format("_");
       }
     }
     cleanup.run();
@@ -155,7 +181,7 @@ public final class WSFanOutTest implements TestSupport {
       clients.add(clientHarnessFactory.create()); 
     }
 
-    if (LOG_PHASES) System.out.println("s: awaiting server.connected");
+    if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.connected\n");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.connected.get() == m);
 
     assertEquals(m, server.connected.get());
@@ -167,14 +193,22 @@ public final class WSFanOutTest implements TestSupport {
     
     final List<E> endpoints = server.getEndpoints();
 
-    if (LOG_PHASES) System.out.println("s: sending");
+    if (LOG_PHASES) LOG_STREAM.format("s: sending\n");
     ParallelJob.blockingSlice(endpoints, sendThreads, sublist -> {
+      long sent = 0;
       for (int i = 0; i < n; i++) {
-        if (LOG_1K && i % 1000 == 0) System.out.println("s: queued " + i);
+        if (LOG_1K && i % 1000 == 0) LOG_STREAM.format("s: queued %d\n", i);
         server.broadcast(sublist, bytes);
+        sent += sublist.size();
+        
+        if (BACKLOG_LWM != 0 && sent > BACKLOG_LWM) {
+          sent = 0;
+          throttle(endpoints, BACKLOG_LWM);
+        }
       }
+      
       if (FLUSH) {
-        if (LOG_PHASES) System.out.println("s: flushing");
+        if (LOG_PHASES) LOG_STREAM.format("s: flushing\n");
         for (int i = 0; i < n; i++) {
           try {
             server.flush(sublist);
@@ -182,19 +216,33 @@ public final class WSFanOutTest implements TestSupport {
             e.printStackTrace();
           }
         }
-        if (LOG_PHASES) System.out.println("s: flushed");
+        if (LOG_PHASES) LOG_STREAM.format("s: flushed\n");
       }
     }).run();
 
-    if (LOG_PHASES) System.out.println("s: awaiting server.sent");
+    if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.sent\n");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.sent.get() >= m * n);
     assertEquals(m * n, server.sent.get());
 
-    if (LOG_PHASES) System.out.println("s: awaiting client.received");
-    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalReceived(clients) >= m * n);
+    if (LOG_PHASES) LOG_STREAM.format("s: awaiting client.received\n");
+    long waitStart = System.currentTimeMillis();
+    long lastPrint = System.currentTimeMillis();
+    for (;;) {
+      final long totalReceived = totalReceived(clients);
+      if (totalReceived >= m * n) {
+        break;
+      } else if (System.currentTimeMillis() - lastPrint > 1000) {
+        final long takingSeconds = (System.currentTimeMillis() - waitStart) / 1000;
+        if (LOG_PHASES) LOG_STREAM.format("s: ... %,d seconds later %,d received\n", takingSeconds, totalReceived);
+        lastPrint = System.currentTimeMillis();
+      } else {
+        Thread.sleep(10);
+      }
+    }
+    
     assertEquals(m * n, totalReceived(clients));
 
-    if (LOG_PHASES) System.out.println("s: awaiting client.sent");
+    if (LOG_PHASES) LOG_STREAM.format("s: awaiting client.sent\n");
     if (echo) {
       Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalSent(clients) >= m * n);
       assertEquals(m * n, totalSent(clients));
@@ -214,16 +262,16 @@ public final class WSFanOutTest implements TestSupport {
       client.close();
     }
 
-    if (LOG_PHASES) System.out.println("s: awaiting server.closed");
+    if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.closed\n");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.closed.get() == m);
     assertEquals(m, server.closed.get());
 
-    if (LOG_PHASES) System.out.println("s: awaiting client.closed");
+    if (LOG_PHASES) LOG_STREAM.format("s: awaiting client.closed\n");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalClosed(clients) == m);
     assertEquals(m, totalClosed(clients));
 
     if (echo) {
-      if (LOG_PHASES) System.out.println("s: awaiting server.received");
+      if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.received\n");
       Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.received.get() == m * n);
       assertEquals(m * n, server.received.get());
     } else {
@@ -233,8 +281,12 @@ public final class WSFanOutTest implements TestSupport {
     server.close();
   }
   
-  public static void main(String[] args) throws Exception {
-    BashInteractor.Ulimit.main(null);
-    new WSFanOutTest().testUtUt();
+  public static void main(String[] args) {
+    try {
+      BashInteractor.Ulimit.main(null);
+      new WSFanOutTest().testUtUt();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
   }
 }

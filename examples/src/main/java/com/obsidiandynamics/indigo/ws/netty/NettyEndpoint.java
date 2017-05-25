@@ -82,4 +82,9 @@ public final class NettyEndpoint implements WSEndpoint<NettyEndpoint> {
   public InetSocketAddress getRemoteAddress() {
     return (InetSocketAddress) context.channel().remoteAddress();
   }
+
+  @Override
+  public long getBacklog() {
+    return backlog.get();
+  }
 }
