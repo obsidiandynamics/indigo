@@ -32,8 +32,13 @@ public final class ParallelJob implements Runnable {
       final int _i = i;
       final Thread t = new Thread(() ->  {
         TestSupport.await(barrier);
-        r.accept(_i);
-        if (latch != null) latch.countDown();
+        try {
+          r.accept(_i);
+        } catch (Throwable e) {
+          e.printStackTrace();
+        } finally {
+          if (latch != null) latch.countDown();
+        }
       }, String.format(threadNameFormat, i));
       t.start();
     }
