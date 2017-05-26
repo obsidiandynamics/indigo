@@ -8,7 +8,7 @@ import java.util.function.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public interface TestSupport {
-  static final boolean LOG = false;
+  static final boolean LOG = true;
   static final PrintStream LOG_STREAM = System.out;
   
   default void log(String format, Object ... args) {

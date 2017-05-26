@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.iot;
+package com.obsidiandynamics.indigo.iot.edge;
 
 import com.obsidiandynamics.indigo.topic.*;
 
