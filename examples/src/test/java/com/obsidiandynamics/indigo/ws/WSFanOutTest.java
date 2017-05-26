@@ -207,6 +207,7 @@ public final class WSFanOutTest implements TestSupport {
     final AtomicBoolean throttleInProgress = new AtomicBoolean();
     
     final ServerProgress progress = new ServerProgress() {
+      private final AtomicBoolean updateInProgress = new AtomicBoolean();
       private long firstUpdate;
       private long lastUpdate;
       private long lastSent;
@@ -223,22 +224,28 @@ public final class WSFanOutTest implements TestSupport {
         final long timeDelta = now - lastUpdate;
         if (timeDelta < PROGRESS_INTERVAL) return;
         
-        final long time = now - firstUpdate;
-        final long received = totalReceived(clients);
-        sent = server.sent.get();
-        final long txDelta = sent - lastSent;
-        final long rxDelta = received - lastReceived;
-        final float txAverageRate = 1000f * sent / time;
-        final float txCurrentRate = 1000f * txDelta / timeDelta;
-        final float rxAverageRate = 1000f * received / time;
-        final float rxCurrentRate = 1000f * rxDelta / timeDelta;
-        lastUpdate = now;
-        lastSent = sent;
-        lastReceived = received;
-        
-        if (! throttleInProgress.get()) {
-          LOG_STREAM.format("> tx: %,d, cur: %,.0f/s, avg: %,.0f/s\n", sent, txCurrentRate, txAverageRate);
-          LOG_STREAM.format("< rx: %,d, cur: %,.0f/s, avg: %,.0f/s\n", received, rxCurrentRate, rxAverageRate);
+        if (updateInProgress.compareAndSet(false, true)) {
+          try {
+            final long time = now - firstUpdate;
+            final long received = totalReceived(clients);
+            sent = server.sent.get();
+            final long txDelta = sent - lastSent;
+            final long rxDelta = received - lastReceived;
+            final float txAverageRate = 1000f * sent / time;
+            final float txCurrentRate = 1000f * txDelta / timeDelta;
+            final float rxAverageRate = 1000f * received / time;
+            final float rxCurrentRate = 1000f * rxDelta / timeDelta;
+            lastUpdate = now;
+            lastSent = sent;
+            lastReceived = received;
+            
+            if (! throttleInProgress.get()) {
+              LOG_STREAM.format("> tx: %,d, cur: %,.0f/s, avg: %,.0f/s\n", sent, txCurrentRate, txAverageRate);
+              LOG_STREAM.format("< rx: %,d, cur: %,.0f/s, avg: %,.0f/s\n", received, rxCurrentRate, rxAverageRate);
+            }
+          } finally {
+            updateInProgress.set(false);
+          }
         }
       }
     };
