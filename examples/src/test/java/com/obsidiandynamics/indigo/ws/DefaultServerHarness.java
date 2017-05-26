@@ -12,7 +12,7 @@ final class DefaultServerHarness<E extends WSEndpoint<E>> extends ServerHarness<
   private final WSServer<E> server;
   private final SendCallback<E> writeCallback;
   
-  DefaultServerHarness(WSConfig config, WSServerFactory<E> factory, ServerProgress progress) throws Exception {
+  DefaultServerHarness(WSServerConfig config, WSServerFactory<E> factory, ServerProgress progress) throws Exception {
     final EndpointListener<E> serverListener = new EndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
         log("s: connected %s\n", endpoint.getRemoteAddress());

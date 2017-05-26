@@ -15,7 +15,7 @@ import io.undertow.server.*;
 import io.undertow.websockets.client.*;
 import io.undertow.websockets.core.*;
 
-public final class UndertowClientHarness extends ClientHarness implements TestSupport {
+public final class UndertowClientHarness extends ClientHarness<UndertowEndpoint> implements TestSupport {
   private final WebSocketChannel channel;
   
   private final WebSocketCallback<Void> writeCallback;

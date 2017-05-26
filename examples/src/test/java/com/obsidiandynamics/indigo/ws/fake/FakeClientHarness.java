@@ -2,12 +2,32 @@ package com.obsidiandynamics.indigo.ws.fake;
 
 import java.io.*;
 import java.net.*;
+import java.nio.*;
 
 import com.obsidiandynamics.indigo.*;
-import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.ws.fake.FakeClientHarness.*;
 
-public final class FakeClientHarness extends ClientHarness implements TestSupport {
+public final class FakeClientHarness extends ClientHarness<FakeEndpoint> implements TestSupport {
+  public static final class FakeEndpoint implements WSEndpoint<FakeEndpoint> {
+    @Override public void close() throws Exception {
+    }
+    @Override public void send(String payload, SendCallback<? super FakeEndpoint> callback) {
+    }
+    @Override public void send(ByteBuffer payload, SendCallback<? super FakeEndpoint> callback) {
+    }
+    @Override public void flush() throws IOException {
+    }
+    @Override public void sendPing() {
+    }
+    @Override public InetSocketAddress getRemoteAddress() {
+      return null;
+    } 
+    @Override public long getBacklog() {
+      return 0;
+    }
+  }
+  
   private final FakeClient client;
   
   public FakeClientHarness(int port, int expectedMessageSize) throws UnknownHostException, IOException {
@@ -32,9 +52,5 @@ public final class FakeClientHarness extends ClientHarness implements TestSuppor
   @Override
   public void close() throws Exception {
     client.close();
-  }
-
-  public static ThrowingSupplier<FakeClientHarness> factory(int port, int expectedMessageSize) {
-    return () -> new FakeClientHarness(port, expectedMessageSize);
   }
 }

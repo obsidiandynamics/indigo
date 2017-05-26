@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo.ws;
 
-public class WSConfig {
+public class WSServerConfig {
   public int port;
   
   public String contextPath;

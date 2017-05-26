@@ -11,7 +11,7 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-public final class JettyClientHarness extends ClientHarness implements TestSupport {
+public final class JettyClientHarness extends ClientHarness<JettyEndpoint> implements TestSupport {
   private final Session session;
   
   private final WriteCallback writeCallback;

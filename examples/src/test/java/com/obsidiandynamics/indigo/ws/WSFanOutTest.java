@@ -41,23 +41,23 @@ public final class WSFanOutTest implements TestSupport {
   
   private static final int UT_CLIENT_BUFFER_SIZE = Math.max(1024, BYTES);
   
-  private static int totalConnected(List<ClientHarness> clients) {
+  private static int totalConnected(List<? extends ClientHarness<?>> clients) {
     return clients.stream().mapToInt(c -> c.connected.get() ? 1 : 0).sum();
   }
   
-  private static int totalClosed(List<ClientHarness> clients) {
+  private static int totalClosed(List<? extends ClientHarness<?>> clients) {
     return clients.stream().mapToInt(c -> c.closed.get() ? 1 : 0).sum();
   }
   
-  private static long totalReceived(List<ClientHarness> clients) {
+  private static long totalReceived(List<? extends ClientHarness<?>> clients) {
     return clients.stream().mapToLong(c -> c.received.get()).sum();
   }
   
-  private static long totalSent(List<ClientHarness> clients) {
+  private static long totalSent(List<? extends ClientHarness<?>> clients) {
     return clients.stream().mapToLong(c -> c.sent.get()).sum();
   }
   
-  private static XnioWorker getXnioWorker() throws IllegalArgumentException, IOException {
+  private static XnioWorker createXnioWorker() throws IllegalArgumentException, IOException {
     return Xnio.getInstance().createWorker(OptionMap.builder()
                                            .set(Options.WORKER_IO_THREADS, Runtime.getRuntime().availableProcessors())
                                            .set(Options.THREAD_DAEMON, true)
@@ -69,69 +69,86 @@ public final class WSFanOutTest implements TestSupport {
                                            .getMap());
   }
   
+  private static HttpClient createHttpClient() throws Exception {
+    final HttpClient httpClient = new HttpClient();
+    httpClient.setExecutor(new QueuedThreadPool(10_000, 100));
+    httpClient.start();
+    return httpClient;
+  }
+  
   private static <E extends WSEndpoint<E>> ServerHarnessFactory<DefaultServerHarness<E>> serverHarnessFactory(WSServerFactory<E> serverFactory) throws Exception {
-    return progress -> new DefaultServerHarness<>(new WSConfig() {{
+    return progress -> new DefaultServerHarness<>(new WSServerConfig() {{
       port = PORT;
       contextPath = "/";
       idleTimeoutMillis = IDLE_TIMEOUT;
     }}, serverFactory, progress);
   }
   
+  private static <E extends WSEndpoint<E>> ClientHarnessFactory<DefaultClientHarness<E>> clientHarnessFactory(WSClient<E> client) {
+    return () -> new DefaultClientHarness<>(client, PORT, ECHO);
+  }
+  
+  private static <E extends WSEndpoint<E>> WSClient<E> createClient(WSClientFactory<E> clientFactory) throws Exception {
+    return clientFactory.create(new WSClientConfig() {{
+      idleTimeoutMillis = IDLE_TIMEOUT;
+    }});
+  }
+
+  private static ClientHarnessFactory<FakeClientHarness> fakeClientFactory() {
+    return () -> new FakeClientHarness(PORT, BYTES);
+  }
+  
   @Test
   public void testNtUt() throws Exception {
-    final XnioWorker worker = getXnioWorker();
+    final WSClient<UndertowEndpoint> client = createClient(UndertowClient.factory(createXnioWorker(), UT_CLIENT_BUFFER_SIZE));
     test(N, M, ECHO, BYTES, CYCLES,
          serverHarnessFactory(NettyServer.factory()),
-         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
-         worker::shutdown);
+         clientHarnessFactory(client),
+         client::close);
   }
   
   @Test
   public void testUtUt() throws Exception {
-    final XnioWorker worker = getXnioWorker();
+    final WSClient<UndertowEndpoint> client = createClient(UndertowClient.factory(createXnioWorker(), UT_CLIENT_BUFFER_SIZE));
     test(N, M, ECHO, BYTES, CYCLES,
          serverHarnessFactory(UndertowServer.factory()),
-         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
-         worker::shutdown);
+         clientHarnessFactory(client),
+         client::close);
   }
   
   @Test
   public void testUtFc() throws Exception {
     test(N, M, ECHO, BYTES, CYCLES,
          serverHarnessFactory(UndertowServer.factory()),
-         FakeClientHarness.factory(PORT, BYTES),
+         fakeClientFactory(),
          ThrowingRunnable::noOp);
   }
   
   @Test
   public void testJtJt() throws Exception {
-    final HttpClient httpClient = new HttpClient();
-    httpClient.setExecutor(new QueuedThreadPool(100));
-    httpClient.start();
+    final WSClient<JettyEndpoint> client = createClient(JettyClient.factory(createHttpClient()));
     test(N, M, ECHO, BYTES, CYCLES,
          serverHarnessFactory(JettyServer.factory()),
-         JettyClientHarness.factory(httpClient, PORT, IDLE_TIMEOUT, ECHO),
-         httpClient::stop);
+         clientHarnessFactory(client),
+         client::close);
   }
   
   @Test
   public void testUtJt() throws Exception {
-    final HttpClient httpClient = new HttpClient();
-    httpClient.setExecutor(new QueuedThreadPool(10_000, 100));
-    httpClient.start();
+    final WSClient<JettyEndpoint> client = createClient(JettyClient.factory(createHttpClient()));
     test(N, M, ECHO, BYTES, CYCLES,
          serverHarnessFactory(UndertowServer.factory()),
-         JettyClientHarness.factory(httpClient, PORT, IDLE_TIMEOUT, ECHO),
-         httpClient::stop);
+         clientHarnessFactory(client),
+         client::close);
   }
   
   @Test
   public void testJtUt() throws Exception {
-    final XnioWorker worker = getXnioWorker();
+    final WSClient<UndertowEndpoint> client = createClient(UndertowClient.factory(createXnioWorker(), UT_CLIENT_BUFFER_SIZE));
     test(N, M, ECHO, BYTES, CYCLES,
          serverHarnessFactory(JettyServer.factory()),
-         UndertowClientHarness.factory(worker, PORT, IDLE_TIMEOUT, UT_CLIENT_BUFFER_SIZE, ECHO),
-         worker::shutdown);
+         clientHarnessFactory(client),
+         client::close);
   }
   
   private void throttle(AtomicBoolean throttleInProgress, List<? extends WSEndpoint<?>> endpoints, int backlogHwm) {
@@ -168,10 +185,10 @@ public final class WSFanOutTest implements TestSupport {
     }
   }
   
-  private <E extends WSEndpoint<E>> void test(int n, int m, boolean echo, int numBytes, int cycles,
-                                              ServerHarnessFactory<? extends ServerHarness<E>> serverHarnessFactory,
-                                              ThrowingSupplier<? extends ClientHarness> clientHarnessFactory,
-                                              ThrowingRunnable cleanup) throws Exception {
+  private <S extends WSEndpoint<S>, C extends WSEndpoint<C>> void test(int n, int m, boolean echo, int numBytes, int cycles,
+                                                                       ServerHarnessFactory<? extends ServerHarness<S>> serverHarnessFactory,
+                                                                       ClientHarnessFactory<? extends ClientHarness<C>> clientHarnessFactory,
+                                                                       ThrowingRunnable cleanup) throws Exception {
     for (int i = 0; i < cycles; i++) {
       test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory);
       if (LOG_PHASES && i < cycles - 1) {
@@ -181,12 +198,12 @@ public final class WSFanOutTest implements TestSupport {
     cleanup.run();
   }
   
-  private <E extends WSEndpoint<E>> void test(int n, int m, boolean echo, int numBytes,
-                                              ServerHarnessFactory<? extends ServerHarness<E>> serverHarnessFactory,
-                                              ThrowingSupplier<? extends ClientHarness> clientHarnessFactory) throws Exception {
+  private <S extends WSEndpoint<S>, C extends WSEndpoint<C>> void test(int n, int m, boolean echo, int numBytes,
+                                                                       ServerHarnessFactory<? extends ServerHarness<S>> serverHarnessFactory,
+                                                                       ClientHarnessFactory<? extends ClientHarness<C>> clientHarnessFactory) throws Exception {
     final int sendThreads = 1;
     final int waitScale = 1 + (int) (((long) n * (long) m) / 1_000_000_000l);
-    final List<ClientHarness> clients = new ArrayList<>(m);
+    final List<ClientHarness<C>> clients = new ArrayList<>(m);
     final AtomicBoolean throttleInProgress = new AtomicBoolean();
     
     final ServerProgress progress = new ServerProgress() {
@@ -226,7 +243,7 @@ public final class WSFanOutTest implements TestSupport {
       }
     };
     
-    final ServerHarness<E> server = serverHarnessFactory.create(progress);
+    final ServerHarness<S> server = serverHarnessFactory.create(progress);
     
     for (int i = 0; i < m; i++) {
       clients.add(clientHarnessFactory.create()); 
@@ -242,7 +259,7 @@ public final class WSFanOutTest implements TestSupport {
     new Random().nextBytes(bytes);
     final long start = System.currentTimeMillis();
     
-    final List<E> endpoints = server.getEndpoints();
+    final List<S> endpoints = server.getEndpoints();
 
     if (LOG_PHASES) LOG_STREAM.format("s: sending\n");
     ParallelJob.blockingSlice(endpoints, sendThreads, sublist -> {
@@ -311,7 +328,7 @@ public final class WSFanOutTest implements TestSupport {
                         tookMillis, ratePerSec, bandwidthMpbs, Thread.activeCount());
     }
 
-    for (ClientHarness client : clients) {
+    for (ClientHarness<?> client : clients) {
       client.close();
     }
 
