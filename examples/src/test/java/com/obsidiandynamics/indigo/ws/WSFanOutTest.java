@@ -375,7 +375,7 @@ public final class WSFanOutTest implements TestSupport {
     final StringBuilder sb = new StringBuilder(length);
     final byte[] bytes = randomBytes(length / 2);
     for (int i = 0; i < bytes.length; i++) {
-      sb.append(BinUtils.toHex(bytes[i]));
+      sb.append(BinaryUtils.toHex(bytes[i]));
     }
     return sb.toString();
   }

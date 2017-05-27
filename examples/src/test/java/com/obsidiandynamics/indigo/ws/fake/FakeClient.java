@@ -5,6 +5,8 @@ import java.net.*;
 
 import javax.net.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class FakeClient extends Thread implements Closeable {
   private static final int BUFFER_SIZE = 8192;
   
@@ -99,8 +101,8 @@ public final class FakeClient extends Thread implements Closeable {
   @Override
   public void close() throws IOException {
     if (! socket.isClosed()) {
-      final byte[] closeFrame = new byte[] { (byte) 0x88, (byte) 0x80, (byte) 0x98,
-                                             (byte) 0xec, (byte) 0x87, (byte) 0xc0 };
+      System.out.println("sending close");
+      final byte[] closeFrame = BinaryUtils.toByteArray(0x88, 0x80, 0x98, 0xec, 0x87, 0xc0);
       try {
         socket.getOutputStream().write(closeFrame);
         socket.getOutputStream().flush();
