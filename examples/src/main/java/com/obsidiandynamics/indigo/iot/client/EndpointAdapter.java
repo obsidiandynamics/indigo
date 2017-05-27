@@ -1,49 +1,79 @@
 package com.obsidiandynamics.indigo.iot.client;
 
 import java.nio.*;
+import java.util.concurrent.*;
 
+import org.slf4j.*;
+
+import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 final class EndpointAdapter<E extends WSEndpoint<E>> implements EndpointListener<E> {
+  private static final Logger LOG = LoggerFactory.getLogger(EndpointAdapter.class);
+  
   private final SessionManager manager;
-  private final SessionListener listener;
-  private Session session;
+  private final Session session;
+  private final SessionHandler handler;
   
-  public EndpointAdapter(SessionManager manager, SessionListener listener) {
+  EndpointAdapter(SessionManager manager, Session session, SessionHandler handler) {
     this.manager = manager;
-    this.listener = listener;
-  }
-  
-  void setSession(Session session) {
     this.session = session;
+    this.handler = handler;
   }
   
   @Override 
   public void onConnect(E endpoint) {
-    listener.onConnect(session);
+    session.setEndpoint(endpoint);
+    handler.onConnect(session);
   }
 
   @Override 
   public void onText(E endpoint, String message) {
-    // TODO Auto-generated method stub
-    
+    try {
+      final Frame frame = manager.getWire().decode(message);
+      switch (frame.getType()) {
+        case SUBSCRIBE:
+          if (frame instanceof SubscribeResponseFrame) {
+            final SubscribeResponseFrame subRes = (SubscribeResponseFrame) frame;
+            final CompletableFuture<SubscribeResponseFrame> f = session.removeSubscribeRequest(subRes.getId());
+            if (f != null) {
+              f.complete(subRes);
+            } else {
+              LOG.debug("Ignoring {}", subRes);
+            }
+          } else {
+            LOG.error("Unsupported frame {}", frame);
+          }
+          break;
+          
+        case RECEIVE:
+          final TextFrame text = (TextFrame) frame;
+          handler.onText(session, text.getPayload());
+          break;
+          
+        default:
+          LOG.error("Unsupported frame {}", frame);
+          return;
+      }
+    } catch (Throwable e) {
+      LOG.error(String.format("Error processing frame %s", message), e);
+      return;
+    }
   }
 
   @Override 
   public void onBinary(E endpoint, ByteBuffer message) {
     // TODO Auto-generated method stub
-    
+    LOG.warn("Unimplemented");
   }
 
   @Override 
   public void onClose(E endpoint, int statusCode, String reason) {
-    // TODO Auto-generated method stub
-    
+    handler.onDisconnect(session);
   }
 
   @Override 
   public void onError(E endpoint, Throwable cause) {
-    // TODO Auto-generated method stub
-    
+    LOG.warn("Unexpected error", cause);
   }
 }

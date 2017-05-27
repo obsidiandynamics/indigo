@@ -11,7 +11,7 @@ public final class PublishFrame extends Frame {
   }
 
   @Override
-  protected FrameType getType() {
+  public FrameType getType() {
     return FrameType.PUBLISH;
   }
 

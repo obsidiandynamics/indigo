@@ -11,7 +11,7 @@ public final class SubscribeResponseFrame extends IdFrame {
   }
 
   @Override
-  protected FrameType getType() {
+  public FrameType getType() {
     return FrameType.SUBSCRIBE;
   }
 

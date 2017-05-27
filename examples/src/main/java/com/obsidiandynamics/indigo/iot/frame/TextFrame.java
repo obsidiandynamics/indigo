@@ -8,7 +8,7 @@ public final class TextFrame extends Frame {
   }
 
   @Override
-  protected FrameType getType() {
+  public FrameType getType() {
     return FrameType.RECEIVE;
   }
 

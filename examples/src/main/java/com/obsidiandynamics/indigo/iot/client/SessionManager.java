@@ -4,19 +4,21 @@ import java.net.*;
 
 import org.slf4j.*;
 
+import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-public final class SessionManager {
+public final class SessionManager implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(SessionManager.class);
   
   private final class ClientHolder<E extends WSEndpoint<E>> {
     final WSClient<E> client;
     
-    public Session connect(URI uri, SessionListener listener) throws Exception {
+    public Session connect(URI uri, SessionHandler handler) throws Exception {
       if (LOG.isDebugEnabled()) LOG.debug("Connecting to {}", uri);
-      final EndpointAdapter<E> adapter = new EndpointAdapter<>(SessionManager.this, listener);
-      final E endpoint = client.connect(uri, adapter);
-      return new Session(endpoint);
+      final Session session = new Session(SessionManager.this);
+      final EndpointAdapter<E> adapter = new EndpointAdapter<>(SessionManager.this, session, handler);
+      client.connect(uri, adapter);
+      return session;
     }
 
     ClientHolder(WSClient<E> client) {
@@ -26,11 +28,23 @@ public final class SessionManager {
   
   private final ClientHolder<?> clientHolder;
   
-  public <E extends WSEndpoint<E>> SessionManager(WSClient<?> client) {
-    clientHolder = new ClientHolder<>(client);
+  private final Wire wire;
+  
+  public SessionManager(WSClientFactory<?> clientFactory, WSClientConfig config, Wire wire) throws Exception {
+    clientHolder = new ClientHolder<>(clientFactory.create(config));
+    this.wire = wire;
   }
   
-  public Session connect(URI uri, SessionListener listener) throws Exception {
-    return clientHolder.connect(uri, listener);
+  public Session open(URI uri, SessionHandler handler) throws Exception {
+    return clientHolder.connect(uri, handler);
+  }
+  
+  Wire getWire() {
+    return wire;
+  }
+
+  @Override
+  public void close() throws Exception {
+    clientHolder.client.close();
   }
 }

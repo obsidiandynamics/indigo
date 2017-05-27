@@ -20,7 +20,7 @@ public final class NettyServerHarness extends ServerHarness<NettyEndpoint> imple
   NettyServerHarness(int port, int idleTimeout) throws Exception {
     final EndpointListener<NettyEndpoint> serverListener = new EndpointListener<NettyEndpoint>() {
       @Override public void onConnect(NettyEndpoint endpoint) {
-        log("s: connected: %s\n", endpoint.getContext().channel().remoteAddress());
+        log("s: connected: %s\n", endpoint.getHandlerContext().channel().remoteAddress());
         connected.incrementAndGet();
         keepAlive(endpoint, ping, idleTimeout);
       }

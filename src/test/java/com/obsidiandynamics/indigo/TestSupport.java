@@ -22,10 +22,6 @@ public interface TestSupport {
     };
   }
   
-  default Consumer<Activation> tell(String role) {
-    return a -> a.to(ActorRef.of(role)).tell();
-  }
-  
   static long took(Runnable r) {
     final long started = System.nanoTime();
     r.run();

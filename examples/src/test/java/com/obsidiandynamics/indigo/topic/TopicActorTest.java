@@ -1,15 +1,13 @@
 package com.obsidiandynamics.indigo.topic;
 
+import static com.obsidiandynamics.indigo.util.Mocks.*;
 import static junit.framework.TestCase.*;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.*;
 
 import org.junit.*;
-import org.mockito.*;
 
 import com.obsidiandynamics.indigo.*;
 
@@ -60,28 +58,17 @@ public final class TopicActorTest implements TestSupport {
     system.shutdownQuietly();
   }
   
-  @SuppressWarnings("unchecked")
-  private static <T> T notNull() {
-    return (T) Mockito.notNull();
-  }
-  
-  private static void verifyInOrder(Object mock, Consumer<InOrder> test) {
-    final InOrder inOrder = inOrder(mock);
-    test.accept(inOrder);
-    inOrder.verifyNoMoreInteractions();
-  }
-  
   @Test
   public void testNonInterfering() throws InterruptedException, ExecutionException {
     final List<Delivery> aList = new ArrayList<>();
     final List<Delivery> bList = new ArrayList<>();
     subscribe("a", aList::add);
     subscribe("b", bList::add);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("b")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("b")), notNull());
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("b")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("b")), anyNotNull());
     });
     publish("a", "hello").get();
     publish("b", "barev").get();
@@ -97,9 +84,9 @@ public final class TopicActorTest implements TestSupport {
     final List<Delivery> a2List = new ArrayList<>();
     subscribe("a", a1List::add);
     subscribe("a", a2List::add);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher, times(2)).subscribed(notNull(), eq(Topic.of("a")), notNull());
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher, times(2)).subscribed(anyNotNull(), eq(Topic.of("a")), anyNotNull());
     });
     publish("a", "hello").get();
     assertEquals(1, a1List.size());
@@ -114,9 +101,9 @@ public final class TopicActorTest implements TestSupport {
     final Subscriber sub = aList::add;
     subscribe("a", sub);
     subscribe("a", sub);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a")), anyNotNull());
     });
     publish("a", "hello").get();
     assertEquals(1, aList.size());
@@ -136,13 +123,13 @@ public final class TopicActorTest implements TestSupport {
     subscribe("a", aList::add);
     subscribe("a/b", abList::add);
     subscribe("a/b/c", abcList::add);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b/c")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b/c")), notNull());
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/b")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a/b/c")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/b/c")), anyNotNull());
     });
     publish("a", "hello").get();
     publish("a/b", "barev").get();
@@ -167,14 +154,14 @@ public final class TopicActorTest implements TestSupport {
     subscribe("a/#", axList::add);
     subscribe("c", cList::add);
     subscribe("c/#", cxList::add);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("#")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/#")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("c")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c/#")), notNull());
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("#")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/b")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/#")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("c")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("c")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("c/#")), anyNotNull());
     });
     publish("a", "hello").get();
     publish("a/b", "barev").get();
@@ -213,14 +200,14 @@ public final class TopicActorTest implements TestSupport {
     subscribe("+/c", xcList::add);
     subscribe("a/+", axList::add);
     subscribe("+/+", xxList::add);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/b")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/c")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/+")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/+")), notNull());
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/b")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+/b")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+/c")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/+")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+/+")), anyNotNull());
     });
     publish("a", "hello").get();
     publish("a/b", "barev").get();
@@ -264,27 +251,27 @@ public final class TopicActorTest implements TestSupport {
     unsubscribe("a0/b0", sub);
     unsubscribe("a1", sub);
     unsubscribe("a0", sub);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a1")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a1")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b1")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0/c0")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0/c0")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b1")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a1")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a1")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0")));
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a1")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0/b0")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0/b1")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0/b0/c0")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0/b0/c0")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0/b1")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0/b0")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a1")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0")));
     });
     
     list.clear();
@@ -319,27 +306,27 @@ public final class TopicActorTest implements TestSupport {
     unsubscribe("a0/b0", sub);
     unsubscribe("a0/b1", sub);
     unsubscribe("a0/b0/c0", sub);
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a1")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a1")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b1")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a0/b0/c0")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a1")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a1")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b1")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b1")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a0/b0/c0")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0/c0")));
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0/b0")));
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a0")));
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a1")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0/b0")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0/b1")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a0/b0/c0")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a1")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a1")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0/b0")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0/b1")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0/b1")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a0/b0/c0")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0/b0/c0")));
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0/b0")));
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a0")));
     });
     
     list.clear();
@@ -376,23 +363,23 @@ public final class TopicActorTest implements TestSupport {
     unsubscribe("c", sub);
     unsubscribe("c/#", sub);
     
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("#")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/#")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("c")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("c/#")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("#")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/b")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a/b")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/#")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("c")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("c/#")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("c")));
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("#")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/b")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/#")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("c")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("c")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("c/#")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("#")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a/b")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a/#")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("c")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("c/#")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("c")));
     });
     
     list.clear();
@@ -421,23 +408,23 @@ public final class TopicActorTest implements TestSupport {
     unsubscribe("a/+", sub);
     unsubscribe("+/+", sub);
     
-    verifyInOrder(topicWatcher, inOrder -> {
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+")), notNull());
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher).created(notNull(), eq(Topic.of("a/b")));
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/b")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/b")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/c")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("a/+")), notNull());
-      inOrder.verify(topicWatcher).subscribed(notNull(), eq(Topic.of("+/+")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/b")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a/b")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+/b")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+/c")), notNull());
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("a/+")), notNull());
-      inOrder.verify(topicWatcher).deleted(notNull(), eq(Topic.of("a")));
-      inOrder.verify(topicWatcher).unsubscribed(notNull(), eq(Topic.of("+/+")), notNull());
+    ordered(topicWatcher, inOrder -> {
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+")), anyNotNull());
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).created(anyNotNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/b")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+/b")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+/c")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("a/+")), anyNotNull());
+      inOrder.verify(topicWatcher).subscribed(anyNotNull(), eq(Topic.of("+/+")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("+")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a/b")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a/b")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("+/b")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("+/c")), anyNotNull());
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("a/+")), anyNotNull());
+      inOrder.verify(topicWatcher).deleted(anyNotNull(), eq(Topic.of("a")));
+      inOrder.verify(topicWatcher).unsubscribed(anyNotNull(), eq(Topic.of("+/+")), anyNotNull());
     });
     
     publishSelf("a").get();

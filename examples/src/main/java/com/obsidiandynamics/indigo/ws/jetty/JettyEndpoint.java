@@ -15,6 +15,8 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint<
   private final JettyEndpointManager manager;
   
   private final AtomicLong backlog = new AtomicLong();
+  
+  private Object context;
 
   JettyEndpoint(JettyEndpointManager manager) {
     this.manager = manager;
@@ -22,6 +24,17 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint<
   
   public static JettyEndpoint clientOf(JettyEndpointConfig config, EndpointListener<? super JettyEndpoint> listener) {
     return new JettyEndpointManager(0, config, listener).createEndpoint();
+  }
+  
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T getContext() {
+    return (T) context;
+  }
+
+  @Override
+  public void setContext(Object context) {
+    this.context = context;
   }
   
   @Override 

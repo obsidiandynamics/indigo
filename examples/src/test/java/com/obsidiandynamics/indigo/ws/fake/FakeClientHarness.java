@@ -26,6 +26,11 @@ public final class FakeClientHarness extends ClientHarness<FakeEndpoint> impleme
     @Override public long getBacklog() {
       return 0;
     }
+    @Override public <T> T getContext() {
+      return null;
+    }
+    @Override public void setContext(Object context) {
+    }
   }
   
   private final FakeClient client;

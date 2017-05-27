@@ -15,6 +15,8 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   private final WebSocketChannel channel;
   
   private final AtomicLong backlog = new AtomicLong();
+  
+  private Object context;
 
   UndertowEndpoint(UndertowEndpointManager manager, WebSocketChannel channel) {
     this.manager = manager;
@@ -23,6 +25,17 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   
   public static UndertowEndpoint clientOf(WebSocketChannel channel, UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
     return new UndertowEndpointManager(config, listener).createEndpoint(channel);
+  }
+  
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T getContext() {
+    return (T) context;
+  }
+
+  @Override
+  public void setContext(Object context) {
+    this.context = context;
   }
   
   @Override

@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.ws.undertow;
 
+import java.io.*;
 import java.net.*;
 
 import org.xnio.*;
@@ -43,7 +44,23 @@ public class UndertowClient implements WSClient<UndertowEndpoint> {
     worker.shutdown();
   }
   
+  public static WSClientFactory<UndertowEndpoint> factory() {
+    return config -> new UndertowClient(config, createXnioWorker(), 1024);
+  }
+  
   public static WSClientFactory<UndertowEndpoint> factory(XnioWorker worker, int bufferSize) {
     return config -> new UndertowClient(config, worker, bufferSize);
+  }
+  
+  private static XnioWorker createXnioWorker() throws IllegalArgumentException, IOException {
+    return Xnio.getInstance().createWorker(OptionMap.builder()
+                                           .set(Options.WORKER_IO_THREADS, Runtime.getRuntime().availableProcessors())
+                                           .set(Options.THREAD_DAEMON, true)
+                                           .set(Options.CONNECTION_HIGH_WATER, 1_000_000)
+                                           .set(Options.CONNECTION_LOW_WATER, 1_000_000)
+                                           .set(Options.WORKER_TASK_CORE_THREADS, 100)
+                                           .set(Options.WORKER_TASK_MAX_THREADS, 10_000)
+                                           .set(Options.TCP_NODELAY, true)
+                                           .getMap());
   }
 }

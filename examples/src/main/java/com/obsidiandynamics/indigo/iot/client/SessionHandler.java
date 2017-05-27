@@ -2,12 +2,12 @@ package com.obsidiandynamics.indigo.iot.client;
 
 import java.nio.*;
 
-public interface SessionListener {
+public interface SessionHandler {
   void onConnect(Session session);
   
   void onDisconnect(Session session);
   
-  void onText(String payload);
+  void onText(Session session, String payload);
   
-  void onBinary(ByteBuffer payload);
+  void onBinary(Session session, ByteBuffer payload);
 }

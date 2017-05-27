@@ -11,6 +11,20 @@ import java.nio.*;
  */
 public interface WSEndpoint<E extends WSEndpoint<E>> extends AutoCloseable {
   /**
+   *  Obtains the context associated with this endpoint.
+   *  
+   *  @return The context, if set.
+   */
+  <T> T getContext();
+  
+  /**
+   *  Associates an arbitrary context object with this endpoint.
+   *  
+   *  @param context The context to associate this endpoint with.
+   */
+  void setContext(Object context);
+  
+  /**
    *  Asynchronously sends a text frame.
    *  
    *  @param payload The payload.
