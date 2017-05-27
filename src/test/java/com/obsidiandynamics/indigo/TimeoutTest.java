@@ -7,6 +7,8 @@ import java.util.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class TimeoutTest implements TestSupport {
   public static final String KEY_TIMEOUT_TOLERANCE = "indigo.TimeoutTest.timeoutTolerance";
   private static final String DRIVER = "driver";

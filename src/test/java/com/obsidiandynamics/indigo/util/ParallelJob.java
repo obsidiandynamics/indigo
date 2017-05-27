@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo;
+package com.obsidiandynamics.indigo.util;
 
 import java.util.*;
 import java.util.concurrent.*;

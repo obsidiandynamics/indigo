@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.experimental;
 import java.util.*;
 import java.util.concurrent.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class ListTester {
   public static void main(String[] args) {

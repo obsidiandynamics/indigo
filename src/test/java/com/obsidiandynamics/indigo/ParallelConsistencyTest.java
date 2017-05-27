@@ -6,6 +6,8 @@ import java.util.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class ParallelConsistencyTest implements TestSupport {
   private static final String DRIVER = "driver";
   private static final String SINK = "sink";

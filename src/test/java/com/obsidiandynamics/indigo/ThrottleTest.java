@@ -6,6 +6,8 @@ import java.util.concurrent.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class ThrottleTest implements TestSupport {
   private static final String SINK = "sink";
   

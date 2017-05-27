@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class ExternalAskTest implements TestSupport {
   private static final String ADDER = "adder";
 

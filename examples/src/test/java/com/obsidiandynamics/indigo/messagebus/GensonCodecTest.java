@@ -6,7 +6,7 @@ import java.util.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.owlike.genson.*;
 
 public final class GensonCodecTest implements TestSupport {

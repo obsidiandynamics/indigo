@@ -4,6 +4,8 @@ import java.util.concurrent.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class ExecutorRegistrationTest implements TestSupport {
   private ActorSystem system;
   

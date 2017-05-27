@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class TaskSchedulerTest implements TestSupport {
   private static final class TestTask extends Task<UUID> {

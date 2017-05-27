@@ -10,6 +10,7 @@ import java.util.concurrent.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class TopicActorTest implements TestSupport {
   private static final class ProxyWatcher implements TopicWatcher, TestSupport {

@@ -6,7 +6,7 @@ import java.util.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class WireTest implements TestSupport {
   private Wire wire;

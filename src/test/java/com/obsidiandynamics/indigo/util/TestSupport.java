@@ -1,11 +1,16 @@
-package com.obsidiandynamics.indigo;
+package com.obsidiandynamics.indigo.util;
+
+import static org.junit.Assert.*;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import com.obsidiandynamics.indigo.util.*;
+import org.junit.*;
+
+import com.obsidiandynamics.indigo.*;
 
 public interface TestSupport {
   static final boolean LOG = false;
@@ -79,5 +84,46 @@ public interface TestSupport {
   static <I, O> EgressBuilder<I, O> egressMode(EgressBuilder<I, O> builder, boolean parallel) {
     if (parallel) builder.parallel(); else builder.serial();
     return builder;
+  }
+
+  /**
+   *  Verifies that the given object overrides the <code>toString()</code> implementation, and that
+   *  the implementation operates without throwing any exceptions.
+   *   
+   *  @param obj The object to test.
+   */
+  static void assertToString(Object obj) {
+    final String objectToString = obj.getClass().getName() + "@" + Integer.toHexString(obj.hashCode());
+    final String actualToString = obj.toString();
+    assertNotEquals(objectToString, actualToString);
+  }
+
+  /**
+   *  Verifies that a utility class is well defined.
+   * 
+   *  Taken from 
+   *  https://github.com/trajano/maven-jee6/blob/master/maven-jee6-test/src/test/java/net/trajano/maven_jee6/test/test/UtilityClassTestUtilTest.java
+   * 
+   *  @param clazz Utility class to verify.
+   */
+  static void assertUtilityClassWellDefined(final Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    Assert.assertTrue("Class must be final",
+                      Modifier.isFinal(clazz.getModifiers()));
+    Assert.assertEquals("There must be only one constructor", 1,
+                        clazz.getDeclaredConstructors().length);
+    final Constructor<?> constructor = clazz.getDeclaredConstructor();
+    if (constructor.isAccessible() || 
+        !Modifier.isPrivate(constructor.getModifiers())) {
+      Assert.fail("Constructor is not private");
+    }
+    constructor.setAccessible(true);
+    constructor.newInstance();
+    constructor.setAccessible(false);
+    for (final Method method : clazz.getMethods()) {
+      if (! Modifier.isStatic(method.getModifiers())
+          && method.getDeclaringClass().equals(clazz)) {
+        Assert.fail("There exists a non-static method: " + method);
+      }
+    }
   }
 }

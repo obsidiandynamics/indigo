@@ -8,7 +8,7 @@ import org.junit.*;
 
 import com.google.gson.*;
 import com.google.gson.typeadapters.*;
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class GsonCodecTest implements TestSupport {
   private static abstract class AbstractNode {}

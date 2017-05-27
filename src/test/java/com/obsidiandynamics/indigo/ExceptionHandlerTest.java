@@ -8,6 +8,8 @@ import java.util.function.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class ExceptionHandlerTest implements TestSupport {
   private static final String SINK = "sink";
   

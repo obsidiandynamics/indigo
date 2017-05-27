@@ -9,6 +9,8 @@ import java.util.function.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class StatefulLifeCycleTest implements TestSupport {
   private static final int SCALE = 1;
   

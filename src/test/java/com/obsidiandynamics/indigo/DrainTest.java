@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class DrainTest implements TestSupport {
   private static final String STAGE = "stage-";
   private static final String SINK = "sink";

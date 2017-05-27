@@ -5,7 +5,7 @@ import java.nio.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 final class DefaultServerHarness<E extends WSEndpoint> extends ServerHarness<E> implements TestSupport {
   private final AtomicBoolean ping = new AtomicBoolean(true);

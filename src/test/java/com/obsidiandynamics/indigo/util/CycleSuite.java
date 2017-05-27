@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo;
+package com.obsidiandynamics.indigo.util;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;

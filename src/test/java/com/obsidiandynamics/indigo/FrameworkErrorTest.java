@@ -5,6 +5,8 @@ import static junit.framework.TestCase.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class FrameworkErrorTest implements TestSupport {
   private static final String SINK = "sink";
   

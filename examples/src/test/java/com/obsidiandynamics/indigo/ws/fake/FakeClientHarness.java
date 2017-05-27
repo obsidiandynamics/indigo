@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 import com.obsidiandynamics.indigo.ws.fake.FakeClientHarness.*;
 

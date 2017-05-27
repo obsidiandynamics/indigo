@@ -6,8 +6,6 @@ import java.io.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
-
 public class IndigoVersionTest implements TestSupport {
   @Test
   public void testValid() throws IOException {

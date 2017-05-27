@@ -4,6 +4,8 @@ import static junit.framework.TestCase.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class StatelessLambdaActorBuilderTest implements TestSupport {
   @Test
   public void testNoAct() {

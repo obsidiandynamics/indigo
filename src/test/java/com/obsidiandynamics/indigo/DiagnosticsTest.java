@@ -6,6 +6,8 @@ import java.io.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class DiagnosticsTest implements TestSupport {
   @Test
   public void testLimit() throws IOException {

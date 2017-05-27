@@ -11,6 +11,7 @@ import java.util.stream.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.topic.TopicGen.*;

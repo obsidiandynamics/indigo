@@ -6,6 +6,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class ThroughputBenchmark implements TestSupport {
   abstract static class Config implements Spec {

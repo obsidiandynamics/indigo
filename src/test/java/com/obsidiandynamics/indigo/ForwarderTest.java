@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class ForwarderTest implements TestSupport {
   private static final String FORWARDER = "forwarder";
   private static final String SINK = "sink";

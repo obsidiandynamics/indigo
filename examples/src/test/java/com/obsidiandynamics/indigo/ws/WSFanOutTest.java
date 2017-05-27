@@ -13,8 +13,9 @@ import org.eclipse.jetty.util.thread.*;
 import org.junit.*;
 import org.xnio.*;
 
-import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.indigo.util.TestSupport;
+import com.obsidiandynamics.indigo.util.ParallelJob;
 import com.obsidiandynamics.indigo.ws.fake.*;
 import com.obsidiandynamics.indigo.ws.jetty.*;
 import com.obsidiandynamics.indigo.ws.netty.*;

@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public final class RequestResponseTest implements TestSupport {
   private static final String DRIVER = "driver";
   private static final String ADDER = "adder";

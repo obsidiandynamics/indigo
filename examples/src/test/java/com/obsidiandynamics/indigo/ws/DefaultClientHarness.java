@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.ws;
 import java.net.*;
 import java.nio.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.*;
 
 public final class DefaultClientHarness<E extends WSEndpoint> extends ClientHarness<E> implements TestSupport {
   private final SendCallback writeCallback;

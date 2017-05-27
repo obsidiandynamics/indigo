@@ -3,7 +3,8 @@ package com.obsidiandynamics.indigo;
 import org.junit.runner.*;
 import org.junit.runners.Suite.*;
 
-import com.obsidiandynamics.indigo.CycleSuite.*;
+import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.indigo.util.CycleSuite.*;
 
 @RunWith(CycleSuite.class)
 @SuiteClasses(PrimaryTests.class)     

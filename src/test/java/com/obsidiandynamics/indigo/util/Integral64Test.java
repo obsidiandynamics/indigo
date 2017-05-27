@@ -1,14 +1,13 @@
 package com.obsidiandynamics.indigo.util;
 
 import static junit.framework.TestCase.*;
-import static com.obsidiandynamics.indigo.util.Integral64.*;
 
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.util.Integral64.*;
 
 public final class Integral64Test implements TestSupport {
   static final class FaultyIntegral extends LongAdder implements Integral64 {

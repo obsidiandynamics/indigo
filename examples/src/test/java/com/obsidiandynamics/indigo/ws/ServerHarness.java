@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class ServerHarness<E extends WSEndpoint> extends BaseHarness {

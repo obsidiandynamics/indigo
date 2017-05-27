@@ -6,7 +6,6 @@ import java.io.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.JvmVersionProvider.*;
 
 public final class JvmVersionProviderTest implements TestSupport {

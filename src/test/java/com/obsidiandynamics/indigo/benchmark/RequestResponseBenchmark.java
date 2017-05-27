@@ -10,6 +10,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.benchmark.Summary.*;
+import com.obsidiandynamics.indigo.util.*;
 
 /**
  *  Benchmarks request-response pair throughput.

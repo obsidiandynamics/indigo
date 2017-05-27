@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo;
 
-import static org.junit.Assert.*;
+import static com.obsidiandynamics.indigo.util.TestSupport.*;
 
 import java.util.*;
 
@@ -29,17 +29,5 @@ public class ToStringTest {
     assertToString(new Integral64.Sum().certain(42));
     assertToString(new Integral64.Sum().uncertain(42));
     assertToString(new JvmVersionProvider.JvmVersion(0, 0, 0, 0));
-  }
-
-  /**
-   *  Verifies that the given object overrides the <code>toString()</code> implementation, and that
-   *  the implementation operates without throwing any exceptions.
-   *   
-   *  @param obj The object to test.
-   */
-  private static void assertToString(Object obj) {
-    final String objectToString = obj.getClass().getName() + "@" + Integer.toHexString(obj.hashCode());
-    final String actualToString = obj.toString();
-    assertNotEquals(objectToString, actualToString);
   }
 }

@@ -1,10 +1,10 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
-import static com.obsidiandynamics.indigo.TestSupport.*;
+import static com.obsidiandynamics.indigo.util.TestSupport.*;
 import static java.util.concurrent.TimeUnit.*;
 import static junit.framework.TestCase.*;
-import static org.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.*;
 
 import java.util.*;
 import java.util.concurrent.*;
