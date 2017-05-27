@@ -19,4 +19,8 @@ public final class Mocks {
     test.accept(inOrder);
     inOrder.verifyNoMoreInteractions();
   }
+  
+  public static <T> T logger(T mock) {
+    return InterceptingProxy.of(mock, new LoggingInterceptor<>());
+  }
 }

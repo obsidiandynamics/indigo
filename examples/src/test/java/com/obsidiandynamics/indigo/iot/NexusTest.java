@@ -1,6 +1,8 @@
 package com.obsidiandynamics.indigo.iot;
 
 import static com.obsidiandynamics.indigo.util.Mocks.*;
+import static java.util.concurrent.TimeUnit.*;
+import static org.awaitility.Awaitility.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
@@ -10,7 +12,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.junit.*;
-import org.mockito.*;
 
 import com.obsidiandynamics.indigo.iot.client.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
@@ -32,22 +33,21 @@ public class NexusTest {
   public void test() throws Exception {
     final UUID subId = UUID.randomUUID();
     final TopicBridge bridge = mock(TopicBridge.class);
-    Mockito
-    .when(bridge.onSubscribe(any(), any()))
-    .thenReturn(CompletableFuture.completedFuture(new SubscribeResponseFrame(subId, null)));
+    final SubscribeResponseFrame mockSubRes = new SubscribeResponseFrame(subId, null);
+    when(bridge.onSubscribe(any(), any())).thenReturn(CompletableFuture.completedFuture(mockSubRes));
     
     final SessionHandler handler = mock(SessionHandler.class);
     
     final Edge edge = new Edge(UndertowServer.factory(), 
                                new WSServerConfig()  {{ port = PORT; }}, 
                                wire,
-                               bridge);
+                               logger(bridge));
     
     final SessionManager manager = new SessionManager(UndertowClient.factory(),
                                                       new WSClientConfig(),
                                                       wire);
     
-    final Session session = manager.open(new URI("ws://localhost:" + PORT + "/"), handler);
+    final Session session = manager.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
     final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = session.subscribe(sub).get();
     
@@ -55,16 +55,34 @@ public class NexusTest {
     assertEquals(FrameType.SUBSCRIBE, subRes.getType());
     assertNull(subRes.getError());
     
-    final PublishFrame pub = new PublishFrame("x/y/z", "hello from publisher");
-    session.publish(pub);
+    final PublishFrame pubRemote = new PublishFrame("x/y/z", "hello from remote");
+    session.publish(pubRemote);
     
-    edge.close();
-    manager.close();
+    final EdgeNexus nexus = edge.getNexuses().get(0);
+    final TextFrame textEdge = new TextFrame("hello from edge");
+    nexus.send(textEdge).get();
+    
+    session.close();
+    
+    given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
+      verify(bridge).onDisconnect(anyNotNull());
+      verify(handler).onDisconnect(anyNotNull());
+    });
     
     ordered(bridge, inOrder -> {
       inOrder.verify(bridge).onConnect(anyNotNull());
       inOrder.verify(bridge).onSubscribe(anyNotNull(), eq(sub));
-      inOrder.verify(bridge).onPublish(anyNotNull(), eq(pub));
+      inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
+      inOrder.verify(bridge).onDisconnect(anyNotNull());
     });
+    
+    ordered(handler, inOrder -> {
+      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onText(anyNotNull(), eq(textEdge.getPayload()));
+      inOrder.verify(handler).onDisconnect(anyNotNull());
+    });
+    
+    edge.close();
+    manager.close();
   }
 }

@@ -13,34 +13,6 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class TopicActorTest implements TestSupport {
-  private static final class ProxyWatcher implements TopicWatcher, TestSupport {
-    private final TopicWatcher delegate;
-    
-    ProxyWatcher(TopicWatcher delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override public void created(Activation a, Topic topic) {
-      log("created(%s, %s)\n", a, topic);
-      delegate.created(a, topic);
-    }
-
-    @Override public void deleted(Activation a, Topic topic) {
-      log("deleted(%s, %s)\n", a, topic);
-      delegate.deleted(a, topic);
-    }
-
-    @Override public void subscribed(Activation a, Topic topic, Subscriber subscriber) {
-      log("subscribed(%s, %s, %s)\n", a, topic, subscriber);
-      delegate.subscribed(a, topic, subscriber);
-    }
-
-    @Override public void unsubscribed(Activation a, Topic topic, Subscriber subscriber) {
-      log("unsubscribed(%s, %s, %s)\n", a, topic, subscriber);
-      delegate.unsubscribed(a, topic, subscriber);
-    }
-  }
-  
   private ActorSystem system;
   
   private TopicWatcher topicWatcher;
@@ -50,7 +22,7 @@ public final class TopicActorTest implements TestSupport {
     topicWatcher = mock(TopicWatcher.class);
     system = ActorSystem.create()
     .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig() {{
-      topicWatcher = new ProxyWatcher(TopicActorTest.this.topicWatcher);
+      topicWatcher = logger(TopicActorTest.this.topicWatcher);
     }}));
   }
   

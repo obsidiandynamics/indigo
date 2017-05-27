@@ -29,10 +29,7 @@ public final class Edge implements AutoCloseable {
     this.bridge = bridge;
     server = serverFactory.create(config, new EndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
-        final EdgeNexus nexus = new EdgeNexus(Edge.this, endpoint);
-        nexuses.add(nexus);
-        endpoint.setContext(nexus);
-        bridge.onConnect(nexus);
+        handleConnect(endpoint);
       }
 
       @Override public void onText(E endpoint, String message) {
@@ -96,8 +93,20 @@ public final class Edge implements AutoCloseable {
     bridge.onPublish(nexus, pub);
   }
   
+  private void handleConnect(WSEndpoint endpoint) {
+    final EdgeNexus nexus = new EdgeNexus(this, endpoint);
+    nexuses.add(nexus);
+    endpoint.setContext(nexus);
+    bridge.onConnect(nexus);
+  }
+  
   private void handleDisconnect(EdgeNexus nexus) {
     bridge.onDisconnect(nexus);
+    nexuses.remove(nexus);
+  }
+  
+  public List<EdgeNexus> getNexuses() {
+    return Collections.unmodifiableList(nexuses);
   }
   
   Wire getWire() {
