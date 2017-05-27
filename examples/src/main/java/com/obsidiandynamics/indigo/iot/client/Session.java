@@ -42,7 +42,7 @@ public final class Session implements AutoCloseable {
     return future;
   }
   
-  public CompletableFuture<Void> publish(PublishFrame pub) {
+  public CompletableFuture<Void> publish(PublishTextFrame pub) {
     return SendHelper.send(pub, endpoint, manager.getWire());
   }
   

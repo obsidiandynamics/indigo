@@ -1,11 +1,11 @@
 package com.obsidiandynamics.indigo.iot.frame;
 
-public final class PublishFrame extends Frame {
+public final class PublishTextFrame implements TextEncodedFrame {
   private final String topic;
   
   private final String payload;
 
-  public PublishFrame(String topic, String payload) {
+  public PublishTextFrame(String topic, String payload) {
     this.topic = topic;
     this.payload = payload;
   }
@@ -40,7 +40,7 @@ public final class PublishFrame extends Frame {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    PublishFrame other = (PublishFrame) obj;
+    PublishTextFrame other = (PublishTextFrame) obj;
     if (payload == null) {
       if (other.payload != null)
         return false;
@@ -56,6 +56,6 @@ public final class PublishFrame extends Frame {
 
   @Override
   public String toString() {
-    return "PublishFrame [topic=" + topic + ", payload=" + payload + "]";
+    return "PublishText [topic=" + topic + ", payload=" + payload + "]";
   }
 }

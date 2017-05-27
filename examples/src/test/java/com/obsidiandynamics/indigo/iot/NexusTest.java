@@ -55,7 +55,7 @@ public class NexusTest {
     assertEquals(FrameType.SUBSCRIBE, subRes.getType());
     assertNull(subRes.getError());
     
-    final PublishFrame pubRemote = new PublishFrame("x/y/z", "hello from remote");
+    final PublishTextFrame pubRemote = new PublishTextFrame("x/y/z", "hello from remote");
     session.publish(pubRemote);
     
     final EdgeNexus nexus = edge.getNexuses().get(0);

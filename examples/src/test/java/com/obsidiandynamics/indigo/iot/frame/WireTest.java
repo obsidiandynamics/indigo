@@ -35,7 +35,7 @@ public final class WireTest implements TestSupport {
   
   @Test
   public void testMarshalPublish() {
-    testEncodeDecode(new PublishFrame("some/topic/to/publish", "some-payload"));
+    testEncodeDecode(new PublishTextFrame("some/topic/to/publish", "some-payload"));
   }
   
   @Test
@@ -53,7 +53,7 @@ public final class WireTest implements TestSupport {
     wire.decode("P topic");
   }
 
-  private void testEncodeDecode(Frame frame) {
+  private void testEncodeDecode(TextEncodedFrame frame) {
     final String enc = wire.encode(frame);
     log("encoded: '%s'\n", enc);
     final Frame decoded = wire.decode(enc);

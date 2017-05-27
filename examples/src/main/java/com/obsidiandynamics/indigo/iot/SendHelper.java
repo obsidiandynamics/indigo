@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class SendHelper {
   private SendHelper() {}
 
-  public static CompletableFuture<Void> send(Frame frame, WSEndpoint endpoint, Wire wire) {
+  public static CompletableFuture<Void> send(TextEncodedFrame frame, WSEndpoint endpoint, Wire wire) {
     final CompletableFuture<Void> f = new CompletableFuture<>();
     final String encoded = wire.encode(frame);
     final SendCallback sendCallback = new SendCallback() {
@@ -25,7 +25,7 @@ public final class SendHelper {
     return f;
   }
   
-  public static void send(Frame frame, WSEndpoint endpoint, Wire wire, Consumer<Throwable> callback) {
+  public static void send(TextEncodedFrame frame, WSEndpoint endpoint, Wire wire, Consumer<Throwable> callback) {
     final String encoded = wire.encode(frame);
     final SendCallback sendCallback;
     if (callback != null) {

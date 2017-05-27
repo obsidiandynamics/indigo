@@ -47,7 +47,7 @@ public final class Edge implements AutoCloseable {
               break;
               
             case PUBLISH:
-              final PublishFrame pub = (PublishFrame) frame;
+              final PublishTextFrame pub = (PublishTextFrame) frame;
               handlePublish(nexus, pub);
               break;
               
@@ -89,7 +89,7 @@ public final class Edge implements AutoCloseable {
     });
   }
   
-  private void handlePublish(EdgeNexus nexus, PublishFrame pub) {
+  private void handlePublish(EdgeNexus nexus, PublishTextFrame pub) {
     bridge.onPublish(nexus, pub);
   }
   

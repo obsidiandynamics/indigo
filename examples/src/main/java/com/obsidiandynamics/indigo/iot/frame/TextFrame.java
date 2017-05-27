@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo.iot.frame;
 
-public final class TextFrame extends Frame {
+public final class TextFrame implements TextEncodedFrame {
   private final String payload;
 
   public TextFrame(String payload) {

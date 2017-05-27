@@ -1,5 +1,5 @@
 package com.obsidiandynamics.indigo.iot.frame;
 
-public abstract class Frame {
-  public abstract FrameType getType();
+public interface Frame {
+  FrameType getType();
 }

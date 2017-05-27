@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.iot.frame;
 
 import java.util.*;
 
-public final class SubscribeFrame extends IdFrame {
+public final class SubscribeFrame extends IdFrame implements TextEncodedFrame {
   private final String[] topics;
   
   private final Object context;
@@ -56,6 +56,6 @@ public final class SubscribeFrame extends IdFrame {
 
   @Override
   public String toString() {
-    return "SubscribeFrame [id=" + getId() + ", topics=" + Arrays.toString(topics) + ", context=" + context + "]";
+    return "Subscribe [id=" + getId() + ", topics=" + Arrays.toString(topics) + ", context=" + context + "]";
   }
 }

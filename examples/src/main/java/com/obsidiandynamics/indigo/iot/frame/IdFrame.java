@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.iot.frame;
 
 import java.util.*;
 
-public abstract class IdFrame extends Frame {
+public abstract class IdFrame implements Frame {
   private final UUID id;
   
   protected IdFrame(UUID id) {
