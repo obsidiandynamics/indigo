@@ -13,17 +13,17 @@ public final class Session implements AutoCloseable {
 
   private final Map<UUID, CompletableFuture<SubscribeResponseFrame>> subscribeRequests = new ConcurrentHashMap<>();
   
-  private WSEndpoint<?> endpoint;
+  private WSEndpoint endpoint;
   
   Session(SessionManager manager) {
     this.manager = manager;
   }
 
-  public WSEndpoint<?> getEndpoint() {
+  public WSEndpoint getEndpoint() {
     return endpoint;
   }
 
-  void setEndpoint(WSEndpoint<?> endpoint) {
+  void setEndpoint(WSEndpoint endpoint) {
     this.endpoint = endpoint;
   }
 

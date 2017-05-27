@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo.ws;
 
-public interface SendCallback<E extends WSEndpoint<?>> {
-  void onComplete(E endpoint);
+public interface SendCallback {
+  void onComplete(WSEndpoint endpoint);
 
-  void onError(E endpoint, Throwable cause);
+  void onError(WSEndpoint endpoint, Throwable cause);
 }

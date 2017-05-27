@@ -11,9 +11,9 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class EdgeNexus implements AutoCloseable {
   private final Edge edge;
   
-  private final WSEndpoint<?> endpoint;
+  private final WSEndpoint endpoint;
 
-  public EdgeNexus(Edge edge, WSEndpoint<?> endpoint) {
+  public EdgeNexus(Edge edge, WSEndpoint endpoint) {
     this.edge = edge;
     this.endpoint = endpoint;
   }

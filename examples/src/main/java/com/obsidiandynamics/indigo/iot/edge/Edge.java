@@ -21,10 +21,10 @@ public final class Edge implements AutoCloseable {
   
   private final List<EdgeNexus> nexuses = new CopyOnWriteArrayList<>();
 
-  public <E extends WSEndpoint<E>> Edge(WSServerFactory<E> serverFactory, 
-                                        WSServerConfig config, 
-                                        Wire wire, 
-                                        TopicBridge bridge) throws Exception {
+  public <E extends WSEndpoint> Edge(WSServerFactory<E> serverFactory, 
+                                     WSServerConfig config, 
+                                     Wire wire, 
+                                     TopicBridge bridge) throws Exception {
     this.wire = wire;
     this.bridge = bridge;
     server = serverFactory.create(config, new EndpointListener<E>() {

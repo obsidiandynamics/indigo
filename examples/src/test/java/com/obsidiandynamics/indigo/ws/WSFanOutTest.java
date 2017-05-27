@@ -76,7 +76,7 @@ public final class WSFanOutTest implements TestSupport {
     return httpClient;
   }
   
-  private static <E extends WSEndpoint<E>> ServerHarnessFactory<DefaultServerHarness<E>> serverHarnessFactory(WSServerFactory<E> serverFactory) throws Exception {
+  private static <E extends WSEndpoint> ServerHarnessFactory<DefaultServerHarness<E>> serverHarnessFactory(WSServerFactory<E> serverFactory) throws Exception {
     return progress -> new DefaultServerHarness<>(new WSServerConfig() {{
       port = PORT;
       contextPath = "/";
@@ -84,11 +84,11 @@ public final class WSFanOutTest implements TestSupport {
     }}, serverFactory, progress);
   }
   
-  private static <E extends WSEndpoint<E>> ClientHarnessFactory<DefaultClientHarness<E>> clientHarnessFactory(WSClient<E> client) {
+  private static <E extends WSEndpoint> ClientHarnessFactory<DefaultClientHarness<E>> clientHarnessFactory(WSClient<E> client) {
     return () -> new DefaultClientHarness<>(client, PORT, ECHO);
   }
   
-  private static <E extends WSEndpoint<E>> WSClient<E> createClient(WSClientFactory<E> clientFactory) throws Exception {
+  private static <E extends WSEndpoint> WSClient<E> createClient(WSClientFactory<E> clientFactory) throws Exception {
     return clientFactory.create(new WSClientConfig() {{
       idleTimeoutMillis = IDLE_TIMEOUT;
     }});
@@ -151,13 +151,13 @@ public final class WSFanOutTest implements TestSupport {
          client::close);
   }
   
-  private void throttle(AtomicBoolean throttleInProgress, List<? extends WSEndpoint<?>> endpoints, int backlogHwm) {
+  private void throttle(AtomicBoolean throttleInProgress, List<? extends WSEndpoint> endpoints, int backlogHwm) {
     boolean logged = false;
     int waits = 0;
     for (;;) {
       long minTotalBacklog = 0;
       boolean overflow = false;
-      inner: for (WSEndpoint<?> endpoint : endpoints) {
+      inner: for (WSEndpoint endpoint : endpoints) {
         minTotalBacklog += endpoint.getBacklog();
         if (minTotalBacklog > backlogHwm) {
           overflow = true;
@@ -185,10 +185,10 @@ public final class WSFanOutTest implements TestSupport {
     }
   }
   
-  private <S extends WSEndpoint<S>, C extends WSEndpoint<C>> void test(int n, int m, boolean echo, int numBytes, int cycles,
-                                                                       ServerHarnessFactory<? extends ServerHarness<S>> serverHarnessFactory,
-                                                                       ClientHarnessFactory<? extends ClientHarness<C>> clientHarnessFactory,
-                                                                       ThrowingRunnable cleanup) throws Exception {
+  private <S extends WSEndpoint, C extends WSEndpoint> void test(int n, int m, boolean echo, int numBytes, int cycles,
+                                                                 ServerHarnessFactory<? extends ServerHarness<S>> serverHarnessFactory,
+                                                                 ClientHarnessFactory<? extends ClientHarness<C>> clientHarnessFactory,
+                                                                 ThrowingRunnable cleanup) throws Exception {
     for (int i = 0; i < cycles; i++) {
       test(n, m, echo, numBytes, serverHarnessFactory, clientHarnessFactory);
       if (LOG_PHASES && i < cycles - 1) {
@@ -198,9 +198,9 @@ public final class WSFanOutTest implements TestSupport {
     cleanup.run();
   }
   
-  private <S extends WSEndpoint<S>, C extends WSEndpoint<C>> void test(int n, int m, boolean echo, int numBytes,
-                                                                       ServerHarnessFactory<? extends ServerHarness<S>> serverHarnessFactory,
-                                                                       ClientHarnessFactory<? extends ClientHarness<C>> clientHarnessFactory) throws Exception {
+  private <S extends WSEndpoint, C extends WSEndpoint> void test(int n, int m, boolean echo, int numBytes,
+                                                                 ServerHarnessFactory<? extends ServerHarness<S>> serverHarnessFactory,
+                                                                 ClientHarnessFactory<? extends ClientHarness<C>> clientHarnessFactory) throws Exception {
     final int sendThreads = 1;
     final int waitScale = 1 + (int) (((long) n * (long) m) / 1_000_000_000l);
     final List<ClientHarness<C>> clients = new ArrayList<>(m);

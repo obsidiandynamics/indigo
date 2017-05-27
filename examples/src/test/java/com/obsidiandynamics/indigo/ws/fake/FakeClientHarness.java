@@ -9,12 +9,12 @@ import com.obsidiandynamics.indigo.ws.*;
 import com.obsidiandynamics.indigo.ws.fake.FakeClientHarness.*;
 
 public final class FakeClientHarness extends ClientHarness<FakeEndpoint> implements TestSupport {
-  public static final class FakeEndpoint implements WSEndpoint<FakeEndpoint> {
+  public static final class FakeEndpoint implements WSEndpoint {
     @Override public void close() throws Exception {
     }
-    @Override public void send(String payload, SendCallback<? super FakeEndpoint> callback) {
+    @Override public void send(String payload, SendCallback callback) {
     }
-    @Override public void send(ByteBuffer payload, SendCallback<? super FakeEndpoint> callback) {
+    @Override public void send(ByteBuffer payload, SendCallback callback) {
     }
     @Override public void flush() throws IOException {
     }

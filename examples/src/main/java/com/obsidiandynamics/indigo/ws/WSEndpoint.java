@@ -9,7 +9,7 @@ import java.nio.*;
  *
  *  @param <E> The endpoint type.
  */
-public interface WSEndpoint<E extends WSEndpoint<E>> extends AutoCloseable {
+public interface WSEndpoint extends AutoCloseable {
   /**
    *  Obtains the context associated with this endpoint.
    *  
@@ -30,7 +30,7 @@ public interface WSEndpoint<E extends WSEndpoint<E>> extends AutoCloseable {
    *  @param payload The payload.
    *  @param callback Optional callback, invoked when the send completes (or fails).
    */
-  void send(String payload, SendCallback<? super E> callback);
+  void send(String payload, SendCallback callback);
 
   /**
    *  Asynchronously sends a binary frame.
@@ -38,7 +38,7 @@ public interface WSEndpoint<E extends WSEndpoint<E>> extends AutoCloseable {
    *  @param payload The payload.
    *  @param callback Optional callback, invoked when the send completes (or fails).
    */
-  void send(ByteBuffer payload, SendCallback<? super E> callback);
+  void send(ByteBuffer payload, SendCallback callback);
   
   /**
    *  Flushing the underlying stream. Depending on the implementation, this method may block.

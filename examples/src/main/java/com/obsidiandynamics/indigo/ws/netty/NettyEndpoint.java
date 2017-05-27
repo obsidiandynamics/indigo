@@ -11,7 +11,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.concurrent.*;
 
-public final class NettyEndpoint implements WSEndpoint<NettyEndpoint> {
+public final class NettyEndpoint implements WSEndpoint {
   private final NettyEndpointManager manager;
   private final ChannelHandlerContext handlerContext;
   private final AtomicLong backlog = new AtomicLong();
@@ -39,7 +39,7 @@ public final class NettyEndpoint implements WSEndpoint<NettyEndpoint> {
   }
   
   @Override
-  public void send(ByteBuffer payload, SendCallback<? super NettyEndpoint> callback) {
+  public void send(ByteBuffer payload, SendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       final ByteBuf buf = Unpooled.wrappedBuffer(payload);
@@ -49,7 +49,7 @@ public final class NettyEndpoint implements WSEndpoint<NettyEndpoint> {
   }
   
   @Override
-  public void send(String payload, SendCallback<? super NettyEndpoint> callback) {
+  public void send(String payload, SendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       final ChannelFuture f = handlerContext.channel().writeAndFlush(new TextWebSocketFrame(payload));
@@ -57,7 +57,7 @@ public final class NettyEndpoint implements WSEndpoint<NettyEndpoint> {
     }
   }
   
-  private GenericFutureListener<ChannelFuture> wrapCallback(SendCallback<? super NettyEndpoint> callback) {
+  private GenericFutureListener<ChannelFuture> wrapCallback(SendCallback callback) {
     return f -> {
       backlog.decrementAndGet();
       if (callback != null) {

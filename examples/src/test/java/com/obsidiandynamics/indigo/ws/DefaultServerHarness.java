@@ -7,10 +7,10 @@ import java.util.concurrent.atomic.*;
 
 import com.obsidiandynamics.indigo.*;
 
-final class DefaultServerHarness<E extends WSEndpoint<E>> extends ServerHarness<E> implements TestSupport {
+final class DefaultServerHarness<E extends WSEndpoint> extends ServerHarness<E> implements TestSupport {
   private final AtomicBoolean ping = new AtomicBoolean(true);
   private final WSServer<E> server;
-  private final SendCallback<E> writeCallback;
+  private final SendCallback writeCallback;
   
   DefaultServerHarness(WSServerConfig config, WSServerFactory<E> factory, ServerProgress progress) throws Exception {
     final EndpointListener<E> serverListener = new EndpointListener<E>() {
@@ -44,16 +44,16 @@ final class DefaultServerHarness<E extends WSEndpoint<E>> extends ServerHarness<
       }
     };
     
-    writeCallback = new SendCallback<E>() {
-      @Override public void onComplete(E endpoint) {
+    writeCallback = new SendCallback() {
+      @Override public void onComplete(WSEndpoint endpoint) {
         final long s = sent.getAndIncrement();
         if (s % 1000 == 0) progress.update(DefaultServerHarness.this, s);
         if (WSFanOutTest.LOG_1K && s % 1000 == 0) System.out.format("s: confirmed %,d\n", s);
       }
 
-      @Override public void onError(E endpoint, Throwable throwable) {
+      @Override public void onError(WSEndpoint endpoint, Throwable cause) {
         System.err.println("server write error");
-        throwable.printStackTrace();
+        cause.printStackTrace();
       }
     };
     server = factory.create(config, serverListener);

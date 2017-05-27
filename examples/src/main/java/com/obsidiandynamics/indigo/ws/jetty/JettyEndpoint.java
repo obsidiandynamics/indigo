@@ -9,7 +9,7 @@ import org.eclipse.jetty.websocket.api.*;
 
 import com.obsidiandynamics.indigo.ws.*;
 
-public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint<JettyEndpoint> {
+public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint {
   private static final byte[] ZERO_ARRAY = new byte[0];
   
   private final JettyEndpointManager manager;
@@ -69,7 +69,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint<
   }
   
   @Override
-  public void send(String payload, SendCallback<? super JettyEndpoint> callback) {
+  public void send(String payload, SendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendString(payload, wrapCallback(callback));
@@ -77,14 +77,14 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint<
   }
   
   @Override
-  public void send(ByteBuffer payload, SendCallback<? super JettyEndpoint> callback) {
+  public void send(ByteBuffer payload, SendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendBytes(payload, wrapCallback(callback));
     }
   }
   
-  private WriteCallback wrapCallback(SendCallback<? super JettyEndpoint> callback) {
+  private WriteCallback wrapCallback(SendCallback callback) {
     return new WriteCallback() {
       @Override public void writeSuccess() {
         backlog.decrementAndGet();

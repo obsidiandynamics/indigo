@@ -9,11 +9,10 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class SendHelper {
   private SendHelper() {}
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  public static CompletableFuture<Void> send(Frame frame, WSEndpoint<?> endpoint, Wire wire) {
+  public static CompletableFuture<Void> send(Frame frame, WSEndpoint endpoint, Wire wire) {
     final CompletableFuture<Void> f = new CompletableFuture<>();
     final String encoded = wire.encode(frame);
-    final SendCallback<?> sendCallback = new SendCallback() {
+    final SendCallback sendCallback = new SendCallback() {
       @Override public void onComplete(WSEndpoint endpoint) {
         f.complete(null);
       }
@@ -22,14 +21,13 @@ public final class SendHelper {
         f.completeExceptionally(cause);
       }
     };
-    endpoint.send(encoded, (SendCallback) sendCallback);
+    endpoint.send(encoded, sendCallback);
     return f;
   }
   
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  public static void send(Frame frame, WSEndpoint<?> endpoint, Wire wire, Consumer<Throwable> callback) {
+  public static void send(Frame frame, WSEndpoint endpoint, Wire wire, Consumer<Throwable> callback) {
     final String encoded = wire.encode(frame);
-    final SendCallback<?> sendCallback;
+    final SendCallback sendCallback;
     if (callback != null) {
       sendCallback = new SendCallback() {
         @Override public void onComplete(WSEndpoint endpoint) {
@@ -43,6 +41,6 @@ public final class SendHelper {
     } else {
       sendCallback = null;
     }
-    endpoint.send(encoded, (SendCallback) sendCallback);
+    endpoint.send(encoded, sendCallback);
   }
 }

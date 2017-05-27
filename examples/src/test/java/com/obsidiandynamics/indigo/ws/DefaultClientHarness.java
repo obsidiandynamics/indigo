@@ -5,10 +5,10 @@ import java.nio.*;
 
 import com.obsidiandynamics.indigo.*;
 
-public final class DefaultClientHarness<E extends WSEndpoint<E>> extends ClientHarness<E> implements TestSupport {
-  private final SendCallback<E> writeCallback;
+public final class DefaultClientHarness<E extends WSEndpoint> extends ClientHarness<E> implements TestSupport {
+  private final SendCallback writeCallback;
   
-  private final WSEndpoint<E> endpoint;
+  private final WSEndpoint endpoint;
   
   DefaultClientHarness(WSClient<E> client, int port, boolean echo) throws Exception {
     final EndpointListener<E> clientListener = new EndpointListener<E>() {
@@ -48,12 +48,12 @@ public final class DefaultClientHarness<E extends WSEndpoint<E>> extends ClientH
     
     endpoint = client.connect(URI.create("ws://127.0.0.1:" + port + "/"), clientListener);
     
-    writeCallback = new SendCallback<E>() {
-      @Override public void onComplete(E endpoint) {
+    writeCallback = new SendCallback() {
+      @Override public void onComplete(WSEndpoint endpoint) {
         sent.incrementAndGet();
       }
 
-      @Override public void onError(E endpoint, Throwable throwable) {
+      @Override public void onError(WSEndpoint endpoint, Throwable throwable) {
         System.err.println("client write error");
         throwable.printStackTrace();
       }

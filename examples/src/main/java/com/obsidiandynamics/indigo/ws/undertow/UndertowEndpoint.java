@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.websockets.core.*;
 
-public final class UndertowEndpoint extends AbstractReceiveListener implements WSEndpoint<UndertowEndpoint> {
+public final class UndertowEndpoint extends AbstractReceiveListener implements WSEndpoint {
   private final UndertowEndpointManager manager;
   
   private final WebSocketChannel channel;
@@ -68,7 +68,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   @Override
-  public void send(String payload, SendCallback<? super UndertowEndpoint> callback) {
+  public void send(String payload, SendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendText(payload, channel, wrapCallback(callback));
@@ -76,14 +76,14 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   @Override
-  public void send(ByteBuffer payload, SendCallback<? super UndertowEndpoint> callback) {
+  public void send(ByteBuffer payload, SendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendBinary(payload, channel, wrapCallback(callback));
     }
   }
   
-  private WebSocketCallback<Void> wrapCallback(SendCallback<? super UndertowEndpoint> callback) {
+  private WebSocketCallback<Void> wrapCallback(SendCallback callback) {
     return new WebSocketCallback<Void>() {
       private final AtomicBoolean onceOnly = new AtomicBoolean();
       
