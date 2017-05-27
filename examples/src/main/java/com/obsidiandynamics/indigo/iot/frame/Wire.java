@@ -144,7 +144,7 @@ public final class Wire {
         buf.position(pos);
         final byte[] frameBytes = new byte[buf.remaining()];
         buf.get(frameBytes);
-        throw new IllegalArgumentException("Unsupported frame content: " + BinDump.dump(frameBytes));
+        throw new IllegalArgumentException("Unsupported frame content: " + BinUtils.dump(frameBytes));
     }
   }
 }

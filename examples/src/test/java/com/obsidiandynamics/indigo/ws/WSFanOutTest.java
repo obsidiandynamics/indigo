@@ -37,6 +37,7 @@ public final class WSFanOutTest implements TestSupport {
   private static final int BYTES = 16;        // bytes per message
   private static final int CYCLES = 1;        // number of repeats
   private static final boolean FLUSH = false; // flush on the server after enqueuing (if 'nodelay' is disabled)
+  private static final boolean TEXT = false;
   
   private static final int BACKLOG_HWM = 1_000_000;
   
@@ -263,8 +264,8 @@ public final class WSFanOutTest implements TestSupport {
     assertEquals(m, server.connected.get());
     assertEquals(m, totalConnected(clients));
 
-    final byte[] bytes = new byte[numBytes];
-    new Random().nextBytes(bytes);
+    final byte[] binPayload = TEXT ? null : randomBytes(BYTES);
+    final String textPayload = TEXT ? randomString(BYTES) : null;
     final long start = System.currentTimeMillis();
     
     final List<S> endpoints = server.getEndpoints();
@@ -274,7 +275,11 @@ public final class WSFanOutTest implements TestSupport {
       long sent = 0;
       for (int i = 0; i < n; i++) {
         if (LOG_1K && i % 1000 == 0) LOG_STREAM.format("s: queued %d\n", i);
-        server.broadcast(sublist, bytes);
+        if (TEXT) {
+          server.broadcast(sublist, textPayload);
+        } else {
+          server.broadcast(sublist, binPayload);
+        }
         
         if (BACKLOG_HWM != 0) {
           sent += sublist.size();
@@ -357,6 +362,22 @@ public final class WSFanOutTest implements TestSupport {
     }
 
     server.close();
+  }
+  
+  private byte[] randomBytes(int length) {
+    final byte[] bytes = new byte[length];
+    new Random().nextBytes(bytes);
+    return bytes;
+  }
+  
+  private String randomString(int length) {
+    if (length % 2 != 0) throw new IllegalArgumentException("Length must be a multiple of 2");
+    final StringBuilder sb = new StringBuilder(length);
+    final byte[] bytes = randomBytes(length / 2);
+    for (int i = 0; i < bytes.length; i++) {
+      sb.append(BinUtils.toHex(bytes[i]));
+    }
+    return sb.toString();
   }
   
   public static void main(String[] args) {

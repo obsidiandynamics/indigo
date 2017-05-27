@@ -14,6 +14,8 @@ public abstract class ServerHarness<E extends WSEndpoint> extends BaseHarness {
   
   public abstract void broadcast(List<E> endpoints, byte[] payload);
   
+  public abstract void broadcast(List<E> endpoints, String payload);
+  
   public abstract void flush(List<E> endpoints) throws IOException;
   
   public abstract void sendPing(E endpoint);

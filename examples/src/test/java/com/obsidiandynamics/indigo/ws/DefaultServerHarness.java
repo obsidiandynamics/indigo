@@ -77,6 +77,13 @@ final class DefaultServerHarness<E extends WSEndpoint> extends ServerHarness<E> 
   }
 
   @Override
+  public void broadcast(List<E> endpoints, String payload) {
+    for (E endpoint : endpoints) {
+      endpoint.send(payload, writeCallback);
+    }
+  }
+
+  @Override
   public void flush(List<E> endpoints) throws IOException {
     for (E endpoint : endpoints) {
       endpoint.flush();
