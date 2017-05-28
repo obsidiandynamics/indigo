@@ -9,6 +9,18 @@ import org.junit.*;
 
 public class PropertyUtilsTest {
   @Test
+  public void testExistingValue() {
+    final Properties props = new Properties();
+    props.put("foo", "bar");
+    assertEquals("bar", PropertyUtils.get(props, "foo", String::valueOf, "baz"));
+  }
+  
+  @Test
+  public void testDefaultValue() {
+    assertEquals("bar", PropertyUtils.get(new Properties(), "foo", String::valueOf, "bar"));
+  }
+  
+  @Test
   public void testLoadExisting() throws IOException {
     final Properties props = PropertyUtils.load("property-utils-test.properties");
     assertTrue(props.containsKey("foo"));
