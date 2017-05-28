@@ -17,7 +17,7 @@ public final class Wire {
   public Wire(boolean prettyPrinting) {
     final GsonBuilder builder = new GsonBuilder()
         .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
-                                    .of(TextEncodedFrame.class, "type")
+                                    .of(IdFrame.class, "type")
                                     .registerSubtype(SubscribeFrame.class, "Subscribe")
                                     .registerSubtype(SubscribeResponseFrame.class, "SubscribeResponse"));
     if (prettyPrinting) builder.setPrettyPrinting();
@@ -34,7 +34,7 @@ public final class Wire {
   private void encodeFrameBody(Frame frame, StringBuilder sb) {
     switch (frame.getType()) {
       case SUBSCRIBE:
-        sb.append(gson.toJson(frame, Frame.class));
+        sb.append(gson.toJson(frame, IdFrame.class));
         return;
         
       case RECEIVE:
@@ -60,7 +60,10 @@ public final class Wire {
         final int payloadRemaining = payload.remaining();
         final ByteBuffer buf = ByteBuffer.allocate(1 + payloadRemaining);
         buf.put(type.getByteCode());
+        final int payloadPos = payload.position();
         buf.put(payload);
+        payload.position(payloadPos);
+        buf.flip();
         return verifiedBuffer(buf);
       }
         
@@ -76,7 +79,10 @@ public final class Wire {
         buf.put(type.getByteCode());
         buf.putShort((short) topicBytes.length);
         buf.put(topicBytes);
+        final int payloadPos = payload.position();
         buf.put(payload);
+        payload.position(payloadPos);
+        buf.flip();
         return verifiedBuffer(buf);
       }
       
@@ -101,7 +107,7 @@ public final class Wire {
     if (str.length() <= 2) return throwError(type, str);
     switch (type) {
       case SUBSCRIBE:
-        return gson.fromJson(str.substring(2), TextEncodedFrame.class);
+        return (TextEncodedFrame) gson.fromJson(str.substring(2), IdFrame.class);
         
       case RECEIVE:
         return new TextFrame(str.substring(2));

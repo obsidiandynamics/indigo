@@ -1,7 +1,9 @@
 package com.obsidiandynamics.indigo.iot.frame;
 
+import static com.obsidiandynamics.indigo.util.BinaryUtils.*;
 import static org.junit.Assert.*;
 
+import java.nio.*;
 import java.util.*;
 
 import org.junit.*;
@@ -34,13 +36,24 @@ public final class WireTest implements TestSupport {
   }
   
   @Test
-  public void testMarshalPublish() {
+  public void testMarshalPublishText() {
     testEncodeDecode(new PublishTextFrame("some/topic/to/publish", "some-payload"));
   }
   
   @Test
   public void testMarshalText() {
     testEncodeDecode(new TextFrame("some-text-here"));
+  }
+  
+  @Test
+  public void testMarshalPublishBinary() {
+    testEncodeDecode(new PublishBinaryFrame("some/topic/to/publish", 
+                                            ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
+  }
+  
+  @Test
+  public void testMarshalBinary() {
+    testEncodeDecode(new BinaryFrame(ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
   }
   
   @Test(expected=IllegalArgumentException.class)
@@ -57,6 +70,17 @@ public final class WireTest implements TestSupport {
     final String enc = wire.encode(frame);
     log("encoded: '%s'\n", enc);
     final Frame decoded = wire.decode(enc);
+    log("decoded: %s\n", decoded);
+    assertEquals(frame, decoded);
+  }
+
+  private void testEncodeDecode(BinaryEncodedFrame frame) {
+    final ByteBuffer enc = wire.encode(frame);
+    final byte[] encBytes = new byte[enc.remaining()];
+    enc.get(encBytes);
+    enc.flip();
+    log("encoded: \n%s\n", dump(encBytes));
+    final BinaryEncodedFrame decoded = wire.decode(enc);
     log("decoded: %s\n", decoded);
     assertEquals(frame, decoded);
   }
