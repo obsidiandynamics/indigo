@@ -49,6 +49,7 @@ public final class TaskScheduler extends Thread {
   public void terminate() throws InterruptedException {
     running = false;
     interrupt();
+    if (Thread.interrupted()) throw new InterruptedException();
     join();
   }
   
