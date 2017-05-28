@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo;
 
-import static com.obsidiandynamics.indigo.util.TestSupport.*;
+import static com.obsidiandynamics.indigo.util.IndigoTestSupport.*;
 import static com.obsidiandynamics.indigo.FaultType.*;
 import static junit.framework.TestCase.*;
 
@@ -8,7 +8,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class DLQTest implements TestSupport {
+public final class DLQTest implements IndigoTestSupport {
   private static final String SINK = "sink";
   
   @Test

@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.FaultType.*;
-import static com.obsidiandynamics.indigo.util.TestSupport.*;
+import static com.obsidiandynamics.indigo.util.IndigoTestSupport.*;
 import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import static junit.framework.TestCase.*;
 
@@ -13,7 +13,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class FaultTest implements TestSupport {
+public final class FaultTest implements IndigoTestSupport {
   public static final String KEY_TRACE_ENABLED = "indigo.FaultTest.traceEnabled";
   
   private static final int SCALE = 1;

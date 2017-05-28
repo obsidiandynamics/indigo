@@ -10,7 +10,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class RequestResponseTest implements TestSupport {
+public final class RequestResponseTest implements IndigoTestSupport {
   private static final String DRIVER = "driver";
   private static final String ADDER = "adder";
   private static final String DONE_RUNS = "done_runs";

@@ -8,7 +8,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class ParallelConsistencyTest implements TestSupport {
+public final class ParallelConsistencyTest implements IndigoTestSupport {
   private static final String DRIVER = "driver";
   private static final String SINK = "sink";
   private static final String DONE = "done";

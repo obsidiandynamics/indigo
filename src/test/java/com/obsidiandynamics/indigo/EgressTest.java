@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
-import static com.obsidiandynamics.indigo.util.TestSupport.*;
+import static com.obsidiandynamics.indigo.util.IndigoTestSupport.*;
 import static java.util.concurrent.TimeUnit.*;
 import static junit.framework.TestCase.*;
 import static org.awaitility.Awaitility.*;
@@ -14,12 +14,12 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class EgressTest implements TestSupport {
+public final class EgressTest implements IndigoTestSupport {
   private static final String DRIVER = "driver";
   private static final String DONE_RUNS = "done_runs";
   private static final String EXTERNAL = "external";
   
-  private static final Executor EXECUTOR = TestSupport.oneTimeExecutor(EXTERNAL);
+  private static final Executor EXECUTOR = oneTimeExecutor(EXTERNAL);
 
   private ActorSystem system;
   

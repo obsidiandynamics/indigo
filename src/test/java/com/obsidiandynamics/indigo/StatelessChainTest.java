@@ -8,7 +8,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class StatelessChainTest implements TestSupport {
+public final class StatelessChainTest implements IndigoTestSupport {
   private static final String RUN = "run";
   private static final String DONE_RUNS = "done";
   
