@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.util;
 
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import static org.junit.Assert.*;
 
 import java.io.*;
@@ -9,7 +10,8 @@ import java.util.concurrent.*;
 import org.junit.*;
 
 public interface TestSupport {
-  static final boolean LOG = false;
+  static final boolean LOG = get(load("system-test.properties", System.getProperties()), 
+                                 "TestSupport.log", Boolean::parseBoolean, false);
   static final PrintStream LOG_STREAM = System.out;
   
   default void log(String format, Object ... args) {
