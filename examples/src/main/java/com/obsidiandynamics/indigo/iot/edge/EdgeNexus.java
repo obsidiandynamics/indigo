@@ -18,15 +18,23 @@ public final class EdgeNexus implements AutoCloseable {
     this.endpoint = endpoint;
   }
   
-  public void send(TextEncodedFrame frame, Consumer<Throwable> callback) {
-    SendHelper.send(frame, endpoint, edge.getWire(), callback);
-  }
-  
   public CompletableFuture<Void> send(TextEncodedFrame frame) {
     return SendHelper.send(frame, endpoint, edge.getWire());
   }
   
-  public InetSocketAddress getRemoteAddress() {
+  public void send(TextEncodedFrame frame, Consumer<Throwable> callback) {
+    SendHelper.send(frame, endpoint, edge.getWire(), callback);
+  }
+  
+  public CompletableFuture<Void> send(BinaryEncodedFrame frame) {
+    return SendHelper.send(frame, endpoint, edge.getWire());
+  }
+  
+  public void send(BinaryEncodedFrame frame, Consumer<Throwable> callback) {
+    SendHelper.send(frame, endpoint, edge.getWire(), callback);
+  }
+  
+  public InetSocketAddress getPeerAddress() {
     return endpoint.getRemoteAddress();
   }
 
@@ -37,6 +45,6 @@ public final class EdgeNexus implements AutoCloseable {
 
   @Override
   public String toString() {
-    return "EdgeNexus [remote=" + getRemoteAddress() + "]";
+    return "EdgeNexus [peer=" + getPeerAddress() + "]";
   }
 }

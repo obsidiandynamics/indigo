@@ -6,6 +6,7 @@ import java.util.concurrent.*;
 import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E> {
@@ -30,7 +31,7 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
   @Override 
   public void onText(E endpoint, String message) {
     try {
-      final Frame frame = manager.getWire().decode(message);
+      final TextEncodedFrame frame = manager.getWire().decode(message);
       switch (frame.getType()) {
         case SUBSCRIBE:
           if (frame instanceof SubscribeResponseFrame) {
@@ -63,8 +64,17 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
 
   @Override 
   public void onBinary(E endpoint, ByteBuffer message) {
-    // TODO Auto-generated method stub
-    LOG.warn("Unimplemented");
+    try {
+      final BinaryEncodedFrame frame = manager.getWire().decode(message);
+      if (frame.getType() == FrameType.RECEIVE) {
+        handler.onBinary(session, ((BinaryFrame) frame).getPayload());
+      } else {
+        LOG.error("Unsupported frame {}", frame);
+      }
+    } catch (Throwable e) {
+      LOG.error(String.format("Error processing frame\n%s", BinaryUtils.dump(message)), e);
+      return;
+    }
   }
 
   @Override 

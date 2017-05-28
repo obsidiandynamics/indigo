@@ -27,7 +27,7 @@ public final class Session implements AutoCloseable {
     this.endpoint = endpoint;
   }
 
-  public InetSocketAddress getRemoteAddress() {
+  public InetSocketAddress getPeerAddress() {
     return endpoint.getRemoteAddress();
   }
   
@@ -46,6 +46,10 @@ public final class Session implements AutoCloseable {
     return SendHelper.send(pub, endpoint, manager.getWire());
   }
   
+  public CompletableFuture<Void> publish(PublishBinaryFrame pub) {
+    return SendHelper.send(pub, endpoint, manager.getWire());
+  }
+  
   @Override
   public void close() throws Exception {
     endpoint.close();
@@ -53,6 +57,6 @@ public final class Session implements AutoCloseable {
 
   @Override
   public String toString() {
-    return "Session [remote=" + getRemoteAddress() + "]";
+    return "Session [peer=" + getPeerAddress() + "]";
   }
 }

@@ -76,10 +76,7 @@ public final class WireTest implements TestSupport {
 
   private void testEncodeDecode(BinaryEncodedFrame frame) {
     final ByteBuffer enc = wire.encode(frame);
-    final byte[] encBytes = new byte[enc.remaining()];
-    enc.get(encBytes);
-    enc.flip();
-    log("encoded: \n%s\n", dump(encBytes));
+    log("encoded: \n%s\n", dump(toByteArray(enc)));
     final BinaryEncodedFrame decoded = wire.decode(enc);
     log("decoded: %s\n", decoded);
     assertEquals(frame, decoded);

@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.iot;
 
+import java.nio.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
@@ -12,7 +13,29 @@ public final class SendHelper {
   public static CompletableFuture<Void> send(TextEncodedFrame frame, WSEndpoint endpoint, Wire wire) {
     final CompletableFuture<Void> f = new CompletableFuture<>();
     final String encoded = wire.encode(frame);
-    final SendCallback sendCallback = new SendCallback() {
+    endpoint.send(encoded, wrapFuture(f));
+    return f;
+  }
+  
+  public static void send(TextEncodedFrame frame, WSEndpoint endpoint, Wire wire, Consumer<Throwable> callback) {
+    final String encoded = wire.encode(frame);
+    endpoint.send(encoded, wrapCallback(callback));
+  }
+
+  public static CompletableFuture<Void> send(BinaryEncodedFrame frame, WSEndpoint endpoint, Wire wire) {
+    final CompletableFuture<Void> f = new CompletableFuture<>();
+    final ByteBuffer encoded = wire.encode(frame);
+    endpoint.send(encoded, wrapFuture(f));
+    return f;
+  }
+  
+  public static void send(BinaryEncodedFrame frame, WSEndpoint endpoint, Wire wire, Consumer<Throwable> callback) {
+    final ByteBuffer encoded = wire.encode(frame);
+    endpoint.send(encoded, wrapCallback(callback));
+  }
+  
+  private static SendCallback wrapFuture(CompletableFuture<Void> f) {
+    return new SendCallback() {
       @Override public void onComplete(WSEndpoint endpoint) {
         f.complete(null);
       }
@@ -21,15 +44,11 @@ public final class SendHelper {
         f.completeExceptionally(cause);
       }
     };
-    endpoint.send(encoded, sendCallback);
-    return f;
   }
   
-  public static void send(TextEncodedFrame frame, WSEndpoint endpoint, Wire wire, Consumer<Throwable> callback) {
-    final String encoded = wire.encode(frame);
-    final SendCallback sendCallback;
+  private static SendCallback wrapCallback(Consumer<Throwable> callback) {
     if (callback != null) {
-      sendCallback = new SendCallback() {
+      return new SendCallback() {
         @Override public void onComplete(WSEndpoint endpoint) {
           callback.accept(null);
         }
@@ -39,8 +58,7 @@ public final class SendHelper {
         }
       };
     } else {
-      sendCallback = null;
+      return null;
     }
-    endpoint.send(encoded, sendCallback);
   }
 }

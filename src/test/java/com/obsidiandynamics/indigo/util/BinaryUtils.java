@@ -1,7 +1,21 @@
 package com.obsidiandynamics.indigo.util;
 
+import java.nio.*;
+
 public final class BinaryUtils {
   private BinaryUtils() {}
+  
+  public static byte[] toByteArray(ByteBuffer buf) {
+    final int pos = buf.position();
+    final byte[] bytes = new byte[buf.remaining()];
+    buf.get(bytes);
+    buf.position(pos);
+    return bytes;
+  }
+  
+  public static String dump(ByteBuffer buf) {
+    return dump(toByteArray(buf));
+  }
   
   public static String dump(byte[] bytes) {
     final StringBuilder sb = new StringBuilder();

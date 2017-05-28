@@ -8,6 +8,7 @@ import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.iot.client.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class Edge implements AutoCloseable {
@@ -62,8 +63,18 @@ public final class Edge implements AutoCloseable {
       }
 
       @Override public void onBinary(E endpoint, ByteBuffer message) {
-        // TODO Auto-generated method stub
-        LOG.warn("Unimplemented");
+        final EdgeNexus nexus = endpoint.getContext();
+        try {
+          final BinaryEncodedFrame frame = wire.decode(message);
+          if (frame.getType() == FrameType.PUBLISH) {
+            bridge.onPublish(nexus, (PublishBinaryFrame) frame);
+          } else {
+            LOG.error("Unsupported frame {}", frame);
+          }
+        } catch (Throwable e) {
+          LOG.error(String.format("Error processing frame\n%s", BinaryUtils.dump(message)), e);
+          return;
+        }
       }
 
       @Override public void onClose(E endpoint, int statusCode, String reason) {

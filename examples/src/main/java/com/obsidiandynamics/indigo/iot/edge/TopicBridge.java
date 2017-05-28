@@ -12,4 +12,6 @@ public interface TopicBridge {
   CompletableFuture<SubscribeResponseFrame> onSubscribe(EdgeNexus nexus, SubscribeFrame sub);
   
   void onPublish(EdgeNexus nexus, PublishTextFrame pub);
+  
+  void onPublish(EdgeNexus nexus, PublishBinaryFrame pub);
 }
