@@ -13,7 +13,7 @@ import com.obsidiandynamics.indigo.util.*;
 
 public final class ZmqMessageBusTest implements TestSupport {
   private static final int PROGRESS_INTERVAL = 100;
-  private static final int SCALE = 100;
+  private static final int SCALE = 1;
   
   @Test
   public void testSendReceiveSync() throws InterruptedException {
