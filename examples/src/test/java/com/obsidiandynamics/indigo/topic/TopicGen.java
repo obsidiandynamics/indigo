@@ -4,8 +4,8 @@ import java.util.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-final class TopicGen {
-  static final class Interest {
+public final class TopicGen {
+  public static final class Interest {
     final Topic topic;
     final int count;
     
@@ -49,11 +49,11 @@ final class TopicGen {
   
   private final Combinations<TopicGenNode> combs;
   
-  TopicGen(List<List<TopicGenNode>> topicGenMatrix) {
+  public TopicGen(List<List<TopicGenNode>> topicGenMatrix) {
     combs = new Combinations<>(topicGenMatrix);
   }
   
-  final List<Topic> getLeafTopics() {
+  public final List<Topic> getLeafTopics() {
     final List<Topic> topics = new ArrayList<>(combs.size());
     for (List<TopicGenNode> nodes : combs) {
       final String[] frags = new String[nodes.size()];
@@ -65,7 +65,7 @@ final class TopicGen {
     return topics;
   }
   
-  final List<Interest> getExactInterests() {
+  public final List<Interest> getExactInterests() {
     final Set<Interest> interests = new LinkedHashSet<>();
     for (List<TopicGenNode> nodes : combs) {
       for (int i = 0; i < nodes.size(); i++) {
@@ -81,7 +81,7 @@ final class TopicGen {
     return new ArrayList<>(interests);
   }
   
-  final List<Interest> getSingleLevelWildcardInterests() {
+  public final List<Interest> getSingleLevelWildcardInterests() {
     final Set<Interest> interests = new LinkedHashSet<>();
     for (List<TopicGenNode> nodes : combs) {
       for (int i = 0; i < nodes.size(); i++) {
@@ -97,7 +97,7 @@ final class TopicGen {
     return new ArrayList<>(interests);
   }
   
-  final List<Interest> getMultiLevelWildcardInterests() {
+  public final List<Interest> getMultiLevelWildcardInterests() {
     final Set<Interest> interests = new LinkedHashSet<>();
     for (List<TopicGenNode> nodes : combs) {
       for (int i = 0; i < nodes.size(); i++) {
@@ -113,7 +113,7 @@ final class TopicGen {
     return new ArrayList<>(interests);
   }
   
-  List<Interest> getAllInterests() {
+  public List<Interest> getAllInterests() {
     final List<Interest> interests = new ArrayList<>();
     interests.addAll(getExactInterests());
     interests.addAll(getSingleLevelWildcardInterests());
@@ -121,20 +121,20 @@ final class TopicGen {
     return interests;
   }
   
-  static final class TopicGenBuilder {
+  public static final class TopicGenBuilder {
     private final List<List<TopicGenNode>> matrix = new ArrayList<>();
     
-    TopicGenBuilder add(List<TopicGenNode> nodes) {
+    public TopicGenBuilder add(List<TopicGenNode> nodes) {
       matrix.add(nodes);
       return this;
     }
     
-    final TopicGen build() {
+    public TopicGen build() {
       return new TopicGen(matrix);
     }
   }
   
-  static TopicGenBuilder builder() {
+  public static TopicGenBuilder builder() {
     return new TopicGenBuilder();
   }
 }

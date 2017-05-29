@@ -23,6 +23,8 @@ public final class EdgeNode implements AutoCloseable {
   private final TopicBridge bridge;
   
   private final List<EdgeNexus> nexuses = new CopyOnWriteArrayList<>();
+  
+  private final List<TopicListener> topicListeners = new ArrayList<>();
 
   public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory, 
                                          WSServerConfig config, 
@@ -69,7 +71,8 @@ public final class EdgeNode implements AutoCloseable {
         try {
           final BinaryEncodedFrame frame = wire.decode(message);
           if (frame.getType() == FrameType.PUBLISH) {
-            bridge.onPublish(nexus, (PublishBinaryFrame) frame);
+            final PublishBinaryFrame pub = (PublishBinaryFrame) frame;
+            handlePublish(nexus, pub);
           } else {
             LOG.error("Unsupported frame {}", frame);
           }
@@ -95,6 +98,7 @@ public final class EdgeNode implements AutoCloseable {
     f.whenComplete((subRes, cause) -> {
       if (cause == null) {
         nexus.send(subRes);
+        fireSubscribeEvent(nexus, sub, subRes);
       } else {
         LOG.warn("Error handling subscription {}", sub);
         LOG.warn("", cause);
@@ -104,6 +108,12 @@ public final class EdgeNode implements AutoCloseable {
   
   private void handlePublish(EdgeNexus nexus, PublishTextFrame pub) {
     bridge.onPublish(nexus, pub);
+    firePublishEvent(nexus, pub);
+  }
+  
+  private void handlePublish(EdgeNexus nexus, PublishBinaryFrame pub) {
+    bridge.onPublish(nexus, pub);
+    firePublishEvent(nexus, pub);
   }
   
   private void handleConnect(WSEndpoint endpoint) {
@@ -111,11 +121,51 @@ public final class EdgeNode implements AutoCloseable {
     nexuses.add(nexus);
     endpoint.setContext(nexus);
     bridge.onConnect(nexus);
+    fireConnectEvent(nexus);
+  }
+  
+  private void fireConnectEvent(EdgeNexus nexus) {
+    for (TopicListener l : topicListeners) {
+      l.onConnect(nexus);
+    }
+  }
+  
+  private void fireDisconnectEvent(EdgeNexus nexus) {
+    for (TopicListener l : topicListeners) {
+      l.onDisconnect(nexus);
+    }
+  }
+  
+  private void fireSubscribeEvent(EdgeNexus nexus, SubscribeFrame sub, SubscribeResponseFrame subRes) {
+    for (TopicListener l : topicListeners) {
+      l.onSubscribe(nexus, sub, subRes);
+    }
+  }
+  
+  private void firePublishEvent(EdgeNexus nexus, PublishTextFrame pub) {
+    for (TopicListener l : topicListeners) {
+      l.onPublish(nexus, pub);
+    }
+  }
+  
+  private void firePublishEvent(EdgeNexus nexus, PublishBinaryFrame pub) {
+    for (TopicListener l : topicListeners) {
+      l.onPublish(nexus, pub);
+    }
   }
   
   private void handleDisconnect(EdgeNexus nexus) {
     bridge.onDisconnect(nexus);
     nexuses.remove(nexus);
+    fireDisconnectEvent(nexus);
+  }
+  
+  public void addTopicListener(TopicListener l) {
+    topicListeners.add(l);
+  }
+  
+  public void removeTopicListener(TopicListener l) {
+    topicListeners.remove(l);
   }
   
   /**
