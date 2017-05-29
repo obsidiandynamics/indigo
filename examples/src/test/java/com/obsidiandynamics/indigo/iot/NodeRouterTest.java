@@ -58,8 +58,9 @@ public class NodeRouterTest {
     final UUID subId = UUID.randomUUID();
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
 
+    final String topic = "a/b/c";
     final String payload = "hello internal";
-    edge.publish("a/b/c", payload); // no subscriber yet - shouldn't be received
+    edge.publish(topic, payload); // no subscriber yet - shouldn't be received
     
     final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
@@ -72,10 +73,10 @@ public class NodeRouterTest {
       inOrder.verify(handler).onConnect(anyNotNull());
     });
     
-    edge.publish("a/b/c", payload); // a single subscriber at this point
+    edge.publish(topic, payload); // a single subscriber at this point
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(handler).onText(anyNotNull(), eq(payload));
+      verify(handler).onText(anyNotNull(), eq("a/b/c"), eq(payload));
     });
     
     remoteNexus.close();
@@ -86,7 +87,7 @@ public class NodeRouterTest {
     
     ordered(handler, inOrder -> {
       inOrder.verify(handler).onConnect(anyNotNull());
-      inOrder.verify(handler).onText(anyNotNull(), eq(payload));
+      inOrder.verify(handler).onText(anyNotNull(), eq(topic), eq(payload));
       inOrder.verify(handler).onDisconnect(anyNotNull());
     });
   }
@@ -96,8 +97,9 @@ public class NodeRouterTest {
     final UUID subId = UUID.randomUUID();
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
 
+    final String topic = "a/b/c";
     final String payload = "hello external";
-    remoteNexus.publish(new PublishTextFrame("a/b/c", payload)); // no subscriber yet - shouldn't be received
+    remoteNexus.publish(new PublishTextFrame(topic, payload)); // no subscriber yet - shouldn't be received
     
     final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
@@ -110,10 +112,10 @@ public class NodeRouterTest {
       inOrder.verify(handler).onConnect(anyNotNull());
     });
     
-    remoteNexus.publish(new PublishTextFrame("a/b/c", payload)); // itself is a subscriber
+    remoteNexus.publish(new PublishTextFrame(topic, payload)); // itself is a subscriber
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(handler).onText(anyNotNull(), eq(payload));
+      verify(handler).onText(anyNotNull(), eq(topic), eq(payload));
     });
     
     remoteNexus.close();
@@ -124,7 +126,7 @@ public class NodeRouterTest {
     
     ordered(handler, inOrder -> {
       inOrder.verify(handler).onConnect(anyNotNull());
-      inOrder.verify(handler).onText(anyNotNull(), eq(payload));
+      inOrder.verify(handler).onText(anyNotNull(), eq(topic), eq(payload));
       inOrder.verify(handler).onDisconnect(anyNotNull());
     });
   }

@@ -3,15 +3,22 @@ package com.obsidiandynamics.indigo.iot.frame;
 import java.nio.*;
 
 public final class BinaryFrame implements BinaryEncodedFrame {
+  private final String topic;
+  
   private final ByteBuffer payload;
 
-  public BinaryFrame(ByteBuffer payload) {
+  public BinaryFrame(String topic, ByteBuffer payload) {
+    this.topic = topic;
     this.payload = payload;
   }
 
   @Override
   public FrameType getType() {
     return FrameType.RECEIVE;
+  }
+
+  public final String getTopic() {
+    return topic;
   }
 
   public final ByteBuffer getPayload() {
@@ -23,6 +30,7 @@ public final class BinaryFrame implements BinaryEncodedFrame {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((payload == null) ? 0 : payload.hashCode());
+    result = prime * result + ((topic == null) ? 0 : topic.hashCode());
     return result;
   }
 
@@ -40,11 +48,16 @@ public final class BinaryFrame implements BinaryEncodedFrame {
         return false;
     } else if (!payload.equals(other.payload))
       return false;
+    if (topic == null) {
+      if (other.topic != null)
+        return false;
+    } else if (!topic.equals(other.topic))
+      return false;
     return true;
   }
 
   @Override
   public String toString() {
-    return "Binary [payload.remaining=" + payload.remaining() + "]";
+    return "Binary [topic=" + topic + ", payload.remaining=" + payload.remaining() + "]";
   }
 }

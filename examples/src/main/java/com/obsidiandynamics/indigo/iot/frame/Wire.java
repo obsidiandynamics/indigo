@@ -33,18 +33,22 @@ public final class Wire {
   
   private void encodeFrameBody(Frame frame, StringBuilder sb) {
     switch (frame.getType()) {
-      case SUBSCRIBE:
+      case SUBSCRIBE: {
         sb.append(gson.toJson(frame, IdFrame.class));
         return;
+      }
         
-      case RECEIVE:
-        sb.append(((TextFrame) frame).getPayload());
+      case RECEIVE: {
+        final TextFrame text = (TextFrame) frame;
+        sb.append(text.getTopic()).append(' ').append(text.getPayload());
         return;
+      }
         
-      case PUBLISH:
+      case PUBLISH: {
         final PublishTextFrame pub = (PublishTextFrame) frame;
         sb.append(pub.getTopic()).append(' ').append(pub.getPayload());
         return;
+      }
         
       default:
         throw new IllegalArgumentException("Unsupported frame " + frame);
@@ -56,10 +60,16 @@ public final class Wire {
     switch (type) {
       case RECEIVE: {
         final BinaryFrame bin = (BinaryFrame) frame;
+        final byte[] topicBytes = bin.getTopic().getBytes(UTF8);
+        if (topicBytes.length > MAX_UNSIGNED_SHORT) {
+          throw new IllegalArgumentException("Topic length cannot exceed " + MAX_UNSIGNED_SHORT + " bytes");
+        }
         final ByteBuffer payload = bin.getPayload();
         final int payloadRemaining = payload.remaining();
-        final ByteBuffer buf = ByteBuffer.allocate(1 + payloadRemaining);
+        final ByteBuffer buf = ByteBuffer.allocate(3 + topicBytes.length + payloadRemaining);
         buf.put(type.getByteCode());
+        buf.putShort((short) topicBytes.length);
+        buf.put(topicBytes);
         final int payloadPos = payload.position();
         buf.put(payload);
         payload.position(payloadPos);
@@ -106,18 +116,25 @@ public final class Wire {
   private TextEncodedFrame decodeFrameBody(FrameType type, String str) {
     if (str.length() <= 2) return throwError(type, str);
     switch (type) {
-      case SUBSCRIBE:
+      case SUBSCRIBE: {
         return (TextEncodedFrame) gson.fromJson(str.substring(2), IdFrame.class);
+      }
         
-      case RECEIVE:
-        return new TextFrame(str.substring(2));
-        
-      case PUBLISH:
+      case RECEIVE: {
+        final int splitIdx = str.indexOf(' ', 2);
+        if (splitIdx == -1) return throwError(type, str);
+        final String topic = str.substring(2, splitIdx);
+        final String payload = str.substring(splitIdx + 1);
+        return new TextFrame(topic, payload);
+      }
+      
+      case PUBLISH: {
         final int splitIdx = str.indexOf(' ', 2);
         if (splitIdx == -1) return throwError(type, str);
         final String topic = str.substring(2, splitIdx);
         final String payload = str.substring(splitIdx + 1);
         return new PublishTextFrame(topic, payload);
+      }
       
       default:
         throw new IllegalArgumentException("Unsupported frame content '" + str + "'");
@@ -133,10 +150,18 @@ public final class Wire {
     final byte byteCode = buf.get();
     final FrameType type = FrameType.fromByteCode(byteCode);
     switch (type) {
-      case RECEIVE:
-        return new BinaryFrame(buf);
+      case RECEIVE: {
+        final int topicLength = Short.toUnsignedInt(buf.getShort());
+        if (topicLength > MAX_UNSIGNED_SHORT) {
+          throw new IllegalArgumentException("Topic length cannot exceed " + MAX_UNSIGNED_SHORT + " bytes");
+        }
+        final byte[] topicBytes = new byte[topicLength];
+        buf.get(topicBytes);
+        final String topic = new String(topicBytes, UTF8);
+        return new BinaryFrame(topic, buf);
+      }
         
-      case PUBLISH:
+      case PUBLISH: {
         final int topicLength = Short.toUnsignedInt(buf.getShort());
         if (topicLength > MAX_UNSIGNED_SHORT) {
           throw new IllegalArgumentException("Topic length cannot exceed " + MAX_UNSIGNED_SHORT + " bytes");
@@ -145,6 +170,7 @@ public final class Wire {
         buf.get(topicBytes);
         final String topic = new String(topicBytes, UTF8);
         return new PublishBinaryFrame(topic, buf);
+      }
         
       default:
         buf.position(pos);

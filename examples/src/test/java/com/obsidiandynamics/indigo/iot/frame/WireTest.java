@@ -42,7 +42,7 @@ public final class WireTest implements TestSupport {
   
   @Test
   public void testMarshalText() {
-    testEncodeDecode(new TextFrame("some-text-here"));
+    testEncodeDecode(new TextFrame("some/topic", "some-text-here"));
   }
   
   @Test
@@ -53,7 +53,7 @@ public final class WireTest implements TestSupport {
   
   @Test
   public void testMarshalBinary() {
-    testEncodeDecode(new BinaryFrame(ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
+    testEncodeDecode(new BinaryFrame("some/topic", ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
   }
   
   @Test(expected=IllegalArgumentException.class)

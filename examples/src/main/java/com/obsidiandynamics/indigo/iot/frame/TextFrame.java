@@ -1,15 +1,22 @@
 package com.obsidiandynamics.indigo.iot.frame;
 
 public final class TextFrame implements TextEncodedFrame {
+  private final String topic;
+  
   private final String payload;
 
-  public TextFrame(String payload) {
+  public TextFrame(String topic, String payload) {
+    this.topic = topic;
     this.payload = payload;
   }
 
   @Override
   public FrameType getType() {
     return FrameType.RECEIVE;
+  }
+
+  public final String getTopic() {
+    return topic;
   }
 
   public final String getPayload() {
@@ -21,6 +28,7 @@ public final class TextFrame implements TextEncodedFrame {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((payload == null) ? 0 : payload.hashCode());
+    result = prime * result + ((topic == null) ? 0 : topic.hashCode());
     return result;
   }
 
@@ -38,11 +46,16 @@ public final class TextFrame implements TextEncodedFrame {
         return false;
     } else if (!payload.equals(other.payload))
       return false;
+    if (topic == null) {
+      if (other.topic != null)
+        return false;
+    } else if (!topic.equals(other.topic))
+      return false;
     return true;
   }
 
   @Override
   public String toString() {
-    return "Text [payload=" + payload + "]";
+    return "Text [topic=" + topic + ", payload=" + payload + "]";
   }
 }

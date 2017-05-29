@@ -73,7 +73,7 @@ public class NodeCommsTest {
     remoteNexus.publish(pubRemote);
     
     final EdgeNexus edgeNexus = edge.getNexuses().get(0);
-    final TextFrame textEdge = new TextFrame("hello from edge");
+    final TextFrame textEdge = new TextFrame("l/m/n", "hello from edge");
     edgeNexus.send(textEdge).get();
     
     remoteNexus.close();
@@ -92,7 +92,7 @@ public class NodeCommsTest {
     
     ordered(handler, inOrder -> {
       inOrder.verify(handler).onConnect(anyNotNull());
-      inOrder.verify(handler).onText(anyNotNull(), eq(textEdge.getPayload()));
+      inOrder.verify(handler).onText(anyNotNull(), eq(textEdge.getTopic()), eq(textEdge.getPayload()));
       inOrder.verify(handler).onDisconnect(anyNotNull());
     });
   }
@@ -116,7 +116,7 @@ public class NodeCommsTest {
     session.publish(pubRemote);
     
     final EdgeNexus nexus = edge.getNexuses().get(0);
-    final BinaryFrame binaryEdge = new BinaryFrame(ByteBuffer.wrap("hello from edge".getBytes()));
+    final BinaryFrame binaryEdge = new BinaryFrame("l/m/n", ByteBuffer.wrap("hello from edge".getBytes()));
     nexus.send(binaryEdge).get();
     
     session.close();
@@ -135,7 +135,7 @@ public class NodeCommsTest {
     
     ordered(handler, inOrder -> {
       inOrder.verify(handler).onConnect(anyNotNull());
-      inOrder.verify(handler).onBinary(anyNotNull(), eq(binaryEdge.getPayload()));
+      inOrder.verify(handler).onBinary(anyNotNull(), eq(binaryEdge.getTopic()), eq(binaryEdge.getPayload()));
       inOrder.verify(handler).onDisconnect(anyNotNull());
     });
   }

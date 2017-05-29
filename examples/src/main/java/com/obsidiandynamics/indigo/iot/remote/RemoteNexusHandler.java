@@ -7,7 +7,7 @@ public interface RemoteNexusHandler {
   
   void onDisconnect(RemoteNexus node);
   
-  void onText(RemoteNexus node, String payload);
+  void onText(RemoteNexus node, String topic, String payload);
   
-  void onBinary(RemoteNexus node, ByteBuffer payload);
+  void onBinary(RemoteNexus node, String topic, ByteBuffer payload);
 }

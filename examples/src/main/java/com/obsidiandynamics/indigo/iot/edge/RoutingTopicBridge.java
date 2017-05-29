@@ -85,13 +85,13 @@ public final class RoutingTopicBridge implements TopicBridge {
   @Override
   public void onPublish(EdgeNexus nexus, PublishTextFrame pub) {
     if (LOG.isTraceEnabled()) LOG.trace("{} published {}", nexus, pub);
-    system.tell(routerRef, new Publish(Topic.of(pub.getTopic()), new TextFrame(pub.getPayload())));
+    system.tell(routerRef, new Publish(Topic.of(pub.getTopic()), new TextFrame(pub.getTopic(), pub.getPayload())));
   }
 
   @Override
   public void onPublish(EdgeNexus nexus, PublishBinaryFrame pub) {
     if (LOG.isTraceEnabled()) LOG.trace("{} published {}", nexus, pub);
-    system.tell(routerRef, new Publish(Topic.of(pub.getTopic()), new BinaryFrame(pub.getPayload())));
+    system.tell(routerRef, new Publish(Topic.of(pub.getTopic()), new BinaryFrame(pub.getTopic(), pub.getPayload())));
   }
 
   @Override

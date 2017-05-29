@@ -49,7 +49,7 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
           
         case RECEIVE:
           final TextFrame text = (TextFrame) frame;
-          handler.onText(nexus, text.getPayload());
+          handler.onText(nexus, text.getTopic(), text.getPayload());
           break;
           
         default:
@@ -67,7 +67,8 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
     try {
       final BinaryEncodedFrame frame = node.getWire().decode(message);
       if (frame.getType() == FrameType.RECEIVE) {
-        handler.onBinary(nexus, ((BinaryFrame) frame).getPayload());
+        final BinaryFrame bin = (BinaryFrame) frame;
+        handler.onBinary(nexus, bin.getTopic(), bin.getPayload());
       } else {
         LOG.error("Unsupported frame {}", frame);
       }
