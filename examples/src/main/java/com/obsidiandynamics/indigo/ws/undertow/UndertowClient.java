@@ -44,8 +44,15 @@ public class UndertowClient implements WSClient<UndertowEndpoint> {
     worker.shutdown();
   }
   
+  public static final class Factory implements WSClientFactory<UndertowEndpoint> {
+    @Override
+    public WSClient<UndertowEndpoint> create(WSClientConfig config) throws Exception {
+      return new UndertowClient(config, createXnioWorker(), 1024);
+    }
+  }
+  
   public static WSClientFactory<UndertowEndpoint> factory() {
-    return config -> new UndertowClient(config, createXnioWorker(), 1024);
+    return new Factory();
   }
   
   public static WSClientFactory<UndertowEndpoint> factory(XnioWorker worker, int bufferSize) {

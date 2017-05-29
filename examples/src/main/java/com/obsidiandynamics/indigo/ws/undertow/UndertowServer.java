@@ -44,12 +44,18 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
     return manager;
   }
   
-  public static WSServerFactory<UndertowEndpoint> factory() {
-    return (config, listener) -> {
+  public static final class Factory implements WSServerFactory<UndertowEndpoint> {
+    @Override
+    public WSServer<UndertowEndpoint> create(WSServerConfig config,
+                                             EndpointListener<? super UndertowEndpoint> listener) throws Exception {
       final UndertowEndpointManager manager = new UndertowEndpointManager(new UndertowEndpointConfig() {{
         highWaterMark = config.highWaterMark;
       }}, listener);
       return new UndertowServer(config.port, config.contextPath, manager);
-    };
+    }
+  }
+  
+  public static WSServerFactory<UndertowEndpoint> factory() {
+    return new Factory();
   }
 }

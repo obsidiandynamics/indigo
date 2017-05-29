@@ -140,4 +140,50 @@ public final class EdgeNode implements AutoCloseable {
     server.close();
     bridge.close();
   }
+  
+  public static final class EdgeNodeBuilder {
+    private WSServerFactory<?> serverFactory;
+    private WSServerConfig serverConfig = new WSServerConfig();
+    private Wire wire = new Wire(false);
+    private TopicBridge topicBridge;
+    
+    private void init() throws Exception {
+      if (serverFactory == null) {
+        serverFactory = (WSServerFactory<?>) Class.forName("com.obsidiandynamics.indigo.ws.undertow.UndertowServer$Factory").newInstance();
+      }
+      
+      if (topicBridge == null) {
+        topicBridge = new RoutingTopicBridge();
+      }
+    }
+    
+    public EdgeNodeBuilder withServerFactory(WSServerFactory<?> serverFactory) {
+      this.serverFactory = serverFactory;
+      return this;
+    }
+    
+    public EdgeNodeBuilder withServerConfig(WSServerConfig serverConfig) {
+      this.serverConfig = serverConfig;
+      return this;
+    }
+    
+    public EdgeNodeBuilder withWire(Wire wire) {
+      this.wire = wire;
+      return this;
+    }
+
+    public EdgeNodeBuilder withTopicBridge(TopicBridge topicBridge) {
+      this.topicBridge = topicBridge;
+      return this;
+    }
+
+    public EdgeNode build() throws Exception {
+      init();
+      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge);
+    }
+  }
+  
+  public static EdgeNodeBuilder builder() {
+    return new EdgeNodeBuilder();
+  }
 }

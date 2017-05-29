@@ -16,9 +16,8 @@ import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.ws.*;
-import com.obsidiandynamics.indigo.ws.undertow.*;
 
-public class NexusRouterTest {
+public class NodeRouterTest {
   private static final int PORT = 6667;
   
   private Wire wire;
@@ -36,13 +35,16 @@ public class NexusRouterTest {
     wire = new Wire(true);
     bridge = new RoutingTopicBridge();
     handler = mock(RemoteNexusHandler.class);
-    edge = new EdgeNode(UndertowServer.factory(), 
-                        new WSServerConfig()  {{ port = PORT; }}, 
-                        wire,
-                        logger(bridge));
-    remote = new RemoteNode(UndertowClient.factory(),
-                            new WSClientConfig(),
-                            wire);
+    
+    edge = EdgeNode.builder()
+        .withServerConfig(new WSServerConfig() {{ port = PORT; }})
+        .withWire(wire)
+        .withTopicBridge(logger(bridge))
+        .build();
+    
+    remote = RemoteNode.builder()
+        .withWire(wire)
+        .build();
   }
   
   @After

@@ -35,4 +35,40 @@ public final class RemoteNode implements AutoCloseable {
   public void close() throws Exception {
     client.close();
   }
+  
+  public static final class RemoteNodeBuilder {
+    private WSClientFactory<?> clientFactory;
+    private WSClientConfig clientConfig = new WSClientConfig();
+    private Wire wire = new Wire(false);
+    
+    public RemoteNodeBuilder withClientFactory(WSClientFactory<?> clientFactory) {
+      this.clientFactory = clientFactory;
+      return this;
+    }
+    
+    public RemoteNodeBuilder withClientConfig(WSClientConfig clientConfig) {
+      this.clientConfig = clientConfig;
+      return this;
+    }
+    
+    public RemoteNodeBuilder withWire(Wire wire) {
+      this.wire = wire;
+      return this;
+    }
+    
+    private void init() throws Exception {
+      if (clientFactory == null) {
+        clientFactory = (WSClientFactory<?>) Class.forName("com.obsidiandynamics.indigo.ws.undertow.UndertowClient$Factory").newInstance();
+      }
+    }
+    
+    public RemoteNode build() throws Exception {
+      init();
+      return new RemoteNode(clientFactory, clientConfig, wire);
+    }
+  }
+  
+  public static RemoteNodeBuilder builder() {
+    return new RemoteNodeBuilder();
+  }
 }
