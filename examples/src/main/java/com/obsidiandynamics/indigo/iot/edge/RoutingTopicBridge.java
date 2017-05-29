@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo.iot.edge;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.*;
 
 import org.slf4j.*;
 
@@ -28,31 +29,50 @@ public final class RoutingTopicBridge implements TopicBridge {
   @Override
   public void onConnect(EdgeNexus nexus) {
     if (LOG.isDebugEnabled()) LOG.debug("Connected to {}", nexus);
+    final Subscriber subscriber = d -> {
+      if (LOG.isTraceEnabled()) LOG.trace("Delivering {} to {}", d.getPayload(), nexus);
+      nexus.sendAuto(d.getPayload());
+    };
+    nexus.setContext(new Subscription(subscriber));
   }
 
   @Override
   public void onDisconnect(EdgeNexus nexus) {
     if (LOG.isDebugEnabled()) LOG.debug("Disconnected from {}", nexus);
-    //TODO clean up subscriptions
+    final Subscription subscription = nexus.getContext();
+    if (subscription == null) {
+      LOG.error("No subscription set for {}", nexus);
+      return;
+    }
+    for (Topic topic : subscription.getTopics()) {
+      if (LOG.isTraceEnabled()) LOG.trace("Unsubscribing {} from {}", nexus, topic);
+      system.tell(routerRef, new Unsubscribe(topic, subscription.getSubscriber()));
+    }
   }
 
   @Override
   public CompletableFuture<SubscribeResponseFrame> onSubscribe(EdgeNexus nexus, SubscribeFrame sub) {
-    final Subscriber subscriber = d -> {
-      if (LOG.isTraceEnabled()) LOG.trace("Delivering {} to {}", d.getPayload(), nexus);
-      nexus.sendAuto(d.getPayload());
-    };
+    final Subscription subscription = nexus.getContext();
+    if (subscription == null) {
+      LOG.error("No subscription set for {}", nexus);
+      throw new IllegalStateException("No subscription set for " + nexus);
+    }
+    
+    final List<Topic> topics = Arrays.stream(sub.getTopics(), 0, sub.getTopics().length)
+        .map(t -> Topic.of(t)).collect(Collectors.toList());
+    
     final CompletableFuture<SubscribeResponseFrame> future = new CompletableFuture<>();
     system.ingress(a -> {
       final List<SubscribeResponse> responses = new ArrayList<>(sub.getTopics().length);
-      for (String topic : sub.getTopics()) {
-        a.to(routerRef).ask(new Subscribe(Topic.of(topic), subscriber))
+      for (final Topic topic : topics) {
+        a.to(routerRef).ask(new Subscribe(topic, subscription.getSubscriber()))
         .onFault(f -> {
           LOG.warn("Fault while handling subscription to topic {}: {}", topic, f);
           future.completeExceptionally(new FaultException(f.getReason()));
         })
         .onResponse(r -> {
           responses.add(r.body());
+          subscription.addTopic(topic);
           if (responses.size() == sub.getTopics().length) {
             future.complete(new SubscribeResponseFrame(sub.getId(), null));
           }

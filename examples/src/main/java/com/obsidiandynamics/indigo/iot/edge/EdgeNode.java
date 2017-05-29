@@ -14,6 +14,8 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class EdgeNode implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(RemoteNode.class);
   
+  private final EdgeNexus localNexus = new EdgeNexus(this, LocalPeer.instance());
+  
   private final WSServer<?> server;
   
   private final Wire wire;
@@ -105,7 +107,7 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   private void handleConnect(WSEndpoint endpoint) {
-    final EdgeNexus nexus = new EdgeNexus(this, endpoint);
+    final EdgeNexus nexus = new EdgeNexus(this, new WSEndpointPeer(endpoint));
     nexuses.add(nexus);
     endpoint.setContext(nexus);
     bridge.onConnect(nexus);
@@ -116,13 +118,17 @@ public final class EdgeNode implements AutoCloseable {
     nexuses.remove(nexus);
   }
   
+  /**
+   *  Obtains the currently connected non-local nexuses.
+   *  
+   *  @return List of nexuses.
+   */
   public List<EdgeNexus> getNexuses() {
     return Collections.unmodifiableList(nexuses);
   }
   
   public void publish(String topic, String payload) {
-    //TODO set the nexus to something
-    bridge.onPublish(null, new PublishTextFrame(topic, payload));
+    bridge.onPublish(localNexus, new PublishTextFrame(topic, payload));
   }
   
   Wire getWire() {

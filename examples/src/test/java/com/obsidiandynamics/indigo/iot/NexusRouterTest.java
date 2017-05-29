@@ -15,7 +15,6 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
-import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
@@ -53,24 +52,73 @@ public class NexusRouterTest {
   }
 
   @Test
-  public void testInternalPub() throws Exception {
+  public void testInternalPubSub() throws Exception {
     final UUID subId = UUID.randomUUID();
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+
+    final String payload = "hello internal";
+    edge.publish("a/b/c", payload); // no subscriber yet - shouldn't be received
+    
     final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
     
     assertTrue(subRes.isSuccess());
     assertEquals(FrameType.SUBSCRIBE, subRes.getType());
     assertNull(subRes.getError());
+
+    ordered(handler, inOrder -> { // shouldn't have received any data yet
+      inOrder.verify(handler).onConnect(anyNotNull());
+    });
     
-    final String payload = "hello internal";
-    edge.publish("a/b/c", payload);
+    edge.publish("a/b/c", payload); // a single subscriber at this point
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
       verify(handler).onText(anyNotNull(), eq(payload));
     });
     
     remoteNexus.close();
+    
+    given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
+      verify(handler).onDisconnect(anyNotNull());
+    });
+    
+    ordered(handler, inOrder -> {
+      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onText(anyNotNull(), eq(payload));
+      inOrder.verify(handler).onDisconnect(anyNotNull());
+    });
+  }
+
+  @Test
+  public void testExternalPubSub() throws Exception {
+    final UUID subId = UUID.randomUUID();
+    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+
+    final String payload = "hello external";
+    remoteNexus.publish(new PublishTextFrame("a/b/c", payload)); // no subscriber yet - shouldn't be received
+    
+    final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
+    final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
+    
+    assertTrue(subRes.isSuccess());
+    assertEquals(FrameType.SUBSCRIBE, subRes.getType());
+    assertNull(subRes.getError());
+
+    ordered(handler, inOrder -> { // shouldn't have received any data yet
+      inOrder.verify(handler).onConnect(anyNotNull());
+    });
+    
+    remoteNexus.publish(new PublishTextFrame("a/b/c", payload)); // itself is a subscriber
+    
+    given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
+      verify(handler).onText(anyNotNull(), eq(payload));
+    });
+    
+    remoteNexus.close();
+    
+    given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
+      verify(handler).onDisconnect(anyNotNull());
+    });
     
     ordered(handler, inOrder -> {
       inOrder.verify(handler).onConnect(anyNotNull());
