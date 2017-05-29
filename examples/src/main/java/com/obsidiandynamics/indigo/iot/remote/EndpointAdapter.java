@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.iot.client;
+package com.obsidiandynamics.indigo.iot.remote;
 
 import java.nio.*;
 import java.util.concurrent.*;
@@ -12,31 +12,31 @@ import com.obsidiandynamics.indigo.ws.*;
 final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E> {
   private static final Logger LOG = LoggerFactory.getLogger(EndpointAdapter.class);
   
-  private final SessionManager manager;
-  private final Session session;
-  private final SessionHandler handler;
+  private final RemoteNode node;
+  private final RemoteNexus nexus;
+  private final RemoteNexusHandler handler;
   
-  EndpointAdapter(SessionManager manager, Session session, SessionHandler handler) {
-    this.manager = manager;
-    this.session = session;
+  EndpointAdapter(RemoteNode node, RemoteNexus nexus, RemoteNexusHandler handler) {
+    this.node = node;
+    this.nexus = nexus;
     this.handler = handler;
   }
   
   @Override 
   public void onConnect(E endpoint) {
-    session.setEndpoint(endpoint);
-    handler.onConnect(session);
+    nexus.setEndpoint(endpoint);
+    handler.onConnect(nexus);
   }
 
   @Override 
   public void onText(E endpoint, String message) {
     try {
-      final TextEncodedFrame frame = manager.getWire().decode(message);
+      final TextEncodedFrame frame = node.getWire().decode(message);
       switch (frame.getType()) {
         case SUBSCRIBE:
           if (frame instanceof SubscribeResponseFrame) {
             final SubscribeResponseFrame subRes = (SubscribeResponseFrame) frame;
-            final CompletableFuture<SubscribeResponseFrame> f = session.removeSubscribeRequest(subRes.getId());
+            final CompletableFuture<SubscribeResponseFrame> f = nexus.removeSubscribeRequest(subRes.getId());
             if (f != null) {
               f.complete(subRes);
             } else {
@@ -49,7 +49,7 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
           
         case RECEIVE:
           final TextFrame text = (TextFrame) frame;
-          handler.onText(session, text.getPayload());
+          handler.onText(nexus, text.getPayload());
           break;
           
         default:
@@ -65,9 +65,9 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
   @Override 
   public void onBinary(E endpoint, ByteBuffer message) {
     try {
-      final BinaryEncodedFrame frame = manager.getWire().decode(message);
+      final BinaryEncodedFrame frame = node.getWire().decode(message);
       if (frame.getType() == FrameType.RECEIVE) {
-        handler.onBinary(session, ((BinaryFrame) frame).getPayload());
+        handler.onBinary(nexus, ((BinaryFrame) frame).getPayload());
       } else {
         LOG.error("Unsupported frame {}", frame);
       }
@@ -79,7 +79,7 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
 
   @Override 
   public void onClose(E endpoint, int statusCode, String reason) {
-    handler.onDisconnect(session);
+    handler.onDisconnect(nexus);
   }
 
   @Override 

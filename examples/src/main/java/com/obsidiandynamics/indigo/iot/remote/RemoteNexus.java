@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.iot.client;
+package com.obsidiandynamics.indigo.iot.remote;
 
 import java.net.*;
 import java.util.*;
@@ -8,15 +8,15 @@ import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-public final class Session implements AutoCloseable {
-  private final SessionManager manager;
+public final class RemoteNexus implements AutoCloseable {
+  private final RemoteNode node;
 
   private final Map<UUID, CompletableFuture<SubscribeResponseFrame>> subscribeRequests = new ConcurrentHashMap<>();
   
   private WSEndpoint endpoint;
   
-  Session(SessionManager manager) {
-    this.manager = manager;
+  RemoteNexus(RemoteNode node) {
+    this.node = node;
   }
 
   public WSEndpoint getEndpoint() {
@@ -38,16 +38,16 @@ public final class Session implements AutoCloseable {
   public CompletableFuture<SubscribeResponseFrame> subscribe(SubscribeFrame sub) {
     final CompletableFuture<SubscribeResponseFrame> future = new CompletableFuture<>();
     subscribeRequests.put(sub.getId(), future);
-    SendHelper.send(sub, endpoint, manager.getWire());
+    SendHelper.send(sub, endpoint, node.getWire());
     return future;
   }
   
   public CompletableFuture<Void> publish(PublishTextFrame pub) {
-    return SendHelper.send(pub, endpoint, manager.getWire());
+    return SendHelper.send(pub, endpoint, node.getWire());
   }
   
   public CompletableFuture<Void> publish(PublishBinaryFrame pub) {
-    return SendHelper.send(pub, endpoint, manager.getWire());
+    return SendHelper.send(pub, endpoint, node.getWire());
   }
   
   @Override
@@ -57,6 +57,6 @@ public final class Session implements AutoCloseable {
 
   @Override
   public String toString() {
-    return "Session [peer=" + getPeerAddress() + "]";
+    return "RemoteNexus [peer=" + getPeerAddress() + "]";
   }
 }
