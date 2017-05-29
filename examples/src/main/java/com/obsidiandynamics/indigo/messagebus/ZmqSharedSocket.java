@@ -12,13 +12,14 @@ final class ZmqSharedSocket {
     context = ZMQ.context(1);
     socket = context.socket(ZMQ.PUB);
     socket.bind(socketAddress);
+    socket.setHWM(0);
   }
   
   synchronized void send(String topic, String payload) {
     socket.send(payload);
   }
 
-  void close() {
+  synchronized void close() {
     socket.close();
     context.term();
   }

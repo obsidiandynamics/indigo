@@ -33,7 +33,7 @@ public final class StrategyActorTest {
     
     final List<Order> received = new CopyOnWriteArrayList<>();
     final AtomicBoolean sync = new AtomicBoolean();
-    bus.getSubscriber("orders").onReceive(msg -> {
+    AsyncMessageSubscriber.using(() -> bus.getSubscriber("orders")).onReceive(msg -> {
       if (msg.equals("sync")) {
         sync.set(true);
         return;
