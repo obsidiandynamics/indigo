@@ -43,5 +43,10 @@ public final class AsyncMessageSubscriber extends Thread implements SafeCloseabl
   @Override
   public void close() {
     subscriber.close();
+    try {
+      join();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 }

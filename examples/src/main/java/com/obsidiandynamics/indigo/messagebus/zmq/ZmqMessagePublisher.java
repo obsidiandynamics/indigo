@@ -20,7 +20,7 @@ public final class ZmqMessagePublisher implements MessagePublisher {
     if (message == null) throw new NullPointerException("Message cannot be null");
     final String encoded = bus.getCodec().encode(message);
     final String payload = topic + " " + encoded;
-    sharedSocket.send(topic, payload);
+    sharedSocket.send(payload);
   }
 
   @Override
