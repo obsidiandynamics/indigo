@@ -1,8 +1,10 @@
-package com.obsidiandynamics.indigo.messagebus;
+package com.obsidiandynamics.indigo.messagebus.zmq;
 
 import org.zeromq.*;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.*;
+
+import com.obsidiandynamics.indigo.messagebus.*;
 
 import zmq.*;
 

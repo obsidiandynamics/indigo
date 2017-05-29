@@ -13,6 +13,8 @@ import com.google.gson.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.marketstrategy.*;
 import com.obsidiandynamics.indigo.messagebus.*;
+import com.obsidiandynamics.indigo.messagebus.codec.*;
+import com.obsidiandynamics.indigo.messagebus.zmq.*;
 
 public final class StrategyActorTest {
   private MessageBus bus;

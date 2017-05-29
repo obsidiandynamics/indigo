@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.messagebus;
+package com.obsidiandynamics.indigo.messagebus.zmq;
 
 import static junit.framework.TestCase.*;
 
@@ -9,6 +9,8 @@ import java.util.concurrent.atomic.*;
 import org.awaitility.*;
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.messagebus.*;
+import com.obsidiandynamics.indigo.messagebus.codec.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ZmqMessageBusTest implements TestSupport {

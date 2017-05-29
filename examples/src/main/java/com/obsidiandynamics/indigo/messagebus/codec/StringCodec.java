@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.messagebus;
+package com.obsidiandynamics.indigo.messagebus.codec;
 
 public final class StringCodec implements MessageCodec {
   @Override

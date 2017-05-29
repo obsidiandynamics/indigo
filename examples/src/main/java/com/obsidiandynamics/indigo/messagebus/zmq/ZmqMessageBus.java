@@ -1,7 +1,10 @@
-package com.obsidiandynamics.indigo.messagebus;
+package com.obsidiandynamics.indigo.messagebus.zmq;
 
 import java.util.*;
 import java.util.concurrent.*;
+
+import com.obsidiandynamics.indigo.messagebus.*;
+import com.obsidiandynamics.indigo.messagebus.codec.*;
 
 public final class ZmqMessageBus implements MessageBus {
   private final String socketAddress;
