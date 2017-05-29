@@ -14,8 +14,9 @@ public final class Delivery {
     return topic;
   }
 
-  public Object getPayload() {
-    return payload;
+  @SuppressWarnings("unchecked")
+  public <T> T getPayload() {
+    return (T) payload;
   }
 
   @Override

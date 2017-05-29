@@ -9,10 +9,16 @@ public final class LoggingInterceptor<T> implements InvocationObserver<T>, TestS
   @Override
   public void onInvoke(T delegate, Method method, Object[] args, Object ret) {
     final boolean isVoid = method.getReturnType() == Void.TYPE;
+    final String argsArray = args == null ? "" : arrayToString(args);
     if (isVoid) {
-      log("%s(%s) => void\n", method.getName(), Arrays.asList(args));
+      log("%s(%s) => void\n", method.getName(), argsArray);
     } else {
-      log("%s(%s) => %s\n", method.getName(), Arrays.asList(args), ret);
+      log("%s(%s) => %s\n", method.getName(), argsArray, ret);
     }
+  }
+  
+  private static String arrayToString(Object[] array) {
+    final String rawStr = Arrays.toString(array);
+    return rawStr.substring(1, rawStr.length() - 1);
   }
 }

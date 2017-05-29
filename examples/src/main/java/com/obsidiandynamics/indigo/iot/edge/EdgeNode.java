@@ -6,13 +6,13 @@ import java.util.concurrent.*;
 
 import org.slf4j.*;
 
-import com.obsidiandynamics.indigo.iot.client.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-public final class Edge implements AutoCloseable {
-  private static final Logger LOG = LoggerFactory.getLogger(SessionManager.class);
+public final class EdgeNode implements AutoCloseable {
+  private static final Logger LOG = LoggerFactory.getLogger(RemoteNode.class);
   
   private final WSServer<?> server;
   
@@ -22,10 +22,10 @@ public final class Edge implements AutoCloseable {
   
   private final List<EdgeNexus> nexuses = new CopyOnWriteArrayList<>();
 
-  public <E extends WSEndpoint> Edge(WSServerFactory<E> serverFactory, 
-                                     WSServerConfig config, 
-                                     Wire wire, 
-                                     TopicBridge bridge) throws Exception {
+  public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory, 
+                                         WSServerConfig config, 
+                                         Wire wire, 
+                                         TopicBridge bridge) throws Exception {
     this.wire = wire;
     this.bridge = bridge;
     server = serverFactory.create(config, new EndpointListener<E>() {
@@ -120,6 +120,11 @@ public final class Edge implements AutoCloseable {
     return Collections.unmodifiableList(nexuses);
   }
   
+  public void publish(String topic, String payload) {
+    //TODO set the nexus to something
+    bridge.onPublish(null, new PublishTextFrame(topic, payload));
+  }
+  
   Wire getWire() {
     return wire;
   }
@@ -127,5 +132,6 @@ public final class Edge implements AutoCloseable {
   @Override
   public void close() throws Exception {
     server.close();
+    bridge.close();
   }
 }

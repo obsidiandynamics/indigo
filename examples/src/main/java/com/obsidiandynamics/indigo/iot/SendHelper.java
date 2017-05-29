@@ -10,6 +10,22 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class SendHelper {
   private SendHelper() {}
 
+  public static CompletableFuture<Void> sendAuto(Frame frame, WSEndpoint endpoint, Wire wire) {
+    if (frame instanceof TextFrame) {
+      return send((TextFrame) frame, endpoint, wire);
+    } else {
+      return send((BinaryFrame) frame, endpoint, wire);
+    }
+  }
+  
+  public static void sendAuto(Frame frame, WSEndpoint endpoint, Wire wire, Consumer<Throwable> callback) {
+    if (frame instanceof TextFrame) {
+      send((TextFrame) frame, endpoint, wire, callback);
+    } else {
+      send((BinaryFrame) frame, endpoint, wire, callback);
+    }
+  }
+
   public static CompletableFuture<Void> send(TextEncodedFrame frame, WSEndpoint endpoint, Wire wire) {
     final CompletableFuture<Void> f = new CompletableFuture<>();
     final String encoded = wire.encode(frame);

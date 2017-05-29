@@ -5,7 +5,7 @@ public final class FaultException extends Exception {
   
   private final Object reason;
   
-  FaultException(Object reason) {
+  public FaultException(Object reason) {
     super(String.valueOf(reason));
     this.reason = reason;
   }

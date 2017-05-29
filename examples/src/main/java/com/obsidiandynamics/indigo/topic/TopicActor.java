@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.*;
 public final class TopicActor implements Actor {
   private static final Logger LOG = LoggerFactory.getLogger(TopicActor.class);
   
-  public static final String ROLE = "topic_router";
+  public static final String ROLE = "topic-router";
   
   private final TopicConfig config;
   

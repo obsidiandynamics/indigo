@@ -14,43 +14,43 @@ import java.util.concurrent.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.iot.client.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.ws.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
-public class NexusTest {
+public class NexusCommsTest {
   private static final int PORT = 6667;
   
   private Wire wire;
 
   private TopicBridge bridge;
   
-  private SessionHandler handler;
+  private RemoteNexusHandler handler;
  
-  private Edge edge;
+  private EdgeNode edge;
   
-  private SessionManager manager;
+  private RemoteNode remote;
   
   @Before
   public void setup() throws Exception {
     wire = new Wire(true);
     bridge = mock(TopicBridge.class);
-    handler = mock(SessionHandler.class);
-    edge = new Edge(UndertowServer.factory(), 
-                    new WSServerConfig()  {{ port = PORT; }}, 
-                    wire,
-                    logger(bridge));
-    manager = new SessionManager(UndertowClient.factory(),
-                                 new WSClientConfig(),
-                                 wire);
+    handler = mock(RemoteNexusHandler.class);
+    edge = new EdgeNode(UndertowServer.factory(), 
+                        new WSServerConfig()  {{ port = PORT; }}, 
+                        wire,
+                        logger(bridge));
+    remote = new RemoteNode(UndertowClient.factory(),
+                            new WSClientConfig(),
+                            wire);
   }
   
   @After
   public void teardown() throws Exception {
     edge.close();
-    manager.close();
+    remote.close();
   }
 
   @Test
@@ -59,22 +59,22 @@ public class NexusTest {
     final SubscribeResponseFrame mockSubRes = new SubscribeResponseFrame(subId, null);
     when(bridge.onSubscribe(any(), any())).thenReturn(CompletableFuture.completedFuture(mockSubRes));
     
-    final Session session = manager.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
     final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
-    final SubscribeResponseFrame subRes = session.subscribe(sub).get();
+    final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
     
     assertTrue(subRes.isSuccess());
     assertEquals(FrameType.SUBSCRIBE, subRes.getType());
     assertNull(subRes.getError());
     
     final PublishTextFrame pubRemote = new PublishTextFrame("x/y/z", "hello from remote");
-    session.publish(pubRemote);
+    remoteNexus.publish(pubRemote);
     
-    final EdgeNexus nexus = edge.getNexuses().get(0);
+    final EdgeNexus edgeNexus = edge.getNexuses().get(0);
     final TextFrame textEdge = new TextFrame("hello from edge");
-    nexus.send(textEdge).get();
+    edgeNexus.send(textEdge).get();
     
-    session.close();
+    remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
       verify(bridge).onDisconnect(anyNotNull());
@@ -101,7 +101,7 @@ public class NexusTest {
     final SubscribeResponseFrame mockSubRes = new SubscribeResponseFrame(subId, null);
     when(bridge.onSubscribe(any(), any())).thenReturn(CompletableFuture.completedFuture(mockSubRes));
     
-    final Session session = manager.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    final RemoteNexus session = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
     final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = session.subscribe(sub).get();
     

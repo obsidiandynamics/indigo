@@ -4,7 +4,7 @@ import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.iot.frame.*;
 
-public interface TopicBridge {
+public interface TopicBridge extends AutoCloseable {
   void onConnect(EdgeNexus nexus);
   
   void onDisconnect(EdgeNexus nexus);
