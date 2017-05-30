@@ -15,7 +15,16 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class RigTest implements TestSupport {
   private static final int PORT = 6667;
   private static final int PULSE_INTERVAL = 100;
-  private static final int CYCLES = 2;
+  private static final int PULSES = 10;
+  private static final int CYCLES = 1;
+  
+  static TopicGen smallLeaves() {
+    return TopicGen.builder()
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .build();
+  }
+
   
   static TopicGen mediumLeaves() {
     return TopicGen.builder()
@@ -35,7 +44,7 @@ public final class RigTest implements TestSupport {
   }
 
   private void _test() throws Exception {
-    final TopicGen _topicGen = mediumLeaves();
+    final TopicGen _topicGen = smallLeaves();
     
     final EdgeNode edge = EdgeNode.builder()
         .withServerConfig(new WSServerConfig() {{ port = PORT; }})
@@ -43,6 +52,7 @@ public final class RigTest implements TestSupport {
     final EdgeRig edgeRig = new EdgeRig(edge, new EdgeRigConfig() {{
       topicGen = _topicGen;
       pulseIntervalMillis = PULSE_INTERVAL;
+      pulses = PULSES;
     }});
     
     final RemoteNode remote = RemoteNode.builder()
@@ -54,6 +64,8 @@ public final class RigTest implements TestSupport {
     }});
     
     remoteRig.run();
+    edgeRig.await();
+    
     remoteRig.close();
     edgeRig.close();
   }

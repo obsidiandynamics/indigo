@@ -12,6 +12,11 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   public static class EdgeRigConfig {
     TopicGen topicGen;
     int pulseIntervalMillis;
+    int pulses;
+  }
+  
+  private enum State {
+    CONNECT_WAIT, RUNNING, CLOSING, CLOSED
   }
   
   private final EdgeNode node;
@@ -24,7 +29,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   private final Gson subframeGson = new Gson();
   
-  private volatile boolean running = true;
+  private volatile State state = State.CONNECT_WAIT;
 
   public EdgeRig(EdgeNode node, EdgeRigConfig config) {
     super("EdgeRig");
@@ -39,14 +44,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   @Override
   public void run() {
-    while (running) {
-      try {
-        Thread.sleep(config.pulseIntervalMillis);
-      } catch (InterruptedException e) {
-        continue;
-      }
-      
-      //node.publish(topic, payload);
+    while (state != State.CLOSING && state != State.CLOSED) {
+      runBenchmark();
     }
     
     try {
@@ -54,11 +53,43 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     } catch (Exception e) {
       e.printStackTrace();
     }
+    state = State.CLOSED;
+  }
+  
+  private void runBenchmark() {
+    if (state == State.RUNNING) {
+      log("e: starting benchmark\n");
+    } else {
+      return;
+    }
+    
+    int pulse = 0;
+    while (state == State.RUNNING) {
+      log("e: sending pulse %,d\n", pulse);
+      for (Topic t : leafTopics) {
+        node.publish(t.toString(), String.valueOf(System.nanoTime()));
+      }
+      
+      if (++pulse < config.pulses) {
+        try {
+          Thread.sleep(config.pulseIntervalMillis);
+        } catch (InterruptedException e) {
+          continue;
+        }
+      } else {
+        state = State.CLOSING;
+        break;
+      }
+    }
+  }
+  
+  public void await() throws InterruptedException {
+    Await.await(Integer.MAX_VALUE, 10, () -> state == State.CLOSED);
   }
   
   @Override
   public void close() {
-    running = false;
+    state = State.CLOSING;
     interrupt();
     try {
       join();
@@ -98,12 +129,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     if (subframe instanceof Sync) {
       sendSubframe(remoteId, new Sync(System.nanoTime()));
     } else if (subframe instanceof Begin) {
-      runBenchmark(); 
+      state = State.RUNNING;
     }
-  }
-  
-  private void runBenchmark() {
-    log("e: starting benchmark\n");
   }
   
   private void sendSubframe(String remoteId, RigSubframe subframe) {

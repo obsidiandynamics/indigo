@@ -59,6 +59,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     for (CompletableFuture<SubscribeResponseFrame> f : futures) {
       f.get();
     }
+    log("r: %,d remotes connected\n", allInterests.size());
   }
   
   private void begin() throws Exception {
