@@ -305,7 +305,7 @@ public final class WSFanOutTest implements TestSupport {
 
     if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.sent\n");
     Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.sent.get() >= m * n);
-    assertEquals(m * n, server.sent.get());
+    assertEquals((long) m * n, server.sent.get());
 
     if (LOG_PHASES) LOG_STREAM.format("s: awaiting client.received\n");
     long waitStart = System.currentTimeMillis();
@@ -323,12 +323,12 @@ public final class WSFanOutTest implements TestSupport {
       }
     }
     
-    assertEquals(m * n, totalReceived(clients));
+    assertEquals((long) m * n, totalReceived(clients));
 
     if (LOG_PHASES) LOG_STREAM.format("s: awaiting client.sent\n");
     if (echo) {
       Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalSent(clients) >= m * n);
-      assertEquals(m * n, totalSent(clients));
+      assertEquals((long) m * n, totalSent(clients));
     } else {
       assertEquals(0, totalSent(clients));
     }
@@ -356,7 +356,7 @@ public final class WSFanOutTest implements TestSupport {
     if (echo) {
       if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.received\n");
       Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.received.get() == m * n);
-      assertEquals(m * n, server.received.get());
+      assertEquals((long) m * n, server.received.get());
     } else {
       assertEquals(0, server.received.get());
     }
