@@ -66,8 +66,8 @@ public final class TopicActor implements Actor {
    */
   private void createSubtopic(Activation a, Message m) {
     final Topic subtopic = Topic.fromRef(m.from());
-    if (LOG.isTraceEnabled()) LOG.trace("{} creating {}", a.self(), subtopic.lastPart());
-    state.subtopics.put(subtopic.lastPart(), m.from());
+    if (LOG.isTraceEnabled()) LOG.trace("{} creating {}", a.self(), subtopic.tail());
+    state.subtopics.put(subtopic.tail(), m.from());
     a.reply(m).tell();
   }
   
@@ -80,8 +80,8 @@ public final class TopicActor implements Actor {
    */
   private void deleteSubtopic(Activation a, Message m) {
     final Topic subtopic = Topic.fromRef(m.from());
-    if (LOG.isTraceEnabled()) LOG.trace("{} deleting {}", a.self(), subtopic.lastPart());
-    state.subtopics.remove(subtopic.lastPart());
+    if (LOG.isTraceEnabled()) LOG.trace("{} deleting {}", a.self(), subtopic.tail());
+    state.subtopics.remove(subtopic.tail());
     if (state.subtopics.isEmpty() && state.subscribers.isEmpty()) {
       a.passivate();
     }

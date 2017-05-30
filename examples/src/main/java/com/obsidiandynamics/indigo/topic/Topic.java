@@ -15,15 +15,15 @@ public final class Topic {
     this.parts = parts;
   }
   
-  String[] getParts() {
+  public String[] getParts() {
     return parts;
   }
   
-  int length() {
+  public int length() {
     return parts.length;
   }
   
-  boolean isRoot() {
+  public boolean isRoot() {
     return parts.length == 0;
   }
   
@@ -71,36 +71,36 @@ public final class Topic {
     return ref.key() != null ? of(ref.key()) : root();
   }
   
-  Topic parent() {
+  public Topic parent() {
     if (parts.length == 0) throw new IllegalArgumentException("Root topic has no parent");
     final String[] newParts = new String[parts.length - 1];
     System.arraycopy(parts, 0, newParts, 0, newParts.length);
     return new Topic(newParts);
   }
   
-  Topic subtopic(int startIncl, int endExcl) {
+  public Topic subtopic(int startIncl, int endExcl) {
     final String[] newParts = new String[endExcl - startIncl];
     System.arraycopy(parts, startIncl, newParts, 0, newParts.length);
     return new Topic(newParts);
   }
   
-  Topic append(String part) {
+  public Topic append(String part) {
     final String[] newParts = new String[parts.length + 1];
     System.arraycopy(parts, 0, newParts, 0, parts.length);
     newParts[parts.length] = part;
     return new Topic(newParts);
   }
   
-  boolean isMultiLevelWildcard() {
+  public boolean isMultiLevelWildcard() {
     return parts.length > 0 && parts[parts.length - 1].equals(ML_WILDCARD);
   }
   
-  String lastPart() {
+  public String tail() {
     if (parts.length == 0) throw new IllegalArgumentException("Cannot invoke on root topic");
     return parts[parts.length - 1];
   }
   
-  boolean accepts(Topic exact) {
+  public boolean accepts(Topic exact) {
     if (length() > exact.length()) return false;
     
     for (int i = 0; i < parts.length; i++) {

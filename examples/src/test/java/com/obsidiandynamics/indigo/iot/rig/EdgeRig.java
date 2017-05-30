@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo.iot.rig;
 
 import java.util.*;
 
+import com.google.gson.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.topic.*;
@@ -9,12 +10,11 @@ import com.obsidiandynamics.indigo.util.*;
 
 public final class EdgeRig extends Thread implements TestSupport, AutoCloseable, TopicListener {
   public static class EdgeRigConfig {
+    TopicGen topicGen;
     int pulseIntervalMillis;
   }
   
   private final EdgeNode node;
-  
-  private final TopicGen topicGen;
   
   private final EdgeRigConfig config;
   
@@ -22,17 +22,19 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   private final int expectedSubscribers;
   
+  private final Gson subframeGson = new Gson();
+  
   private volatile boolean running = true;
 
-  public EdgeRig(EdgeNode node, TopicGen topicGen, EdgeRigConfig config) {
+  public EdgeRig(EdgeNode node, EdgeRigConfig config) {
     super("EdgeRig");
     this.node = node;
-    this.topicGen = topicGen;
     this.config = config;
     
-    leafTopics = topicGen.getLeafTopics();
-    expectedSubscribers = topicGen.getAllInterests().size();
+    leafTopics = config.topicGen.getLeafTopics();
+    expectedSubscribers = config.topicGen.getAllInterests().size();
     node.addTopicListener(this);
+    start();
   }
   
   @Override
@@ -41,7 +43,6 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
       try {
         Thread.sleep(config.pulseIntervalMillis);
       } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
         continue;
       }
       
@@ -68,31 +69,44 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
 
   @Override
   public void onConnect(EdgeNexus nexus) {
-    // TODO Auto-generated method stub
-    
+    log("e: connect %s\n", nexus);
   }
 
   @Override
   public void onDisconnect(EdgeNexus nexus) {
-    // TODO Auto-generated method stub
-    
+    log("e: disconnect %s\n", nexus);
   }
 
   @Override
   public void onSubscribe(EdgeNexus nexus, SubscribeFrame sub, SubscribeResponseFrame subRes) {
-    // TODO Auto-generated method stub
-    
+    log("e: sub %s %s\n", nexus, sub);
   }
 
   @Override
   public void onPublish(EdgeNexus nexus, PublishTextFrame pub) {
-    // TODO Auto-generated method stub
-    
+    log("e: pub %s %s\n", nexus, pub);
+    if (pub.getTopic().startsWith(RigSubframe.TOPIC_PREFIX)) {
+      final Topic t = Topic.of(pub.getTopic());
+      final String remoteId = t.getParts()[1];
+      final RigSubframe subframe = RigSubframe.unmarshal(pub.getPayload(), subframeGson);
+      onSubframe(remoteId, subframe);
+    }
+  }
+  
+  private void onSubframe(String remoteId, RigSubframe subframe) {
+    log("e: subframe %s %s\n", remoteId, subframe);
+    if (subframe instanceof Sync) {
+      sendSubframe(remoteId, new Sync(System.nanoTime()));
+    }
+  }
+  
+  private void sendSubframe(String remoteId, RigSubframe subframe) {
+    final String topic = RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/in";
+    node.publish(topic, subframe.marshal(subframeGson));
   }
 
   @Override
   public void onPublish(EdgeNexus nexus, PublishBinaryFrame pub) {
-    // TODO Auto-generated method stub
-    
+    log("e: pub %s %s\n", nexus, pub);
   }
 }
