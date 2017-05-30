@@ -55,15 +55,6 @@ public final class ZmqSubscriber implements XSubscriber {
   }
   
   @Override
-  public void send(Object message) {
-    if (message == null) throw new NullPointerException("Message cannot be null");
-    owner.verifyCurrent();
-    
-    final String encoded = bus.getCodec().encode(message);
-    socket.send(encoded);
-  }
-  
-  @Override
   public void close() {
     if (owner.isCurrent()) {
       socket.setLinger(0);

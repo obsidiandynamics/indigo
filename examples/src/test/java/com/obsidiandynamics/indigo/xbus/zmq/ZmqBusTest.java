@@ -45,7 +45,7 @@ public final class ZmqBusTest implements TestSupport {
   
   @Test
   public void testSendReceiveSync() throws InterruptedException {
-    final int cycles = 10 * sqrtScale();
+    final int cycles = 2 * sqrtScale();
     final int nPerThreadCycle = 100 * sqrtScale();
     final int pubThreads = 4;
     for (int i = 0; i < cycles; i++) {
@@ -62,7 +62,7 @@ public final class ZmqBusTest implements TestSupport {
     final Thread subThread = Threads.asyncDaemon(() -> {
       final XSubscriber sub = bus.getSubscriber("test");
       log("s: starting\n");
-      while (received.get() != n) {
+      while (received.get() != n * pubThreads) {
         final Object r = sub.receive();
         if (r.equals("sync")) {
           log("s: synced\n");
@@ -81,7 +81,7 @@ public final class ZmqBusTest implements TestSupport {
 
     subThread.join(10_000); // allow time for the subscriber to receive all messages and wind up
     
-    assertEquals(n, received.get());
+    assertEquals(n * pubThreads, received.get());
     bus.close();
   }
   

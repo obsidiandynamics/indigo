@@ -53,7 +53,7 @@ public final class ZmqBus implements XBus {
     } else {
       synchronized (this) {
         if (sharedSocket == null) {
-          sharedSocket = new ZmqSharedSocket(this, socketAddress);
+          sharedSocket = new ZmqSharedSocket(socketAddress);
         }
         return sharedSocket;
       }
