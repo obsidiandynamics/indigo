@@ -15,7 +15,7 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class RigTest implements TestSupport {
   private static final int PORT = 6667;
   private static final int PULSE_INTERVAL = 100;
-  private static final int CYCLES = 10000;
+  private static final int CYCLES = 2;
   
   static TopicGen mediumLeaves() {
     return TopicGen.builder()
