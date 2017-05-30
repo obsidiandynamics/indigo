@@ -5,7 +5,7 @@ import java.util.function.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.marketstrategy.*;
-import com.obsidiandynamics.indigo.messagebus.*;
+import com.obsidiandynamics.indigo.xbus.*;
 
 public final class StrategyActor implements Actor {
   private final Supplier<Strategy> strategyFactory;

@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.messagebus.codec;
+package com.obsidiandynamics.indigo.xbus.codec;
 
 import static org.junit.Assert.*;
 
@@ -6,16 +6,18 @@ import java.util.*;
 
 import org.junit.*;
 
-import com.google.gson.*;
-import com.google.gson.typeadapters.*;
 import com.obsidiandynamics.indigo.util.*;
+import com.owlike.genson.*;
 
-public final class GsonCodecTest implements TestSupport {
-  private static abstract class AbstractNode {}
-  
-  private static final class Node extends AbstractNode {
+public final class GensonCodecTest implements TestSupport {
+  private static final class Node {
     final String text;
-    final AbstractNode[] children;
+    final Object[] children;
+    
+    @SuppressWarnings("unused")
+    @Deprecated Node() {
+      this(null);
+    }
     
     Node(String text) {
       this(text, new Node[0]);
@@ -62,21 +64,14 @@ public final class GsonCodecTest implements TestSupport {
   
   @Test
   public void testObj() {
-    final Gson gson = new GsonBuilder()
-        .setPrettyPrinting()
-        .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
-                                    .of(AbstractNode.class, "_type")
-                                    .registerSubtype(Node.class))
-        .create();
-    
-    final GsonCodec codec = new GsonCodec(gson);
+    final Genson genson = new GensonBuilder().useClassMetadata(true).useIndentation(true).create();
+    final MessageCodec codec = new GensonCodec(genson);
     final Node root = new Node("root", new Node[] {new Node("branch")});
     
     final String encoded = codec.encode(root);
     log("encoded=%s\n", encoded);
     
     final Object r = codec.decode(encoded);
-    log("b=%s\n", root);
     log("r=%s\n", r);
     
     assertNotNull(r);
@@ -86,7 +81,7 @@ public final class GsonCodecTest implements TestSupport {
   
   @Test
   public void testNull() {
-    final GsonCodec codec = new GsonCodec(new Gson());
+    final MessageCodec codec = new GensonCodec(new Genson());
     
     final String encoded = codec.encode(null);
     log("encoded=%s\n", encoded);

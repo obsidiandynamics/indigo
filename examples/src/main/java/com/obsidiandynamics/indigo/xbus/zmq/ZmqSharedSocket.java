@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.messagebus.zmq;
+package com.obsidiandynamics.indigo.xbus.zmq;
 
 import java.util.concurrent.*;
 

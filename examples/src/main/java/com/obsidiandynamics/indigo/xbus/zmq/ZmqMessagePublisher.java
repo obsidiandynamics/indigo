@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.messagebus.zmq;
+package com.obsidiandynamics.indigo.xbus.zmq;
 
-import com.obsidiandynamics.indigo.messagebus.*;
+import com.obsidiandynamics.indigo.xbus.*;
 
 public final class ZmqMessagePublisher implements MessagePublisher {
   private final ZmqMessageBus bus;

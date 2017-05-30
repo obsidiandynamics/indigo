@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.messagebus;
+package com.obsidiandynamics.indigo.xbus;
 
 public interface SafeCloseable extends AutoCloseable {
   @Override
