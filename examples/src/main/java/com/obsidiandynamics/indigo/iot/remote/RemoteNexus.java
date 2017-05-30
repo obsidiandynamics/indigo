@@ -54,6 +54,10 @@ public final class RemoteNexus implements AutoCloseable {
   public void close() throws Exception {
     endpoint.close();
   }
+  
+  public boolean awaitClose(int waitMillis) throws InterruptedException {
+    return endpoint.awaitClose(waitMillis);
+  }
 
   @Override
   public String toString() {

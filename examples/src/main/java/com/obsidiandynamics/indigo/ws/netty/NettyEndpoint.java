@@ -79,6 +79,11 @@ public final class NettyEndpoint implements WSEndpoint {
   public void sendPing() {
     handlerContext.channel().writeAndFlush(new PingWebSocketFrame());
   }
+
+  @Override
+  public boolean isOpen() {
+    return handlerContext.channel().isOpen();
+  }
   
   @Override
   public void flush() {

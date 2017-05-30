@@ -97,7 +97,13 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     log("e: subframe %s %s\n", remoteId, subframe);
     if (subframe instanceof Sync) {
       sendSubframe(remoteId, new Sync(System.nanoTime()));
+    } else if (subframe instanceof Begin) {
+      runBenchmark(); 
     }
+  }
+  
+  private void runBenchmark() {
+    log("e: starting benchmark\n");
   }
   
   private void sendSubframe(String remoteId, RigSubframe subframe) {

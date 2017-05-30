@@ -11,6 +11,7 @@ import io.undertow.*;
 public final class UndertowServer implements WSServer<UndertowEndpoint> {
   private final Undertow server;
   private final UndertowEndpointManager manager;
+  private final XnioWorker worker;
   
   public UndertowServer(int port, String contextPath, UndertowEndpointManager manager) throws Exception {
     this.manager = manager;
@@ -18,13 +19,13 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
     final int coreWorkerThreads = 100;
     final int maxWorkerThreads = coreWorkerThreads * 100;
     
-    final XnioWorker worker = Xnio.getInstance().createWorker(OptionMap.builder()
-                                                              .set(Options.WORKER_IO_THREADS, ioThreads)
-                                                              .set(Options.THREAD_DAEMON, true)
-                                                              .set(Options.WORKER_TASK_CORE_THREADS, coreWorkerThreads)
-                                                              .set(Options.WORKER_TASK_MAX_THREADS, maxWorkerThreads)
-                                                              .set(Options.TCP_NODELAY, true)
-                                                              .getMap());
+    worker = Xnio.getInstance().createWorker(OptionMap.builder()
+                                             .set(Options.WORKER_IO_THREADS, ioThreads)
+                                             .set(Options.THREAD_DAEMON, true)
+                                             .set(Options.WORKER_TASK_CORE_THREADS, coreWorkerThreads)
+                                             .set(Options.WORKER_TASK_MAX_THREADS, maxWorkerThreads)
+                                             .set(Options.TCP_NODELAY, true)
+                                             .getMap());
     
     server = Undertow.builder()
         .setWorker(worker)
@@ -37,6 +38,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
   @Override
   public void close() throws Exception {
     server.stop();
+    worker.shutdown();
   }
 
   @Override

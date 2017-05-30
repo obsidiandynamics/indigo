@@ -117,6 +117,11 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   }
 
   @Override
+  public boolean isOpen() {
+    return getSession().isOpen();
+  }
+
+  @Override
   public void close() throws IOException {
     getSession().close();
   }

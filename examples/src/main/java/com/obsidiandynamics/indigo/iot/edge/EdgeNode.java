@@ -88,7 +88,7 @@ public final class EdgeNode implements AutoCloseable {
       }
 
       @Override public void onError(E endpoint, Throwable cause) {
-        LOG.warn("Unexpected error", cause);
+        LOG.warn(String.format("Unexpected error on endpoint %s", endpoint), cause);
       }
     });
   }

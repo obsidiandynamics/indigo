@@ -22,7 +22,7 @@ public final class ZmqMessageBusTest implements TestSupport {
     final int cycles = 10 * sqrtScale();
     final int nPerCycle = 100 * sqrtScale();
     for (int i = 0; i < cycles; i++) {
-      if (i % PROGRESS_INTERVAL == PROGRESS_INTERVAL - 1) LOG_STREAM.format("testSendReceiveSync: %d cycles\n", i);
+      if (i % PROGRESS_INTERVAL == PROGRESS_INTERVAL - 1) LOG_STREAM.format("testSendReceiveSync: %,d cycles\n", i);
       testSendReceiveSync(nPerCycle);
     }
   }

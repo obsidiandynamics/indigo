@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 /**
  *  The abstract definition of a websocket endpoint.
  *
@@ -53,6 +55,13 @@ public interface WSEndpoint extends AutoCloseable {
   void sendPing();
   
   /**
+   *  Determines whether the underlying connection is open.
+   *  
+   *  @return True if the connection is open.
+   */
+  boolean isOpen();
+  
+  /**
    *  Obtains the socket address of the peer endpoint.
    *  
    *  @return
@@ -65,4 +74,15 @@ public interface WSEndpoint extends AutoCloseable {
    *  @return The number of backlogged messages.
    */
   long getBacklog();
+  
+  /**
+   *  Awaits the closure of the underlying channel, which implies that the close frame handshake
+   *  would have been performed.
+   *  
+   *  @param waitMillis The number of milliseconds to wait.
+   *  @return True if the endpoint was closed.
+   */
+  default boolean awaitClose(int waitMillis) throws InterruptedException {
+    return Await.await(waitMillis, 10, () -> ! isOpen());
+  }
 }

@@ -1,7 +1,6 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
 import java.net.*;
-import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -16,6 +15,8 @@ import com.obsidiandynamics.indigo.topic.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunnable {
+  private static final int CONN_CLOSE_TIMEOUT = 10_000;
+  
   public static class RemoteRigConfig {
     int syncSubframes = 10;
     URI uri;
@@ -28,6 +29,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   private final Gson subframeGson = new Gson();
   
+  private long timeDiff;
+  
   public RemoteRig(RemoteNode node, RemoteRigConfig config) throws Exception {
     this.node = node;
     this.config = config;
@@ -35,30 +38,47 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   @Override
   public void run() throws Exception {
-    final long timeDiff = config.syncSubframes != 0 ? sync() : 0;
-    System.out.println("timeDiff=" + timeDiff);
+    timeDiff = config.syncSubframes != 0 ? sync() : 0;
+    begin();
+  }
+  
+  private void begin() throws Exception {
+    log("r: sending begin command\n");
+    final AtomicBoolean disconnected = new AtomicBoolean();
+    final RemoteNexus control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
+      @Override public void onDisconnect(RemoteNexus nexus) {
+        disconnected.set(true);
+      }
+    });
+    control.publish(new PublishTextFrame(getOutTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
+    control.close();
+    control.awaitClose(CONN_CLOSE_TIMEOUT);
+  }
+  
+  private String getInTopic(String remoteId) {
+    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/in";
+  }
+  
+  private String getOutTopic(String remoteId) {
+    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/out";
+  }
+  
+  private String generateRemoteId() {
+    return Long.toHexString(Crypto.machineRandom());
   }
   
   private long sync() throws Exception {
     log("r: syncing\n");
-    final String remoteId = Long.toHexString(Crypto.machineRandom());
-    final String inTopic = RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/in";
-    final String outTopic = RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/out";
+    final String remoteId = generateRemoteId();
+    final String inTopic = getInTopic(remoteId);
+    final String outTopic = getOutTopic(remoteId);
     final int discardSyncs = (int) (config.syncSubframes * .25);
     final AtomicBoolean syncComplete = new AtomicBoolean();
     final AtomicInteger syncs = new AtomicInteger();
     final AtomicLong lastRemoteTransmitTime = new AtomicLong();
     final List<Long> timeDeltas = new CopyOnWriteArrayList<>();
     
-    final RemoteNexus nexus = node.open(config.uri, new RemoteNexusHandler() {
-      @Override public void onConnect(RemoteNexus nexus) {
-        log("r: sync connect %s\n", nexus);
-      }
-
-      @Override public void onDisconnect(RemoteNexus nexus) {
-        log("r: sync disconnect %s\n", nexus);
-      }
-
+    final RemoteNexus nexus = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         final long now = System.nanoTime();
         log("r: sync text %s %s\n", topic, payload);
@@ -74,7 +94,6 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
           lastRemoteTransmitTime.set(now);
           nexus.publish(new PublishTextFrame(outTopic, new Sync(now).marshal(subframeGson)));
         } else {
-          syncComplete.set(true);
           try {
             nexus.close();
           } catch (Exception e) {
@@ -82,9 +101,9 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
           }
         }
       }
-
-      @Override public void onBinary(RemoteNexus nexus, String topic, ByteBuffer payload) {
-        log("r: sync binary %s %d\n", topic, payload.remaining());
+      
+      @Override public void onDisconnect(RemoteNexus nexus) {
+        syncComplete.set(true);
       }
     });
     nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), new String[] {inTopic}, null)).get();

@@ -31,6 +31,10 @@ public final class FakeClientHarness extends ClientHarness<FakeEndpoint> impleme
     }
     @Override public void setContext(Object context) {
     }
+    @Override
+    public boolean isOpen() {
+      return true;
+    }
   }
   
   private final FakeClient client;

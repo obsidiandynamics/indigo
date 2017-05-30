@@ -8,4 +8,8 @@ public interface Peer extends AutoCloseable {
   InetSocketAddress getAddress();
   
   WSEndpoint getEndpoint();
+  
+  default boolean hasEndpoint() {
+    return getEndpoint() != null;
+  }
 }

@@ -59,6 +59,11 @@ public final class EdgeNexus implements AutoCloseable {
   public void close() throws Exception {
     peer.close();
   }
+  
+  public boolean awaitClose(int waitMillis) throws InterruptedException {
+    if (! peer.hasEndpoint()) throw new IllegalArgumentException("Cannot await close on a non-remote peer");
+    return peer.getEndpoint().awaitClose(waitMillis);
+  }
 
   @Override
   public String toString() {

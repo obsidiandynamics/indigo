@@ -140,4 +140,14 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   public long getBacklog() {
     return backlog.get();
   }
+
+  @Override
+  public boolean isOpen() {
+    return channel.isOpen();
+  }
+
+  @Override
+  public String toString() {
+    return "UndertowEndpoint [channel=" + channel + "]";
+  }
 }
