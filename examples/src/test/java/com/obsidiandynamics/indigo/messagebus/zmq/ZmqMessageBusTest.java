@@ -17,58 +17,71 @@ public final class ZmqMessageBusTest implements TestSupport {
   private static final int PROGRESS_INTERVAL = 100;
   private static final int SCALE = 1;
   
+  private Thread syncThread(MessageBus bus, AtomicBoolean synced) {
+    return Threads.asyncDaemon(() -> {
+      final MessagePublisher pub = bus.getPublisher("test");
+      final long syncStart = System.currentTimeMillis();
+      final long maxSyncWait = 10_000;
+      while (! synced.get()) {
+        log("p: syncing\n");
+        pub.send("sync");
+        TestSupport.sleep(1);
+        final long taken = System.currentTimeMillis() - syncStart;
+        assertTrue("sync is taking " + taken + " ms", taken < maxSyncWait);
+      }
+      log("s: sync took %d ms\n", System.currentTimeMillis() - syncStart);
+    }, "ZmqMessageBusTest-Sync");
+  }
+  
+  private void sendParallel(MessageBus bus, int n, int pubThreads) {
+    ParallelJob.blockingSlice(Arrays.asList(new Object[pubThreads]), pubThreads, o -> {
+      final MessagePublisher pub = bus.getPublisher("test");
+      for (int i = 0; i < n; i++) {
+        log("p: sending\n");
+        pub.send("hello");
+      }
+    }).run();
+  }
+  
   @Test
   public void testSendReceiveSync() throws InterruptedException {
     final int cycles = 10 * sqrtScale();
-    final int nPerCycle = 100 * sqrtScale();
+    final int nPerThreadCycle = 100 * sqrtScale();
+    final int pubThreads = 4;
     for (int i = 0; i < cycles; i++) {
       if (i % PROGRESS_INTERVAL == PROGRESS_INTERVAL - 1) LOG_STREAM.format("testSendReceiveSync: %,d cycles\n", i);
-      testSendReceiveSync(nPerCycle);
+      testSendReceiveSync(nPerThreadCycle, pubThreads);
     }
   }
   
-  private void testSendReceiveSync(int n) throws InterruptedException {
+  private void testSendReceiveSync(int n, int pubThreads) throws InterruptedException {
     final MessageBus bus = new ZmqMessageBus("tcp://*:5557", new StringCodec());
     
-    final List<Object> received = new ArrayList<>();
-
+    final AtomicInteger received = new AtomicInteger();
     final AtomicBoolean synced = new AtomicBoolean();
-    final MessagePublisher pub = bus.getPublisher("test");
     final Thread subThread = Threads.asyncDaemon(() -> {
       final MessageSubscriber sub = bus.getSubscriber("test");
       log("s: starting\n");
-      while (received.size() != n) {
+      while (received.get() != n) {
         final Object r = sub.receive();
         if (r.equals("sync")) {
           log("s: synced\n");
           synced.set(true);
         } else {
-          received.add(r);
+          received.incrementAndGet();
           log("s: received '%s'\n", r);
         }
       }
       sub.close();
-    }, "ZmqSubscriberThread");
+    }, "ZmqMessageBusTest-subscriber");
     
-    final long syncStart = System.currentTimeMillis();
-    final long maxSyncWait = 10_000;
-    while (! synced.get()) {
-      log("p: syncing\n");
-      pub.send("sync");
-      TestSupport.sleep(1);
-      final long taken = System.currentTimeMillis() - syncStart;
-      assertTrue("sync is taking " + taken + " ms", taken < maxSyncWait);
-    }
-    log("s: sync took %d ms\n", System.currentTimeMillis() - syncStart);
+    syncThread(bus, synced).join();
 
-    for (int i = 0; i < n; i++) {
-      log("p: sending\n");
-      pub.send("hello");
-    }
-    
+    sendParallel(bus, n, pubThreads);
+
     subThread.join(10_000); // allow time for the subscriber to receive all messages and wind up
     
-    assertEquals(n, received.size());
+    assertEquals(n, received.get());
     bus.close();
   }
   
@@ -77,19 +90,18 @@ public final class ZmqMessageBusTest implements TestSupport {
   }
   
   @Test
-  public void testSendReceiveAsync() {
+  public void testSendReceiveAsync() throws InterruptedException {
     final int cycles = 2 * sqrtScale();
     final int nPerCycle = 100 * sqrtScale();
+    final int pubThreads = 4;
     for (int i = 0; i < cycles; i++) {
       if (i % PROGRESS_INTERVAL == PROGRESS_INTERVAL - 1) LOG_STREAM.format("testSendReceiveAsync: %d cycles\n", i);
-      testSendReceiveAsync(nPerCycle);
+      testSendReceiveAsync(nPerCycle, pubThreads);
     }
   }
   
-  private void testSendReceiveAsync(int n) {
+  private void testSendReceiveAsync(int n, int pubThreads) throws InterruptedException {
     final MessageBus bus = new ZmqMessageBus("tcp://*:5557", new StringCodec());
-
-    final MessagePublisher pub = bus.getPublisher("test");
     
     final AtomicInteger received = new AtomicInteger();
     final AtomicBoolean synced = new AtomicBoolean();
@@ -105,24 +117,12 @@ public final class ZmqMessageBusTest implements TestSupport {
       }
     });
     
-    final long syncStart = System.currentTimeMillis();
-    final long maxSyncWait = 10_000;
-    while (! synced.get()) {
-      log("p: syncing\n");
-      pub.send("sync");
-      TestSupport.sleep(1);
-      final long taken = System.currentTimeMillis() - syncStart;
-      assertTrue("sync is taking " + taken + " ms", taken < maxSyncWait);
-    }
-    log("s: sync took %d ms\n", System.currentTimeMillis() - syncStart);
+    syncThread(bus, synced).join();
 
-    for (int i = 0; i < n; i++) {
-      log("p: sending\n");
-      pub.send("hello");
-    }
+    sendParallel(bus, n, pubThreads);
     
-    Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> received.get() >= n);
-    assertEquals(n, received.get());
+    Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> received.get() >= n * pubThreads);
+    assertEquals(n * pubThreads, received.get());
     bus.close();
   }
 }

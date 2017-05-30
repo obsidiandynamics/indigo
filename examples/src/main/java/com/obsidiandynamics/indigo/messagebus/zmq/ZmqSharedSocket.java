@@ -3,7 +3,10 @@ package com.obsidiandynamics.indigo.messagebus.zmq;
 import java.util.concurrent.*;
 
 import org.zeromq.*;
+import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.*;
+
+import zmq.*;
 
 final class ZmqSharedSocket extends Thread {
   private final String socketAddress;
@@ -11,6 +14,8 @@ final class ZmqSharedSocket extends Thread {
   private final Context context;
   
   private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(1000);
+  
+  private volatile boolean running = true;
 
   ZmqSharedSocket(String socketAddress) {
     super("ZmqSharedSocket");
@@ -33,24 +38,41 @@ final class ZmqSharedSocket extends Thread {
     socket.bind(socketAddress);
     socket.setHWM(0);
     
-    while (! Thread.interrupted()) {
+    for (;;) {    
       final String payload;
       try {
-        payload = queue.take();
+        payload = queue.poll(10, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        continue;
+        break;
       }
       
-      socket.send(payload);
+      if (running) {
+        if (payload != null) {
+          try {
+            socket.send(payload);
+          } catch (ZMQException e) {
+            if (e.getErrorCode() == ZError.ETERM) {
+              break;
+            } else {
+              e.printStackTrace();
+            }
+          }
+        } else {
+          continue;
+        }
+      } else {
+        break;
+      }
     }
     
     socket.setLinger(0);
     socket.close();
+    context.term();
   }
 
   void close() {
-    interrupt();
+    running = false;
     context.term();
     try {
       join();
