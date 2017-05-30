@@ -10,13 +10,13 @@ import com.obsidiandynamics.indigo.xbus.*;
 public final class StrategyActor implements Actor {
   private final Supplier<Strategy> strategyFactory;
   
-  private final MessageBus bus;
+  private final XBus bus;
   
   private Strategy strategy;
   
-  private MessagePublisher publisher;
+  private XPublisher publisher;
   
-  public StrategyActor(Supplier<Strategy> strategyFactory, MessageBus bus) {
+  public StrategyActor(Supplier<Strategy> strategyFactory, XBus bus) {
     this.strategyFactory = strategyFactory;
     this.bus = bus;
   }

@@ -6,7 +6,7 @@ import java.util.concurrent.*;
 import com.obsidiandynamics.indigo.xbus.*;
 import com.obsidiandynamics.indigo.xbus.codec.*;
 
-public final class ZmqMessageBus implements MessageBus {
+public final class ZmqBus implements XBus {
   private final String socketAddress;
   
   private final MessageCodec codec;
@@ -15,7 +15,7 @@ public final class ZmqMessageBus implements MessageBus {
   
   private final Set<SafeCloseable> endpoints = new CopyOnWriteArraySet<>();
 
-  public ZmqMessageBus(String socketAddress, MessageCodec codec) {
+  public ZmqBus(String socketAddress, MessageCodec codec) {
     this.socketAddress = socketAddress;
     this.codec = codec;
   }
@@ -25,15 +25,15 @@ public final class ZmqMessageBus implements MessageBus {
   }
 
   @Override
-  public ZmqMessagePublisher getPublisher(String topic) {
-    final ZmqMessagePublisher pub = new ZmqMessagePublisher(this, topic, getOrCreateSharedSocket());
+  public ZmqPublisher getPublisher(String topic) {
+    final ZmqPublisher pub = new ZmqPublisher(this, topic, getOrCreateSharedSocket());
     endpoints.add(pub);
     return pub;
   }
 
   @Override
-  public ZmqMessageSubscriber getSubscriber(String topic) {
-    final ZmqMessageSubscriber sub = new ZmqMessageSubscriber(this, topic);
+  public ZmqSubscriber getSubscriber(String topic) {
+    final ZmqSubscriber sub = new ZmqSubscriber(this, topic);
     endpoints.add(sub);
     return sub;
   }

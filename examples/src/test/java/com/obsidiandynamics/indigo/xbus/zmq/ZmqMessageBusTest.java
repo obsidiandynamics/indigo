@@ -17,9 +17,9 @@ public final class ZmqMessageBusTest implements TestSupport {
   private static final int PROGRESS_INTERVAL = 100;
   private static final int SCALE = 1;
   
-  private Thread syncThread(MessageBus bus, AtomicBoolean synced) {
+  private Thread syncThread(XBus bus, AtomicBoolean synced) {
     return Threads.asyncDaemon(() -> {
-      final MessagePublisher pub = bus.getPublisher("test");
+      final XPublisher pub = bus.getPublisher("test");
       final long syncStart = System.currentTimeMillis();
       final long maxSyncWait = 10_000;
       while (! synced.get()) {
@@ -33,9 +33,9 @@ public final class ZmqMessageBusTest implements TestSupport {
     }, "ZmqMessageBusTest-Sync");
   }
   
-  private void sendParallel(MessageBus bus, int n, int pubThreads) {
+  private void sendParallel(XBus bus, int n, int pubThreads) {
     ParallelJob.blockingSlice(Arrays.asList(new Object[pubThreads]), pubThreads, o -> {
-      final MessagePublisher pub = bus.getPublisher("test");
+      final XPublisher pub = bus.getPublisher("test");
       for (int i = 0; i < n; i++) {
         log("p: sending\n");
         pub.send("hello");
@@ -55,12 +55,12 @@ public final class ZmqMessageBusTest implements TestSupport {
   }
   
   private void testSendReceiveSync(int n, int pubThreads) throws InterruptedException {
-    final MessageBus bus = new ZmqMessageBus("tcp://*:5557", new StringCodec());
+    final XBus bus = new ZmqBus("tcp://*:5557", new StringCodec());
     
     final AtomicInteger received = new AtomicInteger();
     final AtomicBoolean synced = new AtomicBoolean();
     final Thread subThread = Threads.asyncDaemon(() -> {
-      final MessageSubscriber sub = bus.getSubscriber("test");
+      final XSubscriber sub = bus.getSubscriber("test");
       log("s: starting\n");
       while (received.get() != n) {
         final Object r = sub.receive();
@@ -101,11 +101,11 @@ public final class ZmqMessageBusTest implements TestSupport {
   }
   
   private void testSendReceiveAsync(int n, int pubThreads) throws InterruptedException {
-    final MessageBus bus = new ZmqMessageBus("tcp://*:5557", new StringCodec());
+    final XBus bus = new ZmqBus("tcp://*:5557", new StringCodec());
     
     final AtomicInteger received = new AtomicInteger();
     final AtomicBoolean synced = new AtomicBoolean();
-    AsyncMessageSubscriber
+    AsyncSubscriber
     .using(() -> bus.getSubscriber("test"))
     .onReceive(msg -> {
       if (msg.equals("sync")) {

@@ -1,5 +1,5 @@
 package com.obsidiandynamics.indigo.xbus;
 
-public interface MessagePublisher extends SafeCloseable {
+public interface XPublisher extends SafeCloseable {
   void send(Object message);
 }

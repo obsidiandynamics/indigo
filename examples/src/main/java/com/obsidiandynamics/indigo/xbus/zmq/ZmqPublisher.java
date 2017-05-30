@@ -2,14 +2,14 @@ package com.obsidiandynamics.indigo.xbus.zmq;
 
 import com.obsidiandynamics.indigo.xbus.*;
 
-public final class ZmqMessagePublisher implements MessagePublisher {
-  private final ZmqMessageBus bus;
+public final class ZmqPublisher implements XPublisher {
+  private final ZmqBus bus;
   
   private final String topic;
   
   private final ZmqSharedSocket sharedSocket;
   
-  ZmqMessagePublisher(ZmqMessageBus bus, String topic, ZmqSharedSocket sharedSocket) {
+  ZmqPublisher(ZmqBus bus, String topic, ZmqSharedSocket sharedSocket) {
     this.bus = bus;
     this.topic = topic;
     this.sharedSocket = sharedSocket;

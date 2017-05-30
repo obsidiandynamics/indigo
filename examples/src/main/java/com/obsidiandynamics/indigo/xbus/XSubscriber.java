@@ -1,5 +1,5 @@
 package com.obsidiandynamics.indigo.xbus;
 
-public interface MessageSubscriber extends SafeCloseable {
+public interface XSubscriber extends SafeCloseable {
   Object receive();
 }

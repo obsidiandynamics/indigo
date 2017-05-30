@@ -17,11 +17,11 @@ import com.obsidiandynamics.indigo.xbus.codec.*;
 import com.obsidiandynamics.indigo.xbus.zmq.*;
 
 public final class StrategyActorTest {
-  private MessageBus bus;
+  private XBus bus;
   
   @Before
   public void setup() {
-    bus = new ZmqMessageBus("tcp://*:5557", new GsonCodec(new Gson()));
+    bus = new ZmqBus("tcp://*:5557", new GsonCodec(new Gson()));
   }
   
   @After
@@ -31,11 +31,11 @@ public final class StrategyActorTest {
   
   @Test
   public void test() {
-    final MessagePublisher pub = bus.getPublisher("orders");
+    final XPublisher pub = bus.getPublisher("orders");
     
     final List<Order> received = new CopyOnWriteArrayList<>();
     final AtomicBoolean sync = new AtomicBoolean();
-    AsyncMessageSubscriber.using(() -> bus.getSubscriber("orders")).onReceive(msg -> {
+    AsyncSubscriber.using(() -> bus.getSubscriber("orders")).onReceive(msg -> {
       if (msg.equals("sync")) {
         sync.set(true);
         return;

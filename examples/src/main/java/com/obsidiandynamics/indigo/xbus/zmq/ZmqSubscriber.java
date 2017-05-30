@@ -8,10 +8,10 @@ import com.obsidiandynamics.indigo.xbus.*;
 
 import zmq.*;
 
-public final class ZmqMessageSubscriber implements MessageSubscriber {
+public final class ZmqSubscriber implements XSubscriber {
   private final Thread owner;
   
-  private final ZmqMessageBus bus;
+  private final ZmqBus bus;
   
   private final String topic;
   
@@ -19,7 +19,7 @@ public final class ZmqMessageSubscriber implements MessageSubscriber {
   
   private final Socket socket;
 
-  ZmqMessageSubscriber(ZmqMessageBus bus, String topic) {
+  ZmqSubscriber(ZmqBus bus, String topic) {
     owner = Thread.currentThread();
     this.bus = bus;
     this.topic = topic;

@@ -2,23 +2,23 @@ package com.obsidiandynamics.indigo.xbus;
 
 import java.util.function.*;
 
-public final class AsyncMessageSubscriber extends Thread implements SafeCloseable{
-  private final Supplier<MessageSubscriber> factory;
+public final class AsyncSubscriber extends Thread implements SafeCloseable {
+  private final Supplier<XSubscriber> factory;
   
   private Consumer<Object> receiver;
   
-  private volatile MessageSubscriber subscriber;
+  private volatile XSubscriber subscriber;
   
-  private AsyncMessageSubscriber(Supplier<MessageSubscriber> factory) {
-    super("AsyncMessageSubsriber");
+  private AsyncSubscriber(Supplier<XSubscriber> factory) {
+    super("AsyncSubsriber");
     this.factory = factory;
   }
   
-  public static AsyncMessageSubscriber using(Supplier<MessageSubscriber> factory) {
-    return new AsyncMessageSubscriber(factory);
+  public static AsyncSubscriber using(Supplier<XSubscriber> factory) {
+    return new AsyncSubscriber(factory);
   }
   
-  public synchronized AsyncMessageSubscriber onReceive(Consumer<Object> receiver) {
+  public synchronized AsyncSubscriber onReceive(Consumer<Object> receiver) {
     if (this.receiver != null) {
       throw new IllegalStateException("Subscriber already running");
     }
