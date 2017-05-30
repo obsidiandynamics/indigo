@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.xbus.*;
 import zmq.*;
 
 public final class ZmqSubscriber implements XSubscriber {
-  private final Thread owner;
+  private final OwnerThread owner = new OwnerThread();
   
   private final ZmqBus bus;
   
@@ -20,7 +20,6 @@ public final class ZmqSubscriber implements XSubscriber {
   private final Socket socket;
 
   ZmqSubscriber(ZmqBus bus, String topic) {
-    owner = Thread.currentThread();
     this.bus = bus;
     this.topic = topic;
     context = ZMQ.context(1);
@@ -32,7 +31,7 @@ public final class ZmqSubscriber implements XSubscriber {
   
   @Override
   public Object receive() {
-    if (! isOwner()) throw new IllegalStateException("Can only be invoked by owner " + owner);
+    owner.verifyCurrent();
     
     final String str;
     try {
@@ -55,13 +54,18 @@ public final class ZmqSubscriber implements XSubscriber {
     }
   }
   
-  private boolean isOwner() {
-    return owner == Thread.currentThread();
+  @Override
+  public void send(Object message) {
+    if (message == null) throw new NullPointerException("Message cannot be null");
+    owner.verifyCurrent();
+    
+    final String encoded = bus.getCodec().encode(message);
+    socket.send(encoded);
   }
-
+  
   @Override
   public void close() {
-    if (isOwner()) {
+    if (owner.isCurrent()) {
       socket.setLinger(0);
       socket.close();
     }
