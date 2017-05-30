@@ -54,9 +54,7 @@ public final class RigTest implements TestSupport {
     }});
     
     remoteRig.run();
-//    Thread.sleep(100);
     remoteRig.close();
     edgeRig.close();
   }
-
 }

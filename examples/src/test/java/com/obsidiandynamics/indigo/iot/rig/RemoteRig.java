@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
 import java.net.*;
+import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -12,9 +13,10 @@ import com.google.gson.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.topic.*;
+import com.obsidiandynamics.indigo.topic.TopicGen.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunnable {
+public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunnable, RemoteNexusHandler {
   private static final int CONN_CLOSE_TIMEOUT = 10_000;
   
   public static class RemoteRigConfig {
@@ -39,7 +41,24 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   @Override
   public void run() throws Exception {
     timeDiff = config.syncSubframes != 0 ? sync() : 0;
+    connectAll();
     begin();
+  }
+  
+  private void connectAll() throws Exception {
+    final List<Interest> allInterests = config.topicGen.getAllInterests();
+    
+    final List<CompletableFuture<SubscribeResponseFrame>> futures = new ArrayList<>(allInterests.size());
+    for (Interest interest : allInterests) {
+      final RemoteNexus nexus = node.open(config.uri, this);
+      final CompletableFuture<SubscribeResponseFrame> f = 
+          nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), new String[]{interest.getTopic().toString()}, null));
+      futures.add(f);
+    }
+    
+    for (CompletableFuture<SubscribeResponseFrame> f : futures) {
+      f.get();
+    }
   }
   
   private void begin() throws Exception {
@@ -120,6 +139,30 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   @Override
   public void close() throws Exception {
     node.close();
+  }
+
+  @Override
+  public void onConnect(RemoteNexus nexus) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void onDisconnect(RemoteNexus nexus) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void onText(RemoteNexus nexus, String topic, String payload) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void onBinary(RemoteNexus nexus, String topic, ByteBuffer payload) {
+    // TODO Auto-generated method stub
+    
   }
 
 //  @Override

@@ -42,6 +42,14 @@ public final class TopicGen {
       return true;
     }
     
+    public Topic getTopic() {
+      return topic;
+    }
+    
+    public int getCount() {
+      return count;
+    }
+    
     public String toString() {
       return count + " in " + topic;
     }
