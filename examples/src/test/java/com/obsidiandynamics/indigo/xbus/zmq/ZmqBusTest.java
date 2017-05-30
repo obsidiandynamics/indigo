@@ -13,7 +13,7 @@ import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.xbus.*;
 import com.obsidiandynamics.indigo.xbus.codec.*;
 
-public final class ZmqMessageBusTest implements TestSupport {
+public final class ZmqBusTest implements TestSupport {
   private static final int PROGRESS_INTERVAL = 100;
   private static final int SCALE = 1;
   
