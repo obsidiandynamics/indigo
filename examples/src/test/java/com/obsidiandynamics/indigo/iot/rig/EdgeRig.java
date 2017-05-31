@@ -116,7 +116,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
       nexus.close();
     }
     for (EdgeNexus nexus : nexuses) {
-      nexus.awaitClose(10_000);
+      nexus.awaitClose(60_000);
     }
     node.close();
     state = State.CLOSED;

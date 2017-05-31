@@ -16,9 +16,9 @@ import com.obsidiandynamics.indigo.ws.*;
 
 public final class RigTest implements TestSupport {
   private static final int PORT = 6667;
-  private static final int PULSE_DURATION = 10;
-  private static final int PULSES = 30;
-  private static final int CYCLES = 10;
+  private static final int PULSE_DURATION = 100;
+  private static final int PULSES = 10;
+  private static final int CYCLES = 1;
   private static final int SYNC_SUBFRAMES = 0;
   private static final Supplier<TopicGen> GEN = RigTest::smallLeaves;
   
@@ -51,6 +51,7 @@ public final class RigTest implements TestSupport {
 
   @Test
   public void test() throws Exception {
+    BashInteractor.Ulimit.main(null);
     for (int i = 0; i < CYCLES; i++) {
       _test();
       if (i % 10 == 9) LOG_STREAM.format("%,d cycles\n", i);
