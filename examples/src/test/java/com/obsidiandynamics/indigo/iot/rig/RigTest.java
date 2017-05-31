@@ -5,6 +5,7 @@ import java.util.function.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.iot.rig.EdgeRig.*;
@@ -16,8 +17,8 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class RigTest implements TestSupport {
   private static final int PORT = 6667;
   private static final int PULSE_DURATION = 10;
-  private static final int PULSES = 10;
-  private static final int CYCLES = 1;
+  private static final int PULSES = 30;
+  private static final int CYCLES = 10;
   private static final int SYNC_SUBFRAMES = 0;
   private static final Supplier<TopicGen> GEN = RigTest::smallLeaves;
   
@@ -47,7 +48,6 @@ public final class RigTest implements TestSupport {
         .add(new TopicSpec(1, 0, 0).nodes(5))
         .build();
   }
-
 
   @Test
   public void test() throws Exception {
@@ -79,8 +79,12 @@ public final class RigTest implements TestSupport {
     
     remoteRig.run();
     edgeRig.await();
-    
-    remoteRig.close();
+    remoteRig.awaitReceival(edgeRig.getNumSent());
+
     edgeRig.close();
+    remoteRig.close();
+    
+    final Summary summary = remoteRig.getSummary();
+    LOG_STREAM.format("%s\n", summary.toString());
   }
 }

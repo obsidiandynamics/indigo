@@ -1,6 +1,6 @@
 package com.obsidiandynamics.indigo.benchmark;
 
-interface Elapsed {
+public interface Elapsed {
   long getTotalProcessed();
   
   long getTimeTaken();

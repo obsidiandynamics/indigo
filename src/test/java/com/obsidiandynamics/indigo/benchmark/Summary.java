@@ -10,25 +10,25 @@ import org.apache.commons.math3.stat.descriptive.*;
 public final class Summary {
   public long timedOps = 0;
   public long avgTime = 0;
-  final Stats stats = new Stats();
+  public final Stats stats = new Stats();
 
-  void compute(Collection<? extends Elapsed> states, int actors) {
-    for (Elapsed s : states) {
-      timedOps += s.getTotalProcessed();
-      avgTime += s.getTimeTaken();
+  public void compute(Collection<? extends Elapsed> intervals) {
+    for (Elapsed interval : intervals) {
+      timedOps += interval.getTotalProcessed();
+      avgTime += interval.getTimeTaken();
     }
-    avgTime /= actors;
+    avgTime /= intervals.size();
     stats.await();
   }
 
-  static final class Stats {
-    final DescriptiveStatistics samples = new DescriptiveStatistics();
-    final ExecutorService executor = Executors.newFixedThreadPool(1);
+  public static final class Stats {
+    public final DescriptiveStatistics samples = new DescriptiveStatistics();
+    public final ExecutorService executor = Executors.newFixedThreadPool(1);
 
-    void await() {
+    public void await() {
       executor.shutdown();
       try {
-        executor.awaitTermination(1, TimeUnit.MINUTES);
+        while (! executor.awaitTermination(1, TimeUnit.MINUTES));
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }

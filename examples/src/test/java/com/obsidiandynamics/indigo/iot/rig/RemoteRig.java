@@ -10,11 +10,14 @@ import java.util.stream.*;
 import org.awaitility.*;
 
 import com.google.gson.*;
+import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.topic.*;
 import com.obsidiandynamics.indigo.topic.TopicGen.*;
 import com.obsidiandynamics.indigo.util.*;
+
+import junit.framework.*;
 
 public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunnable, RemoteNexusHandler {
   private static final int CONN_CLOSE_TIMEOUT = 10_000;
@@ -31,7 +34,13 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   private final Gson subframeGson = new Gson();
   
+  private final Summary summary = new Summary();
+  
   private long timeDiff;
+  
+  private volatile long startTime;
+  
+  private final AtomicLong received = new AtomicLong();
   
   public RemoteRig(RemoteNode node, RemoteRigConfig config) throws Exception {
     this.node = node;
@@ -68,6 +77,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     control.publish(new PublishTextFrame(getOutTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
     control.close();
     control.awaitClose(CONN_CLOSE_TIMEOUT);
+    startTime = System.currentTimeMillis();
   }
   
   private String getInTopic(String remoteId) {
@@ -132,32 +142,49 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     return timeDiff;
   }
   
+  public void awaitReceival(long expected) throws InterruptedException {
+    Await.await(Integer.MAX_VALUE, 10, () -> received.get() >= expected);
+    final long took = System.currentTimeMillis() - startTime;
+    TestCase.assertEquals(expected, received.get());
+    summary.stats.await();
+    summary.compute(Arrays.asList(new Elapsed() {
+      @Override public long getTotalProcessed() {
+        return received.get();
+      }
+      @Override public long getTimeTaken() {
+        return took;
+      }
+    }));
+  }
+  
   @Override
   public void close() throws Exception {
     node.close();
   }
+  
+  public Summary getSummary() {
+    return summary;
+  }
 
   @Override
   public void onConnect(RemoteNexus nexus) {
-    // TODO Auto-generated method stub
-    
+    log("r: connected %s\n", nexus);
   }
 
   @Override
   public void onDisconnect(RemoteNexus nexus) {
-    // TODO Auto-generated method stub
-    
+    log("r: disconnected %s\n", nexus);
   }
 
   @Override
   public void onText(RemoteNexus nexus, String topic, String payload) {
-    if (Math.random() > 0.99) {
-      final long now = System.nanoTime();
-      final long serverNanos = Long.valueOf(payload);
-      final long clientNanos = serverNanos + timeDiff;
-      final long taken = now - clientNanos;
-      log("r: received text, latency %,d\n", taken);
-    }
+    final long now = System.nanoTime();
+    final long serverNanos = Long.valueOf(payload);
+    final long clientNanos = serverNanos + timeDiff;
+    final long taken = now - clientNanos;
+    log("r: received text, latency %,d\n", taken);
+    summary.stats.executor.execute(() -> summary.stats.samples.addValue(taken));
+    received.incrementAndGet();
   }
 
   @Override

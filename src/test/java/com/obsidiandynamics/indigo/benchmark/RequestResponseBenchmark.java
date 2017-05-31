@@ -129,7 +129,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
 
     assertEquals(c.actors, states.size());
     
-    summary.compute(states, c.actors);
+    summary.compute(states);
     return summary;
   }
   

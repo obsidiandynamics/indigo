@@ -189,7 +189,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
 
     assertEquals(c.actors, states.size());
     
-    summary.compute(states, c.actors);
+    summary.compute(states);
     return summary;
   }
   

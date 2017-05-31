@@ -178,7 +178,15 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   public void publish(String topic, String payload) {
-    bridge.onPublish(localNexus, new PublishTextFrame(topic, payload));
+    final PublishTextFrame pub = new PublishTextFrame(topic, payload);
+    bridge.onPublish(localNexus, pub);
+    firePublishEvent(localNexus, pub);
+  }
+  
+  public void publish(String topic, ByteBuffer payload) {
+    final PublishBinaryFrame pub = new PublishBinaryFrame(topic, payload);
+    bridge.onPublish(localNexus, pub);
+    firePublishEvent(localNexus, pub);
   }
   
   Wire getWire() {

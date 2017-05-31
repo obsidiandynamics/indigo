@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
@@ -16,7 +17,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   }
   
   private enum State {
-    CONNECT_WAIT, RUNNING, CLOSING, CLOSED
+    CONNECT_WAIT, RUNNING, STOPPED, CLOSING, CLOSED
   }
   
   private final EdgeNode node;
@@ -28,6 +29,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   private final Gson subframeGson = new Gson();
   
   private volatile State state = State.CONNECT_WAIT;
+  
+  private final AtomicLong sent = new AtomicLong();
 
   public EdgeRig(EdgeNode node, EdgeRigConfig config) {
     super("EdgeRig");
@@ -41,16 +44,9 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   @Override
   public void run() {
-    while (state != State.CLOSING && state != State.CLOSED) {
+    while (state != State.CLOSING) {
       runBenchmark();
     }
-    
-    try {
-      node.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    state = State.CLOSED;
   }
   
   private void runBenchmark() {
@@ -64,7 +60,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     int interval = 1;
     
     int pulse = 0;
-    while (state == State.RUNNING) {
+    outer: while (state == State.RUNNING) {
       final long start = System.nanoTime();
       int sent = 0;
       for (Topic t : leafTopics) {
@@ -74,6 +70,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
             Thread.sleep(interval);
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            continue outer;
           }
         }
       }
@@ -91,34 +88,38 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
           interval++;
         }
       }
-      log("e: pulse %,d took %,d (%,d per %,d ms)\n", pulse, took, perInterval, interval);
+      log("e: pulse %,d took %,d (%,d every %,d ms)\n", pulse, took, perInterval, interval);
       
-      if (++pulse < config.pulses) {
-        try {
-          Thread.sleep(config.pulseDurationMillis);
-        } catch (InterruptedException e) {
-          continue;
-        }
-      } else {
-        state = State.CLOSING;
+      if (++pulse == config.pulses) {
         break;
       }
     }
+    state = State.STOPPED;
   }
   
   public void await() throws InterruptedException {
-    Await.await(Integer.MAX_VALUE, 10, () -> state == State.CLOSED);
+    Await.await(Integer.MAX_VALUE, 10, () -> state == State.STOPPED);
+  }
+  
+  public long getNumSent() {
+    return sent.get();
   }
   
   @Override
-  public void close() {
+  public void close() throws Exception {
     state = State.CLOSING;
     interrupt();
-    try {
-      join();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
+    join();
+    
+    final List<EdgeNexus> nexuses = node.getNexuses();
+    for (EdgeNexus nexus : nexuses) {
+      nexus.close();
     }
+    for (EdgeNexus nexus : nexuses) {
+      nexus.awaitClose(10_000);
+    }
+    node.close();
+    state = State.CLOSED;
   }
 
   @Override
@@ -138,12 +139,14 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
 
   @Override
   public void onPublish(EdgeNexus nexus, PublishTextFrame pub) {
-    log("e: pub %s %s\n", nexus, pub);
+//    log("e: pub %s %s\n", nexus, pub);
     if (pub.getTopic().startsWith(RigSubframe.TOPIC_PREFIX)) {
       final Topic t = Topic.of(pub.getTopic());
       final String remoteId = t.getParts()[1];
       final RigSubframe subframe = RigSubframe.unmarshal(pub.getPayload(), subframeGson);
       onSubframe(remoteId, subframe);
+    } else {
+      sent.incrementAndGet();
     }
   }
   
