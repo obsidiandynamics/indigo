@@ -64,12 +64,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   private void begin() throws Exception {
     log("r: sending begin command\n");
-    final AtomicBoolean disconnected = new AtomicBoolean();
-    final RemoteNexus control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
-      @Override public void onDisconnect(RemoteNexus nexus) {
-        disconnected.set(true);
-      }
-    });
+    final RemoteNexus control = node.open(config.uri, new RemoteNexusHandlerAdapter());
     control.publish(new PublishTextFrame(getOutTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
     control.close();
     control.awaitClose(CONN_CLOSE_TIMEOUT);
@@ -111,8 +106,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         }
         
         if (timeDeltas.size() != config.syncSubframes) {
-          lastRemoteTransmitTime.set(now);
-          nexus.publish(new PublishTextFrame(outTopic, new Sync(now).marshal(subframeGson)));
+          lastRemoteTransmitTime.set(System.nanoTime());
+          nexus.publish(new PublishTextFrame(outTopic, new Sync(lastRemoteTransmitTime.get()).marshal(subframeGson)));
         } else {
           try {
             nexus.close();
@@ -156,8 +151,13 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
 
   @Override
   public void onText(RemoteNexus nexus, String topic, String payload) {
-    // TODO Auto-generated method stub
-    
+    if (Math.random() > 0.99) {
+      final long now = System.nanoTime();
+      final long serverNanos = Long.valueOf(payload);
+      final long clientNanos = serverNanos + timeDiff;
+      final long taken = now - clientNanos;
+      log("r: received text, latency %,d\n", taken);
+    }
   }
 
   @Override

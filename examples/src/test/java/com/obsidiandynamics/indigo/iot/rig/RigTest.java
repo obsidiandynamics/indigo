@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
 import java.net.*;
+import java.util.function.*;
 
 import org.junit.*;
 
@@ -14,9 +15,11 @@ import com.obsidiandynamics.indigo.ws.*;
 
 public final class RigTest implements TestSupport {
   private static final int PORT = 6667;
-  private static final int PULSE_INTERVAL = 100;
+  private static final int PULSE_DURATION = 10;
   private static final int PULSES = 10;
   private static final int CYCLES = 1;
+  private static final int SYNC_SUBFRAMES = 0;
+  private static final Supplier<TopicGen> GEN = RigTest::smallLeaves;
   
   static TopicGen smallLeaves() {
     return TopicGen.builder()
@@ -24,7 +27,6 @@ public final class RigTest implements TestSupport {
         .add(new TopicSpec(1, 0, 0).nodes(5))
         .build();
   }
-
   
   static TopicGen mediumLeaves() {
     return TopicGen.builder()
@@ -34,6 +36,18 @@ public final class RigTest implements TestSupport {
         .add(new TopicSpec(1, 0, 0).nodes(5))
         .build();
   }
+  
+  static TopicGen largeLeaves() {
+    return TopicGen.builder()
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(0, 0, 0).nodes(5))
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(0, 0, 0).nodes(5))
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .build();
+  }
+
 
   @Test
   public void test() throws Exception {
@@ -44,14 +58,14 @@ public final class RigTest implements TestSupport {
   }
 
   private void _test() throws Exception {
-    final TopicGen _topicGen = smallLeaves();
+    final TopicGen _topicGen = GEN.get();
     
     final EdgeNode edge = EdgeNode.builder()
         .withServerConfig(new WSServerConfig() {{ port = PORT; }})
         .build();
     final EdgeRig edgeRig = new EdgeRig(edge, new EdgeRigConfig() {{
       topicGen = _topicGen;
-      pulseIntervalMillis = PULSE_INTERVAL;
+      pulseDurationMillis = PULSE_DURATION;
       pulses = PULSES;
     }});
     
@@ -59,7 +73,7 @@ public final class RigTest implements TestSupport {
         .build();
     final RemoteRig remoteRig = new RemoteRig(remote, new RemoteRigConfig() {{
       topicGen = _topicGen;
-      syncSubframes = 10;
+      syncSubframes = SYNC_SUBFRAMES;
       uri = new URI("ws://localhost:" + PORT + "/");
     }});
     

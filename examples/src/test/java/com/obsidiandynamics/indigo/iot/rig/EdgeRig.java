@@ -11,7 +11,7 @@ import com.obsidiandynamics.indigo.util.*;
 public final class EdgeRig extends Thread implements TestSupport, AutoCloseable, TopicListener {
   public static class EdgeRigConfig {
     TopicGen topicGen;
-    int pulseIntervalMillis;
+    int pulseDurationMillis;
     int pulses;
   }
   
@@ -25,8 +25,6 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   private final List<Topic> leafTopics;
   
-  private final int expectedSubscribers;
-  
   private final Gson subframeGson = new Gson();
   
   private volatile State state = State.CONNECT_WAIT;
@@ -37,7 +35,6 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     this.config = config;
     
     leafTopics = config.topicGen.getLeafTopics();
-    expectedSubscribers = config.topicGen.getAllInterests().size();
     node.addTopicListener(this);
     start();
   }
@@ -62,17 +59,43 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     } else {
       return;
     }
+
+    int perInterval = Math.max(1, leafTopics.size() / config.pulseDurationMillis);
+    int interval = 1;
     
     int pulse = 0;
     while (state == State.RUNNING) {
-      log("e: sending pulse %,d\n", pulse);
+      final long start = System.nanoTime();
+      int sent = 0;
       for (Topic t : leafTopics) {
         node.publish(t.toString(), String.valueOf(System.nanoTime()));
+        if (sent++ % perInterval == 0) {
+          try {
+            Thread.sleep(interval);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
       }
+      final long took = System.nanoTime() - start;
+      if (took > config.pulseDurationMillis * 1_000_000l) {
+        if (interval > 1) {
+          interval--;
+        } else {
+          perInterval++;
+        }
+      } else {
+        if (perInterval > 1) {
+          perInterval--;
+        } else {
+          interval++;
+        }
+      }
+      log("e: pulse %,d took %,d (%,d per %,d ms)\n", pulse, took, perInterval, interval);
       
       if (++pulse < config.pulses) {
         try {
-          Thread.sleep(config.pulseIntervalMillis);
+          Thread.sleep(config.pulseDurationMillis);
         } catch (InterruptedException e) {
           continue;
         }
