@@ -16,11 +16,11 @@ import com.obsidiandynamics.indigo.ws.*;
 
 public final class RigTest implements TestSupport {
   private static final int PORT = 6667;
-  private static final int PULSE_DURATION = 100;
+  private static final int PULSE_DURATION = 10;
   private static final int PULSES = 10;
   private static final int CYCLES = 1;
   private static final int SYNC_SUBFRAMES = 0;
-  private static final Supplier<TopicGen> GEN = RigTest::smallLeaves;
+  private static final Supplier<TopicGen> GEN = RigTest::largeLeaves;
   
   static TopicGen smallLeaves() {
     return TopicGen.builder()
@@ -40,6 +40,19 @@ public final class RigTest implements TestSupport {
   
   static TopicGen largeLeaves() {
     return TopicGen.builder()
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(0, 0, 0).nodes(5))
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(0, 0, 0).nodes(5))
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .build();
+  }
+  
+  static TopicGen jumboLeaves() {
+    return TopicGen.builder()
+        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new TopicSpec(0, 0, 0).nodes(5))
         .add(new TopicSpec(0, 0, 0).nodes(2))
         .add(new TopicSpec(0, 0, 0).nodes(5))
         .add(new TopicSpec(0, 0, 0).nodes(2))
