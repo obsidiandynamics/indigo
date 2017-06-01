@@ -304,15 +304,16 @@ public final class WSFanOutTest implements TestSupport {
     }).run();
 
     if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.sent\n");
-    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.sent.get() >= m * n);
-    assertEquals((long) m * n, server.sent.get());
+    final long expectedReceive = (long) m * n;
+    Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.sent.get() >= expectedReceive);
+    assertEquals(expectedReceive, server.sent.get());
 
     if (LOG_PHASES) LOG_STREAM.format("s: awaiting client.received\n");
     long waitStart = System.currentTimeMillis();
     long lastPrint = System.currentTimeMillis();
     for (;;) {
       final long totalReceived = totalReceived(clients);
-      if (totalReceived >= m * n) {
+      if (totalReceived >= expectedReceive) {
         break;
       } else if (System.currentTimeMillis() - lastPrint > 1000) {
         final long takingSeconds = (System.currentTimeMillis() - waitStart) / 1000;
@@ -323,12 +324,12 @@ public final class WSFanOutTest implements TestSupport {
       }
     }
     
-    assertEquals((long) m * n, totalReceived(clients));
+    assertEquals(expectedReceive, totalReceived(clients));
 
     if (LOG_PHASES) LOG_STREAM.format("s: awaiting client.sent\n");
     if (echo) {
-      Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalSent(clients) >= m * n);
-      assertEquals((long) m * n, totalSent(clients));
+      Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> totalSent(clients) >= expectedReceive);
+      assertEquals(expectedReceive, totalSent(clients));
     } else {
       assertEquals(0, totalSent(clients));
     }
@@ -355,8 +356,8 @@ public final class WSFanOutTest implements TestSupport {
 
     if (echo) {
       if (LOG_PHASES) LOG_STREAM.format("s: awaiting server.received\n");
-      Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.received.get() == m * n);
-      assertEquals((long) m * n, server.received.get());
+      Awaitility.await().atMost(60 * waitScale, TimeUnit.SECONDS).until(() -> server.received.get() == expectedReceive);
+      assertEquals(expectedReceive, server.received.get());
     } else {
       assertEquals(0, server.received.get());
     }
