@@ -74,18 +74,18 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private void begin() throws Exception {
     log("r: sending begin command\n");
     final RemoteNexus control = node.open(config.uri, new RemoteNexusHandlerAdapter());
-    control.publish(new PublishTextFrame(getOutTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
+    control.publish(new PublishTextFrame(getTxTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
     control.close();
     control.awaitClose(CONN_CLOSE_TIMEOUT);
     startTime = System.currentTimeMillis();
   }
   
-  private String getInTopic(String remoteId) {
-    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/in";
+  private String getRxTopic(String remoteId) {
+    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/rx";
   }
   
-  private String getOutTopic(String remoteId) {
-    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/out";
+  private String getTxTopic(String remoteId) {
+    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/tx";
   }
   
   private String generateRemoteId() {
@@ -95,8 +95,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private long sync() throws Exception {
     log("r: syncing\n");
     final String remoteId = generateRemoteId();
-    final String inTopic = getInTopic(remoteId);
-    final String outTopic = getOutTopic(remoteId);
+    final String inTopic = getRxTopic(remoteId);
+    final String outTopic = getTxTopic(remoteId);
     final int discardSyncs = (int) (config.syncSubframes * .25);
     final AtomicBoolean syncComplete = new AtomicBoolean();
     final AtomicInteger syncs = new AtomicInteger();
@@ -159,6 +159,13 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   @Override
   public void close() throws Exception {
+    final List<RemoteNexus> nexuses = node.getNexuses();
+    for (RemoteNexus nexus : nexuses) {
+      nexus.close();
+    }
+    for (RemoteNexus nexus : nexuses) {
+      nexus.awaitClose(60_000);
+    }
     node.close();
   }
   
@@ -192,28 +199,4 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     // TODO Auto-generated method stub
     
   }
-
-//  @Override
-//  public void onPublish(RemoteNexus nexus, PublishTextFrame pub) {
-//    log("e: pub %s %s\n", nexus, pub);
-//    if (pub.getTopic().startsWith(RigSubframe.TOPIC_PREFIX)) {
-//      final Topic t = Topic.of(pub.getTopic());
-//      final String remoteId = t.getParts()[1];
-//      final RigSubframe subframe = RigSubframe.unmarshal(pub.getPayload(), subframeGson);
-//      onSubframe(remoteId, subframe);
-//    }
-//  }
-//  
-//  private void onSubframe(RemoteNexus nexus, String remoteId, RigSubframe subframe) {
-//    log("e: subframe %s %s\n", remoteId, subframe);
-//    if (subframe instanceof Sync) {
-//      sendSubframe(remoteId, new Sync(System.nanoTime()));
-//    }
-//  }
-//  
-//  private void sendSubframe(RemoteNexus nexus, String remoteId, RigSubframe subframe) {
-//    final String topic = RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/in";
-//    node.publish(topic, subframe.marshal(subframeGson));
-//  }
-
 }

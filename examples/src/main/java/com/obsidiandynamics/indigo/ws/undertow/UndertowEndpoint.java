@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.*;
 
 import com.obsidiandynamics.indigo.ws.*;
 
+import io.undertow.*;
 import io.undertow.websockets.core.*;
 
 public final class UndertowEndpoint extends AbstractReceiveListener implements WSEndpoint {
@@ -40,31 +41,26 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   
   @Override
   protected void onFullTextMessage(final WebSocketChannel channel, BufferedTextMessage message) throws IOException {
-    manager.getListener().onText(this, message.getData());
     super.onFullTextMessage(channel, message);
+    manager.getListener().onText(this, message.getData());
   }
 
   @Override
   protected void onFullBinaryMessage(final WebSocketChannel channel, BufferedBinaryMessage message) throws IOException {
-    manager.getListener().onBinary(this, WebSockets.mergeBuffers(message.getData().getResource()));
     super.onFullBinaryMessage(channel, message);
+    manager.getListener().onBinary(this, WebSockets.mergeBuffers(message.getData().getResource()));
   }
 
   @Override
   protected void onCloseMessage(CloseMessage message, WebSocketChannel channel) {
-    manager.getListener().onClose(this, message.getCode(), message.getReason());
     super.onCloseMessage(message, channel);
-    if (channel.isCloseFrameSent() && channel.isOpen()) {
-      try {
-        channel.close();
-      } catch (IOException e) {}
-    }
+    manager.getListener().onClose(this, message.getCode(), message.getReason());
   }
   
   @Override
   protected void onError(WebSocketChannel channel, Throwable cause) {
-    manager.getListener().onError(this, cause);
     super.onError(channel, cause);
+    manager.getListener().onError(this, cause);
   }
   
   @Override
@@ -126,8 +122,17 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
 
   @Override
   public void close() throws IOException {
-    if (channel.isOpen()) {
+    if (channel.isOpen() && ! channel.isCloseFrameSent()) {
       channel.sendClose();
+    } else {
+      channel.getIoThread().execute(() -> {
+        try {
+          channel.close();
+        } catch (IOException e) {
+          final UndertowLogger log = UndertowLogger.ROOT_LOGGER;
+          log.ioException(e);
+        }
+      });
     }
   }
 

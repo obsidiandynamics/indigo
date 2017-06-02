@@ -64,7 +64,6 @@ public final class RigTest implements TestSupport {
 
   @Test
   public void test() throws Exception {
-    BashInteractor.Ulimit.main(null);
     for (int i = 0; i < CYCLES; i++) {
       _test();
       if (i % 10 == 9) LOG_STREAM.format("%,d cycles\n", i);
@@ -100,5 +99,19 @@ public final class RigTest implements TestSupport {
     
     final Summary summary = remoteRig.getSummary();
     LOG_STREAM.format("%s\n", summary.toString());
+  }
+  
+  /**
+   *  Run with -XX:-MaxFDLimit -Xms2G -Xmx4G -XX:+UseConcMarkSweepGC
+   *  
+   *  @param args
+   */
+  public static void main(String[] args) {
+    try {
+      BashInteractor.Ulimit.main(null);
+      new RigTest().test();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
   }
 }

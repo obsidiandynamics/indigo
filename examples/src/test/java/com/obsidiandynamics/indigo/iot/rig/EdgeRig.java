@@ -139,7 +139,6 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
 
   @Override
   public void onPublish(EdgeNexus nexus, PublishTextFrame pub) {
-//    log("e: pub %s %s\n", nexus, pub);
     if (pub.getTopic().startsWith(RigSubframe.TOPIC_PREFIX)) {
       final Topic t = Topic.of(pub.getTopic());
       final String remoteId = t.getParts()[1];

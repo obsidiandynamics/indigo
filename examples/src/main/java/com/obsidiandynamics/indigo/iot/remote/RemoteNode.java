@@ -1,6 +1,8 @@
 package com.obsidiandynamics.indigo.iot.remote;
 
 import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 import org.slf4j.*;
 
@@ -14,6 +16,8 @@ public final class RemoteNode implements AutoCloseable {
   
   private final Wire wire;
   
+  private final List<RemoteNexus> nexuses = new CopyOnWriteArrayList<>();
+  
   public RemoteNode(WSClientFactory<?> clientFactory, WSClientConfig config, Wire wire) throws Exception {
     this.client = clientFactory.create(config);
     this.wire = wire;
@@ -24,7 +28,25 @@ public final class RemoteNode implements AutoCloseable {
     final RemoteNexus nexus = new RemoteNexus(RemoteNode.this);
     final EndpointAdapter<WSEndpoint> adapter = new EndpointAdapter<>(RemoteNode.this, nexus, handler);
     client.connect(uri, adapter);
+    nexuses.add(nexus);
     return nexus;
+  }
+  
+  void addNexus(RemoteNexus nexus) {
+    nexuses.add(nexus);
+  }
+  
+  void removeNexus(RemoteNexus nexus) {
+    nexuses.remove(nexus);
+  }
+  
+  /**
+   *  Obtains the currently connected nexuses.
+   *  
+   *  @return List of nexuses.
+   */
+  public List<RemoteNexus> getNexuses() {
+    return Collections.unmodifiableList(nexuses);
   }
   
   Wire getWire() {
