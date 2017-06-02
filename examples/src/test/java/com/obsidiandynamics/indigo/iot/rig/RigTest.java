@@ -20,7 +20,7 @@ public final class RigTest implements TestSupport {
   private static final int PULSES = 10;
   private static final int CYCLES = 1;
   private static final int SYNC_SUBFRAMES = 0;
-  private static final Supplier<TopicGen> GEN = RigTest::largeLeaves;
+  private static final Supplier<TopicGen> GEN = RigTest::smallLeaves;
   
   static TopicGen smallLeaves() {
     return TopicGen.builder()
