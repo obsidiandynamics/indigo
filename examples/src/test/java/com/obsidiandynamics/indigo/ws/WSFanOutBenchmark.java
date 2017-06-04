@@ -25,7 +25,6 @@ public final class WSFanOutBenchmark implements TestSupport {
   private static final int BACKLOG_HWM = 1_000_000;
   private static final int BYTES = 16;
   private static final int IDLE_TIMEOUT = 0;
-  private static final int UT_CLIENT_BUFFER_SIZE = Math.max(1024, BYTES);
   
   abstract static class Config implements Spec {
     ServerHarnessFactory serverHarnessFactory;
@@ -69,9 +68,7 @@ public final class WSFanOutBenchmark implements TestSupport {
       n = 100;
       m = 10;
       bytes = BYTES;
-      echo = false;
       flush = false;
-      text = false;
       backlogHwm = BACKLOG_HWM;
       warmupFrac = 0.10f;
       log = new LogConfig() {{
@@ -127,6 +124,10 @@ public final class WSFanOutBenchmark implements TestSupport {
     return (T) obj;
   }
   
+  private static int getUtBufferSize(int bytes) {
+    return Math.max(1024, bytes);
+  }
+  
   private static ServerHarnessFactory serverHarnessFactory(WSServerFactory<? extends WSEndpoint> serverFactory) throws Exception {
     return (p, progress, idleTimeout) -> new DefaultServerHarness(new WSServerConfig() {{
       port = p;
@@ -152,22 +153,65 @@ public final class WSFanOutBenchmark implements TestSupport {
   @Test
   public void testNtUt() throws Exception {
     final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(),
-                                                                   UT_CLIENT_BUFFER_SIZE), IDLE_TIMEOUT);
+                                                                   getUtBufferSize(BYTES)), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(NettyServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
       cleanup = client::close;
+      echo = false;
+      text = false;
     }}.assignDefaults().test();
   }
   
   @Test
-  public void testUtUt() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), UT_CLIENT_BUFFER_SIZE),
+  public void testUtUt_noEcho_binary() throws Exception {
+    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)),
                                             IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
       cleanup = client::close;
+      echo = false;
+      text = false;
+    }}.assignDefaults().test();
+  }
+  
+  @Test
+  public void testUtUt_echo_binary() throws Exception {
+    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)),
+                                            IDLE_TIMEOUT);
+    new Config() {{
+      serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
+      clientHarnessFactory = clientHarnessFactory(client);
+      cleanup = client::close;
+      echo = true;
+      text = false;
+    }}.assignDefaults().test();
+  }
+  
+  @Test
+  public void testUtUt_noEcho_text() throws Exception {
+    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)),
+                                            IDLE_TIMEOUT);
+    new Config() {{
+      serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
+      clientHarnessFactory = clientHarnessFactory(client);
+      cleanup = client::close;
+      echo = false;
+      text = true;
+    }}.assignDefaults().test();
+  }
+  
+  @Test
+  public void testUtUt_echo_text() throws Exception {
+    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)),
+                                            IDLE_TIMEOUT);
+    new Config() {{
+      serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
+      clientHarnessFactory = clientHarnessFactory(client);
+      cleanup = client::close;
+      echo = true;
+      text = true;
     }}.assignDefaults().test();
   }
   
@@ -177,6 +221,8 @@ public final class WSFanOutBenchmark implements TestSupport {
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = fakeClientFactory(BYTES);
       cleanup = ThrowingRunnable::noOp;
+      echo = false;
+      text = false;
     }}.assignDefaults().test();
   }
   
@@ -187,6 +233,8 @@ public final class WSFanOutBenchmark implements TestSupport {
       serverHarnessFactory = serverHarnessFactory(JettyServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
       cleanup = client::close;
+      echo = false;
+      text = false;
     }}.assignDefaults().test();
   }
   
@@ -197,17 +245,21 @@ public final class WSFanOutBenchmark implements TestSupport {
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
       cleanup = client::close;
+      echo = false;
+      text = false;
     }}.assignDefaults().test();
   }
   
   @Test
   public void testJtUt() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), UT_CLIENT_BUFFER_SIZE), 
+    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), 
                                             IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(JettyServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
       cleanup = client::close;
+      echo = false;
+      text = false;
     }}.assignDefaults().test();
   }
   
@@ -450,9 +502,8 @@ public final class WSFanOutBenchmark implements TestSupport {
   public static void main(String[] args) throws Exception {
     BashInteractor.Ulimit.main(null);
     final int bytes = 16;
-    final int utClientBufferSize = Math.max(1024, bytes);
     final int idleTimeout_ = 0;
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), utClientBufferSize), 
+    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(bytes)), 
                                             idleTimeout_);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
