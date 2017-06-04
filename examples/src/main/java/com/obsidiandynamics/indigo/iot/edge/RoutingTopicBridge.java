@@ -23,7 +23,9 @@ public final class RoutingTopicBridge implements TopicBridge {
   
   public RoutingTopicBridge(ActorSystem system) {
     this.system = system;
-    system.on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig()));
+    system.on(TopicActor.ROLE).withConfig(new ActorConfig() {{
+      bias = 10;
+    }}).cue(() -> new TopicActor(new TopicConfig()));
   }
 
   @Override
