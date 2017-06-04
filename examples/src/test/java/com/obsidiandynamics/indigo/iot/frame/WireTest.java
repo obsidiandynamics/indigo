@@ -56,6 +56,14 @@ public final class WireTest implements TestSupport {
     testEncodeDecode(new BinaryFrame("some/topic", ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
   }
   
+  @Test
+  public void testMarshalBinaryWithLong() {
+    final ByteBuffer buf = ByteBuffer.allocate(8);
+    buf.putLong(System.nanoTime());
+    buf.flip();
+    testEncodeDecode(new BinaryFrame("some/topic", buf));
+  }
+  
   @Test(expected=IllegalArgumentException.class)
   public void testIncompleteSubscribeFrame() {
     wire.decode("T");
