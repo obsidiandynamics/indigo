@@ -44,7 +44,7 @@ public final class Summary {
                        stats.samples.getMean() / 1000, 
                        stats.samples.getStandardDeviation() / 1000,
                        stats.samples.getMin() / 1000,
-                       stats.samples.getPercentile(5) / 1000, 
+                       stats.samples.getPercentile(50) / 1000, 
                        stats.samples.getPercentile(95) / 1000,
                        stats.samples.getPercentile(99) / 1000,
                        stats.samples.getMax() / 1000,

@@ -42,7 +42,6 @@ public class UndertowClient implements WSClient<UndertowEndpoint> {
   @Override
   public void close() throws Exception {
     worker.shutdown();
-    worker.awaitTermination();
   }
   
   public static final class Factory implements WSClientFactory<UndertowEndpoint> {

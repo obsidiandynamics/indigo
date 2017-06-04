@@ -50,6 +50,10 @@ public final class EdgeNexus implements AutoCloseable {
   public void send(BinaryEncodedFrame frame, Consumer<Throwable> callback) {
     SendHelper.send(frame, peer.getEndpoint(), node.getWire(), callback);
   }
+  
+  public boolean isLocal() {
+    return peer instanceof LocalPeer;
+  }
 
   public Peer getPeer() {
     return peer;

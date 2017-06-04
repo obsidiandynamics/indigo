@@ -26,6 +26,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     int syncSubframes = 10;
     URI uri;
     TopicGen topicGen;
+    LogConfig log;
   }
   
   private final RemoteNode node;
@@ -49,7 +50,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   @Override
   public void run() throws Exception {
-    timeDiff = config.syncSubframes != 0 ? sync() : 0;
+    timeDiff = config.syncSubframes != 0 ? calibrate() : 0;
     connectAll();
     begin();
   }
@@ -59,20 +60,22 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     
     final List<CompletableFuture<SubscribeResponseFrame>> futures = new ArrayList<>(allInterests.size());
     for (Interest interest : allInterests) {
-      final RemoteNexus nexus = node.open(config.uri, this);
-      final CompletableFuture<SubscribeResponseFrame> f = 
-          nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), new String[]{interest.getTopic().toString()}, null));
-      futures.add(f);
+      for (int i = 0; i < interest.getCount(); i++) {
+        final RemoteNexus nexus = node.open(config.uri, this);
+        final CompletableFuture<SubscribeResponseFrame> f = 
+            nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), new String[]{interest.getTopic().toString()}, null));
+        futures.add(f);
+      }
     }
     
     for (CompletableFuture<SubscribeResponseFrame> f : futures) {
       f.get();
     }
-    log("r: %,d remotes connected\n", allInterests.size());
+    if (config.log.verbose) config.log.out.format("r: %,d remotes connected\n", allInterests.size());
   }
   
   private void begin() throws Exception {
-    log("r: sending begin command\n");
+    if (config.log.stages) config.log.out.format("Connecting remotes...\n");
     final RemoteNexus control = node.open(config.uri, new RemoteNexusHandlerAdapter());
     control.publish(new PublishTextFrame(getTxTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
     control.close();
@@ -92,8 +95,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     return Long.toHexString(Crypto.machineRandom());
   }
   
-  private long sync() throws Exception {
-    log("r: syncing\n");
+  private long calibrate() throws Exception {
+    if (config.log.stages) config.log.out.format("Time calibration...\n");
     final String remoteId = generateRemoteId();
     final String inTopic = getRxTopic(remoteId);
     final String outTopic = getTxTopic(remoteId);
@@ -106,12 +109,12 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     final RemoteNexus nexus = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         final long now = System.nanoTime();
-        log("r: sync text %s %s\n", topic, payload);
+        if (config.log.verbose) config.log.out.format("r: sync text %s %s\n", topic, payload);
         final Sync sync = RigSubframe.unmarshal(payload, subframeGson);
         final long timeTaken = now - lastRemoteTransmitTime.get();
         final long timeDelta = now - sync.getNanoTime() - timeTaken / 2;
         if (syncs.getAndIncrement() >= discardSyncs) {
-          log("r: sync round-trip: %,d, delta: %,d\n", timeTaken, timeDelta);
+          if (config.log.verbose) config.log.out.format("r: sync round-trip: %,d, delta: %,d\n", timeTaken, timeDelta);
           timeDeltas.add(timeDelta);
         }
         
@@ -138,7 +141,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     Awaitility.await().atMost(10, TimeUnit.SECONDS).untilTrue(syncComplete);
     
     final long timeDiff = timeDeltas.stream().collect(Collectors.averagingLong(l -> l)).longValue();
-    log("r: sync complete, diff: %,d\n", timeDiff);
+    if (config.log.stages) config.log.out.format("Calibration complete; time delta: %,d ns (%s ahead)\n", 
+                                                 timeDiff, timeDiff >= 0 ? "remote" : "edge");
     return timeDiff;
   }
   
@@ -175,28 +179,34 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
 
   @Override
   public void onConnect(RemoteNexus nexus) {
-    log("r: connected %s\n", nexus);
+    if (config.log.verbose) config.log.out.format("r: connected %s\n", nexus);
   }
 
   @Override
   public void onDisconnect(RemoteNexus nexus) {
-    log("r: disconnected %s\n", nexus);
+    if (config.log.verbose) config.log.out.format("r: disconnected %s\n", nexus);
   }
 
   @Override
   public void onText(RemoteNexus nexus, String topic, String payload) {
     final long now = System.nanoTime();
     final long serverNanos = Long.valueOf(payload);
-    final long clientNanos = serverNanos + timeDiff;
-    final long taken = now - clientNanos;
-    log("r: received text, latency %,d\n", taken);
-    summary.stats.executor.execute(() -> summary.stats.samples.addValue(taken));
-    received.incrementAndGet();
+    time(now, serverNanos);
   }
 
   @Override
   public void onBinary(RemoteNexus nexus, String topic, ByteBuffer payload) {
-    // TODO Auto-generated method stub
-    
+    final long now = System.nanoTime();
+    final long serverNanos = payload.getLong();
+    time(now, serverNanos);
+  }
+  
+  private void time(long now, long serverNanos) {
+    received.incrementAndGet();
+    if (serverNanos == 0) return;
+    final long clientNanos = serverNanos + timeDiff;
+    final long taken = now - clientNanos;
+    if (config.log.verbose) config.log.out.format("r: received; latency %,d\n", taken);
+    summary.stats.executor.execute(() -> summary.stats.samples.addValue(taken));
   }
 }

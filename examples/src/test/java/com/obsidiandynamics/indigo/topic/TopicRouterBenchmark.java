@@ -260,12 +260,14 @@ public final class TopicRouterBenchmark implements TestSupport {
 
     final long o = c.n - c.warmup;
     final long warmupReceived;
+    final long progressInterval = Math.max(1, o / 25);
     if (c.warmup != 0) {
       if (c.log.stages) c.log.out.format("Warming up...\n");
       for (int i = 0; i < c.warmup; i++) {
         for (Topic topic : c.targetTopics) {
           publish(system, routerRef, topic);
         }
+        if (c.log.progress && i % progressInterval == 0) c.log.printProgressBlock();
       }
       system.drain(0);
       warmupReceived = c.subscribers.stream().collect(Collectors.summingLong(s -> s.received)).longValue();
@@ -279,6 +281,7 @@ public final class TopicRouterBenchmark implements TestSupport {
         for (Topic topic : c.targetTopics) {
           publish(system, routerRef, topic);
         }
+        if (c.log.progress && (i + c.warmup) % progressInterval == 0) c.log.printProgressBlock();
       }
       system.drain(0);
     });
@@ -324,6 +327,7 @@ public final class TopicRouterBenchmark implements TestSupport {
       assertTopicOnDelivery = false;
       warmupFrac = .05f;
       log = new LogConfig() {{
+        progress = intermediateSummaries = true;
         summary = true;
       }};
     }}.testPercentile(3, 5, 50, Summary::byThroughput);
