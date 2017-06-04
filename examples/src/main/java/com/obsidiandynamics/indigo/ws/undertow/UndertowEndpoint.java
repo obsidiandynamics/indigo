@@ -41,14 +41,15 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   
   @Override
   protected void onFullTextMessage(final WebSocketChannel channel, BufferedTextMessage message) throws IOException {
-    super.onFullTextMessage(channel, message);
     manager.getListener().onText(this, message.getData());
+    super.onFullTextMessage(channel, message);
   }
 
   @Override
   protected void onFullBinaryMessage(final WebSocketChannel channel, BufferedBinaryMessage message) throws IOException {
+    final ByteBuffer buf = WebSockets.mergeBuffers(message.getData().getResource());
+    manager.getListener().onBinary(this, buf);
     super.onFullBinaryMessage(channel, message);
-    manager.getListener().onBinary(this, WebSockets.mergeBuffers(message.getData().getResource()));
   }
 
   @Override
