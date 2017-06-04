@@ -6,9 +6,8 @@ import java.nio.*;
 
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
-import com.obsidiandynamics.indigo.ws.fake.FakeClientHarness.*;
 
-public final class FakeClientHarness extends ClientHarness<FakeEndpoint> implements TestSupport {
+public final class FakeClientHarness extends ClientHarness implements TestSupport {
   public static final class FakeEndpoint implements WSEndpoint {
     @Override public void close() throws Exception {
     }

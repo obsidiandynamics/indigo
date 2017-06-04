@@ -101,7 +101,6 @@ public final class FakeClient extends Thread implements Closeable {
   @Override
   public void close() throws IOException {
     if (! socket.isClosed()) {
-      System.out.println("sending close");
       final byte[] closeFrame = BinaryUtils.toByteArray(0x88, 0x80, 0x98, 0xec, 0x87, 0xc0);
       try {
         socket.getOutputStream().write(closeFrame);

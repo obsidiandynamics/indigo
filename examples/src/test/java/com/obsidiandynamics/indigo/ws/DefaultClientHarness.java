@@ -5,19 +5,19 @@ import java.nio.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class DefaultClientHarness<E extends WSEndpoint> extends ClientHarness<E> implements TestSupport {
+public final class DefaultClientHarness extends ClientHarness implements TestSupport {
   private final SendCallback writeCallback;
   
   private final WSEndpoint endpoint;
   
-  DefaultClientHarness(WSClient<E> client, int port, boolean echo) throws Exception {
-    final EndpointListener<E> clientListener = new EndpointListener<E>() {
-      @Override public void onConnect(E endpoint) {
+  DefaultClientHarness(WSClient<?> client, int port, boolean echo) throws Exception {
+    final EndpointListener<WSEndpoint> clientListener = new EndpointListener<WSEndpoint>() {
+      @Override public void onConnect(WSEndpoint endpoint) {
         log("c: connected: %s\n", endpoint.getRemoteAddress());
         connected.set(true);
       }
 
-      @Override public void onText(E endpoint, String message) {
+      @Override public void onText(WSEndpoint endpoint, String message) {
         log("c: received: %s\n", message);
         received.incrementAndGet();
         if (echo) {
@@ -25,21 +25,20 @@ public final class DefaultClientHarness<E extends WSEndpoint> extends ClientHarn
         }
       }
 
-      @Override public void onBinary(E endpoint, ByteBuffer message) {
+      @Override public void onBinary(WSEndpoint endpoint, ByteBuffer message) {
         log("c: received\n");
-        final long r = received.incrementAndGet();
-        if (WSFanOutTest.LOG_1K && r % 1000 == 0) System.out.println("c: received " + received);
+        received.incrementAndGet();
         if (echo) {
           send(message);
         }
       }
       
-      @Override public void onClose(E endpoint, int statusCode, String reason) {
+      @Override public void onClose(WSEndpoint endpoint, int statusCode, String reason) {
         log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
         closed.set(true);
       }
       
-      @Override public void onError(E endpoint, Throwable cause) {
+      @Override public void onError(WSEndpoint endpoint, Throwable cause) {
         log("c: socket error\n");
         System.err.println("client socket error");
         cause.printStackTrace();

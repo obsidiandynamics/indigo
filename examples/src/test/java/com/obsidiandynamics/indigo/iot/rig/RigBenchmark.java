@@ -143,7 +143,7 @@ public final class RigBenchmark implements TestSupport {
     final RemoteRig remoteRig = new RemoteRig(remote, new RemoteRigConfig() {{
       topicGen = c.topicGen;
       syncSubframes = c.syncSubframes;
-      uri = new URI("ws://localhost:" + PORT + "/");
+      uri = new URI("ws://localhost:" + c.port + "/");
       log = c.log;
     }});
     
