@@ -129,8 +129,8 @@ public final class WSFanOutBenchmark implements TestSupport {
   }
   
   private static ServerHarnessFactory serverHarnessFactory(WSServerFactory<? extends WSEndpoint> serverFactory) throws Exception {
-    return (p, progress, idleTimeout) -> new DefaultServerHarness(new WSServerConfig() {{
-      port = p;
+    return (port_, progress, idleTimeout) -> new DefaultServerHarness(new WSServerConfig() {{
+      port = port_;
       contextPath = "/";
       idleTimeoutMillis = idleTimeout;
     }}, unsafeCast(serverFactory), progress);
