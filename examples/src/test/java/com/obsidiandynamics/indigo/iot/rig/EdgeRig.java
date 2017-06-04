@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
+import static com.obsidiandynamics.indigo.util.SocketTestSupport.*;
+
 import java.nio.*;
 import java.util.*;
 
@@ -17,6 +19,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     int pulses;
     int warmupPulses;
     boolean text;
+    int bytes;
     LogConfig log;
   }
   
@@ -64,7 +67,10 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     int pulse = 0;
     if (config.log.stages) config.log.out.format("Warming up (%,d pulses)...\n", config.warmupPulses);
     boolean warmup = true;
+    final byte[] binPayload = config.text ? null : randomBytes(config.bytes);
+    final String textPayload = config.text ? randomString(config.bytes) : null;
     final int progressInterval = Math.max(1, config.pulses / 25);
+    
     outer: while (state == State.RUNNING) {
       final long start = System.nanoTime();
       int sent = 0;
@@ -76,10 +82,12 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
         }
         final long timestamp = warmup ? 0 : System.nanoTime();
         if (config.text) {
-          node.publish(t.toString(), String.valueOf(timestamp));
+          final String str = new StringBuilder().append(timestamp).append(' ').append(textPayload).toString();
+          node.publish(t.toString(), str);
         } else {
-          final ByteBuffer buf = ByteBuffer.allocate(8);
+          final ByteBuffer buf = ByteBuffer.allocate(8 + config.bytes);
           buf.putLong(timestamp);
+          buf.put(binPayload);
           buf.flip();
           node.publish(t.toString(), buf);
         }

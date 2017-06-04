@@ -190,7 +190,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   @Override
   public void onText(RemoteNexus nexus, String topic, String payload) {
     final long now = System.nanoTime();
-    final long serverNanos = Long.valueOf(payload);
+    final int idx = payload.indexOf(' ');
+    final long serverNanos = Long.valueOf(payload.substring(0, idx));
     time(now, serverNanos);
   }
 

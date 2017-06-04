@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.ws;
 
+import static com.obsidiandynamics.indigo.util.SocketTestSupport.*;
 import static junit.framework.TestCase.*;
 
 import java.io.*;
@@ -20,7 +21,7 @@ import com.obsidiandynamics.indigo.ws.jetty.*;
 import com.obsidiandynamics.indigo.ws.netty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
-public final class WSFanOutBenchmark implements TestSupport {
+public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   private static final int PORT = 6667;
   private static final int BACKLOG_HWM = 1_000_000;
   private static final int BYTES = 16;
@@ -481,22 +482,6 @@ public final class WSFanOutBenchmark implements TestSupport {
 
     server.close();
     return summary;
-  }
-  
-  private byte[] randomBytes(int length) {
-    final byte[] bytes = new byte[length];
-    new Random().nextBytes(bytes);
-    return bytes;
-  }
-  
-  private String randomString(int length) {
-    if (length % 2 != 0) throw new IllegalArgumentException("Length must be a multiple of 2");
-    final StringBuilder sb = new StringBuilder(length);
-    final byte[] bytes = randomBytes(length / 2);
-    for (int i = 0; i < bytes.length; i++) {
-      sb.append(BinaryUtils.toHex(bytes[i]));
-    }
-    return sb.toString();
   }
   
   public static void main(String[] args) throws Exception {

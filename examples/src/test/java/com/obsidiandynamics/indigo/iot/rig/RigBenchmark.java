@@ -25,6 +25,7 @@ public final class RigBenchmark implements TestSupport {
     int syncSubframes;
     TopicGen topicGen;
     boolean text;
+    int bytes;
     float warmupFrac;
     LogConfig log;
     
@@ -110,7 +111,7 @@ public final class RigBenchmark implements TestSupport {
   }
 
   @Test
-  public void test() throws Exception {
+  public void testText() throws Exception {
     new Config() {{
       port = PORT;
       pulses = 10;
@@ -119,6 +120,24 @@ public final class RigBenchmark implements TestSupport {
       topicGen = smallLeaves();
       warmupFrac = 0.05f;
       text = true;
+      bytes = 16;
+      log = new LogConfig() {{
+        summary = stages = LOG;
+      }};
+    }}.times(CYCLES).test();
+  }
+
+  @Test
+  public void testBinary() throws Exception {
+    new Config() {{
+      port = PORT;
+      pulses = 10;
+      pulseDurationMillis = 1;
+      syncSubframes = 10;
+      topicGen = smallLeaves();
+      warmupFrac = 0.05f;
+      text = false;
+      bytes = 16;
       log = new LogConfig() {{
         summary = stages = LOG;
       }};
@@ -135,6 +154,7 @@ public final class RigBenchmark implements TestSupport {
       pulses = c.pulses;
       warmupPulses = c.warmupPulses;
       text = c.text;
+      bytes = c.bytes;
       log = c.log;
     }});
     
@@ -174,6 +194,7 @@ public final class RigBenchmark implements TestSupport {
       topicGen = largeLeaves();
       warmupFrac = 0.10f;
       text = false;
+      bytes = 16;
       log = new LogConfig() {{
         progress = intermediateSummaries = true;
         summary = true;
