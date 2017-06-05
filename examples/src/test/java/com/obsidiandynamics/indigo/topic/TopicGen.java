@@ -55,15 +55,15 @@ public final class TopicGen {
     }
   }
   
-  private final Combinations<TopicGenNode> combs;
+  private final Combinations<TopicNode> combs;
   
-  public TopicGen(List<List<TopicGenNode>> topicGenMatrix) {
+  public TopicGen(List<List<TopicNode>> topicGenMatrix) {
     combs = new Combinations<>(topicGenMatrix);
   }
   
   public final List<Topic> getLeafTopics() {
     final List<Topic> topics = new ArrayList<>(combs.size());
-    for (List<TopicGenNode> nodes : combs) {
+    for (List<TopicNode> nodes : combs) {
       final String[] frags = new String[nodes.size()];
       for (int i = 0; i < frags.length; i++) {
         frags[i] = nodes.get(i).fragment;
@@ -75,7 +75,7 @@ public final class TopicGen {
   
   public final List<Interest> getExactInterests() {
     final Set<Interest> interests = new LinkedHashSet<>();
-    for (List<TopicGenNode> nodes : combs) {
+    for (List<TopicNode> nodes : combs) {
       for (int i = 0; i < nodes.size(); i++) {
         if (nodes.get(i).spec.exacts > 0) {
           final String[] frags = new String[i + 1];
@@ -91,7 +91,7 @@ public final class TopicGen {
   
   public final List<Interest> getSingleLevelWildcardInterests() {
     final Set<Interest> interests = new LinkedHashSet<>();
-    for (List<TopicGenNode> nodes : combs) {
+    for (List<TopicNode> nodes : combs) {
       for (int i = 0; i < nodes.size(); i++) {
         if (nodes.get(i).spec.slWildcards > 0) {
           final String[] frags = new String[i + 1];
@@ -107,7 +107,7 @@ public final class TopicGen {
   
   public final List<Interest> getMultiLevelWildcardInterests() {
     final Set<Interest> interests = new LinkedHashSet<>();
-    for (List<TopicGenNode> nodes : combs) {
+    for (List<TopicNode> nodes : combs) {
       for (int i = 0; i < nodes.size(); i++) {
         if (nodes.get(i).spec.mlWildcards > 0) {
           final String[] frags = new String[i + 1];
@@ -130,9 +130,9 @@ public final class TopicGen {
   }
   
   public static final class TopicGenBuilder {
-    private final List<List<TopicGenNode>> matrix = new ArrayList<>();
+    private final List<List<TopicNode>> matrix = new ArrayList<>();
     
-    public TopicGenBuilder add(List<TopicGenNode> nodes) {
+    public TopicGenBuilder add(List<TopicNode> nodes) {
       matrix.add(nodes);
       return this;
     }

@@ -108,62 +108,62 @@ public final class TopicRouterBenchmark implements TestSupport {
   
   static TopicGen tiny() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 1, 1).nodes(1))
+        .add(new NodeSpec(1, 1, 1).nodes(1))
         .build();
   }
   
   static TopicGen small() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen medium() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen large() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen jumbo() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
         .build();
   }
   
   static TopicGen mriya() {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
-        .add(new TopicSpec(1, 1, 1).nodes(2))
-        .add(new TopicSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
+        .add(new NodeSpec(1, 1, 1).nodes(2))
+        .add(new NodeSpec(1, 1, 1).nodes(5))
         .build();
   }
   

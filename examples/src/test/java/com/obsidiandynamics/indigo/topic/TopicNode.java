@@ -1,10 +1,10 @@
 package com.obsidiandynamics.indigo.topic;
 
-final class TopicGenNode {
+final class TopicNode {
   final String fragment;
-  final TopicSpec spec;
+  final NodeSpec spec;
   
-  TopicGenNode(String fragment, TopicSpec spec) {
+  TopicNode(String fragment, NodeSpec spec) {
     this.fragment = fragment;
     this.spec = spec;
   }

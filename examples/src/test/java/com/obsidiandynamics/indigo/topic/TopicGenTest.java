@@ -15,7 +15,7 @@ public class TopicGenTest {
   @Test
   public void test1LevelEmpty() {
     final TopicGen gen = TopicGen.builder()
-        .add(new TopicSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
         .build();
     assertEquals(Arrays.asList(Topic.of("0"), Topic.of("1")), gen.getLeafTopics());
     assertEquals(Arrays.asList(), gen.getExactInterests());
@@ -29,7 +29,7 @@ public class TopicGenTest {
   @Test
   public void test1Level() {
     final TopicGen gen = TopicGen.builder()
-        .add(new TopicSpec(1, 2, 3).nodes(2))
+        .add(new NodeSpec(1, 2, 3).nodes(2))
         .build();
     assertEquals(Arrays.asList(Topic.of("0"), Topic.of("1")), gen.getLeafTopics());
     assertEquals(Arrays.asList(new Interest(Topic.of("0"), 1), new Interest(Topic.of("1"), 1)), gen.getExactInterests());
@@ -43,9 +43,9 @@ public class TopicGenTest {
   @Test
   public void test3Level() {
     final TopicGen gen = TopicGen.builder()
-        .add(new TopicSpec(1, 2, 3).nodes(2))
-        .add(new TopicSpec(4, 5, 6).nodes(3))
-        .add(new TopicSpec(7, 8, 9).nodes(1))
+        .add(new NodeSpec(1, 2, 3).nodes(2))
+        .add(new NodeSpec(4, 5, 6).nodes(3))
+        .add(new NodeSpec(7, 8, 9).nodes(1))
         .build();
     assertEquals(Arrays.asList(Topic.of("0/0/0"), Topic.of("0/1/0"), Topic.of("0/2/0"),
                                Topic.of("1/0/0"), Topic.of("1/1/0"), Topic.of("1/2/0")), gen.getLeafTopics());

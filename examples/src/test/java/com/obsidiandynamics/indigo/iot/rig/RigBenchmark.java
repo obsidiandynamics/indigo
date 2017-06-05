@@ -66,53 +66,53 @@ public final class RigBenchmark implements TestSupport {
   
   static TopicGen singleton(int subscribers) {
     return TopicGen.builder()
-        .add(new TopicSpec(subscribers, 0, 0).nodes(1))
+        .add(new NodeSpec(subscribers, 0, 0).nodes(1))
         .build();
   }
   
   static TopicGen shrub(int leaves) {
     return TopicGen.builder()
-        .add(new TopicSpec(1, 0, 0).nodes(leaves))
+        .add(new NodeSpec(1, 0, 0).nodes(leaves))
         .build();
   }
   
   static TopicGen smallLeaves() {
     return TopicGen.builder()
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(1, 0, 0).nodes(5))
         .build();
   }
   
   static TopicGen mediumLeaves() {
     return TopicGen.builder()
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(0, 0, 0).nodes(5))
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(0, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(1, 0, 0).nodes(5))
         .build();
   }
   
   static TopicGen largeLeaves() {
     return TopicGen.builder()
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(0, 0, 0).nodes(5))
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(0, 0, 0).nodes(5))
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(0, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(0, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(1, 0, 0).nodes(5))
         .build();
   }
   
   static TopicGen jumboLeaves() {
     return TopicGen.builder()
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(0, 0, 0).nodes(5))
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(0, 0, 0).nodes(5))
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(0, 0, 0).nodes(5))
-        .add(new TopicSpec(0, 0, 0).nodes(2))
-        .add(new TopicSpec(1, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(0, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(0, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(0, 0, 0).nodes(5))
+        .add(new NodeSpec(0, 0, 0).nodes(2))
+        .add(new NodeSpec(1, 0, 0).nodes(5))
         .build();
   }
 
