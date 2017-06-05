@@ -106,67 +106,6 @@ public final class TopicRouterBenchmark implements TestSupport {
     }
   }
   
-  static TopicSpec tiny() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(1, 1, 1).nodes(1))
-        .build();
-  }
-  
-  static TopicSpec small() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .build();
-  }
-  
-  static TopicSpec medium() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .build();
-  }
-  
-  static TopicSpec large() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .build();
-  }
-  
-  static TopicSpec jumbo() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .build();
-  }
-  
-  static TopicSpec mriya() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .add(new NodeSpec(1, 1, 1).nodes(2))
-        .add(new NodeSpec(1, 1, 1).nodes(5))
-        .build();
-  }
-  
   private static class BenchSubscriber implements Subscriber {
     final Config c;
     final Topic topic;
@@ -213,9 +152,9 @@ public final class TopicRouterBenchmark implements TestSupport {
   
   @Test
   public void test() throws Exception {
-    test(TopicRouterBenchmark::tiny, 1000);
-    test(TopicRouterBenchmark::small, 100);
-    test(TopicRouterBenchmark::medium, 10);
+    test(TopicLibrary::tiny, 1000);
+    test(TopicLibrary::small, 100);
+    test(TopicLibrary::medium, 10);
   }
   
   private void test(Supplier<TopicSpec> topicGenSupplier, int n) throws Exception {
@@ -323,7 +262,7 @@ public final class TopicRouterBenchmark implements TestSupport {
       warmupFrac = .05f;
       threads = Runtime.getRuntime().availableProcessors();
       bias = 10;
-      topicSpec = large();
+      topicSpec = TopicLibrary.large();
       assertTopicOnDelivery = false;
       warmupFrac = .05f;
       log = new LogConfig() {{

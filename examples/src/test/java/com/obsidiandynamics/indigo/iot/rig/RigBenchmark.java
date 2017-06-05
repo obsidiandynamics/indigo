@@ -63,58 +63,6 @@ public final class RigBenchmark implements TestSupport {
       return new RigBenchmark().test(this);
     }
   }
-  
-  static TopicSpec singleton(int subscribers) {
-    return TopicSpec.builder()
-        .add(new NodeSpec(subscribers, 0, 0).nodes(1))
-        .build();
-  }
-  
-  static TopicSpec shrub(int leaves) {
-    return TopicSpec.builder()
-        .add(new NodeSpec(1, 0, 0).nodes(leaves))
-        .build();
-  }
-  
-  static TopicSpec smallLeaves() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(1, 0, 0).nodes(5))
-        .build();
-  }
-  
-  static TopicSpec mediumLeaves() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(0, 0, 0).nodes(5))
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(1, 0, 0).nodes(5))
-        .build();
-  }
-  
-  static TopicSpec largeLeaves() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(0, 0, 0).nodes(5))
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(0, 0, 0).nodes(5))
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(1, 0, 0).nodes(5))
-        .build();
-  }
-  
-  static TopicSpec jumboLeaves() {
-    return TopicSpec.builder()
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(0, 0, 0).nodes(5))
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(0, 0, 0).nodes(5))
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(0, 0, 0).nodes(5))
-        .add(new NodeSpec(0, 0, 0).nodes(2))
-        .add(new NodeSpec(1, 0, 0).nodes(5))
-        .build();
-  }
 
   @Test
   public void testText() throws Exception {
@@ -123,7 +71,7 @@ public final class RigBenchmark implements TestSupport {
       pulses = 10;
       pulseDurationMillis = 1;
       syncSubframes = 10;
-      topicSpec = smallLeaves();
+      topicSpec = TopicLibrary.smallLeaves();
       warmupFrac = 0.05f;
       text = true;
       bytes = 16;
@@ -140,7 +88,7 @@ public final class RigBenchmark implements TestSupport {
       pulses = 10;
       pulseDurationMillis = 1;
       syncSubframes = 10;
-      topicSpec = smallLeaves();
+      topicSpec = TopicLibrary.smallLeaves();
       warmupFrac = 0.05f;
       text = false;
       bytes = 16;
@@ -197,7 +145,7 @@ public final class RigBenchmark implements TestSupport {
       pulses = 300;
       pulseDurationMillis = 100;
       syncSubframes = 0;
-      topicSpec = largeLeaves();
+      topicSpec = TopicLibrary.largeLeaves();
       warmupFrac = 0.10f;
       text = false;
       bytes = 128;
