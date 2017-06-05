@@ -64,9 +64,15 @@ public final class RigBenchmark implements TestSupport {
     }
   }
   
-  static TopicGen denseLeaves() {
+  static TopicGen singleton(int subscribers) {
     return TopicGen.builder()
-        .add(new TopicSpec(1000, 0, 0).nodes(1))
+        .add(new TopicSpec(subscribers, 0, 0).nodes(1))
+        .build();
+  }
+  
+  static TopicGen shrub(int leaves) {
+    return TopicGen.builder()
+        .add(new TopicSpec(1, 0, 0).nodes(leaves))
         .build();
   }
   
@@ -194,7 +200,7 @@ public final class RigBenchmark implements TestSupport {
       topicGen = largeLeaves();
       warmupFrac = 0.10f;
       text = false;
-      bytes = 16;
+      bytes = 128;
       log = new LogConfig() {{
         progress = intermediateSummaries = true;
         summary = true;
