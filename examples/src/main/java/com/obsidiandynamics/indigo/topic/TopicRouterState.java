@@ -4,14 +4,14 @@ import java.util.*;
 
 import com.obsidiandynamics.indigo.*;
 
-final class TopicActorState {
+final class TopicRouterState {
   final Topic topic;
   
   final Map<String, ActorRef> subtopics = new HashMap<>();
   
   final Map<Topic, Set<Subscriber>> subscribers = new HashMap<>();
 
-  TopicActorState(Topic topic) {
+  TopicRouterState(Topic topic) {
     this.topic = topic;
   }
   
@@ -41,6 +41,6 @@ final class TopicActorState {
 
   @Override
   public String toString() {
-    return "TopicActorState [topic=" + topic + ", subtopics=" + subtopics.keySet() + ", subscribers=" + subscribers + "]";
+    return "TopicRouterState [topic=" + topic + ", subtopics=" + subtopics.keySet() + ", subscribers=" + subscribers + "]";
   }
 }

@@ -64,7 +64,7 @@ public final class Topic {
   }
   
   ActorRef asRef() {
-    return ActorRef.of(TopicActor.ROLE, isRoot() ? null : toString());
+    return ActorRef.of(TopicRouter.ROLE, isRoot() ? null : toString());
   }
   
   static Topic fromRef(ActorRef ref) {

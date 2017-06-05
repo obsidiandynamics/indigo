@@ -245,11 +245,11 @@ public final class TopicRouterBenchmark implements TestSupport {
       }};
     }}
     .createActorSystem()
-    .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig() {{
+    .on(TopicRouter.ROLE).cue(() -> new TopicRouter(new TopicConfig() {{
       topicWatcher = watcher;
     }}));
     
-    final ActorRef routerRef = ActorRef.of(TopicActor.ROLE);
+    final ActorRef routerRef = ActorRef.of(TopicRouter.ROLE);
     for (BenchSubscriber subscriber : c.subscribers) {
       subscriber.reset();
       subscribe(system, routerRef, subscriber.topic, subscriber).get();

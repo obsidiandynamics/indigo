@@ -15,7 +15,7 @@ public final class RoutingTopicBridge implements TopicBridge {
   
   private final ActorSystem system;
   
-  private final ActorRef routerRef = ActorRef.of(TopicActor.ROLE);
+  private final ActorRef routerRef = ActorRef.of(TopicRouter.ROLE);
   
   public RoutingTopicBridge() {
     this(ActorSystem.create());
@@ -23,9 +23,9 @@ public final class RoutingTopicBridge implements TopicBridge {
   
   public RoutingTopicBridge(ActorSystem system) {
     this.system = system;
-    system.on(TopicActor.ROLE).withConfig(new ActorConfig() {{
+    system.on(TopicRouter.ROLE).withConfig(new ActorConfig() {{
       bias = 10;
-    }}).cue(() -> new TopicActor(new TopicConfig()));
+    }}).cue(() -> new TopicRouter(new TopicConfig()));
   }
 
   @Override

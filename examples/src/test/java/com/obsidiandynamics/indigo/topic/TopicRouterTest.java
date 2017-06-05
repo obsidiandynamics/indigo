@@ -12,7 +12,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.util.*;
 
-public final class TopicActorTest implements TestSupport {
+public final class TopicRouterTest implements TestSupport {
   private ActorSystem system;
   
   private TopicWatcher topicWatcher;
@@ -21,8 +21,8 @@ public final class TopicActorTest implements TestSupport {
   public void setup() {
     topicWatcher = mock(TopicWatcher.class);
     system = ActorSystem.create()
-    .on(TopicActor.ROLE).cue(() -> new TopicActor(new TopicConfig() {{
-      topicWatcher = logger(TopicActorTest.this.topicWatcher);
+    .on(TopicRouter.ROLE).cue(() -> new TopicRouter(new TopicConfig() {{
+      topicWatcher = logger(TopicRouterTest.this.topicWatcher);
     }}));
   }
   
@@ -407,13 +407,13 @@ public final class TopicActorTest implements TestSupport {
   }
   
   private void subscribe(String topic, Subscriber subscriber) throws InterruptedException, ExecutionException {
-    final CompletableFuture<?> f = system.ask(ActorRef.of(TopicActor.ROLE), new Subscribe(Topic.of(topic), subscriber));
+    final CompletableFuture<?> f = system.ask(ActorRef.of(TopicRouter.ROLE), new Subscribe(Topic.of(topic), subscriber));
     f.get();
     system.drain(0);
   }
   
   private void unsubscribe(String topic, Subscriber subscriber) throws InterruptedException, ExecutionException {
-    final CompletableFuture<?> f =  system.ask(ActorRef.of(TopicActor.ROLE), new Unsubscribe(Topic.of(topic), subscriber));
+    final CompletableFuture<?> f =  system.ask(ActorRef.of(TopicRouter.ROLE), new Unsubscribe(Topic.of(topic), subscriber));
     f.get();
     system.drain(0);
   }
@@ -423,6 +423,6 @@ public final class TopicActorTest implements TestSupport {
   }
   
   private CompletableFuture<PublishResponse> publish(String topic, Object payload) {
-    return system.ask(ActorRef.of(TopicActor.ROLE), new Publish(Topic.of(topic), payload));
+    return system.ask(ActorRef.of(TopicRouter.ROLE), new Publish(Topic.of(topic), payload));
   }
 }

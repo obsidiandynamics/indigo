@@ -6,16 +6,16 @@ import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.*;
 
-public final class TopicActor implements Actor {
-  private static final Logger LOG = LoggerFactory.getLogger(TopicActor.class);
+public final class TopicRouter implements Actor {
+  private static final Logger LOG = LoggerFactory.getLogger(TopicRouter.class);
   
   public static final String ROLE = "topic-router";
   
   private final TopicConfig config;
   
-  private TopicActorState state;
+  private TopicRouterState state;
 
-  public TopicActor(TopicConfig config) {
+  public TopicRouter(TopicConfig config) {
     this.config = config;
   }
   
@@ -23,7 +23,7 @@ public final class TopicActor implements Actor {
   public void activated(Activation a) {
     if (LOG.isTraceEnabled()) LOG.trace("{} activating", a.self());
     final Topic current = Topic.fromRef(a.self());
-    state = new TopicActorState(current);
+    state = new TopicRouterState(current);
     if (! current.isRoot()) {
       config.topicWatcher.created(a, current);
       final Topic parent = current.parent();
