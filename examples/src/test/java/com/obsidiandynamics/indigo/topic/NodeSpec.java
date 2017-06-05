@@ -23,6 +23,6 @@ public final class NodeSpec {
 
   @Override
   public String toString() {
-    return "TopicSpec [exacts=" + exacts + ", (+)=" + slWildcards + ", (#)=" + mlWildcards + "]";
+    return "NodeSpec [exacts=" + exacts + ", (+)=" + slWildcards + ", (#)=" + mlWildcards + "]";
   }
 }

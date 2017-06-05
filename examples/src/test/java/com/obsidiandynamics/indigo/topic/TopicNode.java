@@ -11,6 +11,6 @@ final class TopicNode {
 
   @Override
   public String toString() {
-    return "TopicGenNode [fragment=" + fragment + ", spec=" + spec + "]";
+    return "TopicNode [fragment=" + fragment + ", spec=" + spec + "]";
   }
 }

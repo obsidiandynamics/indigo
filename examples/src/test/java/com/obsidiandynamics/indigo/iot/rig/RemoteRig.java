@@ -14,7 +14,7 @@ import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.topic.*;
-import com.obsidiandynamics.indigo.topic.TopicGen.*;
+import com.obsidiandynamics.indigo.topic.TopicSpec.*;
 import com.obsidiandynamics.indigo.util.*;
 
 import junit.framework.*;
@@ -25,7 +25,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   public static class RemoteRigConfig {
     int syncSubframes = 10;
     URI uri;
-    TopicGen topicGen;
+    TopicSpec topicSpec;
     LogConfig log;
   }
   
@@ -56,7 +56,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private void connectAll() throws Exception {
-    final List<Interest> allInterests = config.topicGen.getAllInterests();
+    final List<Interest> allInterests = config.topicSpec.getAllInterests();
     
     final List<CompletableFuture<SubscribeResponseFrame>> futures = new ArrayList<>(allInterests.size());
     for (Interest interest : allInterests) {

@@ -4,7 +4,7 @@ import java.util.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
-public final class TopicGen {
+public final class TopicSpec {
   public static final class Interest {
     final Topic topic;
     final int count;
@@ -57,8 +57,8 @@ public final class TopicGen {
   
   private final Combinations<TopicNode> combs;
   
-  public TopicGen(List<List<TopicNode>> topicGenMatrix) {
-    combs = new Combinations<>(topicGenMatrix);
+  public TopicSpec(List<List<TopicNode>> nodeMatrix) {
+    combs = new Combinations<>(nodeMatrix);
   }
   
   public final List<Topic> getLeafTopics() {
@@ -129,20 +129,20 @@ public final class TopicGen {
     return interests;
   }
   
-  public static final class TopicGenBuilder {
+  public static final class TopicSpecBuilder {
     private final List<List<TopicNode>> matrix = new ArrayList<>();
     
-    public TopicGenBuilder add(List<TopicNode> nodes) {
+    public TopicSpecBuilder add(List<TopicNode> nodes) {
       matrix.add(nodes);
       return this;
     }
     
-    public TopicGen build() {
-      return new TopicGen(matrix);
+    public TopicSpec build() {
+      return new TopicSpec(matrix);
     }
   }
   
-  public static TopicGenBuilder builder() {
-    return new TopicGenBuilder();
+  public static TopicSpecBuilder builder() {
+    return new TopicSpecBuilder();
   }
 }

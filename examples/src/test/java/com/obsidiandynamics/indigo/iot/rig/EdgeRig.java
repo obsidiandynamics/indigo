@@ -14,7 +14,7 @@ import com.obsidiandynamics.indigo.util.*;
 
 public final class EdgeRig extends Thread implements TestSupport, AutoCloseable, TopicListener {
   public static class EdgeRigConfig {
-    TopicGen topicGen;
+    TopicSpec topicSpec;
     int pulseDurationMillis;
     int pulses;
     int warmupPulses;
@@ -42,7 +42,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     this.node = node;
     this.config = config;
     
-    leafTopics = config.topicGen.getLeafTopics();
+    leafTopics = config.topicSpec.getLeafTopics();
     node.addTopicListener(this);
     start();
   }

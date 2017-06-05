@@ -10,7 +10,7 @@ import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.iot.rig.EdgeRig.*;
 import com.obsidiandynamics.indigo.iot.rig.RemoteRig.*;
 import com.obsidiandynamics.indigo.topic.*;
-import com.obsidiandynamics.indigo.topic.TopicGen.*;
+import com.obsidiandynamics.indigo.topic.TopicSpec.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
@@ -23,7 +23,7 @@ public final class RigBenchmark implements TestSupport {
     int pulses;
     int pulseDurationMillis;
     int syncSubframes;
-    TopicGen topicGen;
+    TopicSpec topicSpec;
     boolean text;
     int bytes;
     float warmupFrac;
@@ -40,7 +40,7 @@ public final class RigBenchmark implements TestSupport {
       if (initialised) return;
       
       warmupPulses = (int) (pulses * warmupFrac);
-      for (Interest interest : topicGen.getAllInterests()) {
+      for (Interest interest : topicSpec.getAllInterests()) {
         expectedMessages += interest.getCount();
       }
       expectedMessages *= pulses;
@@ -64,27 +64,27 @@ public final class RigBenchmark implements TestSupport {
     }
   }
   
-  static TopicGen singleton(int subscribers) {
-    return TopicGen.builder()
+  static TopicSpec singleton(int subscribers) {
+    return TopicSpec.builder()
         .add(new NodeSpec(subscribers, 0, 0).nodes(1))
         .build();
   }
   
-  static TopicGen shrub(int leaves) {
-    return TopicGen.builder()
+  static TopicSpec shrub(int leaves) {
+    return TopicSpec.builder()
         .add(new NodeSpec(1, 0, 0).nodes(leaves))
         .build();
   }
   
-  static TopicGen smallLeaves() {
-    return TopicGen.builder()
+  static TopicSpec smallLeaves() {
+    return TopicSpec.builder()
         .add(new NodeSpec(0, 0, 0).nodes(2))
         .add(new NodeSpec(1, 0, 0).nodes(5))
         .build();
   }
   
-  static TopicGen mediumLeaves() {
-    return TopicGen.builder()
+  static TopicSpec mediumLeaves() {
+    return TopicSpec.builder()
         .add(new NodeSpec(0, 0, 0).nodes(2))
         .add(new NodeSpec(0, 0, 0).nodes(5))
         .add(new NodeSpec(0, 0, 0).nodes(2))
@@ -92,8 +92,8 @@ public final class RigBenchmark implements TestSupport {
         .build();
   }
   
-  static TopicGen largeLeaves() {
-    return TopicGen.builder()
+  static TopicSpec largeLeaves() {
+    return TopicSpec.builder()
         .add(new NodeSpec(0, 0, 0).nodes(2))
         .add(new NodeSpec(0, 0, 0).nodes(5))
         .add(new NodeSpec(0, 0, 0).nodes(2))
@@ -103,8 +103,8 @@ public final class RigBenchmark implements TestSupport {
         .build();
   }
   
-  static TopicGen jumboLeaves() {
-    return TopicGen.builder()
+  static TopicSpec jumboLeaves() {
+    return TopicSpec.builder()
         .add(new NodeSpec(0, 0, 0).nodes(2))
         .add(new NodeSpec(0, 0, 0).nodes(5))
         .add(new NodeSpec(0, 0, 0).nodes(2))
@@ -123,7 +123,7 @@ public final class RigBenchmark implements TestSupport {
       pulses = 10;
       pulseDurationMillis = 1;
       syncSubframes = 10;
-      topicGen = smallLeaves();
+      topicSpec = smallLeaves();
       warmupFrac = 0.05f;
       text = true;
       bytes = 16;
@@ -140,7 +140,7 @@ public final class RigBenchmark implements TestSupport {
       pulses = 10;
       pulseDurationMillis = 1;
       syncSubframes = 10;
-      topicGen = smallLeaves();
+      topicSpec = smallLeaves();
       warmupFrac = 0.05f;
       text = false;
       bytes = 16;
@@ -155,7 +155,7 @@ public final class RigBenchmark implements TestSupport {
         .withServerConfig(new WSServerConfig() {{ port = c.port; }})
         .build();
     final EdgeRig edgeRig = new EdgeRig(edge, new EdgeRigConfig() {{
-      topicGen = c.topicGen;
+      topicSpec = c.topicSpec;
       pulseDurationMillis = c.pulseDurationMillis;
       pulses = c.pulses;
       warmupPulses = c.warmupPulses;
@@ -167,7 +167,7 @@ public final class RigBenchmark implements TestSupport {
     final RemoteNode remote = RemoteNode.builder()
         .build();
     final RemoteRig remoteRig = new RemoteRig(remote, new RemoteRigConfig() {{
-      topicGen = c.topicGen;
+      topicSpec = c.topicSpec;
       syncSubframes = c.syncSubframes;
       uri = new URI("ws://localhost:" + c.port + "/");
       log = c.log;
@@ -197,7 +197,7 @@ public final class RigBenchmark implements TestSupport {
       pulses = 300;
       pulseDurationMillis = 100;
       syncSubframes = 0;
-      topicGen = largeLeaves();
+      topicSpec = largeLeaves();
       warmupFrac = 0.10f;
       text = false;
       bytes = 128;
