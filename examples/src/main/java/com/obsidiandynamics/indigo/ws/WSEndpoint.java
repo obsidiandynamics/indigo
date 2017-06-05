@@ -83,6 +83,6 @@ public interface WSEndpoint extends AutoCloseable {
    *  @return True if the endpoint was closed.
    */
   default boolean awaitClose(int waitMillis) throws InterruptedException {
-    return Await.await(waitMillis, 10, () -> ! isOpen());
+    return Await.bounded(waitMillis, () -> ! isOpen());
   }
 }

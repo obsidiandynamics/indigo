@@ -21,10 +21,10 @@ public final class WireTest implements TestSupport {
   @Test
   public void testMarshalSubscribe() {
     final UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
-    final SubscribeFrame orig = new SubscribeFrame(id, new String[]{"a", "a/b", "a/b/c"}, "some-context");
+    final SubscribeFrame orig = new SubscribeFrame(id, "123", new String[]{"a", "a/b", "a/b/c"}, "some-context");
     final String enc = wire.encode(orig);
     log("encoded: '%s'\n", enc);
-    assertEquals("S {\"type\":\"Subscribe\",\"topics\":[\"a\",\"a/b\",\"a/b/c\"],\"context\":\"some-context\",\"id\":\"123e4567-e89b-12d3-a456-426655440000\"}", enc);
+    assertEquals("S {\"type\":\"Subscribe\",\"remoteId\":\"123\",\"topics\":[\"a\",\"a/b\",\"a/b/c\"],\"context\":\"some-context\",\"id\":\"123e4567-e89b-12d3-a456-426655440000\"}", enc);
     
     final SubscribeFrame decoded = (SubscribeFrame) wire.decode(enc);
     assertEquals(orig, decoded);

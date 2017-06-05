@@ -17,6 +17,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public class NodeCommsTest {
@@ -62,7 +63,8 @@ public class NodeCommsTest {
     when(bridge.onSubscribe(any(), any())).thenReturn(CompletableFuture.completedFuture(mockSubRes));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
-    final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
+    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
+                                                  new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
     
     assertTrue(subRes.isSuccess());
@@ -104,7 +106,8 @@ public class NodeCommsTest {
     when(bridge.onSubscribe(any(), any())).thenReturn(CompletableFuture.completedFuture(mockSubRes));
     
     final RemoteNexus session = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
-    final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
+    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
+                                                  new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = session.subscribe(sub).get();
     
     assertTrue(subRes.isSuccess());

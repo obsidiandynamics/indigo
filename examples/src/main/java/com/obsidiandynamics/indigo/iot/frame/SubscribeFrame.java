@@ -3,12 +3,15 @@ package com.obsidiandynamics.indigo.iot.frame;
 import java.util.*;
 
 public final class SubscribeFrame extends IdFrame implements TextEncodedFrame {
+  private final String remoteId;
+  
   private final String[] topics;
   
   private final Object context;
 
-  public SubscribeFrame(UUID id, String[] topics, Object context) {
+  public SubscribeFrame(UUID id, String remoteId, String[] topics, Object context) {
     super(id);
+    this.remoteId = remoteId;
     this.topics = topics;
     this.context = context;
   }
@@ -16,6 +19,10 @@ public final class SubscribeFrame extends IdFrame implements TextEncodedFrame {
   @Override
   public FrameType getType() {
     return FrameType.SUBSCRIBE;
+  }
+  
+  public String getRemoteId() {
+    return remoteId;
   }
 
   public final String[] getTopics() {
@@ -25,12 +32,13 @@ public final class SubscribeFrame extends IdFrame implements TextEncodedFrame {
   public final Object getContext() {
     return context;
   }
-  
+
   @Override
   public int hashCode() {
     final int prime = 31;
-    int result = 1;
+    int result = super.hashCode();
     result = prime * result + ((context == null) ? 0 : context.hashCode());
+    result = prime * result + ((remoteId == null) ? 0 : remoteId.hashCode());
     result = prime * result + Arrays.hashCode(topics);
     return result;
   }
@@ -39,7 +47,7 @@ public final class SubscribeFrame extends IdFrame implements TextEncodedFrame {
   public boolean equals(Object obj) {
     if (this == obj)
       return true;
-    if (obj == null)
+    if (!super.equals(obj))
       return false;
     if (getClass() != obj.getClass())
       return false;
@@ -49,6 +57,11 @@ public final class SubscribeFrame extends IdFrame implements TextEncodedFrame {
         return false;
     } else if (!context.equals(other.context))
       return false;
+    if (remoteId == null) {
+      if (other.remoteId != null)
+        return false;
+    } else if (!remoteId.equals(other.remoteId))
+      return false;
     if (!Arrays.equals(topics, other.topics))
       return false;
     return true;
@@ -56,6 +69,7 @@ public final class SubscribeFrame extends IdFrame implements TextEncodedFrame {
 
   @Override
   public String toString() {
-    return "Subscribe [id=" + getId() + ", topics=" + Arrays.toString(topics) + ", context=" + context + "]";
+    return "SubscribeFrame [remoteId=" + remoteId + ", topics=" + Arrays.toString(topics) + ", context=" + context
+           + "]";
   }
 }

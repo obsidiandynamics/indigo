@@ -15,6 +15,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
+import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public class NodeRouterTest {
@@ -62,7 +63,8 @@ public class NodeRouterTest {
     final String payload = "hello internal";
     edge.publish(topic, payload); // no subscriber yet - shouldn't be received
     
-    final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
+    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
+                                                  new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
     
     assertTrue(subRes.isSuccess());
@@ -101,7 +103,8 @@ public class NodeRouterTest {
     final String payload = "hello external";
     remoteNexus.publish(new PublishTextFrame(topic, payload)); // no subscriber yet - shouldn't be received
     
-    final SubscribeFrame sub = new SubscribeFrame(subId, new String[]{"a/b/c"}, "some-context");
+    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
+                                                  new String[]{"a/b/c"}, "some-context");
     final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
     
     assertTrue(subRes.isSuccess());

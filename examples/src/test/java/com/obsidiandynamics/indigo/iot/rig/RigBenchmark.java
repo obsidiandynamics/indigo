@@ -16,7 +16,6 @@ import com.obsidiandynamics.indigo.ws.*;
 
 public final class RigBenchmark implements TestSupport {
   private static final int PORT = 6667;
-  private static final int CYCLES = 1;
   
   abstract static class Config implements Spec {
     int port;
@@ -57,6 +56,16 @@ public final class RigBenchmark implements TestSupport {
       return String.format("%,d pulses, %,d ms duration, %.0f%% warmup fraction",
                            pulses, pulseDurationMillis, warmupFrac * 100);
     }
+    
+    public SpecMultiplier applyDefaults() {
+      port = PORT;
+      warmupFrac = 0.05f;
+      log = new LogConfig() {{
+        summary = stages = LOG;
+        verbose = false;
+      }};
+      return times(1);
+    }
 
     @Override
     public Summary run() throws Exception {
@@ -67,35 +76,25 @@ public final class RigBenchmark implements TestSupport {
   @Test
   public void testText() throws Exception {
     new Config() {{
-      port = PORT;
       pulses = 10;
       pulseDurationMillis = 1;
       syncSubframes = 10;
       topicSpec = TopicLibrary.smallLeaves();
-      warmupFrac = 0.05f;
       text = true;
       bytes = 16;
-      log = new LogConfig() {{
-        summary = stages = LOG;
-      }};
-    }}.times(CYCLES).test();
+    }}.applyDefaults().test();
   }
 
   @Test
   public void testBinary() throws Exception {
     new Config() {{
-      port = PORT;
       pulses = 10;
       pulseDurationMillis = 1;
       syncSubframes = 10;
       topicSpec = TopicLibrary.smallLeaves();
-      warmupFrac = 0.05f;
       text = false;
       bytes = 16;
-      log = new LogConfig() {{
-        summary = stages = LOG;
-      }};
-    }}.times(CYCLES).test();
+    }}.applyDefaults().test();
   }
 
   private Summary test(Config c) throws Exception {
@@ -122,7 +121,6 @@ public final class RigBenchmark implements TestSupport {
     }});
     
     remoteRig.run();
-    edgeRig.await();
     remoteRig.awaitReceival(c.expectedMessages);
 
     if (c.log.stages) c.log.out.format("Disconnecting...\n");

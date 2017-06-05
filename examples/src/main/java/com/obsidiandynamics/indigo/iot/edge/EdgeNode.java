@@ -94,6 +94,17 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   private void handleSubscribe(EdgeNexus nexus, SubscribeFrame sub) {
+    if (sub.getRemoteId() != null) {
+      if (nexus.getRemoteId() == null) {
+        nexus.setRemoteId(sub.getRemoteId());
+      } else if (! nexus.getRemoteId().equals(sub.getRemoteId())) {
+        LOG.warn("Connection {} has attempted to change its remote ID from {} to {}", 
+                 nexus, nexus.getRemoteId(), sub.getRemoteId());
+        nexus.send(new SubscribeResponseFrame(sub.getId(), "Cannot reassign remote ID"));
+        return;
+      }
+    }
+    
     final CompletableFuture<SubscribeResponseFrame> f = bridge.onSubscribe(nexus, sub);
     f.whenComplete((subRes, cause) -> {
       if (cause == null) {

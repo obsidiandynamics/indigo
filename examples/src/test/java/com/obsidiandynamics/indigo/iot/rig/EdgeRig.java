@@ -4,6 +4,7 @@ import static com.obsidiandynamics.indigo.util.SocketTestSupport.*;
 
 import java.nio.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.benchmark.*;
@@ -34,6 +35,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   private final List<Topic> leafTopics;
   
   private final Gson subframeGson = new Gson();
+  
+  private final List<EdgeNexus> controlNexuses = new CopyOnWriteArrayList<>();
   
   private volatile State state = State.CONNECT_WAIT;
   
@@ -126,11 +129,17 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
         break;
       }
     }
+    
+    for (EdgeNexus control : controlNexuses) {
+      final String topic = RigSubframe.TOPIC_PREFIX + "/" + control.getRemoteId() + "/rx";
+      control.send(new TextFrame(topic, new AwaitReceival().marshal(subframeGson)));
+    }
+    
     state = State.STOPPED;
   }
   
   public void await() throws InterruptedException {
-    Await.await(Integer.MAX_VALUE, 10, () -> state == State.STOPPED);
+    Await.perpetual(() -> state == State.STOPPED);
   }
   
   @Override
@@ -171,15 +180,16 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
       final Topic t = Topic.of(pub.getTopic());
       final String remoteId = t.getParts()[1];
       final RigSubframe subframe = RigSubframe.unmarshal(pub.getPayload(), subframeGson);
-      onSubframe(remoteId, subframe);
+      onSubframe(nexus, remoteId, subframe);
     }
   }
   
-  private void onSubframe(String remoteId, RigSubframe subframe) {
+  private void onSubframe(EdgeNexus nexus, String remoteId, RigSubframe subframe) {
     if (config.log.verbose) config.log.out.format("e: subframe %s %s\n", remoteId, subframe);
     if (subframe instanceof Sync) {
       sendSubframe(remoteId, new Sync(System.nanoTime()));
     } else if (subframe instanceof Begin) {
+      controlNexuses.add(nexus);
       state = State.RUNNING;
     }
   }

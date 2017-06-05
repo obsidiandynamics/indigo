@@ -20,8 +20,6 @@ import com.obsidiandynamics.indigo.util.*;
 import junit.framework.*;
 
 public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunnable, RemoteNexusHandler {
-  private static final int CONN_CLOSE_TIMEOUT = 10_000;
-  
   public static class RemoteRigConfig {
     int syncSubframes = 10;
     URI uri;
@@ -37,6 +35,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   private final Summary summary = new Summary();
   
+  private RemoteNexus control;
+  
   private long timeDiff;
   
   private volatile long startTime;
@@ -50,9 +50,22 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   @Override
   public void run() throws Exception {
+    createControlNexus();
     timeDiff = config.syncSubframes != 0 ? calibrate() : 0;
     connectAll();
     begin();
+  }
+  
+  private void createControlNexus() throws Exception {
+    if (config.log.stages) config.log.out.format("Connecting control...\n");
+    final String remoteId = generateRemoteId();
+    final String inTopic = getRxTopic(remoteId);
+    control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
+      @Override public void onText(RemoteNexus nexus, String topic, String payload) {
+        if (config.log.verbose) config.log.out.format("r: control received %s\n", payload);
+      }
+    });
+    control.subscribe(new SubscribeFrame(UUID.randomUUID(), remoteId, new String[] {inTopic}, null)).get();
   }
   
   private void connectAll() throws Exception {
@@ -63,7 +76,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
       for (int i = 0; i < interest.getCount(); i++) {
         final RemoteNexus nexus = node.open(config.uri, this);
         final CompletableFuture<SubscribeResponseFrame> f = 
-            nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), new String[]{interest.getTopic().toString()}, null));
+            nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), generateRemoteId(), 
+                                               new String[]{interest.getTopic().toString()}, null));
         futures.add(f);
       }
     }
@@ -75,11 +89,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private void begin() throws Exception {
-    if (config.log.stages) config.log.out.format("Connecting remotes...\n");
-    final RemoteNexus control = node.open(config.uri, new RemoteNexusHandlerAdapter());
     control.publish(new PublishTextFrame(getTxTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
-    control.close();
-    control.awaitClose(CONN_CLOSE_TIMEOUT);
     startTime = System.currentTimeMillis();
   }
   
@@ -134,7 +144,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         syncComplete.set(true);
       }
     });
-    nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), new String[] {inTopic}, null)).get();
+    nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), generateRemoteId(),
+                                       new String[] {inTopic}, null)).get();
     
     lastRemoteTransmitTime.set(System.nanoTime());
     nexus.publish(new PublishTextFrame(outTopic, new Sync(lastRemoteTransmitTime.get()).marshal(subframeGson)));
@@ -147,7 +158,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   public void awaitReceival(long expected) throws InterruptedException {
-    Await.await(Integer.MAX_VALUE, 10, () -> received.get() >= expected);
+    Await.perpetual(() -> received.get() >= expected);
     final long took = System.currentTimeMillis() - startTime;
     TestCase.assertEquals(expected, received.get());
     summary.stats.await();

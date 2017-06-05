@@ -11,6 +11,8 @@ public final class EdgeNexus implements AutoCloseable {
   
   private final Peer peer;
   
+  private String remoteId;
+  
   private Object context;
 
   public EdgeNexus(EdgeNode node, Peer peer) {
@@ -25,6 +27,14 @@ public final class EdgeNexus implements AutoCloseable {
 
   final void setContext(Object context) {
     this.context = context;
+  }
+  
+  public String getRemoteId() {
+    return remoteId;
+  }
+  
+  void setRemoteId(String remoteId) {
+    this.remoteId = remoteId;
   }
 
   public CompletableFuture<Void> sendAuto(Frame frame) {
