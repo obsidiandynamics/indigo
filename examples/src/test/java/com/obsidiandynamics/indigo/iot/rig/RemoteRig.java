@@ -11,7 +11,6 @@ import org.awaitility.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.benchmark.*;
-import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.topic.*;
@@ -193,40 +192,27 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   public boolean await() throws InterruptedException {
     return Await.perpetual(() -> node.getNexuses().isEmpty());
   }
-  
 
   @Override
   public void close() throws Exception {
+    closeNexuses();
+    node.close();
+  }
+  
+  private void closeNexuses() throws Exception, InterruptedException {
     final List<RemoteNexus> nexuses = node.getNexuses();
+    if (nexuses.isEmpty()) return;
+    
+    if (config.log.stages) config.log.out.format("r: closing remotes (%,d nexuses)...\n", nexuses.size());
     for (RemoteNexus nexus : nexuses) {
       nexus.close();
     }
     for (RemoteNexus nexus : nexuses) {
-      nexus.awaitClose(60_000);
+      if (! nexus.awaitClose(60_000)) {
+        config.log.out.format("r: timed out while waiting for close of %s\n", nexus);
+      }
     }
-    node.close();
   }
-//  TODO
-//  @Override
-//  public void close() throws Exception {
-//    closeNexuses();
-//    node.close();
-//  }
-//  
-//  private void closeNexuses() throws Exception, InterruptedException {
-//    final List<RemoteNexus> nexuses = node.getNexuses();
-//    if (nexuses.isEmpty()) return;
-//    
-//    if (config.log.stages) config.log.out.format("r: closing remotes (%,d nexuses)...\n", nexuses.size());
-//    for (RemoteNexus nexus : nexuses) {
-//      nexus.close();
-//    }
-//    for (RemoteNexus nexus : nexuses) {
-//      if (! nexus.awaitClose(60_000)) {
-//        config.log.out.format("r: timed out while waiting for close of %s\n", nexus);
-//      }
-//    }
-//  }
   
   public Summary getSummary() {
     return summary;

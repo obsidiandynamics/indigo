@@ -137,77 +137,59 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     
     state = State.STOPPED;
     
-//    final long expectedMessages = (long) config.pulses * subscribers.get();
-//    for (EdgeNexus control : controlNexuses) {
-//      final String topic = RigSubframe.TOPIC_PREFIX + "/" + control.getRemoteId() + "/rx";
-//      control.send(new TextFrame(topic, new Wait(expectedMessages).marshal(subframeGson)));
-//    }
-//    
-//    if (config.log.stages) config.log.out.format("e: awaiting remotes (%,d messages across %,d subscribers)...\n",
-//                                                 expectedMessages, subscribers.get());
-//    try {
-//      Await.perpetual(() -> completedRemotes.size() == controlNexuses.size());
-//    } catch (InterruptedException e) {
-//      e.printStackTrace(config.log.out);
-//      Thread.currentThread().interrupt();
-//    }
-//    
-//    try {
-//      closeNexuses();
-//    } catch (InterruptedException e) {
-//      e.printStackTrace(config.log.out);
-//      Thread.currentThread().interrupt();
-//    } catch (Exception e) {
-//      e.printStackTrace(config.log.out);
-//    }
+    final long expectedMessages = (long) config.pulses * subscribers.get();
+    for (EdgeNexus control : controlNexuses) {
+      final String topic = RigSubframe.TOPIC_PREFIX + "/" + control.getRemoteId() + "/rx";
+      control.send(new TextFrame(topic, new Wait(expectedMessages).marshal(subframeGson)));
+    }
+    
+    if (config.log.stages) config.log.out.format("e: awaiting remotes (%,d messages across %,d subscribers)...\n",
+                                                 expectedMessages, subscribers.get());
+    try {
+      Await.perpetual(() -> completedRemotes.size() == controlNexuses.size());
+    } catch (InterruptedException e) {
+      e.printStackTrace(config.log.out);
+      Thread.currentThread().interrupt();
+    }
+    
+    try {
+      closeNexuses();
+    } catch (InterruptedException e) {
+      e.printStackTrace(config.log.out);
+      Thread.currentThread().interrupt();
+    } catch (Exception e) {
+      e.printStackTrace(config.log.out);
+    }
   }
   
-
   @Override
   public void close() throws Exception {
+    final boolean wasStopped = state == State.STOPPED;
     state = State.CLOSING;
-    interrupt();
+    if (! wasStopped) {
+      interrupt();
+    }
     join();
     
-    final List<EdgeNexus> nexuses = node.getNexuses();
-    for (EdgeNexus nexus : nexuses) {
-      nexus.close();
-    }
-    for (EdgeNexus nexus : nexuses) {
-      nexus.awaitClose(60_000);
-    }
+    closeNexuses();
     node.close();
     state = State.CLOSED;
   }
   
-//  @Override
-//  public void close() throws Exception {
-//    final boolean wasStopped = state == State.STOPPED;
-//    state = State.CLOSING;
-//    if (! wasStopped) {
-//      interrupt();
-//    }
-//    join();
-//    
-//    closeNexuses();
-//    node.close();
-//    state = State.CLOSED;
-//  }
-//  
-//  private void closeNexuses() throws Exception, InterruptedException {
-//    final List<EdgeNexus> nexuses = node.getNexuses();
-//    if (nexuses.isEmpty()) return;
-//    
-//    if (config.log.stages) config.log.out.format("e: closing remotes (%,d nexuses)...\n", nexuses.size());
-//    for (EdgeNexus nexus : nexuses) {
-//      nexus.close();
-//    }
-//    for (EdgeNexus nexus : nexuses) {
-//      if (! nexus.awaitClose(60_000)) {
-//        config.log.out.format("e: timed out while waiting for close of %s\n", nexus);
-//      }
-//    }
-//  }
+  private void closeNexuses() throws Exception, InterruptedException {
+    final List<EdgeNexus> nexuses = node.getNexuses();
+    if (nexuses.isEmpty()) return;
+    
+    if (config.log.stages) config.log.out.format("e: closing remotes (%,d nexuses)...\n", nexuses.size());
+    for (EdgeNexus nexus : nexuses) {
+      nexus.close();
+    }
+    for (EdgeNexus nexus : nexuses) {
+      if (! nexus.awaitClose(60_000)) {
+        config.log.out.format("e: timed out while waiting for close of %s\n", nexus);
+      }
+    }
+  }
 
   @Override
   public void onConnect(EdgeNexus nexus) {

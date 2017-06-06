@@ -8,6 +8,7 @@ import org.slf4j.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.ws.undertow.*;
 
 final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E> {
   private static final Logger LOG = LoggerFactory.getLogger(EndpointAdapter.class);
@@ -81,7 +82,12 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
   @Override 
   public void onClose(E endpoint, int statusCode, String reason) {
     handler.onDisconnect(nexus);
-    node.removeNexus(nexus);
+//    node.removeNexus(nexus);
+    //TODO
+    UndertowEndpoint ue = (UndertowEndpoint) endpoint;
+    ue.getChannel().addCloseTask(c -> {
+      node.removeNexus(nexus);
+    });
   }
 
   @Override 
