@@ -11,6 +11,7 @@ import org.awaitility.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.benchmark.*;
+import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.topic.*;
@@ -57,15 +58,47 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private void createControlNexus() throws Exception {
-    if (config.log.stages) config.log.out.format("Connecting control...\n");
+    if (config.log.stages) config.log.out.format("r: connecting control...\n");
     final String remoteId = generateRemoteId();
     final String inTopic = getRxTopic(remoteId);
     control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (config.log.verbose) config.log.out.format("r: control received %s\n", payload);
+        final RigSubframe subframe = RigSubframe.unmarshal(payload, subframeGson);
+        if (subframe instanceof Wait) {
+          awaitLater(nexus, remoteId, ((Wait) subframe).getExpectedMessages());
+        } else {
+          config.log.out.format("ERROR: Unsupported subframe of type %s\n", subframe.getClass().getName());
+        }
       }
     });
     control.subscribe(new SubscribeFrame(UUID.randomUUID(), remoteId, new String[] {inTopic}, null)).get();
+  }
+  
+  private void awaitLater(RemoteNexus nexus, String remoteId, long expectedMessages) {
+    Threads.asyncDaemon(() -> {
+      try {
+        awaitReceival(expectedMessages);
+        nexus.publish(new PublishTextFrame(getTxTopic(remoteId), new WaitResponse().marshal(subframeGson)));
+      } catch (InterruptedException e) {
+        e.printStackTrace(config.log.out);
+      }
+    }, "ControlAwait");
+  }
+  
+  public void awaitReceival(long expectedMessages) throws InterruptedException {
+    Await.perpetual(() -> received.get() >= expectedMessages);
+    final long took = System.currentTimeMillis() - startTime;
+    TestCase.assertEquals(expectedMessages, received.get());
+    summary.stats.await();
+    summary.compute(Arrays.asList(new Elapsed() {
+      @Override public long getTotalProcessed() {
+        return received.get();
+      }
+      @Override public long getTimeTaken() {
+        return took;
+      }
+    }));
   }
   
   private void connectAll() throws Exception {
@@ -106,7 +139,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private long calibrate() throws Exception {
-    if (config.log.stages) config.log.out.format("Time calibration...\n");
+    if (config.log.stages) config.log.out.format("r: time calibration...\n");
     final String remoteId = generateRemoteId();
     final String inTopic = getRxTopic(remoteId);
     final String outTopic = getTxTopic(remoteId);
@@ -152,26 +185,16 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     Awaitility.await().atMost(10, TimeUnit.SECONDS).untilTrue(syncComplete);
     
     final long timeDiff = timeDeltas.stream().collect(Collectors.averagingLong(l -> l)).longValue();
-    if (config.log.stages) config.log.out.format("Calibration complete; time delta: %,d ns (%s ahead)\n", 
+    if (config.log.stages) config.log.out.format("r: calibration complete; time delta: %,d ns (%s ahead)\n", 
                                                  timeDiff, timeDiff >= 0 ? "remote" : "edge");
     return timeDiff;
   }
   
-  public void awaitReceival(long expected) throws InterruptedException {
-    Await.perpetual(() -> received.get() >= expected);
-    final long took = System.currentTimeMillis() - startTime;
-    TestCase.assertEquals(expected, received.get());
-    summary.stats.await();
-    summary.compute(Arrays.asList(new Elapsed() {
-      @Override public long getTotalProcessed() {
-        return received.get();
-      }
-      @Override public long getTimeTaken() {
-        return took;
-      }
-    }));
+  public boolean await() throws InterruptedException {
+    return Await.perpetual(() -> node.getNexuses().isEmpty());
   }
   
+
   @Override
   public void close() throws Exception {
     final List<RemoteNexus> nexuses = node.getNexuses();
@@ -183,6 +206,27 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     }
     node.close();
   }
+//  TODO
+//  @Override
+//  public void close() throws Exception {
+//    closeNexuses();
+//    node.close();
+//  }
+//  
+//  private void closeNexuses() throws Exception, InterruptedException {
+//    final List<RemoteNexus> nexuses = node.getNexuses();
+//    if (nexuses.isEmpty()) return;
+//    
+//    if (config.log.stages) config.log.out.format("r: closing remotes (%,d nexuses)...\n", nexuses.size());
+//    for (RemoteNexus nexus : nexuses) {
+//      nexus.close();
+//    }
+//    for (RemoteNexus nexus : nexuses) {
+//      if (! nexus.awaitClose(60_000)) {
+//        config.log.out.format("r: timed out while waiting for close of %s\n", nexus);
+//      }
+//    }
+//  }
   
   public Summary getSummary() {
     return summary;

@@ -5,6 +5,7 @@ import static com.obsidiandynamics.indigo.util.SocketTestSupport.*;
 import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.benchmark.*;
@@ -38,6 +39,10 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   private final List<EdgeNexus> controlNexuses = new CopyOnWriteArrayList<>();
   
+  private final Set<String> completedRemotes = new CopyOnWriteArraySet<>();
+  
+  private final AtomicInteger subscribers = new AtomicInteger();
+  
   private volatile State state = State.CONNECT_WAIT;
   
   public EdgeRig(EdgeNode node, EdgeRigConfig config) {
@@ -68,7 +73,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     int interval = 1;
     
     int pulse = 0;
-    if (config.log.stages) config.log.out.format("Warming up (%,d pulses)...\n", config.warmupPulses);
+    if (config.log.stages) config.log.out.format("e: warming up (%,d pulses)...\n", config.warmupPulses);
     boolean warmup = true;
     final byte[] binPayload = config.text ? null : randomBytes(config.bytes);
     final String textPayload = config.text ? randomString(config.bytes) : null;
@@ -80,7 +85,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
       for (Topic t : leafTopics) {
         if (warmup && pulse >= config.warmupPulses) {
           warmup = false;
-          if (config.log.stages) config.log.out.format("Starting timed run (%,d pulses)...\n", 
+          if (config.log.stages) config.log.out.format("e: starting timed run (%,d pulses)...\n", 
                                                        config.pulses - config.warmupPulses);
         }
         final long timestamp = warmup ? 0 : System.nanoTime();
@@ -130,18 +135,34 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
       }
     }
     
-    for (EdgeNexus control : controlNexuses) {
-      final String topic = RigSubframe.TOPIC_PREFIX + "/" + control.getRemoteId() + "/rx";
-      control.send(new TextFrame(topic, new AwaitReceival().marshal(subframeGson)));
-    }
-    
     state = State.STOPPED;
+    
+//    final long expectedMessages = (long) config.pulses * subscribers.get();
+//    for (EdgeNexus control : controlNexuses) {
+//      final String topic = RigSubframe.TOPIC_PREFIX + "/" + control.getRemoteId() + "/rx";
+//      control.send(new TextFrame(topic, new Wait(expectedMessages).marshal(subframeGson)));
+//    }
+//    
+//    if (config.log.stages) config.log.out.format("e: awaiting remotes (%,d messages across %,d subscribers)...\n",
+//                                                 expectedMessages, subscribers.get());
+//    try {
+//      Await.perpetual(() -> completedRemotes.size() == controlNexuses.size());
+//    } catch (InterruptedException e) {
+//      e.printStackTrace(config.log.out);
+//      Thread.currentThread().interrupt();
+//    }
+//    
+//    try {
+//      closeNexuses();
+//    } catch (InterruptedException e) {
+//      e.printStackTrace(config.log.out);
+//      Thread.currentThread().interrupt();
+//    } catch (Exception e) {
+//      e.printStackTrace(config.log.out);
+//    }
   }
   
-  public void await() throws InterruptedException {
-    Await.perpetual(() -> state == State.STOPPED);
-  }
-  
+
   @Override
   public void close() throws Exception {
     state = State.CLOSING;
@@ -158,6 +179,35 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     node.close();
     state = State.CLOSED;
   }
+  
+//  @Override
+//  public void close() throws Exception {
+//    final boolean wasStopped = state == State.STOPPED;
+//    state = State.CLOSING;
+//    if (! wasStopped) {
+//      interrupt();
+//    }
+//    join();
+//    
+//    closeNexuses();
+//    node.close();
+//    state = State.CLOSED;
+//  }
+//  
+//  private void closeNexuses() throws Exception, InterruptedException {
+//    final List<EdgeNexus> nexuses = node.getNexuses();
+//    if (nexuses.isEmpty()) return;
+//    
+//    if (config.log.stages) config.log.out.format("e: closing remotes (%,d nexuses)...\n", nexuses.size());
+//    for (EdgeNexus nexus : nexuses) {
+//      nexus.close();
+//    }
+//    for (EdgeNexus nexus : nexuses) {
+//      if (! nexus.awaitClose(60_000)) {
+//        config.log.out.format("e: timed out while waiting for close of %s\n", nexus);
+//      }
+//    }
+//  }
 
   @Override
   public void onConnect(EdgeNexus nexus) {
@@ -172,6 +222,15 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   @Override
   public void onSubscribe(EdgeNexus nexus, SubscribeFrame sub, SubscribeResponseFrame subRes) {
     if (config.log.verbose) config.log.out.format("e: sub %s %s\n", nexus, sub);
+    for (String topic : sub.getTopics()) {
+      if (! topic.startsWith(RigSubframe.TOPIC_PREFIX)) {
+        subscribers.incrementAndGet();
+      }
+    }
+  }
+  
+  int getSubscribers() {
+    return subscribers.get();
   }
 
   @Override
@@ -191,6 +250,10 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     } else if (subframe instanceof Begin) {
       controlNexuses.add(nexus);
       state = State.RUNNING;
+    } else if (subframe instanceof WaitResponse) {
+      completedRemotes.add(remoteId);
+    } else {
+      config.log.out.format("ERROR: Unsupported subframe of type %s\n", subframe.getClass().getName());
     }
   }
   

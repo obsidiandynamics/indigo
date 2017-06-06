@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.util;
 
+import java.util.concurrent.*;
 import java.util.function.*;
 
 public final class Await {
@@ -15,8 +16,20 @@ public final class Await {
     return bounded(Integer.MAX_VALUE, intervalMillis, test);
   }
   
+  public static void boundedTimeout(int waitMillis, BooleanSupplier test) throws InterruptedException, TimeoutException {
+    boundedTimeout(waitMillis, DEF_INTERVAL, test);
+  }
+  
   public static boolean bounded(int waitMillis, BooleanSupplier test) throws InterruptedException {
     return bounded(waitMillis, DEF_INTERVAL, test);
+  }
+  
+  public static void boundedTimeout(int waitMillis, 
+                                    int intervalMillis, 
+                                    BooleanSupplier test) throws InterruptedException, TimeoutException {
+    if (! bounded(waitMillis, intervalMillis, test)) {
+      throw new TimeoutException(String.format("Timed out after %,d ms", waitMillis));
+    }
   }
   
   public static boolean bounded(int waitMillis, int intervalMillis, BooleanSupplier test) throws InterruptedException {

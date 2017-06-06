@@ -10,7 +10,6 @@ import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.iot.rig.EdgeRig.*;
 import com.obsidiandynamics.indigo.iot.rig.RemoteRig.*;
 import com.obsidiandynamics.indigo.topic.*;
-import com.obsidiandynamics.indigo.topic.TopicSpec.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
@@ -30,7 +29,6 @@ public final class RigBenchmark implements TestSupport {
     
     /* Derived fields. */
     int warmupPulses;
-    long expectedMessages;
     
     private boolean initialised;
     
@@ -39,10 +37,6 @@ public final class RigBenchmark implements TestSupport {
       if (initialised) return;
       
       warmupPulses = (int) (pulses * warmupFrac);
-      for (Interest interest : topicSpec.getAllInterests()) {
-        expectedMessages += interest.getCount();
-      }
-      expectedMessages *= pulses;
       initialised = true;
     }
 
@@ -121,12 +115,13 @@ public final class RigBenchmark implements TestSupport {
     }});
     
     remoteRig.run();
-    remoteRig.awaitReceival(c.expectedMessages);
+//    remoteRig.awaitReceival(edgeRig.getSubscribers() * c.pulses);
+    remoteRig.await();
 
-    if (c.log.stages) c.log.out.format("Disconnecting...\n");
     edgeRig.close();
     remoteRig.close();
     
+//    TestSupport.sleep(1000); //TODO
     return remoteRig.getSummary();
   }
   
@@ -140,7 +135,7 @@ public final class RigBenchmark implements TestSupport {
     BashInteractor.Ulimit.main(null);
     new Config() {{
       port = PORT;
-      pulses = 300;
+      pulses = 3;
       pulseDurationMillis = 100;
       syncSubframes = 0;
       topicSpec = TopicLibrary.largeLeaves();
@@ -149,6 +144,7 @@ public final class RigBenchmark implements TestSupport {
       bytes = 128;
       log = new LogConfig() {{
         progress = intermediateSummaries = true;
+        stages = true;
         summary = true;
       }};
     }}.testPercentile(1, 5, 50, Summary::byLatency);
