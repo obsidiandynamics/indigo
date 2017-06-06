@@ -36,7 +36,13 @@ def perfJvmArgs = '-server -XX:-MaxFDLimit -XX:+TieredCompilation -XX:+UseNUMA -
 task wsBench(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
   jvmArgs = Arrays.asList perfJvmArgs.split(' ')
-  main = 'com.obsidiandynamics.indigo.util.BashInteractor'
+  main = 'com.obsidiandynamics.indigo.ws.WSFanOutBenchmark'
+}
+
+task rigBench(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
+  main = 'com.obsidiandynamics.indigo.iot.rig.RigBenchmark'
 }
 
 dependencies {
