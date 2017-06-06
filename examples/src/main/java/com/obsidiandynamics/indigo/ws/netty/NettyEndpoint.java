@@ -15,6 +15,7 @@ public final class NettyEndpoint implements WSEndpoint {
   private final NettyEndpointManager manager;
   private final ChannelHandlerContext handlerContext;
   private final AtomicLong backlog = new AtomicLong();
+  private final AtomicBoolean closeFired = new AtomicBoolean();
   
   private Object context;
 
@@ -92,8 +93,18 @@ public final class NettyEndpoint implements WSEndpoint {
 
   @Override
   public void close() throws Exception {
-    manager.remove(handlerContext);
-    handlerContext.close().get();
+    if (handlerContext.channel().isOpen()) {
+      handlerContext.close().get();
+    } else {
+      fireCloseEvent();
+    }
+  }
+  
+  void fireCloseEvent() {
+    if (closeFired.compareAndSet(false, true)) {
+      manager.remove(handlerContext);
+      manager.getListener().onClose(this);
+    }
   }
 
   @Override

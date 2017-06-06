@@ -33,15 +33,19 @@ public final class DefaultClientHarness extends ClientHarness implements TestSup
         }
       }
       
-      @Override public void onClose(WSEndpoint endpoint, int statusCode, String reason) {
+      @Override public void onDisconnect(WSEndpoint endpoint, int statusCode, String reason) {
         log("c: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
-        closed.set(true);
       }
       
       @Override public void onError(WSEndpoint endpoint, Throwable cause) {
         log("c: socket error\n");
         System.err.println("client socket error");
         cause.printStackTrace();
+      }
+
+      @Override public void onClose(WSEndpoint endpoint) {
+        log("c: closed\n");
+        closed.set(true);
       }
     };
     

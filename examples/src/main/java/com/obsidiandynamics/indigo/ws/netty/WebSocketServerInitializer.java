@@ -61,7 +61,8 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
           final NettyEndpoint endpoint = manager.remove(ctx);
           if (endpoint != null) {
             final CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
-            manager.getListener().onClose(endpoint, closeFrame.statusCode(), closeFrame.reasonText());
+            manager.getListener().onDisconnect(endpoint, closeFrame.statusCode(), closeFrame.reasonText());
+            endpoint.fireCloseEvent();
           }
         } else if (frame instanceof TextWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx);

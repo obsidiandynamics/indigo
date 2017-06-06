@@ -42,6 +42,10 @@ public final class JettyEndpointManager extends WebSocketHandler implements WSEn
     return endpoint;
   }
   
+  void remove(JettyEndpoint endpoint) {
+    endpoints.remove(endpoint);
+  }
+  
   EndpointListener<? super JettyEndpoint> getListener() {
     return listener;
   }

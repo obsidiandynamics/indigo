@@ -82,9 +82,14 @@ public final class EdgeNode implements AutoCloseable {
         }
       }
 
-      @Override public void onClose(E endpoint, int statusCode, String reason) {
+      @Override public void onDisconnect(E endpoint, int statusCode, String reason) {
         final EdgeNexus nexus = endpoint.getContext();
         handleDisconnect(nexus);
+      }
+
+      @Override public void onClose(E endpoint) {
+        final EdgeNexus nexus = endpoint.getContext();
+        nexuses.remove(nexus);
       }
 
       @Override public void onError(E endpoint, Throwable cause) {
@@ -167,7 +172,6 @@ public final class EdgeNode implements AutoCloseable {
   
   private void handleDisconnect(EdgeNexus nexus) {
     bridge.onDisconnect(nexus);
-    nexuses.remove(nexus);
     fireDisconnectEvent(nexus);
   }
   

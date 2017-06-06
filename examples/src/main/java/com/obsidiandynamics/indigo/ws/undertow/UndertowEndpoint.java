@@ -17,6 +17,8 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   
   private final AtomicLong backlog = new AtomicLong();
   
+  private final AtomicBoolean closeFired = new AtomicBoolean();
+  
   private Object context;
 
   UndertowEndpoint(UndertowEndpointManager manager, WebSocketChannel channel) {
@@ -55,7 +57,8 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   @Override
   protected void onCloseMessage(CloseMessage message, WebSocketChannel channel) {
     super.onCloseMessage(message, channel);
-    manager.getListener().onClose(this, message.getCode(), message.getReason());
+    manager.getListener().onDisconnect(this, message.getCode(), message.getReason());
+    channel.addCloseTask(ch -> fireCloseEvent());
   }
   
   @Override
@@ -133,7 +136,15 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
           final UndertowLogger log = UndertowLogger.ROOT_LOGGER;
           log.ioException(e);
         }
+        fireCloseEvent();
       });
+    }
+  }
+  
+  private void fireCloseEvent() {
+    if (closeFired.compareAndSet(false, true)) {
+      manager.remove(this);
+      manager.getListener().onClose(this);
     }
   }
 

@@ -31,16 +31,20 @@ final class DefaultServerHarness extends ServerHarness implements TestSupport {
         received.incrementAndGet();
       }
       
-      @Override public void onClose(WSEndpoint endpoint, int statusCode, String reason) {
+      @Override public void onDisconnect(WSEndpoint endpoint, int statusCode, String reason) {
         log("s: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
-        closed.incrementAndGet();
-        ping.set(false);
       }
       
       @Override public void onError(WSEndpoint endpoint, Throwable cause) {
         log("s: socket error\n");
         System.err.println("server socket error");
         cause.printStackTrace();
+      }
+
+      @Override public void onClose(WSEndpoint endpoint) {
+        log("s: closed\n");
+        closed.incrementAndGet();
+        ping.set(false);
       }
     };
     

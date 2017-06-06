@@ -30,7 +30,7 @@ public final class NettyEndpointManager implements WSEndpointManager<NettyEndpoi
     return endpoints.get(context);
   }
   
-  public NettyEndpoint remove(ChannelHandlerContext context) {
+  NettyEndpoint remove(ChannelHandlerContext context) {
     return endpoints.remove(context);
   }
   

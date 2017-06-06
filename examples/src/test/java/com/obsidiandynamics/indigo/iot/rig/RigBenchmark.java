@@ -115,13 +115,11 @@ public final class RigBenchmark implements TestSupport {
     }});
     
     remoteRig.run();
-//    remoteRig.awaitReceival(edgeRig.getSubscribers() * c.pulses);
     remoteRig.await();
 
     edgeRig.close();
     remoteRig.close();
     
-//    TestSupport.sleep(1000); //TODO
     return remoteRig.getSummary();
   }
   
@@ -135,7 +133,7 @@ public final class RigBenchmark implements TestSupport {
     BashInteractor.Ulimit.main(null);
     new Config() {{
       port = PORT;
-      pulses = 3;
+      pulses = 300;
       pulseDurationMillis = 100;
       syncSubframes = 0;
       topicSpec = TopicLibrary.largeLeaves();
@@ -144,7 +142,7 @@ public final class RigBenchmark implements TestSupport {
       bytes = 128;
       log = new LogConfig() {{
         progress = intermediateSummaries = true;
-        stages = true;
+        stages = false;
         summary = true;
       }};
     }}.testPercentile(1, 5, 50, Summary::byLatency);

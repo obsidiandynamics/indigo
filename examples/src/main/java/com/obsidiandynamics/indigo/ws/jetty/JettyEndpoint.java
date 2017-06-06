@@ -16,6 +16,8 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   
   private final AtomicLong backlog = new AtomicLong();
   
+  private final AtomicBoolean closeFired = new AtomicBoolean();
+  
   private Object context;
 
   JettyEndpoint(JettyEndpointManager manager) {
@@ -59,7 +61,8 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   @Override 
   public void onWebSocketClose(int statusCode, String reason) {
     super.onWebSocketClose(statusCode, reason);
-    manager.getListener().onClose(this, statusCode, reason);
+    manager.getListener().onDisconnect(this, statusCode, reason);
+    fireCloseEvent();
   }
   
   @Override 
@@ -123,7 +126,19 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
 
   @Override
   public void close() throws IOException {
-    getSession().close();
+    final Session session = getSession();
+    if (session.isOpen()) {
+      getSession().close();
+    } else {
+      fireCloseEvent();
+    }
+  }
+  
+  private void fireCloseEvent() {
+    if (closeFired.compareAndSet(false, true)) {
+      manager.remove(this);
+      manager.getListener().onClose(this);
+    }
   }
 
   @Override

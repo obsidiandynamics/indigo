@@ -57,4 +57,8 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
   public Collection<UndertowEndpoint> getEndpoints() {
     return endpoints;
   }
+  
+  void remove(UndertowEndpoint endpoint) {
+    endpoints.remove(endpoint);
+  }
 }
