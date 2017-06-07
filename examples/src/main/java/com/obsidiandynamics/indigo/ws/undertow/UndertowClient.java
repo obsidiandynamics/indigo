@@ -12,7 +12,7 @@ import io.undertow.server.*;
 import io.undertow.websockets.client.*;
 import io.undertow.websockets.core.*;
 
-public class UndertowClient implements WSClient<UndertowEndpoint> {
+public final class UndertowClient implements WSClient<UndertowEndpoint> {
   private final WSClientConfig config;
   
   private final XnioWorker worker;

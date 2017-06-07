@@ -7,7 +7,7 @@ import org.eclipse.jetty.websocket.client.*;
 
 import com.obsidiandynamics.indigo.ws.*;
 
-public class JettyClient implements WSClient<JettyEndpoint> {
+public final class JettyClient implements WSClient<JettyEndpoint> {
   private final HttpClient httpClient;
   
   private final WebSocketClient client;
