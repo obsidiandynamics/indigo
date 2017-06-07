@@ -36,8 +36,7 @@ public final class EdgeRigBenchmark implements TestSupport {
       }
 
       @Override public long getTimeTaken() {
-        // TODO Auto-generated method stub
-        return 0;
+        return edgeRig.getTimeTaken();
       }
     });
     return summary;
@@ -45,7 +44,7 @@ public final class EdgeRigBenchmark implements TestSupport {
   
   public static void main(String[] args) throws Exception {
     BashInteractor.Ulimit.main(null);
-    LOG_STREAM.println("\nEdge benchmark started; waiting for remotes...");
+    LOG_STREAM.println("_\nEdge benchmark started; waiting for remotes...");
     new Config() {{
       runner = EdgeRigBenchmark::run;
       port = PORT;

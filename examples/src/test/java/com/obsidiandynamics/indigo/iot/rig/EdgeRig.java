@@ -45,6 +45,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   private volatile State state = State.CONNECT_WAIT;
   
+  private volatile long took;
+  
   public EdgeRig(EdgeNode node, EdgeRigConfig config) {
     super("EdgeRig");
     this.node = node;
@@ -53,6 +55,10 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     leafTopics = config.topicSpec.getLeafTopics();
     node.addTopicListener(this);
     start();
+  }
+  
+  long getTimeTaken() {
+    return took;
   }
   
   @Override
@@ -79,9 +85,10 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     final byte[] binPayload = config.text ? null : randomBytes(config.bytes);
     final String textPayload = config.text ? randomString(config.bytes) : null;
     final int progressInterval = Math.max(1, config.pulses / 25);
+    final long start = System.currentTimeMillis();
     
     outer: while (state == State.RUNNING) {
-      final long start = System.nanoTime();
+      final long cycleStart = System.nanoTime();
       int sent = 0;
       for (Topic t : leafTopics) {
         if (warmup && pulse >= config.warmupPulses) {
@@ -110,8 +117,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
           }
         }
       }
-      final long took = System.nanoTime() - start;
-      if (took > config.pulseDurationMillis * 1_000_000l) {
+      final long cycleTook = System.nanoTime() - cycleStart;
+      if (cycleTook > config.pulseDurationMillis * 1_000_000l) {
         if (interval > 1) {
           interval--;
         } else {
@@ -125,7 +132,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
         }
       }
       if (config.log.verbose) config.log.out.format("e: pulse %,d took %,d (%,d every %,d ms)\n", 
-                                                    pulse, took, perInterval, interval);
+                                                    pulse, cycleTook, perInterval, interval);
       
       if (config.log.progress && pulse % progressInterval == 0) {
         config.log.printProgressBlock();
@@ -135,6 +142,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
         break;
       }
     }
+    
+    took = System.currentTimeMillis() - start; 
     
     state = State.STOPPED;
     

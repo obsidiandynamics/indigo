@@ -45,6 +45,18 @@ task rigBench(type: JavaExec) {
   main = 'com.obsidiandynamics.indigo.iot.rig.RigBenchmark'
 }
 
+task edgeRigBench(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
+  main = 'com.obsidiandynamics.indigo.iot.rig.EdgeRigBenchmark'
+}
+
+task remoteRigBench(type: JavaExec) {
+  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
+  main = 'com.obsidiandynamics.indigo.iot.rig.RemoteRigBenchmark'
+}
+
 dependencies {
   compile project(':')
   compile 'com.amazonaws:aws-java-sdk-dynamodb'

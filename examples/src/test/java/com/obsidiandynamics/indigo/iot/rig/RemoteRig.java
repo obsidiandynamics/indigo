@@ -57,7 +57,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private void createControlNexus() throws Exception {
-    if (config.log.stages) config.log.out.format("r: connecting control...\n");
+    if (config.log.stages) config.log.out.format("r: opening control nexus...\n");
     final String remoteId = generateRemoteId();
     final String inTopic = getRxTopic(remoteId);
     control = node.open(config.uri, new RemoteNexusHandlerAdapter() {

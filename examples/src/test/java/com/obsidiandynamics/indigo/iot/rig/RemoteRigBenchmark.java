@@ -31,7 +31,7 @@ public final class RemoteRigBenchmark implements TestSupport {
   
   public static void main(String[] args) throws Exception {
     BashInteractor.Ulimit.main(null);
-    LOG_STREAM.println("\nRemote benchmark started...");
+    LOG_STREAM.println("_\nRemote benchmark started...");
     new Config() {{
       runner = RemoteRigBenchmark::run;
       port = PORT;
