@@ -299,8 +299,6 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   }
   
   private Summary test(Config c) throws Exception {
-    final int sendThreads = 1;
-    final int waitScale = 1 + (int) (((long) c.n * (long) c.m) / 1_000_000_000l);
     final List<ClientHarness> clients = new ArrayList<>(c.m);
     final AtomicBoolean throttleInProgress = new AtomicBoolean();
     
@@ -349,6 +347,20 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     };
     
     final ServerHarness server = c.serverHarnessFactory.create(c.port, progress, c.idleTimeout);
+    try {
+      return test(c, throttleInProgress, clients, server);
+    } finally {
+      server.close();
+      c.cleanup.run();
+    }
+  }
+  
+  private Summary test(Config c,
+                       AtomicBoolean throttleInProgress,
+                       List<ClientHarness> clients,
+                       ServerHarness server) throws Exception {
+    final int sendThreads = 1;
+    final int waitScale = 1 + (int) (((long) c.n * (long) c.m) / 1_000_000_000l);
     
     for (int i = 0; i < c.m; i++) {
       clients.add(c.clientHarnessFactory.create(c.port, c.echo)); 

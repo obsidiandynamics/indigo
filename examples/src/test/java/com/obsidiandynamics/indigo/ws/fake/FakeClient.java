@@ -106,7 +106,7 @@ public final class FakeClient extends Thread implements Closeable {
         socket.getOutputStream().write(closeFrame);
         socket.getOutputStream().flush();
         socket.getInputStream().read(buffer); // read the server's close frame
-      } catch (SocketException e) {
+      } catch (IOException e) {
         if (! socket.isClosed()) e.printStackTrace();
       }
       socket.close();
