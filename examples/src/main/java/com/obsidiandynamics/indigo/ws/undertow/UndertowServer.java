@@ -29,7 +29,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
     
     server = Undertow.builder()
         .setWorker(worker)
-        .addHttpListener(port, "localhost")
+        .addHttpListener(port, "0.0.0.0")
         .setHandler(path().addPrefixPath(contextPath, websocket(manager)))
         .build();
         server.start();

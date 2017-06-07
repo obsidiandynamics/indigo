@@ -10,6 +10,11 @@ import com.obsidiandynamics.indigo.ws.*;
 
 public final class EdgeRigBenchmark implements TestSupport {
   private static final int PORT = PropertyUtils.get("Rig.port", Integer::valueOf, 6667);
+  private static final int PULSES = PropertyUtils.get("Rig.pulses", Integer::valueOf, 300);
+  private static final int PULSE_DURATION = PropertyUtils.get("Rig.pulseDuration", Integer::valueOf, 100);
+  private static final float WARMUP_FRAC = PropertyUtils.get("Rig.warmupFrac", Float::valueOf, 0.10f);
+  private static final boolean TEXT = PropertyUtils.get("Rig.text", Boolean::valueOf, false);
+  private static final int BYTES = PropertyUtils.get("Rig.bytes", Integer::valueOf, 128);
   
   private static Summary run(Config c) throws Exception {
     final EdgeNode edge = EdgeNode.builder()
@@ -48,13 +53,12 @@ public final class EdgeRigBenchmark implements TestSupport {
     new Config() {{
       runner = EdgeRigBenchmark::run;
       port = PORT;
-      pulses = 300;
-      pulseDurationMillis = 100;
-      syncSubframes = 0;
+      pulses = PULSES;
+      pulseDurationMillis = PULSE_DURATION;
       topicSpec = TopicLibrary.largeLeaves();
-      warmupFrac = 0.10f;
-      text = false;
-      bytes = 128;
+      warmupFrac = WARMUP_FRAC;
+      text = TEXT;
+      bytes = BYTES;
       log = new LogConfig() {{
         progress = intermediateSummaries = false;
         stages = true;

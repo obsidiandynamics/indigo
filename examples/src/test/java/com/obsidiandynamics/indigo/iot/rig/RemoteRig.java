@@ -21,7 +21,7 @@ import junit.framework.*;
 
 public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunnable, RemoteNexusHandler {
   public static class RemoteRigConfig {
-    int syncSubframes = 10;
+    int syncFrames;
     URI uri;
     TopicSpec topicSpec;
     LogConfig log;
@@ -55,7 +55,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   @Override
   public void run() throws Exception {
     createControlNexus();
-    timeDiff = config.syncSubframes != 0 ? calibrate() : 0;
+    timeDiff = config.syncFrames != 0 ? calibrate() : 0;
     connectAll();
     begin();
   }
@@ -146,7 +146,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     final String remoteId = generateRemoteId();
     final String inTopic = getRxTopic(remoteId);
     final String outTopic = getTxTopic(remoteId);
-    final int discardSyncs = (int) (config.syncSubframes * .25);
+    final int discardSyncs = (int) (config.syncFrames * .25);
     final AtomicBoolean syncComplete = new AtomicBoolean();
     final AtomicInteger syncs = new AtomicInteger();
     final AtomicLong lastRemoteTransmitTime = new AtomicLong();
@@ -164,7 +164,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
           timeDeltas.add(timeDelta);
         }
         
-        if (timeDeltas.size() != config.syncSubframes) {
+        if (timeDeltas.size() != config.syncFrames) {
           lastRemoteTransmitTime.set(System.nanoTime());
           nexus.publish(new PublishTextFrame(outTopic, new Sync(lastRemoteTransmitTime.get()).marshal(subframeGson)));
         } else {

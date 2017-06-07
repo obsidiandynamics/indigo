@@ -1,7 +1,5 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
-import java.net.*;
-
 import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.iot.rig.RemoteRig.*;
@@ -12,13 +10,14 @@ import com.obsidiandynamics.indigo.util.*;
 public final class RemoteRigBenchmark implements TestSupport {
   private static final String HOST = PropertyUtils.get("Rig.host", String::valueOf, "localhost");
   private static final int PORT = PropertyUtils.get("Rig.port", Integer::valueOf, 6667);
+  private static final int SYNC_FRAMES = PropertyUtils.get("Rig.sincFrames", Integer::valueOf, 1000);
   
   private static Summary run(Config c) throws Exception {
     final RemoteNode remote = RemoteNode.builder()
         .build();
     final RemoteRig remoteRig = new RemoteRig(remote, new RemoteRigConfig() {{
       topicSpec = c.topicSpec;
-      syncSubframes = c.syncSubframes;
+      syncFrames = c.syncFrames;
       uri = getUri(c.host, c.port);
       log = c.log;
     }});
@@ -36,13 +35,8 @@ public final class RemoteRigBenchmark implements TestSupport {
       runner = RemoteRigBenchmark::run;
       host = HOST;
       port = PORT;
-      pulses = 300;
-      pulseDurationMillis = 100;
-      syncSubframes = 0;
+      syncFrames = SYNC_FRAMES;
       topicSpec = TopicLibrary.largeLeaves();
-      warmupFrac = 0.10f;
-      text = false;
-      bytes = 128;
       log = new LogConfig() {{
         progress = intermediateSummaries = false;
         stages = true;

@@ -23,7 +23,7 @@ public final class RigBenchmark implements TestSupport {
     int port;
     int pulses;
     int pulseDurationMillis;
-    int syncSubframes;
+    int syncFrames;
     TopicSpec topicSpec;
     boolean text;
     int bytes;
@@ -76,7 +76,7 @@ public final class RigBenchmark implements TestSupport {
     new Config() {{
       pulses = 10;
       pulseDurationMillis = 1;
-      syncSubframes = 10;
+      syncFrames = 10;
       topicSpec = TopicLibrary.smallLeaves();
       text = true;
       bytes = 16;
@@ -88,7 +88,7 @@ public final class RigBenchmark implements TestSupport {
     new Config() {{
       pulses = 10;
       pulseDurationMillis = 1;
-      syncSubframes = 10;
+      syncFrames = 10;
       topicSpec = TopicLibrary.smallLeaves();
       text = false;
       bytes = 16;
@@ -113,7 +113,7 @@ public final class RigBenchmark implements TestSupport {
         .build();
     final RemoteRig remoteRig = new RemoteRig(remote, new RemoteRigConfig() {{
       topicSpec = c.topicSpec;
-      syncSubframes = c.syncSubframes;
+      syncFrames = c.syncFrames;
       uri = new URI(String.format("ws://%s:%d/", c.host, c.port));
       log = c.log;
     }});
@@ -140,7 +140,7 @@ public final class RigBenchmark implements TestSupport {
       port = PORT;
       pulses = 300;
       pulseDurationMillis = 100;
-      syncSubframes = 0;
+      syncFrames = 0;
       topicSpec = TopicLibrary.largeLeaves();
       warmupFrac = 0.10f;
       text = false;
