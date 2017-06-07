@@ -39,6 +39,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
   public void close() throws Exception {
     server.stop();
     worker.shutdown();
+    worker.awaitTermination();
   }
 
   @Override
