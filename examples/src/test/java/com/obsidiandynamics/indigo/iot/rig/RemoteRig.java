@@ -25,6 +25,10 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     URI uri;
     TopicSpec topicSpec;
     LogConfig log;
+    
+    static URI getUri(String host, int port) throws URISyntaxException {
+      return new URI(String.format("ws://%s:%d/", host, port));
+    }
   }
   
   private final RemoteNode node;

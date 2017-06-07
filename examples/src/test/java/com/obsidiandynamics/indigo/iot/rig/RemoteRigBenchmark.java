@@ -10,8 +10,8 @@ import com.obsidiandynamics.indigo.topic.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class RemoteRigBenchmark implements TestSupport {
-  private static final String HOST = "localhost";
-  private static final int PORT = 6667;
+  private static final String HOST = PropertyUtils.get("Rig.host", String::valueOf, "localhost");
+  private static final int PORT = PropertyUtils.get("Rig.port", Integer::valueOf, 6667);
   
   private static Summary run(Config c) throws Exception {
     final RemoteNode remote = RemoteNode.builder()
@@ -19,7 +19,7 @@ public final class RemoteRigBenchmark implements TestSupport {
     final RemoteRig remoteRig = new RemoteRig(remote, new RemoteRigConfig() {{
       topicSpec = c.topicSpec;
       syncSubframes = c.syncSubframes;
-      uri = new URI(String.format("ws://%s:%d/", HOST, PORT));
+      uri = getUri(c.host, c.port);
       log = c.log;
     }});
     
@@ -31,9 +31,10 @@ public final class RemoteRigBenchmark implements TestSupport {
   
   public static void main(String[] args) throws Exception {
     BashInteractor.Ulimit.main(null);
-    LOG_STREAM.println("_\nRemote benchmark started...");
+    LOG_STREAM.format("_\nRemote benchmark started (URI: %s)...\n", RemoteRigConfig.getUri(HOST, PORT));
     new Config() {{
       runner = RemoteRigBenchmark::run;
+      host = HOST;
       port = PORT;
       pulses = 300;
       pulseDurationMillis = 100;

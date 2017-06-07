@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class EdgeRigBenchmark implements TestSupport {
-  private static final int PORT = 6667;
+  private static final int PORT = PropertyUtils.get("Rig.port", Integer::valueOf, 6667);
   
   private static Summary run(Config c) throws Exception {
     final EdgeNode edge = EdgeNode.builder()

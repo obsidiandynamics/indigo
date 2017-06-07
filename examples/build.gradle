@@ -46,12 +46,14 @@ task rigBench(type: JavaExec) {
 }
 
 task edgeRigBench(type: JavaExec) {
+  systemProperties = System.properties
   classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
   jvmArgs = Arrays.asList perfJvmArgs.split(' ')
   main = 'com.obsidiandynamics.indigo.iot.rig.EdgeRigBenchmark'
 }
 
 task remoteRigBench(type: JavaExec) {
+  systemProperties = System.properties
   classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
   jvmArgs = Arrays.asList perfJvmArgs.split(' ')
   main = 'com.obsidiandynamics.indigo.iot.rig.RemoteRigBenchmark'

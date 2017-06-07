@@ -14,10 +14,12 @@ import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class RigBenchmark implements TestSupport {
+  private static final String HOST = "localhost";
   private static final int PORT = 6667;
   
   abstract static class Config implements Spec {
     ThrowingFunction<Config, Summary> runner = RigBenchmark::test;
+    String host;
     int port;
     int pulses;
     int pulseDurationMillis;
@@ -53,6 +55,7 @@ public final class RigBenchmark implements TestSupport {
     }
     
     public SpecMultiplier applyDefaults() {
+      host = HOST;
       port = PORT;
       warmupFrac = 0.05f;
       log = new LogConfig() {{
@@ -111,7 +114,7 @@ public final class RigBenchmark implements TestSupport {
     final RemoteRig remoteRig = new RemoteRig(remote, new RemoteRigConfig() {{
       topicSpec = c.topicSpec;
       syncSubframes = c.syncSubframes;
-      uri = new URI("ws://localhost:" + c.port + "/");
+      uri = new URI(String.format("ws://%s:%d/", c.host, c.port));
       log = c.log;
     }});
     
@@ -133,6 +136,7 @@ public final class RigBenchmark implements TestSupport {
   public static void main(String[] args) throws Exception {
     BashInteractor.Ulimit.main(null);
     new Config() {{
+      host = HOST;
       port = PORT;
       pulses = 300;
       pulseDurationMillis = 100;
