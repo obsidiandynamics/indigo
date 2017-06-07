@@ -81,7 +81,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
 
     @Override
     public Summary run() throws Exception {
-      return new WSFanOutBenchmark().test(this);
+      return WSFanOutBenchmark.test(this);
     }
   }
   
@@ -264,7 +264,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     }}.assignDefaults().test();
   }
   
-  private void throttle(Config c, AtomicBoolean throttleInProgress, List<? extends WSEndpoint> endpoints, int backlogHwm) {
+  private static void throttle(Config c, AtomicBoolean throttleInProgress, List<? extends WSEndpoint> endpoints, int backlogHwm) {
     boolean logged = false;
     int waits = 0;
     for (;;) {
@@ -298,7 +298,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     }
   }
   
-  private Summary test(Config c) throws Exception {
+  private static Summary test(Config c) throws Exception {
     final List<ClientHarness> clients = new ArrayList<>(c.m);
     final AtomicBoolean throttleInProgress = new AtomicBoolean();
     
@@ -355,10 +355,10 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     }
   }
   
-  private Summary test(Config c,
-                       AtomicBoolean throttleInProgress,
-                       List<ClientHarness> clients,
-                       ServerHarness server) throws Exception {
+  private static Summary test(Config c,
+                              AtomicBoolean throttleInProgress,
+                              List<ClientHarness> clients,
+                              ServerHarness server) throws Exception {
     final int sendThreads = 1;
     final int waitScale = 1 + (int) (((long) c.n * (long) c.m) / 1_000_000_000l);
     
