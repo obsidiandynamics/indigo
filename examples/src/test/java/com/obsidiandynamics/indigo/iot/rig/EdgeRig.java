@@ -59,6 +59,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   public void run() {
     while (state != State.CLOSING) {
       runBenchmark();
+      TestSupport.sleep(10);
     }
   }
   
@@ -160,6 +161,10 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     } catch (Exception e) {
       e.printStackTrace(config.log.out);
     }
+  }  
+  
+  public boolean await() throws InterruptedException {
+    return Await.perpetual(() -> state == State.STOPPED && node.getNexuses().isEmpty());
   }
   
   @Override

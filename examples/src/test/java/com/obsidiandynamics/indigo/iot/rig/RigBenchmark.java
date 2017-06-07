@@ -17,6 +17,7 @@ public final class RigBenchmark implements TestSupport {
   private static final int PORT = 6667;
   
   abstract static class Config implements Spec {
+    ThrowingFunction<Config, Summary> runner = RigBenchmark::test;
     int port;
     int pulses;
     int pulseDurationMillis;
@@ -63,7 +64,7 @@ public final class RigBenchmark implements TestSupport {
 
     @Override
     public Summary run() throws Exception {
-      return new RigBenchmark().test(this);
+      return runner.apply(this);
     }
   }
 
@@ -91,7 +92,7 @@ public final class RigBenchmark implements TestSupport {
     }}.applyDefaults().test();
   }
 
-  private Summary test(Config c) throws Exception {
+  private static Summary test(Config c) throws Exception {
     final EdgeNode edge = EdgeNode.builder()
         .withServerConfig(new WSServerConfig() {{ port = c.port; }})
         .build();

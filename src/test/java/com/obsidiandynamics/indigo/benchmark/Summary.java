@@ -11,6 +11,10 @@ public final class Summary {
   public long timedOps = 0;
   public long avgTime = 0;
   public final Stats stats = new Stats();
+  
+  public void compute(Elapsed ... intervals) {
+    compute(Arrays.asList(intervals));
+  }
 
   public void compute(Collection<? extends Elapsed> intervals) {
     for (Elapsed interval : intervals) {

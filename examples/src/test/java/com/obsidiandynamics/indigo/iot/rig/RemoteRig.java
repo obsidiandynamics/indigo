@@ -90,14 +90,14 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     final long took = System.currentTimeMillis() - startTime;
     TestCase.assertEquals(expectedMessages, received.get());
     summary.stats.await();
-    summary.compute(Arrays.asList(new Elapsed() {
+    summary.compute(new Elapsed() {
       @Override public long getTotalProcessed() {
         return received.get();
       }
       @Override public long getTimeTaken() {
         return took;
       }
-    }));
+    });
   }
   
   private void connectAll() throws Exception {
