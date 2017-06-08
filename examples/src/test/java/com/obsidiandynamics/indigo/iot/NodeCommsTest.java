@@ -58,18 +58,22 @@ public class NodeCommsTest {
 
   @Test
   public void testText() throws Exception {
-    final UUID subId = UUID.randomUUID();
-    final SubscribeResponseFrame mockSubRes = new SubscribeResponseFrame(subId, null);
-    when(bridge.onSubscribe(any(), any())).thenReturn(CompletableFuture.completedFuture(mockSubRes));
+    final UUID messageId = UUID.randomUUID();
+    final BindResponseFrame mockBindRes = new BindResponseFrame(messageId, null);
+    when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(mockBindRes));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
-    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
-                                                  new String[]{"a/b/c"}, "some-context");
-    final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
+    final BindFrame bind = new BindFrame(messageId, 
+                                         Long.toHexString(Crypto.machineRandom()),
+                                         null,
+                                         new String[]{"a/b/c"}, 
+                                         null,
+                                         "some-context");
+    final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     
-    assertTrue(subRes.isSuccess());
-    assertEquals(FrameType.SUBSCRIBE, subRes.getType());
-    assertNull(subRes.getError());
+    assertTrue(bindRes.isSuccess());
+    assertEquals(FrameType.BIND, bindRes.getType());
+    assertNull(bindRes.getError());
     
     final PublishTextFrame pubRemote = new PublishTextFrame("x/y/z", "hello from remote");
     remoteNexus.publish(pubRemote);
@@ -87,7 +91,7 @@ public class NodeCommsTest {
     
     ordered(bridge, inOrder -> {
       inOrder.verify(bridge).onConnect(anyNotNull());
-      inOrder.verify(bridge).onSubscribe(anyNotNull(), eq(sub));
+      inOrder.verify(bridge).onBind(anyNotNull(), eq(bind));
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
       inOrder.verify(bridge).onDisconnect(anyNotNull());
     });
@@ -101,28 +105,32 @@ public class NodeCommsTest {
 
   @Test
   public void testBinary() throws Exception {
-    final UUID subId = UUID.randomUUID();
-    final SubscribeResponseFrame mockSubRes = new SubscribeResponseFrame(subId, null);
-    when(bridge.onSubscribe(any(), any())).thenReturn(CompletableFuture.completedFuture(mockSubRes));
+    final UUID messageId = UUID.randomUUID();
+    final BindResponseFrame mockBindRes = new BindResponseFrame(messageId, null);
+    when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(mockBindRes));
     
-    final RemoteNexus session = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
-    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
-                                                  new String[]{"a/b/c"}, "some-context");
-    final SubscribeResponseFrame subRes = session.subscribe(sub).get();
+    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    final BindFrame bind = new BindFrame(messageId, 
+                                         Long.toHexString(Crypto.machineRandom()),
+                                         null,
+                                         new String[]{"a/b/c"}, 
+                                         null,
+                                         "some-context");
+    final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     
-    assertTrue(subRes.isSuccess());
-    assertEquals(FrameType.SUBSCRIBE, subRes.getType());
-    assertNull(subRes.getError());
+    assertTrue(bindRes.isSuccess());
+    assertEquals(FrameType.BIND, bindRes.getType());
+    assertNull(bindRes.getError());
     
     final PublishBinaryFrame pubRemote = new PublishBinaryFrame("x/y/z", 
                                                                 ByteBuffer.wrap("hello from remote".getBytes()));
-    session.publish(pubRemote);
+    remoteNexus.publish(pubRemote);
     
     final EdgeNexus nexus = edge.getNexuses().get(0);
     final BinaryFrame binaryEdge = new BinaryFrame("l/m/n", ByteBuffer.wrap("hello from edge".getBytes()));
     nexus.send(binaryEdge).get();
     
-    session.close();
+    remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
       verify(bridge).onDisconnect(anyNotNull());
@@ -131,7 +139,7 @@ public class NodeCommsTest {
     
     ordered(bridge, inOrder -> {
       inOrder.verify(bridge).onConnect(anyNotNull());
-      inOrder.verify(bridge).onSubscribe(anyNotNull(), eq(sub));
+      inOrder.verify(bridge).onBind(anyNotNull(), eq(bind));
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
       inOrder.verify(bridge).onDisconnect(anyNotNull());
     });

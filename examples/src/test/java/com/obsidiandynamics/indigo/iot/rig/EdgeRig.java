@@ -149,7 +149,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     
     final long expectedMessages = (long) config.pulses * subscribers.get();
     for (EdgeNexus control : controlNexuses) {
-      final String topic = RigSubframe.TOPIC_PREFIX + "/" + control.getRemoteId() + "/rx";
+      final String topic = RigSubframe.TOPIC_PREFIX + "/" + control.getSession().getSessionId() + "/rx";
       control.send(new TextFrame(topic, new Wait(expectedMessages).marshal(subframeGson)));
     }
     
@@ -216,9 +216,9 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   }
 
   @Override
-  public void onSubscribe(EdgeNexus nexus, SubscribeFrame sub, SubscribeResponseFrame subRes) {
-    if (config.log.verbose) config.log.out.format("e: sub %s %s\n", nexus, sub);
-    for (String topic : sub.getTopics()) {
+  public void onBind(EdgeNexus nexus, BindFrame bind, BindResponseFrame bindRes) {
+    if (config.log.verbose) config.log.out.format("e: sub %s %s\n", nexus, bind);
+    for (String topic : bind.getSubscribe()) {
       if (! topic.startsWith(RigSubframe.TOPIC_PREFIX)) {
         subscribers.incrementAndGet();
       }

@@ -9,7 +9,7 @@ public interface TopicBridge extends AutoCloseable {
   
   void onDisconnect(EdgeNexus nexus);
   
-  CompletableFuture<SubscribeResponseFrame> onSubscribe(EdgeNexus nexus, SubscribeFrame sub);
+  CompletableFuture<BindResponseFrame> onBind(EdgeNexus nexus, BindFrame bind);
   
   void onPublish(EdgeNexus nexus, PublishTextFrame pub);
   

@@ -11,7 +11,7 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class RemoteNexus implements AutoCloseable {
   private final RemoteNode node;
 
-  private final Map<UUID, CompletableFuture<SubscribeResponseFrame>> subscribeRequests = new ConcurrentHashMap<>();
+  private final Map<UUID, CompletableFuture<BindResponseFrame>> bindRequests = new ConcurrentHashMap<>();
   
   private WSEndpoint endpoint;
   
@@ -31,14 +31,14 @@ public final class RemoteNexus implements AutoCloseable {
     return endpoint.getRemoteAddress();
   }
   
-  CompletableFuture<SubscribeResponseFrame> removeSubscribeRequest(UUID id) {
-    return subscribeRequests.remove(id);
+  CompletableFuture<BindResponseFrame> removeBindRequest(UUID id) {
+    return bindRequests.remove(id);
   }
   
-  public CompletableFuture<SubscribeResponseFrame> subscribe(SubscribeFrame sub) {
-    final CompletableFuture<SubscribeResponseFrame> future = new CompletableFuture<>();
-    subscribeRequests.put(sub.getId(), future);
-    SendHelper.send(sub, endpoint, node.getWire());
+  public CompletableFuture<BindResponseFrame> bind(BindFrame bind) {
+    final CompletableFuture<BindResponseFrame> future = new CompletableFuture<>();
+    bindRequests.put(bind.getMessageId(), future);
+    SendHelper.send(bind, endpoint, node.getWire());
     return future;
   }
   

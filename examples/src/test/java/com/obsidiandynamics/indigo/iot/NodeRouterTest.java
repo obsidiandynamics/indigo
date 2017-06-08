@@ -56,20 +56,24 @@ public class NodeRouterTest {
 
   @Test
   public void testInternalPubSub() throws Exception {
-    final UUID subId = UUID.randomUUID();
+    final UUID messageId = UUID.randomUUID();
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
 
     final String topic = "a/b/c";
     final String payload = "hello internal";
     edge.publish(topic, payload); // no subscriber yet - shouldn't be received
     
-    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
-                                                  new String[]{"a/b/c"}, "some-context");
-    final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
+    final BindFrame bind = new BindFrame(messageId, 
+                                         Long.toHexString(Crypto.machineRandom()),
+                                         null,
+                                         new String[]{"a/b/c"}, 
+                                         null,
+                                         "some-context");
+    final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     
-    assertTrue(subRes.isSuccess());
-    assertEquals(FrameType.SUBSCRIBE, subRes.getType());
-    assertNull(subRes.getError());
+    assertTrue(bindRes.isSuccess());
+    assertEquals(FrameType.BIND, bindRes.getType());
+    assertNull(bindRes.getError());
 
     ordered(handler, inOrder -> { // shouldn't have received any data yet
       inOrder.verify(handler).onConnect(anyNotNull());
@@ -96,20 +100,24 @@ public class NodeRouterTest {
 
   @Test
   public void testExternalPubSub() throws Exception {
-    final UUID subId = UUID.randomUUID();
+    final UUID messageId = UUID.randomUUID();
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
 
     final String topic = "a/b/c";
     final String payload = "hello external";
     remoteNexus.publish(new PublishTextFrame(topic, payload)); // no subscriber yet - shouldn't be received
     
-    final SubscribeFrame sub = new SubscribeFrame(subId, Long.toHexString(Crypto.machineRandom()),
-                                                  new String[]{"a/b/c"}, "some-context");
-    final SubscribeResponseFrame subRes = remoteNexus.subscribe(sub).get();
+    final BindFrame bind = new BindFrame(messageId, 
+                                         Long.toHexString(Crypto.machineRandom()),
+                                         null,
+                                         new String[]{"a/b/c"}, 
+                                         null,
+                                         "some-context");
+    final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     
-    assertTrue(subRes.isSuccess());
-    assertEquals(FrameType.SUBSCRIBE, subRes.getType());
-    assertNull(subRes.getError());
+    assertTrue(bindRes.isSuccess());
+    assertEquals(FrameType.BIND, bindRes.getType());
+    assertNull(bindRes.getError());
 
     ordered(handler, inOrder -> { // shouldn't have received any data yet
       inOrder.verify(handler).onConnect(anyNotNull());

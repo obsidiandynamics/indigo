@@ -18,8 +18,8 @@ public final class Wire {
     final GsonBuilder builder = new GsonBuilder()
         .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
                                     .of(IdFrame.class, "type")
-                                    .registerSubtype(SubscribeFrame.class, "Subscribe")
-                                    .registerSubtype(SubscribeResponseFrame.class, "SubscribeResponse"));
+                                    .registerSubtype(BindFrame.class, "Bind")
+                                    .registerSubtype(BindResponseFrame.class, "BindResponse"));
     if (prettyPrinting) builder.setPrettyPrinting();
     gson = builder.create();
   }
@@ -33,7 +33,7 @@ public final class Wire {
   
   private void encodeFrameBody(Frame frame, StringBuilder sb) {
     switch (frame.getType()) {
-      case SUBSCRIBE: {
+      case BIND: {
         sb.append(gson.toJson(frame, IdFrame.class));
         return;
       }
@@ -116,7 +116,7 @@ public final class Wire {
   private TextEncodedFrame decodeFrameBody(FrameType type, String str) {
     if (str.length() <= 2) return throwError(type, str);
     switch (type) {
-      case SUBSCRIBE: {
+      case BIND: {
         return (TextEncodedFrame) gson.fromJson(str.substring(2), IdFrame.class);
       }
         

@@ -7,7 +7,7 @@ public interface TopicListener {
   
   void onDisconnect(EdgeNexus nexus);
   
-  void onSubscribe(EdgeNexus nexus, SubscribeFrame sub, SubscribeResponseFrame subRes);
+  void onBind(EdgeNexus nexus, BindFrame bind, BindResponseFrame bindRes);
   
   void onPublish(EdgeNexus nexus, PublishTextFrame pub);
   

@@ -18,21 +18,26 @@ public final class WireTest implements TestSupport {
     wire = new Wire(false);
   }
   
+  private static String requote(String singleQuotedString) {
+    return singleQuotedString.replaceAll("'", "\"");
+  }
+  
   @Test
   public void testMarshalSubscribe() {
     final UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
-    final SubscribeFrame orig = new SubscribeFrame(id, "123", new String[]{"a", "a/b", "a/b/c"}, "some-context");
+    final BindFrame orig = new BindFrame(id, "123", null, new String[]{"a", "a/b", "a/b/c"}, null, "some-meta");
     final String enc = wire.encode(orig);
     log("encoded: '%s'\n", enc);
-    assertEquals("S {\"type\":\"Subscribe\",\"remoteId\":\"123\",\"topics\":[\"a\",\"a/b\",\"a/b/c\"],\"context\":\"some-context\",\"id\":\"123e4567-e89b-12d3-a456-426655440000\"}", enc);
+    final String expected = requote("B {'type':'Bind','sessionId':'123','subscribe':['a','a/b','a/b/c'],'metadata':'some-meta','messageId':'123e4567-e89b-12d3-a456-426655440000'}");
+    assertEquals(expected, enc);
     
-    final SubscribeFrame decoded = (SubscribeFrame) wire.decode(enc);
+    final BindFrame decoded = (BindFrame) wire.decode(enc);
     assertEquals(orig, decoded);
   }
   
   @Test
   public void testMarshalSubscribeResponse() {
-    testEncodeDecode(new SubscribeResponseFrame(new UUID(0l, 0l), "some-error"));
+    testEncodeDecode(new BindResponseFrame(new UUID(0l, 0l), "some-error"));
   }
   
   @Test

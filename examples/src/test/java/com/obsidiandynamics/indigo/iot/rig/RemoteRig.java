@@ -62,20 +62,20 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   private void createControlNexus() throws Exception {
     if (config.log.stages) config.log.out.format("r: opening control nexus...\n");
-    final String remoteId = generateRemoteId();
-    final String inTopic = getRxTopic(remoteId);
+    final String sessionId = generateSessionId();
+    final String inTopic = getRxTopic(sessionId);
     control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (config.log.verbose) config.log.out.format("r: control received %s\n", payload);
         final RigSubframe subframe = RigSubframe.unmarshal(payload, subframeGson);
         if (subframe instanceof Wait) {
-          awaitLater(nexus, remoteId, ((Wait) subframe).getExpectedMessages());
+          awaitLater(nexus, sessionId, ((Wait) subframe).getExpectedMessages());
         } else {
           config.log.out.format("ERROR: Unsupported subframe of type %s\n", subframe.getClass().getName());
         }
       }
     });
-    control.subscribe(new SubscribeFrame(UUID.randomUUID(), remoteId, new String[] {inTopic}, null)).get();
+    control.bind(new BindFrame(UUID.randomUUID(), sessionId, null, new String[] {inTopic}, null, null)).get();
   }
   
   private void awaitLater(RemoteNexus nexus, String remoteId, long expectedMessages) {
@@ -107,25 +107,25 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private void connectAll() throws Exception {
     final List<Interest> allInterests = config.topicSpec.getAllInterests();
     
-    final List<CompletableFuture<SubscribeResponseFrame>> futures = new ArrayList<>(allInterests.size());
+    final List<CompletableFuture<BindResponseFrame>> futures = new ArrayList<>(allInterests.size());
     for (Interest interest : allInterests) {
       for (int i = 0; i < interest.getCount(); i++) {
         final RemoteNexus nexus = node.open(config.uri, this);
-        final CompletableFuture<SubscribeResponseFrame> f = 
-            nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), generateRemoteId(), 
-                                               new String[]{interest.getTopic().toString()}, null));
+        final CompletableFuture<BindResponseFrame> f = 
+            nexus.bind(new BindFrame(UUID.randomUUID(), generateSessionId(), null,
+                                     new String[]{interest.getTopic().toString()}, null, null));
         futures.add(f);
       }
     }
     
-    for (CompletableFuture<SubscribeResponseFrame> f : futures) {
+    for (CompletableFuture<BindResponseFrame> f : futures) {
       f.get();
     }
     if (config.log.verbose) config.log.out.format("r: %,d remotes connected\n", allInterests.size());
   }
   
   private void begin() throws Exception {
-    control.publish(new PublishTextFrame(getTxTopic(generateRemoteId()), new Begin().marshal(subframeGson))).get();
+    control.publish(new PublishTextFrame(getTxTopic(generateSessionId()), new Begin().marshal(subframeGson))).get();
     startTime = System.currentTimeMillis();
   }
   
@@ -137,13 +137,13 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/tx";
   }
   
-  private String generateRemoteId() {
+  private String generateSessionId() {
     return Long.toHexString(Crypto.machineRandom());
   }
   
   private long calibrate() throws Exception {
     if (config.log.stages) config.log.out.format("r: time calibration...\n");
-    final String remoteId = generateRemoteId();
+    final String remoteId = generateSessionId();
     final String inTopic = getRxTopic(remoteId);
     final String outTopic = getTxTopic(remoteId);
     final int discardSyncs = (int) (config.syncFrames * .25);
@@ -180,8 +180,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         syncComplete.set(true);
       }
     });
-    nexus.subscribe(new SubscribeFrame(UUID.randomUUID(), generateRemoteId(),
-                                       new String[] {inTopic}, null)).get();
+    nexus.bind(new BindFrame(UUID.randomUUID(), generateSessionId(), null,
+                             new String[] {inTopic}, null, null)).get();
     
     lastRemoteTransmitTime.set(System.nanoTime());
     nexus.publish(new PublishTextFrame(outTopic, new Sync(lastRemoteTransmitTime.get()).marshal(subframeGson)));

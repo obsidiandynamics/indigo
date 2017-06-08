@@ -11,30 +11,19 @@ public final class EdgeNexus implements AutoCloseable {
   
   private final Peer peer;
   
-  private String remoteId;
-  
-  private Object context;
+  private Session session;
 
   public EdgeNexus(EdgeNode node, Peer peer) {
     this.node = node;
     this.peer = peer;
   }
   
-  @SuppressWarnings("unchecked")
-  final <T> T getContext() {
-    return (T) context;
+  public Session getSession() {
+    return session;
   }
 
-  final void setContext(Object context) {
-    this.context = context;
-  }
-  
-  public String getRemoteId() {
-    return remoteId;
-  }
-  
-  void setRemoteId(String remoteId) {
-    this.remoteId = remoteId;
+  final void setSession(Session session) {
+    this.session = session;
   }
 
   public CompletableFuture<Void> sendAuto(Frame frame) {

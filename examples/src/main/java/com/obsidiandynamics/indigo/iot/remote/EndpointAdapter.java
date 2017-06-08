@@ -33,14 +33,14 @@ final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E>
     try {
       final TextEncodedFrame frame = node.getWire().decode(message);
       switch (frame.getType()) {
-        case SUBSCRIBE:
-          if (frame instanceof SubscribeResponseFrame) {
-            final SubscribeResponseFrame subRes = (SubscribeResponseFrame) frame;
-            final CompletableFuture<SubscribeResponseFrame> f = nexus.removeSubscribeRequest(subRes.getId());
+        case BIND:
+          if (frame instanceof BindResponseFrame) {
+            final BindResponseFrame bindRes = (BindResponseFrame) frame;
+            final CompletableFuture<BindResponseFrame> f = nexus.removeBindRequest(bindRes.getMessageId());
             if (f != null) {
-              f.complete(subRes);
+              f.complete(bindRes);
             } else {
-              LOG.debug("Ignoring {}", subRes);
+              LOG.debug("Ignoring {}", bindRes);
             }
           } else {
             LOG.error("Unsupported frame {}", frame);

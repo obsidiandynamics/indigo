@@ -42,10 +42,10 @@ public final class EdgeNode implements AutoCloseable {
         try {
           final Frame frame = wire.decode(message);
           switch (frame.getType()) {
-            case SUBSCRIBE:
-              if (frame instanceof SubscribeFrame) {
-                final SubscribeFrame sub = (SubscribeFrame) frame;
-                handleSubscribe(nexus, sub);
+            case BIND:
+              if (frame instanceof BindFrame) {
+                final BindFrame bind = (BindFrame) frame;
+                handleBind(nexus, bind);
               } else {
                 LOG.error("Unsupported frame {}", frame);
               }
@@ -98,25 +98,31 @@ public final class EdgeNode implements AutoCloseable {
     });
   }
   
-  private void handleSubscribe(EdgeNexus nexus, SubscribeFrame sub) {
-    if (sub.getRemoteId() != null) {
-      if (nexus.getRemoteId() == null) {
-        nexus.setRemoteId(sub.getRemoteId());
-      } else if (! nexus.getRemoteId().equals(sub.getRemoteId())) {
-        LOG.warn("Connection {} has attempted to change its remote ID from {} to {}", 
-                 nexus, nexus.getRemoteId(), sub.getRemoteId());
-        nexus.send(new SubscribeResponseFrame(sub.getId(), "Cannot reassign remote ID"));
+  private void handleBind(EdgeNexus nexus, BindFrame bind) {
+    if (bind.getSessionId() != null) {
+      final Session session = nexus.getSession();
+      if (session == null) {
+        LOG.error("No session set for {}", nexus);
+        return;
+      }
+      
+      if (session.getSessionId() == null) {
+        session.setSessionId(bind.getSessionId());
+      } else if (! session.getSessionId().equals(bind.getSessionId())) {
+        LOG.warn("Connection {} has attempted to change its session ID from {} to {}", 
+                 nexus, session.getSessionId(), bind.getSessionId());
+        nexus.send(new BindResponseFrame(bind.getMessageId(), "Cannot reassign session ID"));
         return;
       }
     }
     
-    final CompletableFuture<SubscribeResponseFrame> f = bridge.onSubscribe(nexus, sub);
-    f.whenComplete((subRes, cause) -> {
+    final CompletableFuture<BindResponseFrame> f = bridge.onBind(nexus, bind);
+    f.whenComplete((bindRes, cause) -> {
       if (cause == null) {
-        nexus.send(subRes);
-        fireSubscribeEvent(nexus, sub, subRes);
+        nexus.send(bindRes);
+        fireBindEvent(nexus, bind, bindRes);
       } else {
-        LOG.warn("Error handling subscription {}", sub);
+        LOG.warn("Error handling bind {}", bind);
         LOG.warn("", cause);
       }
     });
@@ -136,6 +142,7 @@ public final class EdgeNode implements AutoCloseable {
     final EdgeNexus nexus = new EdgeNexus(this, new WSEndpointPeer(endpoint));
     nexuses.add(nexus);
     endpoint.setContext(nexus);
+    nexus.setSession(new Session());
     bridge.onConnect(nexus);
     fireConnectEvent(nexus);
   }
@@ -152,9 +159,9 @@ public final class EdgeNode implements AutoCloseable {
     }
   }
   
-  private void fireSubscribeEvent(EdgeNexus nexus, SubscribeFrame sub, SubscribeResponseFrame subRes) {
+  private void fireBindEvent(EdgeNexus nexus, BindFrame bind, BindResponseFrame bindRes) {
     for (TopicListener l : topicListeners) {
-      l.onSubscribe(nexus, sub, subRes);
+      l.onBind(nexus, bind, bindRes);
     }
   }
   
