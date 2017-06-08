@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.iot.edge;
 
+import java.util.*;
 import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.iot.frame.*;
@@ -9,7 +10,7 @@ public interface TopicBridge extends AutoCloseable {
   
   void onDisconnect(EdgeNexus nexus);
   
-  CompletableFuture<BindResponseFrame> onBind(EdgeNexus nexus, BindFrame bind);
+  CompletableFuture<Void> onBind(EdgeNexus nexus, List<String> subscribe);
   
   void onPublish(EdgeNexus nexus, PublishTextFrame pub);
   

@@ -53,19 +53,18 @@ public final class RoutingTopicBridge implements TopicBridge {
   }
 
   @Override
-  public CompletableFuture<BindResponseFrame> onBind(EdgeNexus nexus, BindFrame bind) {
+  public CompletableFuture<Void> onBind(EdgeNexus nexus, List<String> subscribe) {
     final RoutingSubscription subscription = nexus.getSession().getSubscription();
     if (subscription == null) {
       LOG.error("{}: no subscription", nexus);
       throw new IllegalStateException("No subscription set for " + nexus);
     }
     
-    final List<Topic> topics = Arrays.stream(bind.getSubscribe(), 0, bind.getSubscribe().length)
-        .map(t -> Topic.of(t)).collect(Collectors.toList());
+    final List<Topic> topics = subscribe.stream().map(t -> Topic.of(t)).collect(Collectors.toList());
     
-    final CompletableFuture<BindResponseFrame> future = new CompletableFuture<>();
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     system.ingress(a -> {
-      final List<SubscribeResponse> responses = new ArrayList<>(bind.getSubscribe().length);
+      final List<SubscribeResponse> responses = new ArrayList<>(topics.size());
       for (final Topic topic : topics) {
         a.to(routerRef).ask(new Subscribe(topic, subscription.getSubscriber()))
         .onFault(f -> {
@@ -75,8 +74,8 @@ public final class RoutingTopicBridge implements TopicBridge {
         .onResponse(r -> {
           responses.add(r.body());
           subscription.addTopic(topic);
-          if (responses.size() == bind.getSubscribe().length) {
-            future.complete(new BindResponseFrame(bind.getMessageId()));
+          if (responses.size() == topics.size()) {
+            future.complete(null);
           }
         });
       } 

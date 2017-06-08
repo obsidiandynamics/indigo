@@ -145,9 +145,10 @@ public final class EdgeNode implements AutoCloseable {
     }
     
     authenticateTopics(nexus, bind.getAuth(), bind.getMessageId(), toSubscribe, () -> {
-      final CompletableFuture<BindResponseFrame> f = bridge.onBind(nexus, bind);
-      f.whenComplete((bindRes, cause) -> {
+      final CompletableFuture<Void> f = bridge.onBind(nexus, toSubscribe);
+      f.whenComplete((void_, cause) -> {
         if (cause == null) {
+          final BindResponseFrame bindRes = new BindResponseFrame(bind.getMessageId());
           nexus.send(bindRes);
           fireBindEvent(nexus, bind, bindRes);
         } else {

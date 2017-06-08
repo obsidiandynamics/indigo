@@ -150,8 +150,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     
     final long expectedMessages = (long) config.pulses * subscribers.get();
     for (EdgeNexus control : controlNexuses) {
-      final String topic = Flywheel.REMOTE_PREFIX + "/" + control.getSession().getSessionId() + "/rx";
-      control.send(new TextFrame(topic, new Wait(expectedMessages).marshal(subframeGson)));
+      final String topic = Flywheel.getRxTopicPrefix(control.getSession().getSessionId());
+      node.publish(topic, new Wait(expectedMessages).marshal(subframeGson));
     }
     
     if (config.log.stages) config.log.out.format("e: awaiting remotes (%,d messages across %,d subscribers)...\n",

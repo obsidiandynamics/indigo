@@ -65,7 +65,6 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private void createControlNexus() throws Exception {
     if (config.log.stages) config.log.out.format("r: opening control nexus...\n");
     final String sessionId = generateSessionId();
-    final String inTopic = getRxTopicPrefix(sessionId);
     control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (config.log.verbose) config.log.out.format("r: control received %s\n", payload);
@@ -77,7 +76,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         }
       }
     });
-    control.bind(new BindFrame(UUID.randomUUID(), sessionId, null, new String[] {inTopic}, null, null)).get();
+    control.bind(new BindFrame(UUID.randomUUID(), sessionId, null, new String[0], null, null)).get();
   }
   
   private void awaitLater(RemoteNexus nexus, String remoteId, long expectedMessages) {
@@ -138,7 +137,6 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private long calibrate() throws Exception {
     if (config.log.stages) config.log.out.format("r: time calibration...\n");
     final String sessionId = generateSessionId();
-    final String inTopic = getRxTopicPrefix(sessionId);
     final String outTopic = getTxTopicPrefix(sessionId);
     final int discardSyncs = (int) (config.syncFrames * .25);
     final AtomicBoolean syncComplete = new AtomicBoolean();
@@ -175,7 +173,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
       }
     });
     nexus.bind(new BindFrame(UUID.randomUUID(), sessionId, null,
-                             new String[] {inTopic}, null, null)).get();
+                             new String[0], null, null)).get();
     
     lastRemoteTransmitTime.set(System.nanoTime());
     nexus.publish(new PublishTextFrame(outTopic, new Sync(lastRemoteTransmitTime.get()).marshal(subframeGson)));
