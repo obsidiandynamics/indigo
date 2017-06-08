@@ -37,7 +37,7 @@ public final class WireTest implements TestSupport {
   
   @Test
   public void testMarshalSubscribeResponse() {
-    testEncodeDecode(new BindResponseFrame(new UUID(0l, 0l), "some-error"));
+    testEncodeDecode(new BindResponseFrame(new UUID(0l, 0l), new GeneralError("some-error")));
   }
   
   @Test

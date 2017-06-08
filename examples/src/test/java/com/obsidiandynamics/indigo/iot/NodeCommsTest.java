@@ -16,6 +16,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.frame.Error;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
@@ -59,7 +60,7 @@ public class NodeCommsTest {
   @Test
   public void testText() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    final BindResponseFrame mockBindRes = new BindResponseFrame(messageId, null);
+    final BindResponseFrame mockBindRes = new BindResponseFrame(messageId);
     when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(mockBindRes));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
@@ -73,7 +74,7 @@ public class NodeCommsTest {
     
     assertTrue(bindRes.isSuccess());
     assertEquals(FrameType.BIND, bindRes.getType());
-    assertNull(bindRes.getError());
+    assertArrayEquals(new Error[0], bindRes.getErrors());
     
     final PublishTextFrame pubRemote = new PublishTextFrame("x/y/z", "hello from remote");
     remoteNexus.publish(pubRemote);
@@ -106,7 +107,7 @@ public class NodeCommsTest {
   @Test
   public void testBinary() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    final BindResponseFrame mockBindRes = new BindResponseFrame(messageId, null);
+    final BindResponseFrame mockBindRes = new BindResponseFrame(messageId);
     when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(mockBindRes));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
@@ -120,7 +121,7 @@ public class NodeCommsTest {
     
     assertTrue(bindRes.isSuccess());
     assertEquals(FrameType.BIND, bindRes.getType());
-    assertNull(bindRes.getError());
+    assertArrayEquals(new Error[0], bindRes.getErrors());
     
     final PublishBinaryFrame pubRemote = new PublishBinaryFrame("x/y/z", 
                                                                 ByteBuffer.wrap("hello from remote".getBytes()));

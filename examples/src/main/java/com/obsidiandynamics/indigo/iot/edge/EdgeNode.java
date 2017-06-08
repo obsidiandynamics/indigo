@@ -3,9 +3,12 @@ package com.obsidiandynamics.indigo.iot.edge;
 import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import org.slf4j.*;
 
+import com.obsidiandynamics.indigo.iot.edge.auth.*;
+import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
@@ -22,6 +25,8 @@ public final class EdgeNode implements AutoCloseable {
   
   private final TopicBridge bridge;
   
+  private final AuthenticatorChain subscribeAuthChain;
+  
   private final List<EdgeNexus> nexuses = new CopyOnWriteArrayList<>();
   
   private final List<TopicListener> topicListeners = new ArrayList<>();
@@ -29,9 +34,11 @@ public final class EdgeNode implements AutoCloseable {
   public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory, 
                                          WSServerConfig config, 
                                          Wire wire, 
-                                         TopicBridge bridge) throws Exception {
+                                         TopicBridge bridge,
+                                         AuthenticatorChain subscribeAuthChain) throws Exception {
     this.wire = wire;
     this.bridge = bridge;
+    this.subscribeAuthChain = subscribeAuthChain;
     server = serverFactory.create(config, new EndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
         handleConnect(endpoint);
@@ -99,6 +106,7 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   private void handleBind(EdgeNexus nexus, BindFrame bind) {
+    if (LOG.isDebugEnabled()) LOG.debug("Binding {} using {}", nexus, bind);
     if (bind.getSessionId() != null) {
       final Session session = nexus.getSession();
       if (session == null) {
@@ -109,23 +117,61 @@ public final class EdgeNode implements AutoCloseable {
       if (session.getSessionId() == null) {
         session.setSessionId(bind.getSessionId());
       } else if (! session.getSessionId().equals(bind.getSessionId())) {
-        LOG.warn("Connection {} has attempted to change its session ID from {} to {}", 
+        LOG.warn("{} has attempted to change its session ID from {} to {}", 
                  nexus, session.getSessionId(), bind.getSessionId());
-        nexus.send(new BindResponseFrame(bind.getMessageId(), "Cannot reassign session ID"));
+        nexus.send(new BindResponseFrame(bind.getMessageId(), new GeneralError("Cannot reassign session ID")));
         return;
       }
     }
     
-    final CompletableFuture<BindResponseFrame> f = bridge.onBind(nexus, bind);
-    f.whenComplete((bindRes, cause) -> {
-      if (cause == null) {
-        nexus.send(bindRes);
-        fireBindEvent(nexus, bind, bindRes);
-      } else {
-        LOG.warn("Error handling bind {}", bind);
-        LOG.warn("", cause);
-      }
+    authenticateTopics(nexus, bind, () -> {
+      final CompletableFuture<BindResponseFrame> f = bridge.onBind(nexus, bind);
+      f.whenComplete((bindRes, cause) -> {
+        if (cause == null) {
+          nexus.send(bindRes);
+          fireBindEvent(nexus, bind, bindRes);
+        } else {
+          LOG.warn("Error handling bind {}", bind);
+          LOG.warn("", cause);
+          fireBindEvent(nexus, bind, new BindResponseFrame(bind.getMessageId(), new GeneralError("Internal error")));
+        }
+      });      
     });
+
+  }
+  
+  private void authenticateTopics(EdgeNexus nexus, BindFrame bind, Runnable onSuccess) {
+    if (bind.getSubscribe().length == 0) {
+      onSuccess.run();
+      return;
+    }
+    
+    final AtomicInteger remainingOutcomes = new AtomicInteger(bind.getSubscribe().length);
+    final List<TopicAccessError> errors = new CopyOnWriteArrayList<>();
+    for (String topic : bind.getSubscribe()) {
+      final Authenticator authenticator = subscribeAuthChain.get(topic);
+      authenticator.verify(nexus, bind.getAuth(), topic, new AuthenticationOutcome() {
+        @Override public void allow() {
+          complete();
+        }
+
+        @Override public void deny(TopicAccessError error) {
+          errors.add(error);
+          complete();
+        }
+        
+        private void complete() {
+          if (remainingOutcomes.decrementAndGet() == 0) {
+            if (errors.isEmpty()) {
+              onSuccess.run();
+            } else {
+              LOG.warn("Subscriber authentication for {} failed with errors {}", nexus, errors);
+              nexus.send(new BindResponseFrame(bind.getMessageId(), errors));
+            }
+          }
+        }
+      });
+    }
   }
   
   private void handlePublish(EdgeNexus nexus, PublishTextFrame pub) {
@@ -226,6 +272,7 @@ public final class EdgeNode implements AutoCloseable {
     private WSServerConfig serverConfig = new WSServerConfig();
     private Wire wire = new Wire(false);
     private TopicBridge topicBridge;
+    private AuthenticatorChain subscribeAuthChain = AuthenticatorChain.createDefault();
     
     private void init() throws Exception {
       if (serverFactory == null) {
@@ -256,10 +303,15 @@ public final class EdgeNode implements AutoCloseable {
       this.topicBridge = topicBridge;
       return this;
     }
+    
+    public EdgeNodeBuilder withSubscribeAuthenticatorChain(AuthenticatorChain subscribeAuthChain) {
+      this.subscribeAuthChain = subscribeAuthChain;
+      return this;
+    }
 
     public EdgeNode build() throws Exception {
       init();
-      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge);
+      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge, subscribeAuthChain);
     }
   }
   

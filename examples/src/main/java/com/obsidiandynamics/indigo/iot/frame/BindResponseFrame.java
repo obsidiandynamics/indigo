@@ -1,13 +1,19 @@
 package com.obsidiandynamics.indigo.iot.frame;
 
-import java.util.*;
+import java.util.*;import com.obsidiandynamics.indigo.iot.frame.Error;
 
 public final class BindResponseFrame extends IdFrame implements TextEncodedFrame {
-  private final Object error;
+  public static String JSON_TYPE_NAME = "BindResponse";
+  
+  private final Error[] errors;
+  
+  public BindResponseFrame(UUID messageId, Collection<? extends Error> errors) {
+    this(messageId, errors.toArray(new Error[errors.size()]));
+  }
 
-  public BindResponseFrame(UUID messageId, Object error) {
+  public BindResponseFrame(UUID messageId, Error ... errors) {
     super(messageId);
-    this.error = error;
+    this.errors = errors;
   }
 
   @Override
@@ -16,18 +22,18 @@ public final class BindResponseFrame extends IdFrame implements TextEncodedFrame
   }
 
   public final boolean isSuccess() {
-    return error == null;
+    return errors.length == 0;
   }
 
-  public final Object getError() {
-    return error;
+  public final Error[] getErrors() {
+    return errors;
   }
-
+  
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + ((error == null) ? 0 : error.hashCode());
+    result = prime * result + Arrays.hashCode(errors);
     return result;
   }
 
@@ -40,16 +46,13 @@ public final class BindResponseFrame extends IdFrame implements TextEncodedFrame
     if (getClass() != obj.getClass())
       return false;
     BindResponseFrame other = (BindResponseFrame) obj;
-    if (error == null) {
-      if (other.error != null)
-        return false;
-    } else if (!error.equals(other.error))
+    if (!Arrays.equals(errors, other.errors))
       return false;
     return true;
   }
 
   @Override
   public String toString() {
-    return "BindResponse [messageId=" + getMessageId() + ", error=" + String.valueOf(error) + "]";
+    return "BindResponse [messageId=" + getMessageId() + ", error=" + Arrays.toString(errors) + "]";
   }
 }

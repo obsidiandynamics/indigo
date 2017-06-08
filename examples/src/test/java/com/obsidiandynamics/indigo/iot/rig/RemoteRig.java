@@ -11,6 +11,7 @@ import org.awaitility.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.benchmark.*;
+import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.topic.*;
@@ -130,11 +131,11 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private String getRxTopic(String remoteId) {
-    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/rx";
+    return Flywheel.REMOTE_PREFIX + "/" + remoteId + "/rx";
   }
   
   private String getTxTopic(String remoteId) {
-    return RigSubframe.TOPIC_PREFIX + "/" + remoteId + "/tx";
+    return Flywheel.REMOTE_PREFIX + "/" + remoteId + "/tx";
   }
   
   private String generateSessionId() {
@@ -143,9 +144,9 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   private long calibrate() throws Exception {
     if (config.log.stages) config.log.out.format("r: time calibration...\n");
-    final String remoteId = generateSessionId();
-    final String inTopic = getRxTopic(remoteId);
-    final String outTopic = getTxTopic(remoteId);
+    final String sessionId = generateSessionId();
+    final String inTopic = getRxTopic(sessionId);
+    final String outTopic = getTxTopic(sessionId);
     final int discardSyncs = (int) (config.syncFrames * .25);
     final AtomicBoolean syncComplete = new AtomicBoolean();
     final AtomicInteger syncs = new AtomicInteger();
@@ -180,7 +181,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         syncComplete.set(true);
       }
     });
-    nexus.bind(new BindFrame(UUID.randomUUID(), generateSessionId(), null,
+    nexus.bind(new BindFrame(UUID.randomUUID(), sessionId, null,
                              new String[] {inTopic}, null, null)).get();
     
     lastRemoteTransmitTime.set(System.nanoTime());

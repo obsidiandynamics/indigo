@@ -3,6 +3,8 @@ package com.obsidiandynamics.indigo.iot.frame;
 import java.util.*;
 
 public final class BindFrame extends IdFrame implements TextEncodedFrame {
+  public static String JSON_TYPE_NAME = "Bind";
+  
   private final String sessionId;
   
   private final Auth auth;

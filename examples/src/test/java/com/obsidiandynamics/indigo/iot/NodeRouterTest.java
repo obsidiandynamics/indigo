@@ -14,6 +14,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.frame.Error;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
@@ -73,7 +74,7 @@ public class NodeRouterTest {
     
     assertTrue(bindRes.isSuccess());
     assertEquals(FrameType.BIND, bindRes.getType());
-    assertNull(bindRes.getError());
+    assertArrayEquals(new Error[0], bindRes.getErrors());
 
     ordered(handler, inOrder -> { // shouldn't have received any data yet
       inOrder.verify(handler).onConnect(anyNotNull());
@@ -117,7 +118,7 @@ public class NodeRouterTest {
     
     assertTrue(bindRes.isSuccess());
     assertEquals(FrameType.BIND, bindRes.getType());
-    assertNull(bindRes.getError());
+    assertArrayEquals(new Error[0], bindRes.getErrors());
 
     ordered(handler, inOrder -> { // shouldn't have received any data yet
       inOrder.verify(handler).onConnect(anyNotNull());

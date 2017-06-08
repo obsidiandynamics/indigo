@@ -122,12 +122,14 @@ public final class RigBenchmark implements TestSupport {
       uri = new URI(String.format("ws://%s:%d/", c.host, c.port));
       log = c.log;
     }});
-    
-    remoteRig.run();
-    remoteRig.await();
 
-    edgeRig.close();
-    remoteRig.close();
+    try {
+      remoteRig.run();
+      remoteRig.await();
+    } finally {
+      edgeRig.close();
+      remoteRig.close();
+    }
     
     return remoteRig.getSummary();
   }

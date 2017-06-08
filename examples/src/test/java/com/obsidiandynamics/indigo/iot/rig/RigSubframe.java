@@ -3,8 +3,6 @@ package com.obsidiandynamics.indigo.iot.rig;
 import com.google.gson.*;
 
 abstract class RigSubframe {
-  static final String TOPIC_PREFIX = "$remote";
-  
   @Override
   public abstract String toString();
   

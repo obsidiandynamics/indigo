@@ -10,9 +10,9 @@ import java.util.concurrent.*;
 import org.junit.*;
 
 public interface TestSupport {
-  static final boolean LOG = get(load("system-test.properties", System.getProperties()), 
-                                 "TestSupport.log", Boolean::parseBoolean, false);
-  static final PrintStream LOG_STREAM = System.out;
+  final boolean LOG = get(load("system-test.properties", System.getProperties()), 
+                          "TestSupport.log", Boolean::parseBoolean, false);
+  final PrintStream LOG_STREAM = System.out;
   
   default void log(String format, Object ... args) {
     if (LOG) LOG_STREAM.printf(format, args);

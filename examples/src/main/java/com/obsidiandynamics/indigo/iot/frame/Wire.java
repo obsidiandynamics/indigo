@@ -18,8 +18,12 @@ public final class Wire {
     final GsonBuilder builder = new GsonBuilder()
         .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
                                     .of(IdFrame.class, "type")
-                                    .registerSubtype(BindFrame.class, "Bind")
-                                    .registerSubtype(BindResponseFrame.class, "BindResponse"));
+                                    .registerSubtype(BindFrame.class, BindFrame.JSON_TYPE_NAME)
+                                    .registerSubtype(BindResponseFrame.class, BindResponseFrame.JSON_TYPE_NAME))
+        .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
+                                    .of(Error.class, "type")
+                                    .registerSubtype(GeneralError.class, GeneralError.JSON_TYPE_NAME)
+                                    .registerSubtype(TopicAccessError.class, TopicAccessError.JSON_TYPE_NAME));
     if (prettyPrinting) builder.setPrettyPrinting();
     gson = builder.create();
   }

@@ -1,23 +1,21 @@
 package com.obsidiandynamics.indigo.iot.frame;
 
-import java.util.*;
-
-public abstract class IdFrame implements Frame {
-  private final UUID messageId;
+public abstract class Error {
+  private final String description;
   
-  protected IdFrame(UUID messageId) {
-    this.messageId = messageId;
+  protected Error(String description) {
+    this.description = description;
   }
 
-  public final UUID getMessageId() {
-    return messageId;
-  }
-
+  public String getDescription() {
+    return description;
+  }  
+  
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((messageId == null) ? 0 : messageId.hashCode());
+    result = prime * result + ((description == null) ? 0 : description.hashCode());
     return result;
   }
 
@@ -29,11 +27,11 @@ public abstract class IdFrame implements Frame {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    IdFrame other = (IdFrame) obj;
-    if (messageId == null) {
-      if (other.messageId != null)
+    Error other = (Error) obj;
+    if (description == null) {
+      if (other.description != null)
         return false;
-    } else if (!messageId.equals(other.messageId))
+    } else if (!description.equals(other.description))
       return false;
     return true;
   }

@@ -76,7 +76,7 @@ public final class RoutingTopicBridge implements TopicBridge {
           responses.add(r.body());
           subscription.addTopic(topic);
           if (responses.size() == bind.getSubscribe().length) {
-            future.complete(new BindResponseFrame(bind.getMessageId(), null));
+            future.complete(new BindResponseFrame(bind.getMessageId()));
           }
         });
       } 
