@@ -4,5 +4,5 @@ import java.util.*;
 
 @FunctionalInterface
 interface Subscription {
-  Collection<String> getTopics();
+  Set<String> getTopics();
 }

@@ -30,9 +30,9 @@ public final class RoutingTopicBridge implements TopicBridge {
 
   @Override
   public void onConnect(EdgeNexus nexus) {
-    if (LOG.isDebugEnabled()) LOG.debug("Connected to {}", nexus);
+    if (LOG.isDebugEnabled()) LOG.debug("{}: connected", nexus);
     final Subscriber subscriber = d -> {
-      if (LOG.isTraceEnabled()) LOG.trace("Delivering {} to {}", d.getPayload(), nexus);
+      if (LOG.isTraceEnabled()) LOG.trace("{}: delivering {}", nexus, d.getPayload());
       nexus.sendAuto(d.getPayload());
     };
     nexus.getSession().setSubscription(new RoutingSubscription(subscriber));
@@ -40,14 +40,14 @@ public final class RoutingTopicBridge implements TopicBridge {
 
   @Override
   public void onDisconnect(EdgeNexus nexus) {
-    if (LOG.isDebugEnabled()) LOG.debug("Disconnected from {}", nexus);
+    if (LOG.isDebugEnabled()) LOG.debug("{}: disconnected", nexus);
     final RoutingSubscription subscription = nexus.getSession().getSubscription();
     if (subscription == null) {
-      LOG.error("No subscription set for {}", nexus);
+      LOG.error("{}: no subscription", nexus);
       return;
     }
     for (Topic topic : subscription.getSubscribedTopics()) {
-      if (LOG.isTraceEnabled()) LOG.trace("Unsubscribing {} from {}", nexus, topic);
+      if (LOG.isTraceEnabled()) LOG.trace("{}: unsubscribing from {}", nexus, topic);
       system.tell(routerRef, new Unsubscribe(topic, subscription.getSubscriber()));
     }
   }
@@ -56,7 +56,7 @@ public final class RoutingTopicBridge implements TopicBridge {
   public CompletableFuture<BindResponseFrame> onBind(EdgeNexus nexus, BindFrame bind) {
     final RoutingSubscription subscription = nexus.getSession().getSubscription();
     if (subscription == null) {
-      LOG.error("No subscription set for {}", nexus);
+      LOG.error("{}: no subscription", nexus);
       throw new IllegalStateException("No subscription set for " + nexus);
     }
     
@@ -69,7 +69,7 @@ public final class RoutingTopicBridge implements TopicBridge {
       for (final Topic topic : topics) {
         a.to(routerRef).ask(new Subscribe(topic, subscription.getSubscriber()))
         .onFault(f -> {
-          LOG.warn("Fault while handling subscription to topic {}: {}", topic, f);
+          LOG.warn("{}: fault while handling subscription to topic {}: {}", nexus, topic, f);
           future.completeExceptionally(new FaultException(f.getReason()));
         })
         .onResponse(r -> {
@@ -86,13 +86,13 @@ public final class RoutingTopicBridge implements TopicBridge {
 
   @Override
   public void onPublish(EdgeNexus nexus, PublishTextFrame pub) {
-    if (LOG.isTraceEnabled()) LOG.trace("{} published {}", nexus, pub);
+    if (LOG.isTraceEnabled()) LOG.trace("{}: published {}", nexus, pub);
     system.tell(routerRef, new Publish(Topic.of(pub.getTopic()), new TextFrame(pub.getTopic(), pub.getPayload())));
   }
 
   @Override
   public void onPublish(EdgeNexus nexus, PublishBinaryFrame pub) {
-    if (LOG.isTraceEnabled()) LOG.trace("{} published {}", nexus, pub);
+    if (LOG.isTraceEnabled()) LOG.trace("{}: published {}", nexus, pub);
     system.tell(routerRef, new Publish(Topic.of(pub.getTopic()), new BinaryFrame(pub.getTopic(), pub.getPayload())));
   }
 

@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
+import static com.obsidiandynamics.indigo.iot.Flywheel.*;
+
 import java.net.*;
 import java.nio.*;
 import java.util.*;
@@ -11,7 +13,6 @@ import org.awaitility.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.benchmark.*;
-import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.topic.*;
@@ -64,7 +65,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private void createControlNexus() throws Exception {
     if (config.log.stages) config.log.out.format("r: opening control nexus...\n");
     final String sessionId = generateSessionId();
-    final String inTopic = getRxTopic(sessionId);
+    final String inTopic = getRxTopicPrefix(sessionId);
     control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (config.log.verbose) config.log.out.format("r: control received %s\n", payload);
@@ -83,7 +84,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     Threads.asyncDaemon(() -> {
       try {
         awaitReceival(expectedMessages);
-        nexus.publish(new PublishTextFrame(getTxTopic(remoteId), new WaitResponse().marshal(subframeGson)));
+        nexus.publish(new PublishTextFrame(getTxTopicPrefix(remoteId), new WaitResponse().marshal(subframeGson)));
       } catch (InterruptedException e) {
         e.printStackTrace(config.log.out);
       }
@@ -126,16 +127,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private void begin() throws Exception {
-    control.publish(new PublishTextFrame(getTxTopic(generateSessionId()), new Begin().marshal(subframeGson))).get();
+    control.publish(new PublishTextFrame(getTxTopicPrefix(generateSessionId()), new Begin().marshal(subframeGson))).get();
     startTime = System.currentTimeMillis();
-  }
-  
-  private String getRxTopic(String remoteId) {
-    return Flywheel.REMOTE_PREFIX + "/" + remoteId + "/rx";
-  }
-  
-  private String getTxTopic(String remoteId) {
-    return Flywheel.REMOTE_PREFIX + "/" + remoteId + "/tx";
   }
   
   private String generateSessionId() {
@@ -145,8 +138,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private long calibrate() throws Exception {
     if (config.log.stages) config.log.out.format("r: time calibration...\n");
     final String sessionId = generateSessionId();
-    final String inTopic = getRxTopic(sessionId);
-    final String outTopic = getTxTopic(sessionId);
+    final String inTopic = getRxTopicPrefix(sessionId);
+    final String outTopic = getTxTopicPrefix(sessionId);
     final int discardSyncs = (int) (config.syncFrames * .25);
     final AtomicBoolean syncComplete = new AtomicBoolean();
     final AtomicInteger syncs = new AtomicInteger();

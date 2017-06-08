@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.*;
 
 import org.slf4j.*;
 
+import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
@@ -54,7 +55,7 @@ public final class EdgeNode implements AutoCloseable {
                 final BindFrame bind = (BindFrame) frame;
                 handleBind(nexus, bind);
               } else {
-                LOG.error("Unsupported frame {}", frame);
+                LOG.error("{}: unsupported frame {}", nexus, frame);
               }
               break;
               
@@ -64,11 +65,11 @@ public final class EdgeNode implements AutoCloseable {
               break;
               
             default:
-              LOG.error("Unsupported frame {}", frame);
+              LOG.error("{}: unsupported frame {}", nexus, frame);
               return;
           }
         } catch (Throwable e) {
-          LOG.error(String.format("Error processing frame %s", message), e);
+          LOG.error(String.format("%s: error processing frame\n%s", nexus,message), e);
           return;
         }
       }
@@ -81,10 +82,10 @@ public final class EdgeNode implements AutoCloseable {
             final PublishBinaryFrame pub = (PublishBinaryFrame) frame;
             handlePublish(nexus, pub);
           } else {
-            LOG.error("Unsupported frame {}", frame);
+            LOG.error("{}: unsupported frame {}", nexus, frame);
           }
         } catch (Throwable e) {
-          LOG.error(String.format("Error processing frame\n%s", BinaryUtils.dump(message)), e);
+          LOG.error(String.format("%s: error processing frame\n%s", nexus, BinaryUtils.dump(message)), e);
           return;
         }
       }
@@ -106,51 +107,69 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   private void handleBind(EdgeNexus nexus, BindFrame bind) {
-    if (LOG.isDebugEnabled()) LOG.debug("Binding {} using {}", nexus, bind);
+    if (LOG.isDebugEnabled()) LOG.debug("{}: bind {}", nexus, bind);
+    final Session session = nexus.getSession();
+    if (session == null) {
+      LOG.error("{}: no session", nexus);
+      return;
+    }
+    
+    final String newSessionId;
     if (bind.getSessionId() != null) {
-      final Session session = nexus.getSession();
-      if (session == null) {
-        LOG.error("No session set for {}", nexus);
-        return;
-      }
-      
       if (session.getSessionId() == null) {
-        session.setSessionId(bind.getSessionId());
+        newSessionId = bind.getSessionId();
+        session.setSessionId(newSessionId);
       } else if (! session.getSessionId().equals(bind.getSessionId())) {
-        LOG.warn("{} has attempted to change its session ID from {} to {}", 
+        LOG.warn("{}: attempted to change its session ID from {} to {}", 
                  nexus, session.getSessionId(), bind.getSessionId());
         nexus.send(new BindResponseFrame(bind.getMessageId(), new GeneralError("Cannot reassign session ID")));
         return;
+      } else {
+        newSessionId = null;
       }
+    } else {
+      newSessionId = null;
     }
     
-    authenticateTopics(nexus, bind, () -> {
+    final List<String> toSubscribe = new ArrayList<>(bind.getSubscribe().length + (newSessionId != null ? 1 : 0));
+    final Set<String> existing = session.getSubscription().getTopics();
+    for (String topic : bind.getSubscribe()) {
+      if (! existing.contains(topic)) {
+        toSubscribe.add(topic);
+      } else {
+        if (LOG.isDebugEnabled()) LOG.debug("{}: ignoring duplicate subscription to {} for {}", nexus, topic);    
+      }
+    }
+    if (newSessionId != null) {
+      toSubscribe.add(Flywheel.getRxTopicPrefix(newSessionId));
+    }
+    
+    authenticateTopics(nexus, bind.getAuth(), bind.getMessageId(), toSubscribe, () -> {
       final CompletableFuture<BindResponseFrame> f = bridge.onBind(nexus, bind);
       f.whenComplete((bindRes, cause) -> {
         if (cause == null) {
           nexus.send(bindRes);
           fireBindEvent(nexus, bind, bindRes);
         } else {
-          LOG.warn("Error handling bind {}", bind);
+          LOG.warn("{}: error handling bind {}", nexus, bind);
           LOG.warn("", cause);
           fireBindEvent(nexus, bind, new BindResponseFrame(bind.getMessageId(), new GeneralError("Internal error")));
         }
       });      
     });
-
   }
   
-  private void authenticateTopics(EdgeNexus nexus, BindFrame bind, Runnable onSuccess) {
-    if (bind.getSubscribe().length == 0) {
+  private void authenticateTopics(EdgeNexus nexus, Auth auth, UUID messageId, List<String> topics, Runnable onSuccess) {
+    if (topics.isEmpty()) {
       onSuccess.run();
       return;
     }
     
-    final AtomicInteger remainingOutcomes = new AtomicInteger(bind.getSubscribe().length);
+    final AtomicInteger remainingOutcomes = new AtomicInteger(topics.size());
     final List<TopicAccessError> errors = new CopyOnWriteArrayList<>();
-    for (String topic : bind.getSubscribe()) {
+    for (String topic : topics) {
       final Authenticator authenticator = subscribeAuthChain.get(topic);
-      authenticator.verify(nexus, bind.getAuth(), topic, new AuthenticationOutcome() {
+      authenticator.verify(nexus, auth, topic, new AuthenticationOutcome() {
         @Override public void allow() {
           complete();
         }
@@ -165,8 +184,8 @@ public final class EdgeNode implements AutoCloseable {
             if (errors.isEmpty()) {
               onSuccess.run();
             } else {
-              LOG.warn("Subscriber authentication for {} failed with errors {}", nexus, errors);
-              nexus.send(new BindResponseFrame(bind.getMessageId(), errors));
+              LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
+              nexus.send(new BindResponseFrame(messageId, errors));
             }
           }
         }
@@ -188,7 +207,6 @@ public final class EdgeNode implements AutoCloseable {
     final EdgeNexus nexus = new EdgeNexus(this, new WSEndpointPeer(endpoint));
     nexuses.add(nexus);
     endpoint.setContext(nexus);
-    nexus.setSession(new Session());
     bridge.onConnect(nexus);
     fireConnectEvent(nexus);
   }

@@ -8,7 +8,7 @@ import com.obsidiandynamics.indigo.topic.*;
 
 final class RoutingSubscription implements Subscription {
   private final Subscriber subscriber;
-  private final List<Topic> topics = new CopyOnWriteArrayList<>();
+  private final Set<Topic> topics = new CopyOnWriteArraySet<>();
   
   RoutingSubscription(Subscriber subscriber) {
     this.subscriber = subscriber;
@@ -30,12 +30,12 @@ final class RoutingSubscription implements Subscription {
     topics.removeAll(toRemove);
   }
   
-  List<Topic> getSubscribedTopics() {
-    return Collections.unmodifiableList(topics);
+  Set<Topic> getSubscribedTopics() {
+    return Collections.unmodifiableSet(topics);
   }
 
   @Override
-  public Collection<String> getTopics() {
-    return topics.stream().map(t -> t.toString()).collect(Collectors.toList());
+  public Set<String> getTopics() {
+    return topics.stream().map(t -> t.toString()).collect(Collectors.toSet());
   }
 }

@@ -1,12 +1,14 @@
 package com.obsidiandynamics.indigo.iot.edge;
 
+import java.util.*;
+
 public final class Session {
   private final long connectTime = System.currentTimeMillis();
   
-  private volatile String sessionId;
+  private String sessionId;
   
-  private volatile Subscription subscription;
-
+  private Subscription subscription = () -> Collections.emptySet();
+  
   Session() {}
   
   public long getConnectTime() {
@@ -20,7 +22,7 @@ public final class Session {
   void setSessionId(String sessionId) {
     this.sessionId = sessionId;
   }
-
+  
   @SuppressWarnings("unchecked")
   <S extends Subscription> S getSubscription() {
     return (S) subscription;

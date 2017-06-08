@@ -11,7 +11,7 @@ public final class EdgeNexus implements AutoCloseable {
   
   private final Peer peer;
   
-  private Session session;
+  private final Session session = new Session();
 
   public EdgeNexus(EdgeNode node, Peer peer) {
     this.node = node;
@@ -20,10 +20,6 @@ public final class EdgeNexus implements AutoCloseable {
   
   public Session getSession() {
     return session;
-  }
-
-  final void setSession(Session session) {
-    this.session = session;
   }
 
   public CompletableFuture<Void> sendAuto(Frame frame) {
