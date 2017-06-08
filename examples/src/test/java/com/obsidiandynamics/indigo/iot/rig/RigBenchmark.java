@@ -2,6 +2,7 @@ package com.obsidiandynamics.indigo.iot.rig;
 
 import java.net.*;
 
+import org.awaitility.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.benchmark.*;
@@ -18,6 +19,10 @@ public final class RigBenchmark implements TestSupport {
   private static final int PORT = 6667;
   
   abstract static class Config implements Spec {
+    static {
+      Awaitility.doNotCatchUncaughtExceptionsByDefault();
+    }
+    
     ThrowingFunction<Config, Summary> runner = RigBenchmark::test;
     String host;
     int port;
@@ -62,7 +67,7 @@ public final class RigBenchmark implements TestSupport {
         summary = stages = LOG;
         verbose = false;
       }};
-      return times(1);
+      return times(2);
     }
 
     @Override

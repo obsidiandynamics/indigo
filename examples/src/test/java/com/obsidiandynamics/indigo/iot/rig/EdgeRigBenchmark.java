@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
+import org.awaitility.*;
+
 import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.rig.EdgeRig.*;
