@@ -18,7 +18,7 @@ import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-public class AuthChainTest {
+public final class BindAuthTest {
   private static final int PREFERRED_PORT = 6667;
   private static final boolean SUPPRESS_LOGGING = true;
   
@@ -55,7 +55,7 @@ public class AuthChainTest {
   
   private void setupEdgeNode(AuthChain authChain) throws Exception {
     edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = AuthChainTest.this.port; }})
+        .withServerConfig(new WSServerConfig() {{ port = BindAuthTest.this.port; }})
         .withWire(wire)
         .withSubAuthChain(authChain)
         .build();

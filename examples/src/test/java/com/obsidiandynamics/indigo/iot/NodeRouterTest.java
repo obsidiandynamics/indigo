@@ -19,7 +19,7 @@ import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-public class NodeRouterTest {
+public final class NodeRouterTest {
   private static final int PREFERRED_PORT = 6667;
   
   private Wire wire;
