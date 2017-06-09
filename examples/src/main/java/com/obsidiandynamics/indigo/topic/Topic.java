@@ -11,7 +11,7 @@ public final class Topic {
   
   private final String[] parts;
   
-  public Topic(String[] parts) {
+  Topic(String[] parts) {
     this.parts = parts;
   }
   

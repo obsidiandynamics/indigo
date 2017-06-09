@@ -8,6 +8,7 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.*;
+import com.obsidiandynamics.indigo.iot.edge.auth.AuthChain.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 
@@ -30,12 +31,20 @@ public final class AuthChainTest {
       }
     });
   }
+  
+  @Test(expected=NoAuthenticatorException.class)
+  public void testBlank() {
+    assertOutcome("#");
+  }
 
   @Test
-  public void test() {
+  public void testCustomChain() {
     alw("");
+    alw("remote/1234");
+    alw("remote/1231");
     dny("remote");
     dny("custom");
+    alw("custom/a/b/c/d");
     alw("custom/public");
     dny("custom/public/privatised");
     alw("them");
@@ -45,6 +54,8 @@ public final class AuthChainTest {
     assertOutcome("remote", "remote");
     assertOutcome("remote/#", "remote");
     assertOutcome("remote/a", "remote");
+    assertOutcome("remote/1231");
+    assertOutcome("remote/+", "remote");
     assertOutcome("remote/+/rx", "remote");
     assertOutcome("custom", "custom");
     assertOutcome("custom/a", "custom");
@@ -71,7 +82,6 @@ public final class AuthChainTest {
   }
   
   private void assertOutcome(String topic, String ... errorDescriptions) {
-    System.out.println("---");
     final List<Authenticator> matchingAuthenticators = chain.get(topic);
     final Set<String> actualErrors = collectErrors(matchingAuthenticators, topic);
     assertEquals(new HashSet<>(Arrays.asList(errorDescriptions)), actualErrors);

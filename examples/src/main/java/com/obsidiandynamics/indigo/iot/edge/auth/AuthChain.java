@@ -4,10 +4,14 @@ import static com.obsidiandynamics.indigo.topic.Topic.*;
 
 import java.util.*;
 
+import org.slf4j.*;
+
 import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.topic.*;
 
 public final class AuthChain {
+  private static final Logger LOG = LoggerFactory.getLogger(AuthChain.class);
+  
   public static final class NoAuthenticatorException extends RuntimeException {
     private static final long serialVersionUID = 1L;
     
@@ -52,6 +56,8 @@ public final class AuthChain {
   }
   
   private static final class Match {
+    static final Match INCOMPLETE = new Match(-1, true);
+    
     final int length;
     final boolean definite;
     
@@ -60,90 +66,69 @@ public final class AuthChain {
       this.definite = definite;
     }
     
-    static Match common(Topic t1, Topic t2) {
-      final String[] parts1 = t1.getParts();
-      final String[] parts2 = t2.getParts();
-      final int extent = Math.min(parts1.length, parts2.length);
+    static Match common(String[] t1, String[] t2) {
+      final int extent = Math.min(t1.length, t2.length);
       
       boolean definite = true;
       int i;
       for (i = 0; i < extent; i++) {
-        if (parts1[i].equals(parts2[i])) {
-        } else if (parts1[i].equals(SL_WILDCARD) || parts2[i].equals(SL_WILDCARD)) {
+        if (t1[i].equals(t2[i])) {
+        } else if (t1[i].equals(SL_WILDCARD) || t2[i].equals(SL_WILDCARD)) {
           definite = false;
         } else {
           break;
         }
       }
+      
+      if (i != t1.length && i != t2.length) return INCOMPLETE;
+      
       return new Match(i, definite);
     }
   }
   
-  private static Topic strip(Topic topic) {
-    final String[] parts = topic.getParts();
-    final List<String> newParts = new ArrayList<>(parts.length);
-    for (int i = 0; i < parts.length; i++) {
-      final String part = parts[i];
-      if (! part.equals(ML_WILDCARD)) {
-        newParts.add(part);
-      } else {
-        break;
-      }
+  private static String[] stripMLWildcard(Topic topic) {
+    if (topic.isMultiLevelWildcard()) {
+      return topic.subtopic(0, topic.length() - 1).getParts();
+    } else {
+      return topic.getParts();
     }
-    return new Topic(newParts.toArray(new String[newParts.size()]));
   }
   
   public List<Authenticator> get(String topic) {
     final Topic original = Topic.of(topic);
-    final Topic stripped = strip(original);
-    final boolean exact = stripped.length() == original.length();
-    System.out.format("original=%s (%d), stripped=%s (%d), exact=%b\n", 
-                      original, original.length(), stripped, stripped.length(), exact);
+    final String[] stripped = stripMLWildcard(original);
+    final boolean exactOrSL = stripped.length == original.length();
+    if (LOG.isTraceEnabled()) LOG.trace("topic={} ({}), stripped={} ({}), exactOrSL={}", 
+                                        original, original.length(), Arrays.toString(stripped), stripped.length, exactOrSL);
     
     final List<Authenticator> definite = new ArrayList<>();
     final List<Authenticator> plausible = new ArrayList<>();
     int longestDefiniteMatch = 0, longestPlausibleMatch = 0;
     for (Map.Entry<Topic, Authenticator> entry : filters.entrySet()) {
       final Topic filter = entry.getKey();
-      final Match match = Match.common(filter, stripped);
-      System.out.format("filter=%s, matchLength=%d (%b)\n", filter, match.length, match.definite);
-      if (match.length != filter.length() && match.length != stripped.length()) continue;
-      if (exact && match.length != filter.length()) continue;
+      final Match match = Match.common(filter.getParts(), stripped);
+      if (LOG.isTraceEnabled()) LOG.trace("  filter={}, matchLength={} (definite={})", 
+                                          filter, match.length, match.definite);
+      if (match == Match.INCOMPLETE || exactOrSL && match.length != filter.length()) continue;
       
       if (match.definite && match.length >= longestDefiniteMatch) {
-        if (match.length > longestDefiniteMatch) {
-          definite.clear();
-        }
-        
         longestDefiniteMatch = match.length;
         definite.add(entry.getValue());
-        System.out.format("  adding definite %s\n", filter);
+        if (LOG.isTraceEnabled()) LOG.trace("    adding definite {}", filter);
       } else if (! match.definite && match.length >= longestPlausibleMatch) {
-        if (match.length > longestPlausibleMatch) {
-          plausible.clear();
-        }
-        
         longestPlausibleMatch = match.length;
         plausible.add(entry.getValue());
-        System.out.format("  adding plausible %s\n", filter);
+        if (LOG.isTraceEnabled()) LOG.trace("    adding plausible {}", filter);
       }
     }
     
-    if (definite.isEmpty() && plausible.isEmpty()) throw new NoAuthenticatorException("No match for topic " + topic + ", filters=" + filters.keySet());
+    if (definite.isEmpty() && plausible.isEmpty()) {
+      throw new NoAuthenticatorException("No match for topic " + topic + ", filters=" + filters.keySet());
+    }
     
     definite.addAll(plausible);
     return definite;
   }
-  
-//  public Authenticator get(String topic) {
-//    final Topic t = Topic.of(topic);
-//    for (Map.Entry<Topic, Authenticator> entry : filters.entrySet()) {
-//      if (entry.getKey().accepts(t)) {
-//        return entry.getValue();
-//      }
-//    }
-//    throw new NoAuthenticatorException("No authenticator for topic " + topic);
-//  }
   
   public void validate() {
     get("#");
