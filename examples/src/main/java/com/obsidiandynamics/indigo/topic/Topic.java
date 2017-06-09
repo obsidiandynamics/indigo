@@ -5,13 +5,13 @@ import java.util.*;
 import com.obsidiandynamics.indigo.*;
 
 public final class Topic {
-  static final String SEPARATOR = "/";
-  static final String SL_WILDCARD = "+";
-  static final String ML_WILDCARD = "#";
+  public static final String SEPARATOR = "/";
+  public static final String SL_WILDCARD = "+";
+  public static final String ML_WILDCARD = "#";
   
   private final String[] parts;
   
-  Topic(String[] parts) {
+  public Topic(String[] parts) {
     this.parts = parts;
   }
   
@@ -59,7 +59,7 @@ public final class Topic {
     return new Topic(parts);
   }
   
-  static Topic root() {
+  public static Topic root() {
     return new Topic(new String[0]);
   }
   
