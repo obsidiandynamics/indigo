@@ -85,8 +85,7 @@ public final class BindAuthTest {
     final BindFrame bind1 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          null,
-                                         new String[]{"#",
-                                                      "a/b/c",
+                                         new String[]{"a/b/c",
                                                       Flywheel.getRxTopicPrefix(sessionId) + "/#"}, 
                                          null,
                                          null);
@@ -144,8 +143,8 @@ public final class BindAuthTest {
   @Test
   public void testCustomSubChain() throws Exception {
     setupEdgeNode(AuthChain.createDefault()
-                  .set("custom/basic/#", Mocks.logger(createBasicAuth("user", "pass")))
-                  .set("custom/bearer/#", Mocks.logger(createBearerAuth("token"))));
+                  .set("custom/basic", Mocks.logger(createBasicAuth("user", "pass")))
+                  .set("custom/bearer", Mocks.logger(createBearerAuth("token"))));
     
     final RemoteNexus remoteNexus = openNexus();
     final String sessionId = generateSessionId();
@@ -154,21 +153,19 @@ public final class BindAuthTest {
     final BindFrame bind1 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          new BasicAuth("user", "pass"),
-                                         new String[]{"#",
-                                                      "a/b/c",
+                                         new String[]{"a/b/c",
                                                       Flywheel.getRxTopicPrefix(sessionId) + "/#",
                                                       "custom/basic/1"}, 
                                          null,
                                          null);
     final BindResponseFrame bind1Res = remoteNexus.bind(bind1).get();
     assertTrue(bind1Res.isSuccess());
-    
+    System.out.println("----");
     // test with a wrong password; should fail
     final BindFrame bind2 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          new BasicAuth("user", "badpass"),
-                                         new String[]{"#",
-                                                      "a/b/c",
+                                         new String[]{"a/b/c",
                                                       Flywheel.getRxTopicPrefix(sessionId) + "/#",
                                                       "custom/basic/2"}, 
                                          null,
@@ -177,7 +174,7 @@ public final class BindAuthTest {
     assertEquals(1, bind2Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind2Res.getErrors()[0].getClass());
 
-    // should pass, as the authenticator is set on 'custom/basic/#', not 'custom/basic'
+    // test with a wrong password; should fail
     final BindFrame bind3 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          new BasicAuth("user", "badpass"),
@@ -185,7 +182,8 @@ public final class BindAuthTest {
                                          null,
                                          null);
     final BindResponseFrame bind3Res = remoteNexus.bind(bind3).get();
-    assertTrue(bind3Res.isSuccess());
+    assertEquals(1, bind3Res.getErrors().length);
+    assertEquals(TopicAccessError.class, bind3Res.getErrors()[0].getClass());
     
     // test with a null auth object; should fail
     final BindFrame bind4 = new BindFrame(UUID.randomUUID(), 

@@ -164,37 +164,56 @@ public final class EdgeNode implements AutoCloseable {
     });
   }
   
+  private static final class TopicAuthenticators {
+    final String topic;
+    final List<Authenticator> authenticators;
+    TopicAuthenticators(String topic, List<Authenticator> authenticators) {
+      this.topic = topic;
+      this.authenticators = authenticators;
+    }
+  }
+  
   private void authenticateTopics(EdgeNexus nexus, Auth auth, UUID messageId, Set<String> topics, Runnable onSuccess) {
     if (topics.isEmpty()) {
       onSuccess.run();
       return;
     }
     
-    final AtomicInteger remainingOutcomes = new AtomicInteger(topics.size());
-    final List<TopicAccessError> errors = new CopyOnWriteArrayList<>();
+    final List<TopicAuthenticators> mappings = new ArrayList<>(topics.size());
+    int numAuthenticators = 0;
     for (String topic : topics) {
-      final Authenticator authenticator = subAuthChain.get(topic);
-      authenticator.verify(nexus, auth, topic, new AuthenticationOutcome() {
-        @Override public void allow() {
-          complete();
-        }
+      final List<Authenticator> authenticators = subAuthChain.get(topic);
+      mappings.add(new TopicAuthenticators(topic, authenticators));
+      numAuthenticators += authenticators.size();
+    }
 
-        @Override public void deny(TopicAccessError error) {
-          errors.add(error);
-          complete();
-        }
-        
-        private void complete() {
-          if (remainingOutcomes.decrementAndGet() == 0) {
-            if (errors.isEmpty()) {
-              onSuccess.run();
-            } else {
-              if (loggingEnabled) LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
-              nexus.send(new BindResponseFrame(messageId, errors));
+    final AtomicInteger remainingOutcomes = new AtomicInteger(numAuthenticators);
+    final List<TopicAccessError> errors = new CopyOnWriteArrayList<>();
+    
+    for (TopicAuthenticators pair : mappings) {
+      for (Authenticator authenticator : pair.authenticators) {
+        authenticator.verify(nexus, auth, pair.topic, new AuthenticationOutcome() {
+          @Override public void allow() {
+            complete();
+          }
+  
+          @Override public void deny(TopicAccessError error) {
+            errors.add(error);
+            complete();
+          }
+          
+          private void complete() {
+            if (remainingOutcomes.decrementAndGet() == 0) {
+              if (errors.isEmpty()) {
+                onSuccess.run();
+              } else {
+                if (loggingEnabled) LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
+                nexus.send(new BindResponseFrame(messageId, errors));
+              }
             }
           }
-        }
-      });
+        });
+      }
     }
   }
   

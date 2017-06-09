@@ -3,7 +3,6 @@ package com.obsidiandynamics.indigo.iot.edge.auth;
 import java.util.*;
 
 import com.obsidiandynamics.indigo.iot.*;
-import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.topic.*;
 
 public final class AuthChain {
@@ -55,12 +54,13 @@ public final class AuthChain {
     final String[] parts2 = t2.getParts();
     final int extent = Math.min(parts1.length, parts2.length);
     
-    for (int i = 0; i < extent; i++) {
+    int i;
+    for (i = 0; i < extent; i++) {
       if (! parts1[i].equals(parts2[i])) {
-        return i + 1;
+        break;
       }
     }
-    return 0;
+    return i;
   }
   
   private static Topic strip(Topic topic) {
@@ -68,7 +68,7 @@ public final class AuthChain {
     final List<String> newParts = new ArrayList<>(parts.length);
     for (int i = 0; i < parts.length; i++) {
       final String part = parts[i];
-      if (! parts.equals(Topic.SL_WILDCARD) && ! parts.equals(Topic.ML_WILDCARD)) {
+      if (! part.equals(Topic.SL_WILDCARD) && ! part.equals(Topic.ML_WILDCARD)) {
         newParts.add(part);
       } else {
         break;
@@ -77,37 +77,48 @@ public final class AuthChain {
     return new Topic(newParts.toArray(new String[newParts.size()]));
   }
   
-  public List<Authenticator> get_(String topic) {
+  public List<Authenticator> get(String topic) {
     final Topic original = Topic.of(topic);
     final Topic stripped = strip(original);
-    final boolean exact = stripped.length() != original.length();
+    final boolean exact = stripped.length() == original.length();
+    System.out.format("original=%s (%d), stripped=%s (%d), exact=%b\n", 
+                      original, original.length(), stripped, stripped.length(), exact);
     
     final List<Authenticator> matched = new ArrayList<>();
     int longestMatch = 0;
     for (Map.Entry<Topic, Authenticator> entry : filters.entrySet()) {
       final Topic filter = entry.getKey();
       final int matchLength = commonParts(filter, stripped);
+      System.out.format("filter=%s, matchLength=%d\n", filter, matchLength);
+      if (matchLength != filter.length() && matchLength != stripped.length()) continue;
       if (exact && matchLength != filter.length()) continue;
       
       if (matchLength >= longestMatch) {
+        if (matchLength > longestMatch) {
+          matched.clear();
+        }
+        
         longestMatch = matchLength;
         matched.add(entry.getValue());
+        System.out.format("  adding %s\n", filter);
+      } else if (matchLength < longestMatch) {
+        break;
       }
     }
     
-    if (matched.isEmpty()) throw new IllegalStateException("No match for topic " + topic + ", filters=" + filters.keySet());
+    if (matched.isEmpty()) throw new NoAuthenticatorException("No match for topic " + topic + ", filters=" + filters.keySet());
     return matched;
   }
   
-  public Authenticator get(String topic) {
-    final Topic t = Topic.of(topic);
-    for (Map.Entry<Topic, Authenticator> entry : filters.entrySet()) {
-      if (entry.getKey().accepts(t)) {
-        return entry.getValue();
-      }
-    }
-    throw new NoAuthenticatorException("No authenticator for topic " + topic);
-  }
+//  public Authenticator get(String topic) {
+//    final Topic t = Topic.of(topic);
+//    for (Map.Entry<Topic, Authenticator> entry : filters.entrySet()) {
+//      if (entry.getKey().accepts(t)) {
+//        return entry.getValue();
+//      }
+//    }
+//    throw new NoAuthenticatorException("No authenticator for topic " + topic);
+//  }
   
   public void validate() {
     get("#");
