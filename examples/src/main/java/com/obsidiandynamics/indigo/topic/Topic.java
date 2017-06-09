@@ -139,7 +139,7 @@ public final class Topic {
       return false;
     return true;
   }
-
+  
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();

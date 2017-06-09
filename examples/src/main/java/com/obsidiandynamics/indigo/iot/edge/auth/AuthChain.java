@@ -15,7 +15,12 @@ public final class AuthChain {
   private final Map<Topic, Authenticator> authenticators = new TreeMap<>(AuthChain::byLengthDescending);
   
   private static int byLengthDescending(Topic t1, Topic t2) {
-    return Integer.compare(t2.length(), t1.length());
+    final int lengthComparison = Integer.compare(t2.length(), t1.length());
+    if (lengthComparison != 0) {
+      return lengthComparison;
+    } else {
+      return t2.toString().compareTo(t1.toString());
+    }
   }
   
   private AuthChain() {}

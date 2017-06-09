@@ -108,7 +108,24 @@ public class AuthChainTest {
       @Override public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
         if (auth instanceof BasicAuth) {
           final BasicAuth basic = (BasicAuth) auth;
-          if (basic.getUsername().equals(username) && basic.getPassword().equals(password)) {
+          if (username.equals(basic.getUsername()) && password.equals(basic.getPassword())) {
+            outcome.allow();
+          } else {
+            outcome.forbidden(topic);
+          }
+        } else {
+          outcome.forbidden(topic);
+        }
+      }
+    };
+  }
+
+  private static Authenticator createBearerAuth(String token) {
+    return new Authenticator() {
+      @Override public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
+        if (auth instanceof BearerAuth) {
+          final BearerAuth bearer = (BearerAuth) auth;
+          if (token.equals(bearer.getToken())) {
             outcome.allow();
           } else {
             outcome.forbidden(topic);
@@ -123,11 +140,13 @@ public class AuthChainTest {
   @Test
   public void testCustomSubChain() throws Exception {
     setupEdgeNode(AuthChain.createDefault()
-                  .set("custom/basic/#", Mocks.logger(createBasicAuth("user", "pass"))));
+                  .set("custom/basic/#", Mocks.logger(createBasicAuth("user", "pass")))
+                  .set("custom/bearer/#", Mocks.logger(createBearerAuth("token"))));
     
     final RemoteNexus remoteNexus = openNexus();
     final String sessionId = generateSessionId();
 
+    // test with the right user/pass on the correct topic; should pass
     final BindFrame bind1 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          new BasicAuth("user", "pass"),
@@ -140,6 +159,7 @@ public class AuthChainTest {
     final BindResponseFrame bind1Res = remoteNexus.bind(bind1).get();
     assertTrue(bind1Res.isSuccess());
     
+    // test with a wrong password; should fail
     final BindFrame bind2 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          new BasicAuth("user", "badpass"),
@@ -153,6 +173,7 @@ public class AuthChainTest {
     assertEquals(1, bind2Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind2Res.getErrors()[0].getClass());
 
+    // should pass, as the authenticator is set on 'custom/basic/#', not 'custom/basic'
     final BindFrame bind3 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          new BasicAuth("user", "badpass"),
@@ -161,5 +182,26 @@ public class AuthChainTest {
                                          null);
     final BindResponseFrame bind3Res = remoteNexus.bind(bind3).get();
     assertTrue(bind3Res.isSuccess());
+    
+    // test with a null auth object; should fail
+    final BindFrame bind4 = new BindFrame(UUID.randomUUID(), 
+                                         sessionId,
+                                         null,
+                                         new String[]{"custom/basic/4"}, 
+                                         null,
+                                         null);
+    final BindResponseFrame bind4Res = remoteNexus.bind(bind4).get();
+    assertEquals(1, bind4Res.getErrors().length);
+    assertEquals(TopicAccessError.class, bind4Res.getErrors()[0].getClass());
+
+    // test with the right token on the correct topic; should pass
+    final BindFrame bind5 = new BindFrame(UUID.randomUUID(), 
+                                         sessionId,
+                                         new BearerAuth("token"),
+                                         new String[]{"custom/bearer/1"}, 
+                                         null,
+                                         null);
+    final BindResponseFrame bind5Res = remoteNexus.bind(bind5).get();
+    assertTrue(bind5Res.isSuccess());
   }
 }
