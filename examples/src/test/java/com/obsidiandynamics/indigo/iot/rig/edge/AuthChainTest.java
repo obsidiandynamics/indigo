@@ -57,8 +57,8 @@ public final class AuthChainTest {
     assertOutcome("custom/public/privatised/b", "custom/public/privatised");
     assertOutcome("custom/public/privatised/?", "custom/public/privatised");
     assertOutcome("custom/#", "custom", "custom/public/privatised");
-    assertOutcome("custom/+/b", "custom", "custom/public/privatised");
-    assertOutcome("custom/+", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/b", "custom");
+    assertOutcome("custom/+", "custom");
     assertOutcome("them");
     assertOutcome("them/pears");
     assertOutcome("them/apples");
@@ -67,10 +67,11 @@ public final class AuthChainTest {
     assertOutcome("them/apples/private/+", "them/apples/private");
     assertOutcome("them/+/private/+", "them/apples/private");
     assertOutcome("them/+/#", "them/apples/private");
-    assertOutcome("them/+/public/+", "them/apples/private");
+    assertOutcome("them/+/public/+");
   }
   
   private void assertOutcome(String topic, String ... errorDescriptions) {
+    System.out.println("---");
     final List<Authenticator> matchingAuthenticators = chain.get(topic);
     final Set<String> actualErrors = collectErrors(matchingAuthenticators, topic);
     assertEquals(new HashSet<>(Arrays.asList(errorDescriptions)), actualErrors);

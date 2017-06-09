@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo.iot.edge.auth;
 
+import static com.obsidiandynamics.indigo.topic.Topic.*;
+
 import java.util.*;
 
 import com.obsidiandynamics.indigo.iot.*;
@@ -49,18 +51,32 @@ public final class AuthChain {
     return this;
   }
   
-  private static int commonParts(Topic t1, Topic t2) {
-    final String[] parts1 = t1.getParts();
-    final String[] parts2 = t2.getParts();
-    final int extent = Math.min(parts1.length, parts2.length);
+  private static final class Match {
+    final int length;
+    final boolean definite;
     
-    int i;
-    for (i = 0; i < extent; i++) {
-      if (! parts1[i].equals(parts2[i])) {
-        break;
-      }
+    private Match(int length, boolean definite) {
+      this.length = length;
+      this.definite = definite;
     }
-    return i;
+    
+    static Match common(Topic t1, Topic t2) {
+      final String[] parts1 = t1.getParts();
+      final String[] parts2 = t2.getParts();
+      final int extent = Math.min(parts1.length, parts2.length);
+      
+      boolean definite = true;
+      int i;
+      for (i = 0; i < extent; i++) {
+        if (parts1[i].equals(parts2[i])) {
+        } else if (parts1[i].equals(SL_WILDCARD) || parts2[i].equals(SL_WILDCARD)) {
+          definite = false;
+        } else {
+          break;
+        }
+      }
+      return new Match(i, definite);
+    }
   }
   
   private static Topic strip(Topic topic) {
@@ -68,7 +84,7 @@ public final class AuthChain {
     final List<String> newParts = new ArrayList<>(parts.length);
     for (int i = 0; i < parts.length; i++) {
       final String part = parts[i];
-      if (! part.equals(Topic.SL_WILDCARD) && ! part.equals(Topic.ML_WILDCARD)) {
+      if (! part.equals(ML_WILDCARD)) {
         newParts.add(part);
       } else {
         break;
@@ -84,30 +100,39 @@ public final class AuthChain {
     System.out.format("original=%s (%d), stripped=%s (%d), exact=%b\n", 
                       original, original.length(), stripped, stripped.length(), exact);
     
-    final List<Authenticator> matched = new ArrayList<>();
-    int longestMatch = 0;
+    final List<Authenticator> definite = new ArrayList<>();
+    final List<Authenticator> plausible = new ArrayList<>();
+    int longestDefiniteMatch = 0, longestPlausibleMatch = 0;
     for (Map.Entry<Topic, Authenticator> entry : filters.entrySet()) {
       final Topic filter = entry.getKey();
-      final int matchLength = commonParts(filter, stripped);
-      System.out.format("filter=%s, matchLength=%d\n", filter, matchLength);
-      if (matchLength != filter.length() && matchLength != stripped.length()) continue;
-      if (exact && matchLength != filter.length()) continue;
+      final Match match = Match.common(filter, stripped);
+      System.out.format("filter=%s, matchLength=%d (%b)\n", filter, match.length, match.definite);
+      if (match.length != filter.length() && match.length != stripped.length()) continue;
+      if (exact && match.length != filter.length()) continue;
       
-      if (matchLength >= longestMatch) {
-        if (matchLength > longestMatch) {
-          matched.clear();
+      if (match.definite && match.length >= longestDefiniteMatch) {
+        if (match.length > longestDefiniteMatch) {
+          definite.clear();
         }
         
-        longestMatch = matchLength;
-        matched.add(entry.getValue());
-        System.out.format("  adding %s\n", filter);
-      } else if (matchLength < longestMatch) {
-        break;
+        longestDefiniteMatch = match.length;
+        definite.add(entry.getValue());
+        System.out.format("  adding definite %s\n", filter);
+      } else if (! match.definite && match.length >= longestPlausibleMatch) {
+        if (match.length > longestPlausibleMatch) {
+          plausible.clear();
+        }
+        
+        longestPlausibleMatch = match.length;
+        plausible.add(entry.getValue());
+        System.out.format("  adding plausible %s\n", filter);
       }
     }
     
-    if (matched.isEmpty()) throw new NoAuthenticatorException("No match for topic " + topic + ", filters=" + filters.keySet());
-    return matched;
+    if (definite.isEmpty() && plausible.isEmpty()) throw new NoAuthenticatorException("No match for topic " + topic + ", filters=" + filters.keySet());
+    
+    definite.addAll(plausible);
+    return definite;
   }
   
 //  public Authenticator get(String topic) {
