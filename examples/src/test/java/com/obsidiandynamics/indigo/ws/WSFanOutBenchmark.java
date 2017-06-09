@@ -22,7 +22,7 @@ import com.obsidiandynamics.indigo.ws.netty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
-  private static final int PORT = 6667;
+  private static final int PREFERRED_PORT = 6667;
   private static final int BACKLOG_HWM = 1_000_000;
   private static final int BYTES = 16;
   private static final int IDLE_TIMEOUT = 0;
@@ -67,7 +67,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     }
     
     SpecMultiplier assignDefaults() {
-      port = PORT;
+      port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
       idleTimeout = IDLE_TIMEOUT;
       n = 100;
       m = 10;
@@ -489,7 +489,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(bytes_)), 
                                                                idleTimeout_));
-      port = PORT;
+      port = PREFERRED_PORT;
       idleTimeout = idleTimeout_;
       n = 300_000;
       m = 100;

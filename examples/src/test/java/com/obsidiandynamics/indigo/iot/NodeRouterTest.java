@@ -20,7 +20,7 @@ import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public class NodeRouterTest {
-  private static final int PORT = 6667;
+  private static final int PREFERRED_PORT = 6667;
   
   private Wire wire;
 
@@ -32,14 +32,18 @@ public class NodeRouterTest {
   
   private RemoteNode remote;
   
+  private int port;
+  
   @Before
   public void setup() throws Exception {
+    port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
+    
     wire = new Wire(true);
     bridge = new RoutingTopicBridge();
     handler = mock(RemoteNexusHandler.class);
     
     edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = PORT; }})
+        .withServerConfig(new WSServerConfig() {{ port = NodeRouterTest.this.port; }})
         .withWire(wire)
         .withTopicBridge(logger(bridge))
         .build();
@@ -58,7 +62,7 @@ public class NodeRouterTest {
   @Test
   public void testInternalPubSub() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
 
     final String topic = "a/b/c";
     final String payload = "hello internal";
@@ -102,7 +106,7 @@ public class NodeRouterTest {
   @Test
   public void testExternalPubSub() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
 
     final String topic = "a/b/c";
     final String payload = "hello external";

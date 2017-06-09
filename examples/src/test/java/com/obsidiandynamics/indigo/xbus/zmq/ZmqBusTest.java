@@ -14,8 +14,16 @@ import com.obsidiandynamics.indigo.xbus.*;
 import com.obsidiandynamics.indigo.xbus.codec.*;
 
 public final class ZmqBusTest implements TestSupport {
+  private static final int PREFERRED_PORT = 5557;
   private static final int PROGRESS_INTERVAL = 100;
   private static final int SCALE = 1;
+  
+  private int port;
+  
+  @Before
+  public void setup() {
+    port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
+  }
   
   private Thread syncThread(XBus bus, AtomicBoolean synced) {
     return Threads.asyncDaemon(() -> {
@@ -55,7 +63,7 @@ public final class ZmqBusTest implements TestSupport {
   }
   
   private void testSendReceiveSync(int n, int pubThreads) throws InterruptedException {
-    final XBus bus = new ZmqBus("tcp://*:5557", new StringCodec());
+    final XBus bus = new ZmqBus("tcp://*:" + port, new StringCodec());
     
     final AtomicInteger received = new AtomicInteger();
     final AtomicBoolean synced = new AtomicBoolean();
@@ -101,7 +109,7 @@ public final class ZmqBusTest implements TestSupport {
   }
   
   private void testSendReceiveAsync(int n, int pubThreads) throws InterruptedException {
-    final XBus bus = new ZmqBus("tcp://*:5557", new StringCodec());
+    final XBus bus = new ZmqBus("tcp://*:" + port, new StringCodec());
     
     final AtomicInteger received = new AtomicInteger();
     final AtomicBoolean synced = new AtomicBoolean();

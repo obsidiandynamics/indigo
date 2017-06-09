@@ -22,7 +22,7 @@ import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public class NodeCommsTest {
-  private static final int PORT = 6667;
+  private static final int PREFERRED_PORT = 6667;
   
   private Wire wire;
 
@@ -34,14 +34,18 @@ public class NodeCommsTest {
   
   private RemoteNode remote;
   
+  private int port;
+  
   @Before
   public void setup() throws Exception {
+    port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
+    
     wire = new Wire(true);
     bridge = mock(TopicBridge.class);
     handler = mock(RemoteNexusHandler.class);
     
     edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = PORT; }})
+        .withServerConfig(new WSServerConfig() {{ port = NodeCommsTest.this.port; }})
         .withWire(wire)
         .withTopicBridge(logger(bridge))
         .build();
@@ -62,7 +66,7 @@ public class NodeCommsTest {
     final UUID messageId = UUID.randomUUID();
     when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
     
-    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
     final String sessionId = Long.toHexString(Crypto.machineRandom());
     final String[] subscribe = new String[]{"a/b/c"};
     final BindFrame bind = new BindFrame(messageId, 
@@ -114,7 +118,7 @@ public class NodeCommsTest {
     final UUID messageId = UUID.randomUUID();
     when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
     
-    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
     final String sessionId = Long.toHexString(Crypto.machineRandom());
     final String[] subscribe = new String[]{"a/b/c"};
     final BindFrame bind = new BindFrame(messageId, 

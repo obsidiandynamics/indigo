@@ -19,7 +19,7 @@ import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public class AuthChainTest {
-  private static final int PORT = 6667;
+  private static final int PREFERRED_PORT = 6667;
   private static final boolean SUPPRESS_LOGGING = true;
   
   private Wire wire;
@@ -32,8 +32,12 @@ public class AuthChainTest {
   
   private RemoteNexus remoteNexus;
   
+  private int port;
+  
   @Before
   public void setup() throws Exception {
+    port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
+    
     wire = new Wire(true);
     handler = mock(RemoteNexusHandler.class);
     
@@ -51,7 +55,7 @@ public class AuthChainTest {
   
   private void setupEdgeNode(AuthChain authChain) throws Exception {
     edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = PORT; }})
+        .withServerConfig(new WSServerConfig() {{ port = AuthChainTest.this.port; }})
         .withWire(wire)
         .withSubAuthChain(authChain)
         .build();
@@ -59,7 +63,7 @@ public class AuthChainTest {
   }
   
   private RemoteNexus openNexus() throws URISyntaxException, Exception {
-    return remote.open(new URI("ws://localhost:" + PORT + "/"), logger(handler));
+    return remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
   }
   
   private String generateSessionId() {

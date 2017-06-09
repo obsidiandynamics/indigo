@@ -16,7 +16,7 @@ import com.obsidiandynamics.indigo.ws.*;
 
 public final class RigBenchmark implements TestSupport {
   private static final String HOST = "localhost";
-  private static final int PORT = 6667;
+  private static final int PREFERRED_PORT = 6667;
   
   abstract static class Config implements Spec {
     static {
@@ -61,7 +61,7 @@ public final class RigBenchmark implements TestSupport {
     
     public SpecMultiplier applyDefaults() {
       host = HOST;
-      port = PORT;
+      port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
       warmupFrac = 0.05f;
       log = new LogConfig() {{
         summary = stages = LOG;
@@ -144,7 +144,7 @@ public final class RigBenchmark implements TestSupport {
     BashInteractor.Ulimit.main(null);
     new Config() {{
       host = HOST;
-      port = PORT;
+      port = PREFERRED_PORT;
       pulses = 300;
       pulseDurationMillis = 100;
       syncFrames = 0;
