@@ -53,16 +53,20 @@ public final class RoutingTopicBridge implements TopicBridge {
   }
 
   @Override
-  public CompletableFuture<Void> onBind(EdgeNexus nexus, List<String> subscribe) {
+  public CompletableFuture<Void> onBind(EdgeNexus nexus, Set<String> subscribe) {
+    if (subscribe.isEmpty()) {
+      return CompletableFuture.completedFuture(null);
+    }
+    
     final RoutingSubscription subscription = nexus.getSession().getSubscription();
     if (subscription == null) {
       LOG.error("{}: no subscription", nexus);
       throw new IllegalStateException("No subscription set for " + nexus);
     }
-    
+
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     final List<Topic> topics = subscribe.stream().map(t -> Topic.of(t)).collect(Collectors.toList());
     
-    final CompletableFuture<Void> future = new CompletableFuture<>();
     system.ingress(a -> {
       final List<SubscribeResponse> responses = new ArrayList<>(topics.size());
       for (final Topic topic : topics) {

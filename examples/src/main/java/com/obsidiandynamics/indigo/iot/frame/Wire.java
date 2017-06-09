@@ -13,7 +13,7 @@ public final class Wire {
   private static final int MAX_UNSIGNED_SHORT = (1 << 16) - 1;
   
   private final Gson gson;
-  
+
   public Wire(boolean prettyPrinting) {
     final GsonBuilder builder = new GsonBuilder()
         .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
@@ -23,7 +23,11 @@ public final class Wire {
         .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
                                     .of(Error.class, "type")
                                     .registerSubtype(GeneralError.class, GeneralError.JSON_TYPE_NAME)
-                                    .registerSubtype(TopicAccessError.class, TopicAccessError.JSON_TYPE_NAME));
+                                    .registerSubtype(TopicAccessError.class, TopicAccessError.JSON_TYPE_NAME))
+        .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
+                                    .of(Auth.class, "type")
+                                    .registerSubtype(BasicAuth.class, BasicAuth.JSON_TYPE_NAME)
+                                    .registerSubtype(BearerAuth.class, BearerAuth.JSON_TYPE_NAME));
     if (prettyPrinting) builder.setPrettyPrinting();
     gson = builder.create();
   }

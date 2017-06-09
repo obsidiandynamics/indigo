@@ -91,9 +91,10 @@ public class NodeCommsTest {
       verify(handler).onDisconnect(anyNotNull());
     });
     
-    final List<String> expectedTopics = new ArrayList<>();
+    final Set<String> expectedTopics = new HashSet<>();
     expectedTopics.addAll(Arrays.asList(subscribe));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId));
+    expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
     ordered(bridge, inOrder -> {
       inOrder.verify(bridge).onConnect(anyNotNull());
       inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics));
@@ -143,9 +144,10 @@ public class NodeCommsTest {
       verify(handler).onDisconnect(anyNotNull());
     });
 
-    final List<String> expectedTopics = new ArrayList<>();
+    final Set<String> expectedTopics = new HashSet<>();
     expectedTopics.addAll(Arrays.asList(subscribe));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId));
+    expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
     ordered(bridge, inOrder -> {
       inOrder.verify(bridge).onConnect(anyNotNull());
       inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics));

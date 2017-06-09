@@ -26,20 +26,23 @@ public final class EdgeNode implements AutoCloseable {
   
   private final TopicBridge bridge;
   
-  private final AuthenticatorChain subscribeAuthChain;
+  private final AuthChain subAuthChain;
   
   private final List<EdgeNexus> nexuses = new CopyOnWriteArrayList<>();
   
   private final List<TopicListener> topicListeners = new ArrayList<>();
+  
+  private boolean loggingEnabled = true;
 
   public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory, 
                                          WSServerConfig config, 
                                          Wire wire, 
                                          TopicBridge bridge,
-                                         AuthenticatorChain subscribeAuthChain) throws Exception {
+                                         AuthChain subAuthChain) throws Exception {
+    subAuthChain.validate();
     this.wire = wire;
     this.bridge = bridge;
-    this.subscribeAuthChain = subscribeAuthChain;
+    this.subAuthChain = subAuthChain;
     server = serverFactory.create(config, new EndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
         handleConnect(endpoint);
@@ -55,7 +58,7 @@ public final class EdgeNode implements AutoCloseable {
                 final BindFrame bind = (BindFrame) frame;
                 handleBind(nexus, bind);
               } else {
-                LOG.error("{}: unsupported frame {}", nexus, frame);
+                if (loggingEnabled) LOG.error("{}: unsupported frame {}", nexus, frame);
               }
               break;
               
@@ -65,11 +68,11 @@ public final class EdgeNode implements AutoCloseable {
               break;
               
             default:
-              LOG.error("{}: unsupported frame {}", nexus, frame);
+              if (loggingEnabled) LOG.error("{}: unsupported frame {}", nexus, frame);
               return;
           }
         } catch (Throwable e) {
-          LOG.error(String.format("%s: error processing frame\n%s", nexus,message), e);
+          if (loggingEnabled) LOG.error(String.format("%s: error processing frame\n%s", nexus,message), e);
           return;
         }
       }
@@ -82,10 +85,10 @@ public final class EdgeNode implements AutoCloseable {
             final PublishBinaryFrame pub = (PublishBinaryFrame) frame;
             handlePublish(nexus, pub);
           } else {
-            LOG.error("{}: unsupported frame {}", nexus, frame);
+            if (loggingEnabled) LOG.error("{}: unsupported frame {}", nexus, frame);
           }
         } catch (Throwable e) {
-          LOG.error(String.format("%s: error processing frame\n%s", nexus, BinaryUtils.dump(message)), e);
+          if (loggingEnabled) LOG.error(String.format("%s: error processing frame\n%s", nexus, BinaryUtils.dump(message)), e);
           return;
         }
       }
@@ -101,16 +104,16 @@ public final class EdgeNode implements AutoCloseable {
       }
 
       @Override public void onError(E endpoint, Throwable cause) {
-        LOG.warn(String.format("Unexpected error on endpoint %s", endpoint), cause);
+        if (loggingEnabled) LOG.warn(String.format("Unexpected error on endpoint %s", endpoint), cause);
       }
     });
   }
   
   private void handleBind(EdgeNexus nexus, BindFrame bind) {
-    if (LOG.isDebugEnabled()) LOG.debug("{}: bind {}", nexus, bind);
+    if (loggingEnabled && LOG.isDebugEnabled()) LOG.debug("{}: bind {}", nexus, bind);
     final Session session = nexus.getSession();
     if (session == null) {
-      LOG.error("{}: no session", nexus);
+      if (loggingEnabled) LOG.error("{}: no session", nexus);
       return;
     }
     
@@ -120,8 +123,8 @@ public final class EdgeNode implements AutoCloseable {
         newSessionId = bind.getSessionId();
         session.setSessionId(newSessionId);
       } else if (! session.getSessionId().equals(bind.getSessionId())) {
-        LOG.warn("{}: attempted to change its session ID from {} to {}", 
-                 nexus, session.getSessionId(), bind.getSessionId());
+        if (loggingEnabled) LOG.warn("{}: attempted to change its session ID from {} to {}", 
+                                     nexus, session.getSessionId(), bind.getSessionId());
         nexus.send(new BindResponseFrame(bind.getMessageId(), new GeneralError("Cannot reassign session ID")));
         return;
       } else {
@@ -131,17 +134,18 @@ public final class EdgeNode implements AutoCloseable {
       newSessionId = null;
     }
     
-    final List<String> toSubscribe = new ArrayList<>(bind.getSubscribe().length + (newSessionId != null ? 1 : 0));
+    final Set<String> toSubscribe = new HashSet<>();
     final Set<String> existing = session.getSubscription().getTopics();
     for (String topic : bind.getSubscribe()) {
       if (! existing.contains(topic)) {
         toSubscribe.add(topic);
       } else {
-        if (LOG.isDebugEnabled()) LOG.debug("{}: ignoring duplicate subscription to {} for {}", nexus, topic);    
+        if (loggingEnabled && LOG.isDebugEnabled()) LOG.debug("{}: ignoring duplicate subscription to {} for {}", nexus, topic);    
       }
     }
     if (newSessionId != null) {
       toSubscribe.add(Flywheel.getRxTopicPrefix(newSessionId));
+      toSubscribe.add(Flywheel.getRxTopicPrefix(newSessionId) + "/#");
     }
     
     authenticateTopics(nexus, bind.getAuth(), bind.getMessageId(), toSubscribe, () -> {
@@ -152,15 +156,15 @@ public final class EdgeNode implements AutoCloseable {
           nexus.send(bindRes);
           fireBindEvent(nexus, bind, bindRes);
         } else {
-          LOG.warn("{}: error handling bind {}", nexus, bind);
-          LOG.warn("", cause);
+          if (loggingEnabled) LOG.warn("{}: error handling bind {}", nexus, bind);
+          if (loggingEnabled) LOG.warn("", cause);
           fireBindEvent(nexus, bind, new BindResponseFrame(bind.getMessageId(), new GeneralError("Internal error")));
         }
       });      
     });
   }
   
-  private void authenticateTopics(EdgeNexus nexus, Auth auth, UUID messageId, List<String> topics, Runnable onSuccess) {
+  private void authenticateTopics(EdgeNexus nexus, Auth auth, UUID messageId, Set<String> topics, Runnable onSuccess) {
     if (topics.isEmpty()) {
       onSuccess.run();
       return;
@@ -169,7 +173,7 @@ public final class EdgeNode implements AutoCloseable {
     final AtomicInteger remainingOutcomes = new AtomicInteger(topics.size());
     final List<TopicAccessError> errors = new CopyOnWriteArrayList<>();
     for (String topic : topics) {
-      final Authenticator authenticator = subscribeAuthChain.get(topic);
+      final Authenticator authenticator = subAuthChain.get(topic);
       authenticator.verify(nexus, auth, topic, new AuthenticationOutcome() {
         @Override public void allow() {
           complete();
@@ -185,7 +189,7 @@ public final class EdgeNode implements AutoCloseable {
             if (errors.isEmpty()) {
               onSuccess.run();
             } else {
-              LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
+              if (loggingEnabled) LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
               nexus.send(new BindResponseFrame(messageId, errors));
             }
           }
@@ -255,6 +259,14 @@ public final class EdgeNode implements AutoCloseable {
     topicListeners.remove(l);
   }
   
+  public boolean isLoggingEnabled() {
+    return loggingEnabled;
+  }
+
+  public void setLoggingEnabled(boolean loggingEnabled) {
+    this.loggingEnabled = loggingEnabled;
+  }
+
   /**
    *  Obtains the currently connected non-local nexuses.
    *  
@@ -291,7 +303,7 @@ public final class EdgeNode implements AutoCloseable {
     private WSServerConfig serverConfig = new WSServerConfig();
     private Wire wire = new Wire(false);
     private TopicBridge topicBridge;
-    private AuthenticatorChain subscribeAuthChain = AuthenticatorChain.createDefault();
+    private AuthChain subAuthChain = AuthChain.createDefault();
     
     private void init() throws Exception {
       if (serverFactory == null) {
@@ -323,14 +335,14 @@ public final class EdgeNode implements AutoCloseable {
       return this;
     }
     
-    public EdgeNodeBuilder withSubscribeAuthenticatorChain(AuthenticatorChain subscribeAuthChain) {
-      this.subscribeAuthChain = subscribeAuthChain;
+    public EdgeNodeBuilder withSubAuthChain(AuthChain subAuthChain) {
+      this.subAuthChain = subAuthChain;
       return this;
     }
 
     public EdgeNode build() throws Exception {
       init();
-      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge, subscribeAuthChain);
+      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge, subAuthChain);
     }
   }
   

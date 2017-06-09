@@ -25,10 +25,17 @@ public final class WireTest implements TestSupport {
   @Test
   public void testMarshalSubscribe() {
     final UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
-    final BindFrame orig = new BindFrame(id, "123", null, new String[]{"a", "a/b", "a/b/c"}, null, "some-meta");
+    final BindFrame orig = new BindFrame(id, "123", new BearerAuth("xyz"), new String[]{"a", "a/b", "a/b/c"}, new String[0], "some-meta");
     final String enc = wire.encode(orig);
     log("encoded: '%s'\n", enc);
-    final String expected = requote("B {'type':'Bind','sessionId':'123','subscribe':['a','a/b','a/b/c'],'metadata':'some-meta','messageId':'123e4567-e89b-12d3-a456-426655440000'}");
+    final String expected = requote("B {"
+        + "'type':'Bind','sessionId':'123',"
+        + "'auth':{'type':'Bearer','token':'xyz'},"
+        + "'subscribe':['a','a/b','a/b/c'],"
+        + "'unsubscribe':[],"
+        + "'metadata':'some-meta',"
+        + "'messageId':'123e4567-e89b-12d3-a456-426655440000'"
+        + "}");
     assertEquals(expected, enc);
     
     final BindFrame decoded = (BindFrame) wire.decode(enc);

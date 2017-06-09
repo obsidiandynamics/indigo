@@ -13,11 +13,11 @@ public final class RemoteTopicAuthenticator implements Authenticator {
       return;
     }
     
-    final String allowedTopicPrefix = Flywheel.REMOTE_PREFIX + "/" + sessionId + "/";
+    final String allowedTopicPrefix = Flywheel.getRxTopicPrefix(sessionId);
     if (topic.startsWith(allowedTopicPrefix)) {
       outcome.allow();
     } else{
-      outcome.deny(new TopicAccessError(String.format("Cannot subscribe to %s; only %s# is allowed", topic, allowedTopicPrefix), topic));
+      outcome.deny(new TopicAccessError(String.format("Restricted to %s/#", topic, allowedTopicPrefix), topic));
     }
   }
 }

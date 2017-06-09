@@ -5,36 +5,37 @@ import java.util.*;
 import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.topic.*;
 
-public final class AuthenticatorChain {
+public final class AuthChain {
   public static final class NoAuthenticatorException extends RuntimeException {
     private static final long serialVersionUID = 1L;
     
     NoAuthenticatorException(String m) { super(m); }
   }
   
-  private final Map<Topic, Authenticator> authenticators = new TreeMap<>(AuthenticatorChain::byLengthDescending);
+  private final Map<Topic, Authenticator> authenticators = new TreeMap<>(AuthChain::byLengthDescending);
   
   private static int byLengthDescending(Topic t1, Topic t2) {
     return Integer.compare(t2.length(), t1.length());
   }
   
-  private AuthenticatorChain() {}
+  private AuthChain() {}
   
-  public static AuthenticatorChain createEmpty() {
-    return new AuthenticatorChain();
+  public static AuthChain createDefault() {
+    return new AuthChain().registerDefaults();
   }
   
-  public static AuthenticatorChain createDefault() {
-    return createEmpty().registerDefaults();
+  public AuthChain clear() {
+    authenticators.clear();
+    return this;
   }
   
-  private AuthenticatorChain registerDefaults() {
+  private AuthChain registerDefaults() {
     set("#", Authenticator::allowAll);
     set(Flywheel.REMOTE_PREFIX + "/#", new RemoteTopicAuthenticator());
     return this;
   }
   
-  public AuthenticatorChain set(String topicFilter, Authenticator authenticator) {
+  public AuthChain set(String topicFilter, Authenticator authenticator) {
     authenticators.put(Topic.of(topicFilter), authenticator);
     return this;
   }
@@ -47,5 +48,9 @@ public final class AuthenticatorChain {
       }
     }
     throw new NoAuthenticatorException("No authenticator for topic " + topic);
+  }
+  
+  public void validate() {
+    get("#");
   }
 }
