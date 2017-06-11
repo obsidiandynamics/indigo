@@ -30,6 +30,7 @@ public final class RigBenchmark implements TestSupport {
     int pulseDurationMillis;
     int syncFrames;
     TopicSpec topicSpec;
+    boolean initiate;
     boolean text;
     int bytes;
     float warmupFrac;
@@ -63,6 +64,7 @@ public final class RigBenchmark implements TestSupport {
       host = HOST;
       port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
       warmupFrac = 0.05f;
+      initiate = true;
       log = new LogConfig() {{
         summary = stages = LOG;
         verbose = false;
@@ -120,6 +122,7 @@ public final class RigBenchmark implements TestSupport {
       topicSpec = c.topicSpec;
       syncFrames = c.syncFrames;
       uri = new URI(String.format("ws://%s:%d/", c.host, c.port));
+      initiate = c.initiate;
       log = c.log;
     }});
 
@@ -144,12 +147,13 @@ public final class RigBenchmark implements TestSupport {
     BashInteractor.Ulimit.main(null);
     new Config() {{
       host = HOST;
-      port = PREFERRED_PORT;
+      port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
       pulses = 300;
       pulseDurationMillis = 100;
       syncFrames = 0;
       topicSpec = TopicLibrary.largeLeaves();
       warmupFrac = 0.10f;
+      initiate = true;
       text = false;
       bytes = 128;
       log = new LogConfig() {{

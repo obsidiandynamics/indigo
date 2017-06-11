@@ -26,6 +26,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     int syncFrames;
     URI uri;
     TopicSpec topicSpec;
+    boolean initiate;
     LogConfig log;
     
     static URI getUri(String host, int port) throws URISyntaxException {
@@ -56,15 +57,15 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   @Override
   public void run() throws Exception {
-    createControlNexus();
+    openControlNexus();
     timeDiff = config.syncFrames != 0 ? calibrate() : 0;
     connectAll();
     begin();
   }
   
-  private void createControlNexus() throws Exception {
-    if (config.log.stages) config.log.out.format("r: opening control nexus...\n");
+  private void openControlNexus() throws Exception {
     final String sessionId = generateSessionId();
+    if (config.log.stages) config.log.out.format("r: opening control nexus (%s)...\n", sessionId);
     control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (config.log.verbose) config.log.out.format("r: control received %s\n", payload);
@@ -76,7 +77,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         }
       }
     });
-    control.bind(new BindFrame(UUID.randomUUID(), sessionId, null, new String[0], null, null)).get();
+    control.bind(new BindFrame(UUID.randomUUID(), sessionId, null, new String[0], null, "control")).get();
   }
   
   private void awaitLater(RemoteNexus nexus, String remoteId, long expectedMessages) {
@@ -112,9 +113,10 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     for (Interest interest : allInterests) {
       for (int i = 0; i < interest.getCount(); i++) {
         final RemoteNexus nexus = node.open(config.uri, this);
+        final Object metadata = control.getSessionId();
         final CompletableFuture<BindResponseFrame> f = 
             nexus.bind(new BindFrame(UUID.randomUUID(), generateSessionId(), null,
-                                     new String[]{interest.getTopic().toString()}, null, null));
+                                     new String[]{interest.getTopic().toString()}, null, metadata));
         futures.add(f);
       }
     }
@@ -126,8 +128,12 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   private void begin() throws Exception {
-    control.publish(new PublishTextFrame(getTxTopicPrefix(generateSessionId()), new Begin().marshal(subframeGson))).get();
-    startTime = System.currentTimeMillis();
+    if (config.initiate) { 
+      if (config.log.stages) config.log.out.format("r: initiated benchmark\n");
+      control.publish(new PublishTextFrame(getTxTopicPrefix(generateSessionId()), new Begin().marshal(subframeGson))).get();
+    } else {
+      if (config.log.stages) config.log.out.format("r: awaiting initiator...\n");
+    }
   }
   
   private String generateSessionId() {
@@ -226,6 +232,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
 
   @Override
   public void onText(RemoteNexus nexus, String topic, String payload) {
+    ensureStartTimeSet();
     final long now = System.nanoTime();
     final int idx = payload.indexOf(' ');
     final long serverNanos = Long.valueOf(payload.substring(0, idx));
@@ -234,9 +241,16 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
 
   @Override
   public void onBinary(RemoteNexus nexus, String topic, ByteBuffer payload) {
+    ensureStartTimeSet();
     final long now = System.nanoTime();
     final long serverNanos = payload.getLong();
     time(now, serverNanos);
+  }
+  
+  private void ensureStartTimeSet() {
+    if (startTime == 0) {
+      startTime = System.currentTimeMillis();
+    }
   }
   
   private void time(long now, long serverNanos) {

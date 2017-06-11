@@ -37,7 +37,7 @@ public final class EdgeRigBenchmark implements TestSupport {
     final Summary summary = new Summary();
     summary.compute(new Elapsed() {
       @Override public long getTotalProcessed() {
-        return (long) edgeRig.getSubscribers() * c.pulses;
+        return (long) edgeRig.getTotalSubscribers() * c.pulses;
       }
 
       @Override public long getTimeTaken() {

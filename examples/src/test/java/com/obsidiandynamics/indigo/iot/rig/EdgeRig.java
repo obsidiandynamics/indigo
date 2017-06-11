@@ -6,6 +6,7 @@ import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.stream.*;
 
 import com.google.gson.*;
 import com.obsidiandynamics.indigo.benchmark.*;
@@ -42,7 +43,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   private final Set<String> completedRemotes = new CopyOnWriteArraySet<>();
   
-  private final AtomicInteger subscribers = new AtomicInteger();
+  private final Map<String, AtomicInteger> subscriptionsByNode = new ConcurrentHashMap<>();
   
   private volatile State state = State.CONNECT_WAIT;
   
@@ -148,14 +149,22 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     
     state = State.STOPPED;
     
-    final long expectedMessages = (long) config.pulses * subscribers.get();
+    awaitRemotes();
+  }
+  
+  private void awaitRemotes() {
     for (EdgeNexus control : controlNexuses) {
-      final String topic = Flywheel.getRxTopicPrefix(control.getSession().getSessionId());
+      final String sessionId = control.getSession().getSessionId();
+      final String topic = Flywheel.getRxTopicPrefix(sessionId);
+      final int subscribers = getSubscribers(sessionId);
+      final long expectedMessages = (long) config.pulses * subscribers;
+      
+      if (config.log.stages) config.log.out.format("e: awaiting remote %s (%,d messages across %,d subscribers)...\n",
+                                                   sessionId, expectedMessages, subscribers);
+      
       node.publish(topic, new Wait(expectedMessages).marshal(subframeGson));
     }
     
-    if (config.log.stages) config.log.out.format("e: awaiting remotes (%,d messages across %,d subscribers)...\n",
-                                                 expectedMessages, subscribers.get());
     try {
       Await.perpetual(() -> completedRemotes.size() == controlNexuses.size());
     } catch (InterruptedException e) {
@@ -171,7 +180,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     } catch (Exception e) {
       e.printStackTrace(config.log.out);
     }
-  }  
+  }
   
   public boolean await() throws InterruptedException {
     return Await.perpetual(() -> state == State.STOPPED && node.getNexuses().isEmpty());
@@ -205,6 +214,24 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
       }
     }
   }
+  
+  private void addSubscriber(String sessionId) {
+    synchronized (subscriptionsByNode) {
+      AtomicInteger counter = subscriptionsByNode.get(sessionId);
+      if (counter == null) {
+        subscriptionsByNode.put(sessionId, counter = new AtomicInteger());
+      }
+      counter.incrementAndGet();
+    }
+  }
+  
+  int getTotalSubscribers() {
+    return subscriptionsByNode.values().stream().collect(Collectors.summingInt(v -> v.get())).intValue();
+  }
+  
+  private int getSubscribers(String sessionId) {
+    return subscriptionsByNode.get(sessionId).get();
+  }
 
   @Override
   public void onConnect(EdgeNexus nexus) {
@@ -219,17 +246,16 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   @Override
   public void onBind(EdgeNexus nexus, BindFrame bind, BindResponseFrame bindRes) {
     if (config.log.verbose) config.log.out.format("e: sub %s %s\n", nexus, bind);
-    for (String topic : bind.getSubscribe()) {
-      if (! topic.startsWith(Flywheel.REMOTE_PREFIX)) {
-        subscribers.incrementAndGet();
+    
+    if (bind.getMetadata() != null) {
+      if (bind.getMetadata().equals("control")) {
+        controlNexuses.add(nexus);
+      } else {
+        addSubscriber(String.valueOf(bind.getMetadata()));
       }
     }
   }
   
-  int getSubscribers() {
-    return subscribers.get();
-  }
-
   @Override
   public void onPublish(EdgeNexus nexus, PublishTextFrame pub) {
     if (! nexus.isLocal() && pub.getTopic().startsWith(Flywheel.REMOTE_PREFIX)) {
@@ -245,7 +271,6 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     if (subframe instanceof Sync) {
       sendSubframe(remoteId, new Sync(System.nanoTime()));
     } else if (subframe instanceof Begin) {
-      controlNexuses.add(nexus);
       state = State.RUNNING;
     } else if (subframe instanceof WaitResponse) {
       completedRemotes.add(remoteId);

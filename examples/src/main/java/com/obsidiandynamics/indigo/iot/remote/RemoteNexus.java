@@ -13,6 +13,8 @@ public final class RemoteNexus implements AutoCloseable {
 
   private final Map<UUID, CompletableFuture<BindResponseFrame>> bindRequests = new ConcurrentHashMap<>();
   
+  private volatile String sessionId;
+  
   private WSEndpoint endpoint;
   
   RemoteNexus(RemoteNode node) {
@@ -26,6 +28,14 @@ public final class RemoteNexus implements AutoCloseable {
   void setEndpoint(WSEndpoint endpoint) {
     this.endpoint = endpoint;
   }
+  
+  public String getSessionId() {
+    return sessionId;
+  }
+  
+  void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
+  }
 
   public InetSocketAddress getPeerAddress() {
     return endpoint.getRemoteAddress();
@@ -38,6 +48,9 @@ public final class RemoteNexus implements AutoCloseable {
   public CompletableFuture<BindResponseFrame> bind(BindFrame bind) {
     final CompletableFuture<BindResponseFrame> future = new CompletableFuture<>();
     bindRequests.put(bind.getMessageId(), future);
+    if (bind.getSessionId() != null) {
+      setSessionId(bind.getSessionId());
+    }
     SendHelper.send(bind, endpoint, node.getWire());
     return future;
   }
