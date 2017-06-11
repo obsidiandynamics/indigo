@@ -36,13 +36,45 @@ public final class AuthChainTest {
   public void testBlank() {
     assertOutcome("#");
   }
+  
+  @Test
+  public void testSimulatedDefault() {
+    alw("");
+    dny("$remote");
+    
+    assertOutcome("foo");
+    assertOutcome("$remote", "$remote");
+    assertOutcome("$remote/a", "$remote");
+    assertOutcome("$remote/a/+/b", "$remote");
+    assertOutcome("$remote/+", "$remote");
+    assertOutcome("$remote/+/a", "$remote");
+    assertOutcome("$remote/+/a/+", "$remote");
+    assertOutcome("$remote/#", "$remote");
+    assertOutcome("$remote/a/#", "$remote");
+    assertOutcome("$remote/+/#", "$remote");
+    assertOutcome("$remote/+/a/#", "$remote");
+    assertOutcome("+", "$remote");
+    assertOutcome("+/+", "$remote");
+    assertOutcome("+/#", "$remote");
+    assertOutcome("+/$remote", "$remote");
+    assertOutcome("+/foo", "$remote");
+    assertOutcome("#", "$remote");
+    
+    assertOutcome("foo");
+    assertOutcome("$Remote");
+    assertOutcome("remote");
+    assertOutcome("$rem");
+    assertOutcome("$remoteX");
+    assertOutcome("$rem/ote");
+    assertOutcome("foo/$remote");
+  }
 
   @Test
-  public void testCustomChain() {
+  public void testCustomChainDefaultAllow() {
     alw("");
+    dny("remote");
     alw("remote/1234");
     alw("remote/1231");
-    dny("remote");
     dny("custom");
     alw("custom/a/b/c/d");
     alw("custom/public");
@@ -51,25 +83,55 @@ public final class AuthChainTest {
     dny("them/apples/private");
 
     assertOutcome("#", "remote", "custom", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+", "remote", "custom");
+    assertOutcome("+/foo", "remote", "custom");
+    assertOutcome("+/foo/#", "custom", "remote");
+    assertOutcome("+/+/#", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+", "custom", "remote");
+    assertOutcome("+/+/foo", "custom", "remote");
+    assertOutcome("+/#", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+/+", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+/#", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+/foo/#", "custom", "remote");
+
     assertOutcome("remote", "remote");
-    assertOutcome("remote/#", "remote");
     assertOutcome("remote/a", "remote");
     assertOutcome("remote/1231");
+    assertOutcome("remote/1231/+");
+    assertOutcome("remote/1231/#");
+    assertOutcome("remote/1234");
+    assertOutcome("remote/1234/+");
+    assertOutcome("remote/1234/#");
+    assertOutcome("remote/+/#", "remote");
+    assertOutcome("remote/#", "remote");
     assertOutcome("remote/+", "remote");
+    assertOutcome("remote/+/#", "remote");
     assertOutcome("remote/+/rx", "remote");
+    
     assertOutcome("custom", "custom");
     assertOutcome("custom/a", "custom");
     assertOutcome("custom/public");
     assertOutcome("custom/public/b");
     assertOutcome("custom/public/b/#");
     assertOutcome("custom/public/+", "custom/public/privatised");
+    assertOutcome("custom/public/+/+", "custom/public/privatised");
+    assertOutcome("custom/public/+/foo", "custom/public/privatised");
+    assertOutcome("custom/public/+/#", "custom/public/privatised");
     assertOutcome("custom/public/b/+");
     assertOutcome("custom/public/privatised", "custom/public/privatised");
     assertOutcome("custom/public/privatised/b", "custom/public/privatised");
-    assertOutcome("custom/public/privatised/?", "custom/public/privatised");
+    assertOutcome("custom/public/privatised/+", "custom/public/privatised");
+    assertOutcome("custom/+/privatised/+", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/+", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/#", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/+/foo/+", "custom", "custom/public/privatised");
     assertOutcome("custom/#", "custom", "custom/public/privatised");
     assertOutcome("custom/+/b", "custom");
     assertOutcome("custom/+", "custom");
+    assertOutcome("+/public", "custom", "remote");
+    assertOutcome("+/+/privatised", "custom", "remote", "custom/public/privatised");
+    assertOutcome("+/public/+", "custom", "remote", "custom/public/privatised");
+    
     assertOutcome("them");
     assertOutcome("them/pears");
     assertOutcome("them/apples");
@@ -77,8 +139,90 @@ public final class AuthChainTest {
     assertOutcome("them/apples/private/b", "them/apples/private");
     assertOutcome("them/apples/private/+", "them/apples/private");
     assertOutcome("them/+/private/+", "them/apples/private");
+    assertOutcome("them/#", "them/apples/private");
     assertOutcome("them/+/#", "them/apples/private");
     assertOutcome("them/+/public/+");
+    assertOutcome("+/apples", "remote", "custom");
+    assertOutcome("+/apples/private", "remote", "custom", "them/apples/private");
+    assertOutcome("+", "remote", "custom");
+  }
+
+  @Test
+  public void testCustomChainDefaultDeny() {
+    dny("");
+    dny("remote");
+    alw("remote/1234");
+    alw("remote/1231");
+    dny("custom");
+    alw("custom/a/b/c/d");
+    alw("custom/public");
+    dny("custom/public/privatised");
+    alw("them");
+    dny("them/apples/private");
+
+    assertOutcome("#", "", "remote", "custom", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+", "", "remote", "custom");
+    assertOutcome("+/foo", "", "remote", "custom");
+    assertOutcome("+/foo/#", "", "custom", "remote");
+    assertOutcome("+/+/#", "", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+", "", "custom", "remote");
+    assertOutcome("+/+/foo", "", "custom", "remote");
+    assertOutcome("+/#", "", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+/+", "", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+/#", "", "custom", "remote", "custom/public/privatised", "them/apples/private");
+    assertOutcome("+/+/foo/#", "", "custom", "remote");
+
+    assertOutcome("remote", "remote");
+    assertOutcome("remote/a", "remote");
+    assertOutcome("remote/1231");
+    assertOutcome("remote/1231/+");
+    assertOutcome("remote/1231/#");
+    assertOutcome("remote/1234");
+    assertOutcome("remote/1234/+");
+    assertOutcome("remote/1234/#");
+    assertOutcome("remote/+/#", "remote");
+    assertOutcome("remote/#", "remote");
+    assertOutcome("remote/+", "remote");
+    assertOutcome("remote/+/#", "remote");
+    assertOutcome("remote/+/rx", "remote");
+    
+    assertOutcome("custom", "custom");
+    assertOutcome("custom/a", "custom");
+    assertOutcome("custom/public");
+    assertOutcome("custom/public/b");
+    assertOutcome("custom/public/b/#");
+    assertOutcome("custom/public/+", "custom/public/privatised");
+    assertOutcome("custom/public/+/+", "custom/public/privatised");
+    assertOutcome("custom/public/+/foo", "custom/public/privatised");
+    assertOutcome("custom/public/+/#", "custom/public/privatised");
+    assertOutcome("custom/public/b/+");
+    assertOutcome("custom/public/privatised", "custom/public/privatised");
+    assertOutcome("custom/public/privatised/b", "custom/public/privatised");
+    assertOutcome("custom/public/privatised/+", "custom/public/privatised");
+    assertOutcome("custom/+/privatised/+", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/+", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/#", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/+/foo/+", "custom", "custom/public/privatised");
+    assertOutcome("custom/#", "custom", "custom/public/privatised");
+    assertOutcome("custom/+/b", "custom");
+    assertOutcome("custom/+", "custom");
+    assertOutcome("+/public", "", "custom", "remote");
+    assertOutcome("+/+/privatised", "", "custom", "remote", "custom/public/privatised");
+    assertOutcome("+/public/+", "", "custom", "remote", "custom/public/privatised");
+    
+    assertOutcome("them");
+    assertOutcome("them/pears");
+    assertOutcome("them/apples");
+    assertOutcome("them/apples/private", "them/apples/private");
+    assertOutcome("them/apples/private/b", "them/apples/private");
+    assertOutcome("them/apples/private/+", "them/apples/private");
+    assertOutcome("them/+/private/+", "them/apples/private");
+    assertOutcome("them/#", "them/apples/private");
+    assertOutcome("them/+/#", "them/apples/private");
+    assertOutcome("them/+/public/+");
+    assertOutcome("+/apples", "", "remote", "custom");
+    assertOutcome("+/apples/private", "", "remote", "custom", "them/apples/private");
+    assertOutcome("+", "remote", "", "custom");
   }
   
   private void assertOutcome(String topic, String ... errorDescriptions) {
