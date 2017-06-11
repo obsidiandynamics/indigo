@@ -49,7 +49,7 @@ public final class EdgeRigBenchmark implements TestSupport {
   
   public static void main(String[] args) throws Exception {
     BashInteractor.Ulimit.main(null);
-    LOG_STREAM.println("_\nEdge benchmark started; waiting for remotes...");
+    LOG_STREAM.println("_\nEdge benchmark started; waiting for remote connections...");
     new Config() {{
       runner = EdgeRigBenchmark::run;
       port = PORT;

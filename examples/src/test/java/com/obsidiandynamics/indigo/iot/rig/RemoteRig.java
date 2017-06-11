@@ -129,7 +129,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   
   private void begin() throws Exception {
     if (config.initiate) { 
-      if (config.log.stages) config.log.out.format("r: initiated benchmark\n");
+      if (config.log.stages) config.log.out.format("r: initiating benchmark...\n");
       control.publish(new PublishTextFrame(getTxTopicPrefix(generateSessionId()), new Begin().marshal(subframeGson))).get();
     } else {
       if (config.log.stages) config.log.out.format("r: awaiting initiator...\n");
@@ -250,6 +250,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private void ensureStartTimeSet() {
     if (startTime == 0) {
       startTime = System.currentTimeMillis();
+      if (config.log.stages) config.log.out.format("r: benchmark commenced on %s\n", new Date(startTime));
     }
   }
   

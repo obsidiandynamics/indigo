@@ -73,7 +73,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   
   private void runBenchmark() {
     if (state == State.RUNNING) {
-      if (config.log.verbose) config.log.out.format("e: starting benchmark\n");
+      if (config.log.stages) config.log.out.format("e: benchmark commenced on %s\n", new Date());
     } else {
       return;
     }
