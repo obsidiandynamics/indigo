@@ -33,6 +33,7 @@ public final class RigBenchmark implements TestSupport {
     boolean initiate;
     boolean text;
     int bytes;
+    double normalMinNanos = Double.NaN;
     float warmupFrac;
     LogConfig log;
     
@@ -65,6 +66,7 @@ public final class RigBenchmark implements TestSupport {
       port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
       warmupFrac = 0.05f;
       initiate = true;
+      normalMinNanos = 50_000f;
       log = new LogConfig() {{
         summary = stages = LOG;
         verbose = false;
@@ -123,6 +125,7 @@ public final class RigBenchmark implements TestSupport {
       syncFrames = c.syncFrames;
       uri = new URI(String.format("ws://%s:%d/", c.host, c.port));
       initiate = c.initiate;
+      normalMinNanos = c.normalMinNanos;
       log = c.log;
     }});
 
@@ -152,8 +155,9 @@ public final class RigBenchmark implements TestSupport {
       pulseDurationMillis = 100;
       syncFrames = 0;
       topicSpec = TopicLibrary.largeLeaves();
-      warmupFrac = 0.10f;
+      warmupFrac = 0.20f;
       initiate = true;
+      normalMinNanos = Double.NaN;
       text = false;
       bytes = 128;
       log = new LogConfig() {{

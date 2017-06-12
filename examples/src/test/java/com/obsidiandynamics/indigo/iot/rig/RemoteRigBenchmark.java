@@ -1,5 +1,7 @@
 package com.obsidiandynamics.indigo.iot.rig;
 
+import static com.obsidiandynamics.indigo.util.PropertyUtils.get;
+
 import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.iot.rig.RemoteRig.*;
@@ -8,10 +10,11 @@ import com.obsidiandynamics.indigo.topic.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class RemoteRigBenchmark implements TestSupport {
-  private static final String HOST = PropertyUtils.get("Rig.host", String::valueOf, "localhost");
-  private static final int PORT = PropertyUtils.get("Rig.port", Integer::valueOf, 6667);
-  private static final int SYNC_FRAMES = PropertyUtils.get("Rig.sincFrames", Integer::valueOf, 1000);
-  private static final boolean INITIATE = PropertyUtils.get("Rig.initiate", Boolean::valueOf, true);
+  private static final String HOST = get("Rig.host", String::valueOf, "localhost");
+  private static final int PORT = get("Rig.port", Integer::valueOf, 6667);
+  private static final int SYNC_FRAMES = get("Rig.sincFrames", Integer::valueOf, 1000);
+  private static final boolean INITIATE = get("Rig.initiate", Boolean::valueOf, true);
+  private static final double NORMAL_MIN = get("Rig.normalMin", Double::valueOf, 50_000d);
   
   private static Summary run(Config c) throws Exception {
     final RemoteNode remote = RemoteNode.builder()
@@ -21,6 +24,7 @@ public final class RemoteRigBenchmark implements TestSupport {
       syncFrames = c.syncFrames;
       uri = getUri(c.host, c.port);
       initiate = c.initiate;
+      normalMinNanos = c.normalMinNanos;
       log = c.log;
     }});
     
@@ -41,6 +45,7 @@ public final class RemoteRigBenchmark implements TestSupport {
       syncFrames = SYNC_FRAMES;
       topicSpec = TopicLibrary.largeLeaves();
       initiate = INITIATE;
+      normalMinNanos = NORMAL_MIN;
       log = new LogConfig() {{
         progress = intermediateSummaries = false;
         stages = true;

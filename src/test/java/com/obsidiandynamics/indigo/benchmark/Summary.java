@@ -24,6 +24,16 @@ public final class Summary {
     avgTime /= intervals.size();
     stats.await();
   }
+  
+  public void normaliseToMinimum(double normalMin) {
+    final double min = stats.samples.getMin();
+    final double[] values = stats.samples.getValues();
+    stats.samples.clear();
+    final double diff = normalMin - min;
+    for (double v : values) {
+      stats.samples.addValue(v + diff);
+    }
+  }
 
   public static final class Stats {
     public final DescriptiveStatistics samples = new DescriptiveStatistics();

@@ -27,6 +27,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     URI uri;
     TopicSpec topicSpec;
     boolean initiate;
+    double normalMinNanos = Double.NaN;
     LogConfig log;
     
     static URI getUri(String host, int port) throws URISyntaxException {
@@ -92,7 +93,14 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
   
   public void awaitReceival(long expectedMessages) throws InterruptedException {
-    Await.perpetual(() -> received.get() >= expectedMessages);
+    for (;;) {
+      final boolean complete = Await.bounded(10_000, () -> received.get() >= expectedMessages);
+      if (complete) {
+        break;
+      } else {
+        config.log.out.format("r: received %,d/%,d\n", received.get(), expectedMessages);
+      }
+    }
     final long took = System.currentTimeMillis() - startTime;
     TestCase.assertEquals(expectedMessages, received.get());
     summary.stats.await();
@@ -104,6 +112,9 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         return took;
       }
     });
+    if (! Double.isNaN(config.normalMinNanos)) {
+      summary.normaliseToMinimum(config.normalMinNanos);
+    }
   }
   
   private void connectAll() throws Exception {
