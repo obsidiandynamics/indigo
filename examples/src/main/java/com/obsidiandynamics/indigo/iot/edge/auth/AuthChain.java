@@ -1,16 +1,88 @@
 package com.obsidiandynamics.indigo.iot.edge.auth;
 
-import static com.obsidiandynamics.indigo.topic.Topic.*;
+import static com.obsidiandynamics.indigo.topic.Topic.SL_WILDCARD;
 
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import java.util.function.*;
 
 import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.iot.*;
+import com.obsidiandynamics.indigo.iot.edge.*;
+import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator.*;
+import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.topic.*;
 
 public final class AuthChain {
   private static final Logger LOG = LoggerFactory.getLogger(AuthChain.class);
+  
+  public static final class CombinedMatches {
+    final static CombinedMatches EMPTY = new CombinedMatches(Collections.emptyList(), 0);
+    
+    public final List<MatchedAuthenticators> matches;
+    public final int numAuthenticators;
+    
+    CombinedMatches(List<MatchedAuthenticators> matches, int numAuthenticators) {
+      this.matches = matches;
+      this.numAuthenticators = numAuthenticators;
+    }
+    
+    public void invokeAll(EdgeNexus nexus, Auth auth, Consumer<List<TopicAccessError>> onComplete) {
+      if (matches.isEmpty()) {
+        onComplete.accept(Collections.emptyList());
+        return;
+      }
+      
+      final AtomicInteger remainingOutcomes = new AtomicInteger(numAuthenticators);
+      final List<TopicAccessError> errors = new CopyOnWriteArrayList<>();
+      
+      for (MatchedAuthenticators match : matches) {
+        for (Authenticator authenticator : match.authenticators) {
+          authenticator.verify(nexus, auth, match.topic, new AuthenticationOutcome() {
+            @Override public void allow() {
+              complete();
+            }
+    
+            @Override public void deny(TopicAccessError error) {
+              errors.add(error);
+              complete();
+            }
+            
+            private void complete() {
+              if (remainingOutcomes.decrementAndGet() == 0) {
+                onComplete.accept(errors);
+              }
+            }
+          });
+        }
+      }
+    }
+  }
+  
+  public static final class MatchedAuthenticators {
+    public final String topic;
+    public final List<Authenticator> authenticators;
+    
+    MatchedAuthenticators(String topic, List<Authenticator> authenticators) {
+      this.topic = topic;
+      this.authenticators = authenticators;
+    }
+  }
+  
+  public CombinedMatches get(Collection<String> topics) {
+    if (topics.isEmpty()) return CombinedMatches.EMPTY;
+    
+    final List<MatchedAuthenticators> mappings = new ArrayList<>(topics.size());
+    int numAuthenticators = 0;
+    for (String topic : topics) {
+      final List<Authenticator> authenticators = get(topic);
+      mappings.add(new MatchedAuthenticators(topic, authenticators));
+      numAuthenticators += authenticators.size();
+    }
+    return new CombinedMatches(mappings, numAuthenticators);
+  }
   
   public static final class NoAuthenticatorException extends RuntimeException {
     private static final long serialVersionUID = 1L;
@@ -31,8 +103,12 @@ public final class AuthChain {
   
   private AuthChain() {}
   
-  public static AuthChain createDefault() {
-    return new AuthChain().registerDefaults();
+  public static AuthChain createSubDefault() {
+    return new AuthChain().registerSubDefaults();
+  }
+  
+  public static AuthChain createPubDefault() {
+    return new AuthChain().registerPubDefaults();
   }
   
   public AuthChain clear() {
@@ -40,7 +116,13 @@ public final class AuthChain {
     return this;
   }
   
-  private AuthChain registerDefaults() {
+  private AuthChain registerSubDefaults() {
+    set("", Authenticator::allowAll);
+    set(Flywheel.REMOTE_PREFIX, new RemoteTopicAuthenticator());
+    return this;
+  }
+  
+  private AuthChain registerPubDefaults() {
     set("", Authenticator::allowAll);
     set(Flywheel.REMOTE_PREFIX, new RemoteTopicAuthenticator());
     return this;

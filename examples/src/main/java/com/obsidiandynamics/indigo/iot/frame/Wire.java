@@ -187,4 +187,12 @@ public final class Wire {
         throw new IllegalArgumentException("Unsupported frame content: " + BinaryUtils.dump(frameBytes));
     }
   }
+  
+  public String encodeArbitrary(Object obj) {
+    return gson.toJson(obj);
+  }
+  
+  public <T> T decodeArbitrary(String json, Class<? extends T> type) {
+    return gson.fromJson(json, type);
+  }
 }

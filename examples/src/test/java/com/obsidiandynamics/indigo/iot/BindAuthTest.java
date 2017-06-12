@@ -1,148 +1,73 @@
 package com.obsidiandynamics.indigo.iot;
 
-import static com.obsidiandynamics.indigo.util.Mocks.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.net.*;
 import java.util.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.AuthChain.*;
-import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
 
-public final class BindAuthTest {
-  private static final int PREFERRED_PORT = 6667;
-  private static final boolean SUPPRESS_LOGGING = true;
-  
-  private Wire wire;
-
-  private RemoteNexusHandler handler;
- 
-  private EdgeNode edge;
-  
-  private RemoteNode remote;
-  
-  private RemoteNexus remoteNexus;
-  
-  private int port;
-  
-  @Before
-  public void setup() throws Exception {
-    port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
-    
-    wire = new Wire(true);
-    handler = mock(RemoteNexusHandler.class);
-    
-    remote = RemoteNode.builder()
-        .withWire(wire)
-        .build();
-  }
-  
-  @After
-  public void teardown() throws Exception {
-    if (remoteNexus != null) remoteNexus.close();
-    if (edge != null) edge.close();
-    if (remote != null) remote.close();
-  }
-  
-  private void setupEdgeNode(AuthChain authChain) throws Exception {
-    edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = BindAuthTest.this.port; }})
-        .withWire(wire)
-        .withSubAuthChain(authChain)
-        .build();
-    edge.setLoggingEnabled(! SUPPRESS_LOGGING || TestSupport.LOG);
-  }
-  
-  private RemoteNexus openNexus() throws URISyntaxException, Exception {
-    return remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
-  }
-  
-  private String generateSessionId() {
-    return Long.toHexString(Crypto.machineRandom());
-  }
-
+public final class BindAuthTest extends AbstractAuthTest {
   @Test(expected=NoAuthenticatorException.class)
   public void testEmptyChain() throws Exception {
-    setupEdgeNode(AuthChain.createDefault().clear());
+    setupEdgeNode(AuthChain.createSubDefault().clear());
   }
 
   @Test
   public void testDefaultSubChain() throws Exception {
-    setupEdgeNode(AuthChain.createDefault());
+    setupEdgeNode(AuthChain.createSubDefault());
     
     final RemoteNexus remoteNexus = openNexus();
     final String sessionId = generateSessionId();
 
+    // bind to our own RX topic
     final BindFrame bind1 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          null,
                                          new String[]{"a/b/c",
+                                                      Flywheel.getRxTopicPrefix(sessionId),
                                                       Flywheel.getRxTopicPrefix(sessionId) + "/#"}, 
                                          null,
                                          null);
     final BindResponseFrame bind1Res = remoteNexus.bind(bind1).get();
     assertTrue(bind1Res.isSuccess());
     
+    // bind to someone else's RX and TX topics
     final BindFrame bind2 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          null,
                                          new String[]{Flywheel.getRxTopicPrefix(sessionId) + "/#",
                                                       Flywheel.getRxTopicPrefix("12345") + "/#",
-                                                      Flywheel.getRxTopicPrefix("12346") + "/#"}, 
+                                                      Flywheel.getTxTopicPrefix("12346") + "/#"}, 
                                          null,
                                          null);
     final BindResponseFrame bind2Res = remoteNexus.bind(bind2).get();
     assertEquals(2, bind2Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind2Res.getErrors()[0].getClass());
     assertEquals(TopicAccessError.class, bind2Res.getErrors()[1].getClass());
+
+    // bind to the TX topic; should pass
+    final BindFrame bind3 = new BindFrame(UUID.randomUUID(), 
+                                         sessionId,
+                                         null,
+                                         new String[]{"a/b/c",
+                                                      Flywheel.getTxTopicPrefix(sessionId),
+                                                      Flywheel.getTxTopicPrefix(sessionId) + "/#"}, 
+                                         null,
+                                         null);
+    final BindResponseFrame bind3Res = remoteNexus.bind(bind3).get();
+    assertTrue(bind3Res.isSuccess());
   }
   
-  private static Authenticator createBasicAuth(String username, String password) {
-    return new Authenticator() {
-      @Override public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
-        if (auth instanceof BasicAuth) {
-          final BasicAuth basic = (BasicAuth) auth;
-          if (username.equals(basic.getUsername()) && password.equals(basic.getPassword())) {
-            outcome.allow();
-          } else {
-            outcome.forbidden(topic);
-          }
-        } else {
-          outcome.forbidden(topic);
-        }
-      }
-    };
-  }
-
-  private static Authenticator createBearerAuth(String token) {
-    return new Authenticator() {
-      @Override public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
-        if (auth instanceof BearerAuth) {
-          final BearerAuth bearer = (BearerAuth) auth;
-          if (token.equals(bearer.getToken())) {
-            outcome.allow();
-          } else {
-            outcome.forbidden(topic);
-          }
-        } else {
-          outcome.forbidden(topic);
-        }
-      }
-    };
-  }
-
   @Test
   public void testCustomSubChain() throws Exception {
-    setupEdgeNode(AuthChain.createDefault()
+    setupEdgeNode(AuthChain.createSubDefault()
                   .set("custom/basic", Mocks.logger(createBasicAuth("user", "pass")))
                   .set("custom/bearer", Mocks.logger(createBearerAuth("token"))));
     
@@ -160,7 +85,7 @@ public final class BindAuthTest {
                                          null);
     final BindResponseFrame bind1Res = remoteNexus.bind(bind1).get();
     assertTrue(bind1Res.isSuccess());
-    System.out.println("----");
+
     // test with a wrong password; should fail
     final BindFrame bind2 = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
@@ -205,5 +130,18 @@ public final class BindAuthTest {
                                          null);
     final BindResponseFrame bind5Res = remoteNexus.bind(bind5).get();
     assertTrue(bind5Res.isSuccess());
+
+    // bind to a wildcard with the wrong token; should fail with multiple errors
+    final BindFrame bind6 = new BindFrame(UUID.randomUUID(), 
+                                         sessionId,
+                                         new BearerAuth("badtoken"),
+                                         new String[]{"#"}, 
+                                         null,
+                                         null);
+    final BindResponseFrame bind6Res = remoteNexus.bind(bind6).get();
+    assertEquals(3, bind6Res.getErrors().length);
+    assertEquals(TopicAccessError.class, bind6Res.getErrors()[0].getClass());
+    assertEquals(TopicAccessError.class, bind6Res.getErrors()[1].getClass());
+    assertEquals(TopicAccessError.class, bind6Res.getErrors()[2].getClass());
   }
 }

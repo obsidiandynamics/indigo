@@ -3,13 +3,12 @@ package com.obsidiandynamics.indigo.iot.edge;
 import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 
 import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.*;
-import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator.*;
+import com.obsidiandynamics.indigo.iot.edge.auth.AuthChain.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
@@ -26,6 +25,8 @@ public final class EdgeNode implements AutoCloseable {
   
   private final TopicBridge bridge;
   
+  private final AuthChain pubAuthChain;
+  
   private final AuthChain subAuthChain;
   
   private final List<EdgeNexus> nexuses = new CopyOnWriteArrayList<>();
@@ -38,10 +39,13 @@ public final class EdgeNode implements AutoCloseable {
                                          WSServerConfig config, 
                                          Wire wire, 
                                          TopicBridge bridge,
+                                         AuthChain pubAuthChain,
                                          AuthChain subAuthChain) throws Exception {
+    pubAuthChain.validate();
     subAuthChain.validate();
     this.wire = wire;
     this.bridge = bridge;
+    this.pubAuthChain = pubAuthChain;
     this.subAuthChain = subAuthChain;
     server = serverFactory.create(config, new EndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
@@ -148,7 +152,7 @@ public final class EdgeNode implements AutoCloseable {
       toSubscribe.add(Flywheel.getRxTopicPrefix(newSessionId) + "/#");
     }
     
-    authenticateTopics(nexus, bind.getAuth(), bind.getMessageId(), toSubscribe, () -> {
+    authenticateSubTopics(nexus, bind.getAuth(), bind.getMessageId(), toSubscribe, () -> {
       final CompletableFuture<Void> f = bridge.onBind(nexus, toSubscribe);
       f.whenComplete((void_, cause) -> {
         if (cause == null) {
@@ -164,67 +168,47 @@ public final class EdgeNode implements AutoCloseable {
     });
   }
   
-  private static final class TopicAuthenticators {
-    final String topic;
-    final List<Authenticator> authenticators;
-    TopicAuthenticators(String topic, List<Authenticator> authenticators) {
-      this.topic = topic;
-      this.authenticators = authenticators;
-    }
-  }
-  
-  private void authenticateTopics(EdgeNexus nexus, Auth auth, UUID messageId, Set<String> topics, Runnable onSuccess) {
-    if (topics.isEmpty()) {
-      onSuccess.run();
-      return;
-    }
-    
-    final List<TopicAuthenticators> mappings = new ArrayList<>(topics.size());
-    int numAuthenticators = 0;
-    for (String topic : topics) {
-      final List<Authenticator> authenticators = subAuthChain.get(topic);
-      mappings.add(new TopicAuthenticators(topic, authenticators));
-      numAuthenticators += authenticators.size();
-    }
-
-    final AtomicInteger remainingOutcomes = new AtomicInteger(numAuthenticators);
-    final List<TopicAccessError> errors = new CopyOnWriteArrayList<>();
-    
-    for (TopicAuthenticators pair : mappings) {
-      for (Authenticator authenticator : pair.authenticators) {
-        authenticator.verify(nexus, auth, pair.topic, new AuthenticationOutcome() {
-          @Override public void allow() {
-            complete();
-          }
-  
-          @Override public void deny(TopicAccessError error) {
-            errors.add(error);
-            complete();
-          }
-          
-          private void complete() {
-            if (remainingOutcomes.decrementAndGet() == 0) {
-              if (errors.isEmpty()) {
-                onSuccess.run();
-              } else {
-                if (loggingEnabled) LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
-                nexus.send(new BindResponseFrame(messageId, errors));
-              }
-            }
-          }
-        });
+  private void authenticateSubTopics(EdgeNexus nexus, Auth auth, UUID messageId, Set<String> topics, Runnable onSuccess) {
+    final CombinedMatches combined = subAuthChain.get(topics);
+    combined.invokeAll(nexus, auth, errors -> {
+      if (errors.isEmpty()) {
+        onSuccess.run();
+      } else {
+        if (loggingEnabled) LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
+        nexus.send(new BindResponseFrame(messageId, errors));
       }
-    }
+    });
   }
   
   private void handlePublish(EdgeNexus nexus, PublishTextFrame pub) {
-    bridge.onPublish(nexus, pub);
-    firePublishEvent(nexus, pub);
+    authenticatePubTopic(nexus, pub.getTopic(), () -> {
+      bridge.onPublish(nexus, pub);
+      firePublishEvent(nexus, pub);
+    });
   }
   
   private void handlePublish(EdgeNexus nexus, PublishBinaryFrame pub) {
-    bridge.onPublish(nexus, pub);
-    firePublishEvent(nexus, pub);
+    authenticatePubTopic(nexus, pub.getTopic(), () -> {
+      bridge.onPublish(nexus, pub);
+      firePublishEvent(nexus, pub);
+    });
+  }
+  
+  private void authenticatePubTopic(EdgeNexus nexus, String topic, Runnable onSuccess) {
+    //TODO read the Auth from the Session object
+    final CombinedMatches combined = pubAuthChain.get(Collections.singleton(topic));
+    combined.invokeAll(nexus, null, errors -> {
+      if (errors.isEmpty()) {
+        onSuccess.run();
+      } else {
+        if (loggingEnabled) LOG.warn("{}: publisher authentication failed with errors {}", nexus, errors);
+        final String sessionId = nexus.getSession().getSessionId();
+        if (sessionId != null) {
+          final String errorTopic = Flywheel.getRxTopicPrefix(sessionId) + "/errors";
+          publish(errorTopic, wire.encodeArbitrary(new Errors(errors)));
+        }
+      }
+    });
   }
   
   private void handleConnect(WSEndpoint endpoint) {
@@ -322,7 +306,8 @@ public final class EdgeNode implements AutoCloseable {
     private WSServerConfig serverConfig = new WSServerConfig();
     private Wire wire = new Wire(false);
     private TopicBridge topicBridge;
-    private AuthChain subAuthChain = AuthChain.createDefault();
+    private AuthChain pubAuthChain = AuthChain.createPubDefault();
+    private AuthChain subAuthChain = AuthChain.createSubDefault();
     
     private void init() throws Exception {
       if (serverFactory == null) {
@@ -354,6 +339,11 @@ public final class EdgeNode implements AutoCloseable {
       return this;
     }
     
+    public EdgeNodeBuilder withPubAuthChain(AuthChain pubAuthChain) {
+      this.pubAuthChain = pubAuthChain;
+      return this;
+    }
+    
     public EdgeNodeBuilder withSubAuthChain(AuthChain subAuthChain) {
       this.subAuthChain = subAuthChain;
       return this;
@@ -361,7 +351,7 @@ public final class EdgeNode implements AutoCloseable {
 
     public EdgeNode build() throws Exception {
       init();
-      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge, subAuthChain);
+      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge, pubAuthChain, subAuthChain);
     }
   }
   

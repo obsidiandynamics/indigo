@@ -17,7 +17,7 @@ public final class AuthChainTest {
   
   @Before
   public void setup() {
-    chain = AuthChain.createDefault().clear();
+    chain = AuthChain.createSubDefault().clear();
   }
   
   private void alw(String topicPrefix) {

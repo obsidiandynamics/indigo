@@ -141,7 +141,8 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private void begin() throws Exception {
     if (config.initiate) { 
       if (config.log.stages) config.log.out.format("r: initiating benchmark...\n");
-      control.publish(new PublishTextFrame(getTxTopicPrefix(generateSessionId()), new Begin().marshal(subframeGson))).get();
+      control.publish(new PublishTextFrame(getTxTopicPrefix(control.getSessionId()), 
+                                           new Begin().marshal(subframeGson))).get();
     } else {
       if (config.log.stages) config.log.out.format("r: awaiting initiator...\n");
     }
@@ -163,6 +164,10 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     
     final RemoteNexus nexus = node.open(config.uri, new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
+        if (! topic.endsWith("/rx")) {
+          config.log.out.format("r: unexpected frame on topic %s: %s\n", topic, payload);
+          return;
+        }
         final long now = System.nanoTime();
         if (config.log.verbose) config.log.out.format("r: sync text %s %s\n", topic, payload);
         final Sync sync = RigSubframe.unmarshal(payload, subframeGson);

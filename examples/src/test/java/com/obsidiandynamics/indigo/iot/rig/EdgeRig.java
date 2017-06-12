@@ -269,7 +269,7 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   private void onSubframe(EdgeNexus nexus, String remoteId, RigSubframe subframe) {
     if (config.log.verbose) config.log.out.format("e: subframe %s %s\n", remoteId, subframe);
     if (subframe instanceof Sync) {
-      sendSubframe(remoteId, new Sync(System.nanoTime()));
+      pubToTX(remoteId, new Sync(System.nanoTime()));
     } else if (subframe instanceof Begin) {
       state = State.RUNNING;
     } else if (subframe instanceof WaitResponse) {
@@ -279,8 +279,8 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
     }
   }
   
-  private void sendSubframe(String remoteId, RigSubframe subframe) {
-    final String topic = Flywheel.REMOTE_PREFIX + "/" + remoteId + "/rx";
+  private void pubToTX(String sessionId, RigSubframe subframe) {
+    final String topic = Flywheel.getRxTopicPrefix(sessionId);
     node.publish(topic, subframe.marshal(subframeGson));
   }
 

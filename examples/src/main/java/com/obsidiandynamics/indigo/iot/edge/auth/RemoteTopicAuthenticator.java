@@ -13,7 +13,7 @@ public final class RemoteTopicAuthenticator implements Authenticator {
       return;
     }
     
-    final String allowedTopicPrefix = Flywheel.getRxTopicPrefix(sessionId);
+    final String allowedTopicPrefix = Flywheel.getSessionTopicPrefix(sessionId);
     if (topic.startsWith(allowedTopicPrefix)) {
       outcome.allow();
     } else{
