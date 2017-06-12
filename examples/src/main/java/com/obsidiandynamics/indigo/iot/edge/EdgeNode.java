@@ -205,7 +205,7 @@ public final class EdgeNode implements AutoCloseable {
         final String sessionId = nexus.getSession().getSessionId();
         if (sessionId != null) {
           final String errorTopic = Flywheel.getRxTopicPrefix(sessionId) + "/errors";
-          publish(errorTopic, wire.encodeArbitrary(new Errors(errors)));
+          publish(errorTopic, wire.encodeJson(new Errors(errors)));
         }
       }
     });

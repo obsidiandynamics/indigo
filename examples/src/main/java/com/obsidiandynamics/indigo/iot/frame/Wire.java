@@ -188,11 +188,11 @@ public final class Wire {
     }
   }
   
-  public String encodeArbitrary(Object obj) {
+  public String encodeJson(Object obj) {
     return gson.toJson(obj);
   }
   
-  public <T> T decodeArbitrary(String json, Class<? extends T> type) {
+  public <T> T decodeJson(String json, Class<? extends T> type) {
     return gson.fromJson(json, type);
   }
 }
