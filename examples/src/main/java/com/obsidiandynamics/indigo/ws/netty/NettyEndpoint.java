@@ -17,7 +17,7 @@ public final class NettyEndpoint implements WSEndpoint {
   private final AtomicLong backlog = new AtomicLong();
   private final AtomicBoolean closeFired = new AtomicBoolean();
   
-  private Object context;
+  private volatile Object context;
 
   NettyEndpoint(NettyEndpointManager manager, ChannelHandlerContext handlerContext) {
     this.manager = manager;

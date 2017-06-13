@@ -18,7 +18,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   
   private final AtomicBoolean closeFired = new AtomicBoolean();
   
-  private Object context;
+  private volatile Object context;
 
   JettyEndpoint(JettyEndpointManager manager) {
     this.manager = manager;

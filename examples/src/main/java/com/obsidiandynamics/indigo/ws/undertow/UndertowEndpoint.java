@@ -19,7 +19,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   
   private final AtomicBoolean closeFired = new AtomicBoolean();
   
-  private Object context;
+  private volatile Object context;
 
   UndertowEndpoint(UndertowEndpointManager manager, WebSocketChannel channel) {
     this.manager = manager;

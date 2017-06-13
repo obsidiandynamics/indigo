@@ -5,9 +5,9 @@ import java.util.*;
 public final class Session {
   private final long connectTime = System.currentTimeMillis();
   
-  private String sessionId;
+  private volatile String sessionId;
   
-  private Subscription subscription = () -> Collections.emptySet();
+  private volatile Subscription subscription = () -> Collections.emptySet();
   
   Session() {}
   

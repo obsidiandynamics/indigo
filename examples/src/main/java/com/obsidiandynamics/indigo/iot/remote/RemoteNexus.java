@@ -15,7 +15,7 @@ public final class RemoteNexus implements AutoCloseable {
   
   private volatile String sessionId;
   
-  private WSEndpoint endpoint;
+  private volatile WSEndpoint endpoint;
   
   RemoteNexus(RemoteNode node) {
     this.node = node;
