@@ -66,6 +66,6 @@ public final class EdgeNexus implements AutoCloseable {
 
   @Override
   public String toString() {
-    return "EdgeNexus [peer=" + peer + "]";
+    return "EdgeNexus [peer=" + peer + ", sessionId=" + (session != null ? session.getSessionId() : "<no session>") + "]";
   }
 }

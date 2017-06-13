@@ -179,7 +179,8 @@ public final class EdgeNode implements AutoCloseable {
       if (errors.isEmpty()) {
         onSuccess.run();
       } else {
-        if (loggingEnabled) LOG.warn("{}: subscriber authentication failed with errors {}", nexus, errors);
+        if (loggingEnabled) LOG.warn("{}: subscriber authentication failed with errors {}, auth: {}", 
+                                     nexus, errors, nexus.getSession().getAuth());
         nexus.send(new BindResponseFrame(messageId, errors));
       }
     });
@@ -205,15 +206,11 @@ public final class EdgeNode implements AutoCloseable {
       if (errors.isEmpty()) {
         onSuccess.run();
       } else {
-        if (loggingEnabled) LOG.warn("{}: publisher authentication failed with errors {}", nexus, errors);
+        if (loggingEnabled) LOG.warn("{}: publisher authentication failed with errors {}, auth: {}", 
+                                     nexus, errors, nexus.getSession().getAuth());
         final String sessionId = nexus.getSession().getSessionId();
-        if (sessionId != null) {
-          final String errorTopic = Flywheel.getRxTopicPrefix(sessionId) + "/errors";
-          publish(errorTopic, wire.encodeJson(new Errors(errors)));
-        } else {
-          final String errorTopic = Flywheel.getRxTopicPrefix("anon") + "/errors";
-          nexus.send(new TextFrame(errorTopic, wire.encodeJson(new Errors(errors))));
-        }
+        final String errorTopic = Flywheel.getRxTopicPrefix(sessionId != null ? sessionId : "anon") + "/errors";
+        nexus.send(new TextFrame(errorTopic, wire.encodeJson(new Errors(errors))));
       }
     });
   }
