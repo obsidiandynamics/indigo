@@ -15,13 +15,13 @@ import com.obsidiandynamics.indigo.util.*;
 
 public final class BindAuthTest extends AbstractAuthTest {
   @Test(expected=NoAuthenticatorException.class)
-  public void testEmptyChain() throws Exception {
-    setupEdgeNode(AuthChain.createSubDefault().clear());
+  public void testEmptySubChain() throws Exception {
+    setupEdgeNode(AuthChain.createPubDefault(), AuthChain.createSubDefault().clear());
   }
 
   @Test
   public void testDefaultSubChain() throws Exception {
-    setupEdgeNode(AuthChain.createSubDefault());
+    setupEdgeNode(AuthChain.createPubDefault(), AuthChain.createSubDefault());
     
     final RemoteNexus remoteNexus = openNexus();
     final String sessionId = generateSessionId();
@@ -67,7 +67,8 @@ public final class BindAuthTest extends AbstractAuthTest {
   
   @Test
   public void testCustomSubChain() throws Exception {
-    setupEdgeNode(AuthChain.createSubDefault()
+    setupEdgeNode(AuthChain.createPubDefault(),
+                  AuthChain.createSubDefault()
                   .set("custom/basic", Mocks.logger(createBasicAuth("user", "pass")))
                   .set("custom/bearer", Mocks.logger(createBearerAuth("token"))));
     

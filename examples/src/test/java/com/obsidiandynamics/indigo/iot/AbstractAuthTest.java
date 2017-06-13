@@ -1,10 +1,12 @@
 package com.obsidiandynamics.indigo.iot;
 
-import static com.obsidiandynamics.indigo.util.Mocks.logger;
-import static org.mockito.Mockito.mock;
+import static com.obsidiandynamics.indigo.util.Mocks.*;
 
 import java.net.*;
+import java.nio.*;
+import java.util.concurrent.*;
 
+import org.awaitility.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.iot.edge.*;
@@ -29,6 +31,12 @@ public abstract class AbstractAuthTest {
   
   protected RemoteNexus remoteNexus;
   
+  protected volatile Errors errors;
+  
+  protected volatile TextFrame text;
+  
+  protected volatile BinaryFrame binary;
+  
   private int port;
   
   @Before
@@ -36,7 +44,19 @@ public abstract class AbstractAuthTest {
     port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
     
     wire = new Wire(true);
-    handler = mock(RemoteNexusHandler.class);
+    handler = new RemoteNexusHandlerAdapter() {
+      @Override public void onText(RemoteNexus nexus, String topic, String payload) {
+        if (topic.endsWith("/errors")) {
+          errors = wire.decodeJson(payload, Errors.class);
+        } else {
+          text = new TextFrame(topic, payload);
+        }
+      }
+
+      @Override public void onBinary(RemoteNexus nexus, String topic, ByteBuffer payload) {
+        binary = new BinaryFrame(topic, payload);
+      }
+    };
     
     remote = RemoteNode.builder()
         .withWire(wire)
@@ -50,17 +70,41 @@ public abstract class AbstractAuthTest {
     if (remote != null) remote.close();
   }
   
-  protected void setupEdgeNode(AuthChain authChain) throws Exception {
+  protected void clearReceived() {
+    errors = null;
+    text = null;
+    binary = null;
+  }
+  
+  protected void awaitReceived() {
+    Awaitility.await().dontCatchUncaughtExceptions()
+    .atMost(10, TimeUnit.SECONDS).until(() -> errors != null || text != null || binary != null);
+  }
+  
+  protected void setupEdgeNode(AuthChain pubAuthChain, AuthChain subAuthChain) throws Exception {
     edge = EdgeNode.builder()
         .withServerConfig(new WSServerConfig() {{ port = AbstractAuthTest.this.port; }})
         .withWire(wire)
-        .withSubAuthChain(authChain)
+        .withPubAuthChain(pubAuthChain)
+        .withSubAuthChain(subAuthChain)
         .build();
     edge.setLoggingEnabled(! SUPPRESS_LOGGING || TestSupport.LOG);
+    edge.addTopicListener(new TopicListenerAdapter() {
+      @Override public void onPublish(EdgeNexus nexus, PublishTextFrame pub) {
+        if (pub.getTopic().endsWith("/tx")) {
+          edge.publish(Flywheel.getRxTopicPrefix(nexus.getSession().getSessionId()), pub.getPayload());
+        }
+      }
+      @Override public void onPublish(EdgeNexus nexus, PublishBinaryFrame pub) {
+        if (pub.getTopic().endsWith("/tx")) {
+          edge.publish(Flywheel.getRxTopicPrefix(nexus.getSession().getSessionId()), pub.getPayload());
+        }
+      }
+    });
   }
   
   protected RemoteNexus openNexus() throws URISyntaxException, Exception {
-    return remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
+    return remote.open(new URI("ws://localhost:" + port + "/"), logger(RemoteNexusHandler.class, handler));
   }
   
   protected String generateSessionId() {

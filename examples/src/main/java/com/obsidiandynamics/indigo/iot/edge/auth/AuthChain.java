@@ -59,6 +59,10 @@ public final class AuthChain {
         }
       }
     }
+
+    @Override public String toString() {
+      return "CombinedMatches [matches=" + matches + ", numAuthenticators=" + numAuthenticators + "]";
+    }
   }
   
   public static final class MatchedAuthenticators {
@@ -68,6 +72,10 @@ public final class AuthChain {
     MatchedAuthenticators(String topic, List<Authenticator> authenticators) {
       this.topic = topic;
       this.authenticators = authenticators;
+    }
+
+    @Override public String toString() {
+      return "MatchedAuthenticators [topic=" + topic + ", authenticators=" + authenticators + "]";
     }
   }
   

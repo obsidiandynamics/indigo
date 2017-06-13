@@ -17,7 +17,7 @@ public final class RemoteTopicAuthenticator implements Authenticator {
     if (topic.startsWith(allowedTopicPrefix)) {
       outcome.allow();
     } else{
-      outcome.deny(new TopicAccessError(String.format("Restricted to %s/#", topic, allowedTopicPrefix), topic));
+      outcome.deny(new TopicAccessError(String.format("Restricted to %s/#", allowedTopicPrefix), topic));
     }
   }
 }

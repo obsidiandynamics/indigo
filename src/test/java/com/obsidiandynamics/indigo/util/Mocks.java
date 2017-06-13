@@ -23,4 +23,8 @@ public final class Mocks {
   public static <T> T logger(T mock) {
     return InterceptingProxy.of(mock, new LoggingInterceptor<>());
   }
+  
+  public static <T, TT extends T> T logger(Class<T> cls, TT mock) {
+    return InterceptingProxy.of(cls, mock, new LoggingInterceptor<>());
+  }
 }

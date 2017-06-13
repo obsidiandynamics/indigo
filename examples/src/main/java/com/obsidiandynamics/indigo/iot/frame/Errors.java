@@ -12,6 +12,10 @@ public final class Errors {
   private Errors(Error ... errors) {
     this.errors = errors;
   }
+  
+  public Error[] getErrors() {
+    return errors;
+  }
 
   @Override
   public int hashCode() {
