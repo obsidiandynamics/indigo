@@ -115,10 +115,15 @@ public final class EdgeNode implements AutoCloseable {
   
   private void handleBind(EdgeNexus nexus, BindFrame bind) {
     if (loggingEnabled && LOG.isDebugEnabled()) LOG.debug("{}: bind {}", nexus, bind);
+    
     final Session session = nexus.getSession();
     if (session == null) {
       if (loggingEnabled) LOG.error("{}: no session", nexus);
       return;
+    }
+    
+    if (bind.getAuth() != null) {
+      session.setAuth(bind.getAuth());
     }
     
     final String newSessionId;
@@ -152,7 +157,7 @@ public final class EdgeNode implements AutoCloseable {
       toSubscribe.add(Flywheel.getRxTopicPrefix(newSessionId) + "/#");
     }
     
-    authenticateSubTopics(nexus, bind.getAuth(), bind.getMessageId(), toSubscribe, () -> {
+    authenticateSubTopics(nexus, bind.getMessageId(), toSubscribe, () -> {
       final CompletableFuture<Void> f = bridge.onBind(nexus, toSubscribe);
       f.whenComplete((void_, cause) -> {
         if (cause == null) {
@@ -168,9 +173,9 @@ public final class EdgeNode implements AutoCloseable {
     });
   }
   
-  private void authenticateSubTopics(EdgeNexus nexus, Auth auth, UUID messageId, Set<String> topics, Runnable onSuccess) {
+  private void authenticateSubTopics(EdgeNexus nexus, UUID messageId, Set<String> topics, Runnable onSuccess) {
     final CombinedMatches combined = subAuthChain.get(topics);
-    combined.invokeAll(nexus, auth, errors -> {
+    combined.invokeAll(nexus, errors -> {
       if (errors.isEmpty()) {
         onSuccess.run();
       } else {
@@ -195,9 +200,8 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   private void authenticatePubTopic(EdgeNexus nexus, String topic, Runnable onSuccess) {
-    //TODO read the Auth from the Session object
     final CombinedMatches combined = pubAuthChain.get(Collections.singleton(topic));
-    combined.invokeAll(nexus, null, errors -> {
+    combined.invokeAll(nexus, errors -> {
       if (errors.isEmpty()) {
         onSuccess.run();
       } else {

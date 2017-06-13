@@ -26,7 +26,7 @@ public final class AuthChainTest {
   
   private void dny(String topicPrefix) {
     chain.set(topicPrefix, new Authenticator() {
-      @Override public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
+      @Override public void verify(EdgeNexus nexus, String topic, AuthenticationOutcome outcome) {
         outcome.deny(new TopicAccessError(topicPrefix, topic));
       }
     });
@@ -234,7 +234,7 @@ public final class AuthChainTest {
   private static Set<String> collectErrors(List<Authenticator> authenticators, String topic) {
     final Set<String> errors = new HashSet<>();
     for (Authenticator auth : authenticators) {
-      auth.verify(null, null, topic, new AuthenticationOutcome() {
+      auth.verify(null, topic, new AuthenticationOutcome() {
         @Override public void deny(TopicAccessError error) {
           errors.add(error.getDescription());
         }

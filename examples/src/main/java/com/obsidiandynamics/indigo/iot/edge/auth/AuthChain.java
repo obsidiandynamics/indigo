@@ -29,7 +29,7 @@ public final class AuthChain {
       this.numAuthenticators = numAuthenticators;
     }
     
-    public void invokeAll(EdgeNexus nexus, Auth auth, Consumer<List<TopicAccessError>> onComplete) {
+    public void invokeAll(EdgeNexus nexus, Consumer<List<TopicAccessError>> onComplete) {
       if (matches.isEmpty()) {
         onComplete.accept(Collections.emptyList());
         return;
@@ -40,7 +40,7 @@ public final class AuthChain {
       
       for (MatchedAuthenticators match : matches) {
         for (Authenticator authenticator : match.authenticators) {
-          authenticator.verify(nexus, auth, match.topic, new AuthenticationOutcome() {
+          authenticator.verify(nexus, match.topic, new AuthenticationOutcome() {
             @Override public void allow() {
               complete();
             }

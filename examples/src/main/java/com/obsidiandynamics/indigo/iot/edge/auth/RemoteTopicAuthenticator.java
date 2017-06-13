@@ -6,7 +6,7 @@ import com.obsidiandynamics.indigo.iot.frame.*;
 
 public final class RemoteTopicAuthenticator implements Authenticator {
   @Override
-  public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
+  public void verify(EdgeNexus nexus, String topic, AuthenticationOutcome outcome) {
     final String sessionId = nexus.getSession().getSessionId();
     if (sessionId == null) {
       outcome.deny(new TopicAccessError("No session ID", topic));

@@ -69,9 +69,9 @@ public abstract class AbstractAuthTest {
   
   protected static Authenticator createBasicAuth(String username, String password) {
     return new Authenticator() {
-      @Override public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
-        if (auth instanceof BasicAuth) {
-          final BasicAuth basic = (BasicAuth) auth;
+      @Override public void verify(EdgeNexus nexus, String topic, AuthenticationOutcome outcome) {
+        if (nexus.getSession().getAuth() instanceof BasicAuth) {
+          final BasicAuth basic = nexus.getSession().getAuth();
           if (username.equals(basic.getUsername()) && password.equals(basic.getPassword())) {
             outcome.allow();
           } else {
@@ -86,9 +86,9 @@ public abstract class AbstractAuthTest {
 
   protected static Authenticator createBearerAuth(String token) {
     return new Authenticator() {
-      @Override public void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
-        if (auth instanceof BearerAuth) {
-          final BearerAuth bearer = (BearerAuth) auth;
+      @Override public void verify(EdgeNexus nexus, String topic, AuthenticationOutcome outcome) {
+        if (nexus.getSession().getAuth() instanceof BearerAuth) {
+          final BearerAuth bearer = nexus.getSession().getAuth();
           if (token.equals(bearer.getToken())) {
             outcome.allow();
           } else {

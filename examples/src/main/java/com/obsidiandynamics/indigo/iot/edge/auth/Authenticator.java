@@ -15,13 +15,13 @@ public interface Authenticator {
     }
   }
   
-  void verify(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome);
+  void verify(EdgeNexus nexus, String topic, AuthenticationOutcome outcome);
   
-  static void allowAll(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
+  static void allowAll(EdgeNexus nexus, String topic, AuthenticationOutcome outcome) {
     outcome.allow();
   }
   
-  static void allowLocal(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
+  static void allowLocal(EdgeNexus nexus, String topic, AuthenticationOutcome outcome) {
     if (nexus.isLocal()) {
       outcome.allow();
     } else {
@@ -29,7 +29,7 @@ public interface Authenticator {
     }
   }
   
-  static void denyAll(EdgeNexus nexus, Auth auth, String topic, AuthenticationOutcome outcome) {
+  static void denyAll(EdgeNexus nexus, String topic, AuthenticationOutcome outcome) {
     outcome.forbidden(topic);
   }
 }
