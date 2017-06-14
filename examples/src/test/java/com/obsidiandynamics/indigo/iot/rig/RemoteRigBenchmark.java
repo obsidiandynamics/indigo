@@ -10,11 +10,11 @@ import com.obsidiandynamics.indigo.topic.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class RemoteRigBenchmark implements TestSupport {
-  private static final String HOST = get("Rig.host", String::valueOf, "localhost");
-  private static final int PORT = get("Rig.port", Integer::valueOf, 6667);
-  private static final int SYNC_FRAMES = get("Rig.sincFrames", Integer::valueOf, 1000);
-  private static final boolean INITIATE = get("Rig.initiate", Boolean::valueOf, true);
-  private static final double NORMAL_MIN = get("Rig.normalMin", Double::valueOf, 50_000d);
+  private static final String HOST = get("flywheel.rig.host", String::valueOf, "localhost");
+  private static final int PORT = get("flywheel.rig.port", Integer::valueOf, 6667);
+  private static final int SYNC_FRAMES = get("flywheel.rig.sincFrames", Integer::valueOf, 1000);
+  private static final boolean INITIATE = get("flywheel.rig.initiate", Boolean::valueOf, true);
+  private static final double NORMAL_MIN = get("flywheel.rig.normalMin", Double::valueOf, 50_000d);
   
   private static Summary run(Config c) throws Exception {
     final RemoteNode remote = RemoteNode.builder()

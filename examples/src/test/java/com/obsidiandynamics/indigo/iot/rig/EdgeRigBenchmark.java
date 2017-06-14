@@ -11,13 +11,13 @@ import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class EdgeRigBenchmark implements TestSupport {
-  private static final int PORT = get("Rig.port", Integer::valueOf, 6667);
-  private static final int PULSES = get("Rig.pulses", Integer::valueOf, 300);
-  private static final int PULSE_DURATION = get("Rig.pulseDuration", Integer::valueOf, 100);
-  private static final float WARMUP_FRAC = get("Rig.warmupFrac", Float::valueOf, 0.10f);
-  private static final boolean TEXT = get("Rig.text", Boolean::valueOf, false);
-  private static final int BYTES = get("Rig.bytes", Integer::valueOf, 128);
-  private static final boolean CYCLE = get("Rig.cycle", Boolean::valueOf, false);
+  private static final int PORT = get("flywheel.rig.port", Integer::valueOf, 6667);
+  private static final int PULSES = get("flywheel.rig.pulses", Integer::valueOf, 300);
+  private static final int PULSE_DURATION = get("flywheel.rig.pulseDuration", Integer::valueOf, 100);
+  private static final float WARMUP_FRAC = get("flywheel.rig.warmupFrac", Float::valueOf, 0.10f);
+  private static final boolean TEXT = get("flywheel.rig.text", Boolean::valueOf, false);
+  private static final int BYTES = get("flywheel.rig.bytes", Integer::valueOf, 128);
+  private static final boolean CYCLE = get("flywheel.rig.cycle", Boolean::valueOf, false);
   
   private static Summary run(Config c) throws Exception {
     final EdgeNode edge = EdgeNode.builder()

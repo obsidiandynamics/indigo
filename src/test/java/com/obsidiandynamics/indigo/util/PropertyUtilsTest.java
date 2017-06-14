@@ -21,6 +21,21 @@ public class PropertyUtilsTest {
   }
   
   @Test
+  public void testGetOrSetExisting() {
+    final Properties props = new Properties();
+    props.put("foo", "bar");
+    assertEquals("bar", PropertyUtils.getOrSet(props, "foo", String::valueOf, "baz"));
+    assertEquals("bar", props.getProperty("foo"));
+  }
+  
+  @Test
+  public void testGetOrSetDefault() {
+    final Properties props = new Properties();
+    assertEquals("baz", PropertyUtils.getOrSet(props, "foo", String::valueOf, "baz"));
+    assertEquals("baz", props.getProperty("foo"));
+  }
+  
+  @Test
   public void testLoadExisting() throws IOException {
     final Properties props = PropertyUtils.load("property-utils-test.properties");
     assertTrue(props.containsKey("foo"));

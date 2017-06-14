@@ -18,6 +18,10 @@ public final class Session {
   public long getConnectTime() {
     return connectTime;
   }
+  
+  public boolean hasSessionId() {
+    return sessionId != null;
+  }
 
   public String getSessionId() {
     return sessionId;

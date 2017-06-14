@@ -9,13 +9,22 @@ public final class PropertyUtils {
   private PropertyUtils() {}
   
   public static <T> T get(String key, Function<String, T> parser, T defaultValue) {
-    final String str = System.getProperties().getProperty(key);
+    return get(System.getProperties(), key, parser, defaultValue);
+  }
+  
+  public static <T> T get(Hashtable<?, ?> props, String key, Function<String, T> parser, T defaultValue) {
+    final String str = (String) props.get(key);
     return str != null ? parser.apply(str) : defaultValue;
   }
   
-  public static <T> T get(Properties props, String key, Function<String, T> parser, T defaultValue) {
-    final String str = props.getProperty(key);
-    return str != null ? parser.apply(str) : defaultValue;
+  public static <T> T getOrSet(Hashtable<Object, Object> props, String key, Function<String, T> parser, T defaultValue) {
+    final String str = (String) props.get(key);
+    if (str == null) {
+      props.put(key, defaultValue);
+      return defaultValue;
+    } else {
+      return parser.apply(str);
+    }
   }
   
   public static Properties load(String resourceFile) throws IOException {
@@ -29,11 +38,11 @@ public final class PropertyUtils {
     return props;
   }
   
-  public static Properties load(String resourceFile, Properties defaultProperties) {
+  public static Properties load(String resourceFile, Properties defaultHashtable) {
     try {
       return load(resourceFile);
     } catch (IOException e) {
-      return defaultProperties;
+      return defaultHashtable;
     }
   }
 }
