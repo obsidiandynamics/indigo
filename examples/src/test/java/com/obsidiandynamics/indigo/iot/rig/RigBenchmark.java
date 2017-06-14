@@ -61,7 +61,7 @@ public final class RigBenchmark implements TestSupport {
                            pulses, pulseDurationMillis, warmupFrac * 100);
     }
     
-    public SpecMultiplier applyDefaults() {
+    SpecMultiplier applyDefaults() {
       host = HOST;
       port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
       warmupFrac = 0.05f;
@@ -143,7 +143,7 @@ public final class RigBenchmark implements TestSupport {
   /**
    *  Run with -XX:-MaxFDLimit -Xms2G -Xmx4G -XX:+UseConcMarkSweepGC
    *  
-   *  @param args
+   *  @param args Arguments.
    *  @throws Exception 
    */
   public static void main(String[] args) throws Exception {

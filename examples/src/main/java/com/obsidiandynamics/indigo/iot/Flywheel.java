@@ -1,7 +1,7 @@
 package com.obsidiandynamics.indigo.iot;
 
 public interface Flywheel {
-  final String REMOTE_PREFIX = "$remote";
+  String REMOTE_PREFIX = "$remote";
   
   static String getSessionTopicPrefix(String sessionId) {
     return REMOTE_PREFIX + "/" + sessionId;
