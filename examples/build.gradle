@@ -59,6 +59,12 @@ task remoteRigBench(type: JavaExec) {
   main = 'com.obsidiandynamics.indigo.iot.rig.RemoteRigBenchmark'
 }
 
+task beaconServer(type: JavaExec) {
+  systemProperties = System.properties
+  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+  main = 'com.obsidiandynamics.indigo.iot.beacon.BeaconServer'
+}
+
 dependencies {
   compile project(':')
   compile 'com.amazonaws:aws-java-sdk-dynamodb'
