@@ -70,6 +70,7 @@ public final class BeaconServer extends Thread implements TopicListener {
         Thread.sleep(INTERVAL_MILLIS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
+        break;
       }
     }
   }
