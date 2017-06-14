@@ -25,7 +25,7 @@ final class NodeQueueActivation extends Activation {
 
   private final AtomicReference<Node> tail = new AtomicReference<>();
   
-  /** Set to by the dispatch thread to {@link #DISPOSAL_ATTEMPT_PROPOSED} just prior to the CAS parking 
+  /** Set to by the dispatch thread to {@link #DISPOSAL_STATE_PROPOSED} just prior to the CAS parking
    *  attempt when disposal is required, and subsequently overwritten either to {@link #DISPOSAL_STATE_NEUTRAL}
    *  or {@link #DISPOSAL_STATE_ACCEPTED} depending on whether or not CAS succeeded. Eventually, when
    *  disposal is complete, this field is set to {@link #DISPOSAL_STATE_COMPLETE}.
@@ -34,7 +34,7 @@ final class NodeQueueActivation extends Activation {
   
   private final AtomicInteger backlogSize;
 
-  public NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
+  NodeQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
     super(id, ref, system, actorConfig, actor, executor);
     backlogSize = actorConfig.backlogThrottleCapacity != Integer.MAX_VALUE ? new AtomicInteger() : null;
   }

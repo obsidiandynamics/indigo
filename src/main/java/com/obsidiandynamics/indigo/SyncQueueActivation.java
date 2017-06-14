@@ -14,7 +14,7 @@ final class SyncQueueActivation extends Activation {
   
   private boolean disposed;
   
-  public SyncQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
+  SyncQueueActivation(long id, ActorRef ref, ActorSystem system, ActorConfig actorConfig, Actor actor, Executor executor) {
     super(id, ref, system, actorConfig, actor, executor);
   }
   
