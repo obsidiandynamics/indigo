@@ -45,4 +45,14 @@ public final class PropertyUtils {
       return defaultHashtable;
     }
   }
+  
+  public static Properties filter(String keyPrefix, Hashtable<Object, Object> props) {
+    final Properties filtered = new Properties();
+    for (Map.Entry<Object, Object> entry : props.entrySet()) {
+      if (((String) entry.getKey()).startsWith(keyPrefix)) {
+        filtered.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return filtered;
+  }
 }

@@ -19,8 +19,9 @@ public final class BeaconServer extends Thread implements TopicListener {
   
   private BeaconServer() throws Exception {
     super("BeaconServer");
+    filter("flywheel.beacon", PROPS).entrySet().stream()
+    .map(e -> String.format("%-30s: %s", e.getKey(), e.getValue())).forEach(System.out::println);
     
-    logArgs("param", "value", "port", PORT, "context path", CONTEXT_PATH, "interval", INTERVAL_MILLIS);
     edge = EdgeNode.builder()
         .withServerConfig(new WSServerConfig() {{
           contextPath = CONTEXT_PATH;
@@ -31,17 +32,6 @@ public final class BeaconServer extends Thread implements TopicListener {
     start();
   }
   
-  private static void logArgs(Object ... keysValues) {
-    for (Object key : PROPS.keySet()) {
-      if (((String) key).startsWith("flywheel.beacon.")) {
-        System.out.format("%30s: %s\n", key, PROPS.get(key));
-      }
-    }
-//    for (int i = 0; i < keysValues.length / 2; i++) {
-//      System.out.format("%15s: %s\n", keysValues[i * 2], keysValues[i * 2 + 1]);
-//    }
-  }
-
   @Override
   public void onConnect(EdgeNexus nexus) {
     System.out.format("%s: connected\n", nexus);

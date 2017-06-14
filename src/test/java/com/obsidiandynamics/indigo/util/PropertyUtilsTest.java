@@ -60,4 +60,17 @@ public class PropertyUtilsTest {
     final Properties props = PropertyUtils.load("non-existing.properties", def);
     assertTrue(props.containsKey("foo"));
   }
+  
+  @Test
+  public void testFilter() {
+    final Properties props = new Properties();
+    props.put("a.foo", "foo");
+    props.put("a.bar", "bar");
+    props.put("b.foo", "bar");
+    final Properties filtered = PropertyUtils.filter("a.", props);
+    assertEquals(2, filtered.size());
+    assertTrue(filtered.containsKey("a.foo"));
+    assertTrue(filtered.containsKey("a.bar"));
+    assertFalse(filtered.containsKey("b.foo"));
+  }
 }
