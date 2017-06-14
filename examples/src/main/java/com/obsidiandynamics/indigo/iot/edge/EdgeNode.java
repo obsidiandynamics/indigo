@@ -62,7 +62,7 @@ public final class EdgeNode implements AutoCloseable {
                 final BindFrame bind = (BindFrame) frame;
                 handleBind(nexus, bind);
               } else {
-                if (loggingEnabled) LOG.error("{}: unsupported frame {}", nexus, frame);
+                if (loggingEnabled) LOG.warn("{}: unsupported frame {}", nexus, frame);
               }
               break;
               
@@ -72,11 +72,11 @@ public final class EdgeNode implements AutoCloseable {
               break;
               
             default:
-              if (loggingEnabled) LOG.error("{}: unsupported frame {}", nexus, frame);
+              if (loggingEnabled) LOG.warn("{}: unsupported frame {}", nexus, frame);
               return;
           }
         } catch (Throwable e) {
-          if (loggingEnabled) LOG.error(String.format("%s: error processing frame\n%s", nexus,message), e);
+          if (loggingEnabled) LOG.warn(String.format("%s: error processing frame\n%s", nexus,message), e);
           return;
         }
       }
@@ -89,10 +89,10 @@ public final class EdgeNode implements AutoCloseable {
             final PublishBinaryFrame pub = (PublishBinaryFrame) frame;
             handlePublish(nexus, pub);
           } else {
-            if (loggingEnabled) LOG.error("{}: unsupported frame {}", nexus, frame);
+            if (loggingEnabled) LOG.warn("{}: unsupported frame {}", nexus, frame);
           }
         } catch (Throwable e) {
-          if (loggingEnabled) LOG.error(String.format("%s: error processing frame\n%s", nexus, BinaryUtils.dump(message)), e);
+          if (loggingEnabled) LOG.warn(String.format("%s: error processing frame\n%s", nexus, BinaryUtils.dump(message)), e);
           return;
         }
       }
