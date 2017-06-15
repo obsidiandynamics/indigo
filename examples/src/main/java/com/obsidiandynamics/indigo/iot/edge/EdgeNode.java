@@ -116,12 +116,12 @@ public final class EdgeNode implements AutoCloseable {
   private void handleBind(EdgeNexus nexus, BindFrame bind) {
     if (loggingEnabled && LOG.isDebugEnabled()) LOG.debug("{}: bind {}", nexus, bind);
 
-//    final String validationError = bind.getValidationError();
-//    if (validationError != null) {
-//      if (loggingEnabled) LOG.warn("{}: validation error: {}", nexus, validationError);
-//      sendErrors(nexus, Arrays.asList(new GeneralError(validationError)));
-//      return;
-//    }
+    final String validationError = bind.getValidationError();
+    if (validationError != null) {
+      if (loggingEnabled) LOG.warn("{}: validation error: {}", nexus, validationError);
+      nexus.send(new BindResponseFrame(bind.getMessageId(), new GeneralError(validationError)));
+      return;
+    }
     
     final Session session = nexus.getSession();
     if (session == null) {
