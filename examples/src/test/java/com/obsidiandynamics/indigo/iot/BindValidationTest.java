@@ -1,17 +1,15 @@
 package com.obsidiandynamics.indigo.iot;
 
-import com.obsidiandynamics.indigo.iot.edge.auth.*;
-import com.obsidiandynamics.indigo.iot.edge.auth.AuthChain.*;
-import com.obsidiandynamics.indigo.iot.frame.*;
-import com.obsidiandynamics.indigo.iot.remote.*;
-import com.obsidiandynamics.indigo.util.*;
-import org.junit.*;
+import static junit.framework.TestCase.assertFalse;
+import static org.junit.Assert.assertEquals;
 
 import java.util.*;
 
-import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.*;
+
+import com.obsidiandynamics.indigo.iot.edge.auth.*;
+import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.remote.*;
 
 public final class BindValidationTest extends AbstractAuthTest {
   @Test

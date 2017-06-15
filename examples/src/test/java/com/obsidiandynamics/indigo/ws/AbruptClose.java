@@ -8,9 +8,9 @@ import java.net.*;
 import java.nio.*;
 
 public final class AbruptClose implements TestSupport {
-  private WSServer<?> server;
+  private WSServer<? extends WSEndpoint> server;
 
-  private WSClient<?> client;
+  private WSClient<? extends WSEndpoint> client;
 
   @After
   public void teardown() throws Exception {
@@ -33,8 +33,9 @@ public final class AbruptClose implements TestSupport {
     testClientClose(UndertowServer.factory(), UndertowClient.factory());
   }
 
-  @SuppressWarnings("unchecked") private void testClientClose(WSServerFactory<?> serverFactory,
-                                                              WSClientFactory<?> clientFactory) throws Exception {
+  @SuppressWarnings("unchecked") 
+  private void testClientClose(WSServerFactory<? extends WSEndpoint> serverFactory,
+                               WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
     final EndpointListener<WSEndpoint> serverListener = new EndpointListener<WSEndpoint>() {
       @Override public void onConnect(WSEndpoint endpoint) {
         //        log("%s connected\n", endpoint);
