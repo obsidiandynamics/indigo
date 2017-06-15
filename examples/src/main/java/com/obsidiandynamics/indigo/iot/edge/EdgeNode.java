@@ -1,18 +1,18 @@
 package com.obsidiandynamics.indigo.iot.edge;
 
-import java.nio.*;
-import java.util.*;
-import java.util.concurrent.*;
-
-import org.slf4j.*;
-
 import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.AuthChain.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.frame.Error;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
+import org.slf4j.*;
+
+import java.nio.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 public final class EdgeNode implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(RemoteNode.class);
@@ -35,9 +35,9 @@ public final class EdgeNode implements AutoCloseable {
   
   private boolean loggingEnabled = true;
 
-  public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory, 
-                                         WSServerConfig config, 
-                                         Wire wire, 
+  public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory,
+                                         WSServerConfig config,
+                                         Wire wire,
                                          TopicBridge bridge,
                                          AuthChain pubAuthChain,
                                          AuthChain subAuthChain) throws Exception {
@@ -115,6 +115,13 @@ public final class EdgeNode implements AutoCloseable {
   
   private void handleBind(EdgeNexus nexus, BindFrame bind) {
     if (loggingEnabled && LOG.isDebugEnabled()) LOG.debug("{}: bind {}", nexus, bind);
+
+//    final String validationError = bind.getValidationError();
+//    if (validationError != null) {
+//      if (loggingEnabled) LOG.warn("{}: validation error: {}", nexus, validationError);
+//      sendErrors(nexus, Arrays.asList(new GeneralError(validationError)));
+//      return;
+//    }
     
     final Session session = nexus.getSession();
     if (session == null) {
@@ -156,9 +163,18 @@ public final class EdgeNode implements AutoCloseable {
       toSubscribe.add(Flywheel.getRxTopicPrefix(newSessionId));
       toSubscribe.add(Flywheel.getRxTopicPrefix(newSessionId) + "/#");
     }
+
+    final Set<String> toUnsubscribe = new HashSet<>();
+    for (String topic : bind.getUnsubscribe()) {
+      if (existing.contains(topic)) {
+        toUnsubscribe.add(topic);
+      } else {
+        if (loggingEnabled && LOG.isDebugEnabled()) LOG.debug("{}: ignoring duplicate unsubscription from {} for {}", nexus, topic);
+      }
+    }
     
     authenticateSubTopics(nexus, bind.getMessageId(), toSubscribe, () -> {
-      final CompletableFuture<Void> f = bridge.onBind(nexus, toSubscribe);
+      final CompletableFuture<Void> f = bridge.onBind(nexus, toSubscribe, toUnsubscribe);
       f.whenComplete((void_, cause) -> {
         if (cause == null) {
           final BindResponseFrame bindRes = new BindResponseFrame(bind.getMessageId());
@@ -208,11 +224,15 @@ public final class EdgeNode implements AutoCloseable {
       } else {
         if (loggingEnabled) LOG.warn("{}: publisher authentication failed with errors {}, auth: {}", 
                                      nexus, errors, nexus.getSession().getAuth());
-        final String sessionId = nexus.getSession().getSessionId();
-        final String errorTopic = Flywheel.getRxTopicPrefix(sessionId != null ? sessionId : "anon") + "/errors";
-        nexus.send(new TextFrame(errorTopic, wire.encodeJson(new Errors(errors))));
+        sendErrors(nexus, errors);
       }
     });
+  }
+
+  private void sendErrors(EdgeNexus nexus, Collection<? extends Error> errors) {
+    final String sessionId = nexus.getSession().getSessionId();
+    final String errorTopic = Flywheel.getRxTopicPrefix(sessionId != null ? sessionId : "anon") + "/errors";
+    nexus.send(new TextFrame(errorTopic, wire.encodeJson(new Errors(errors))));
   }
   
   private void handleConnect(WSEndpoint endpoint) {

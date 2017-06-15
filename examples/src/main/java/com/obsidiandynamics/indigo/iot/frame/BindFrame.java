@@ -97,4 +97,14 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
     return "BindFrame [messageId=" + getMessageId() + ", sessionId=" + sessionId + ", auth=" + auth + ", subscribe=" + Arrays.toString(subscribe)
            + ", unsubscribe=" + Arrays.toString(unsubscribe) + ", metadata=" + metadata + "]";
   }
+
+  public String getValidationError() {
+    if (subscribe == null) {
+      return "Missing attribute 'subscribe";
+    }
+    if (unsubscribe == null) {
+      return "Missing attribute 'unsubscribe'";
+    }
+    return null;
+  }
 }

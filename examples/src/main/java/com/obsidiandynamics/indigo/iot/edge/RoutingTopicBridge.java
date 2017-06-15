@@ -12,15 +12,15 @@ import com.obsidiandynamics.indigo.topic.*;
 
 public final class RoutingTopicBridge implements TopicBridge {
   private static final Logger LOG = LoggerFactory.getLogger(RoutingTopicBridge.class);
-  
+
   private final ActorSystem system;
-  
+
   private final ActorRef routerRef = ActorRef.of(TopicRouter.ROLE);
-  
+
   public RoutingTopicBridge() {
     this(ActorSystem.create());
   }
-  
+
   private RoutingTopicBridge(ActorSystem system) {
     this.system = system;
     system.on(TopicRouter.ROLE).withConfig(new ActorConfig() {{
@@ -53,11 +53,11 @@ public final class RoutingTopicBridge implements TopicBridge {
   }
 
   @Override
-  public CompletableFuture<Void> onBind(EdgeNexus nexus, Set<String> subscribe) {
-    if (subscribe.isEmpty()) {
+  public CompletableFuture<Void> onBind(EdgeNexus nexus, Set<String> subscribe, Set<String> unsubscribe) {
+    if (subscribe.isEmpty() && unsubscribe.isEmpty()) {
       return CompletableFuture.completedFuture(null);
     }
-    
+
     final RoutingSubscription subscription = nexus.getSession().getSubscription();
     if (subscription == null) {
       LOG.error("{}: no subscription", nexus);
@@ -65,26 +65,49 @@ public final class RoutingTopicBridge implements TopicBridge {
     }
 
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    final List<Topic> topics = subscribe.stream().map(t -> Topic.of(t)).collect(Collectors.toList());
-    
+    final List<Topic> subTopics = subscribe.stream().map(t -> Topic.of(t)).collect(Collectors.toList());
+    final List<Topic> unsubTopics = unsubscribe.stream().map(t -> Topic.of(t)).collect(Collectors.toList());
+
     system.ingress(a -> {
-      final List<SubscribeResponse> responses = new ArrayList<>(topics.size());
-      for (final Topic topic : topics) {
+      final List<SubscribeResponse> subResponses = new ArrayList<>(subTopics.size());
+      final List<UnsubscribeResponse> unsubResponses = new ArrayList<>(unsubTopics.size());
+
+      for (final Topic topic : subTopics) {
         a.to(routerRef).ask(new Subscribe(topic, subscription.getSubscriber()))
         .onFault(f -> {
           LOG.warn("{}: fault while handling subscription to topic {}: {}", nexus, topic, f);
           future.completeExceptionally(new FaultException(f.getReason()));
         })
         .onResponse(r -> {
-          responses.add(r.body());
+          subResponses.add(r.body());
           subscription.addTopic(topic);
-          if (responses.size() == topics.size()) {
-            future.complete(null);
-          }
+          checkComplete(future, subTopics, subResponses, unsubTopics, unsubResponses);
         });
-      } 
+      }
+
+      for (final Topic topic : unsubTopics) {
+        a.to(routerRef).ask(new Unsubscribe(topic, subscription.getSubscriber()))
+        .onFault(f -> {
+          LOG.warn("{}: fault while handling unsubscription from topic {}: {}", nexus, topic, f);
+          future.completeExceptionally(new FaultException(f.getReason()));
+        })
+        .onResponse(r -> {
+          unsubResponses.add(r.body());
+          subscription.removeTopic(topic);
+          checkComplete(future, subTopics, subResponses, unsubTopics, unsubResponses);
+        });
+      }
     });
     return future;
+  }
+
+  private static void checkComplete(CompletableFuture<Void> future,
+                                    List<Topic> subTopics, List<SubscribeResponse> subResponses,
+                                    List<Topic> unsubTopics, List<UnsubscribeResponse> unsubResponses) {
+    if (subResponses.size() == subTopics.size() &&
+        unsubResponses.size() == unsubTopics.size()) {
+      future.complete(null);
+    }
   }
 
   @Override

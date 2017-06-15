@@ -78,7 +78,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         }
       }
     });
-    control.bind(new BindFrame(UUID.randomUUID(), sessionId, null, new String[0], null, "control")).get();
+    control.bind(new BindFrame(UUID.randomUUID(), sessionId, null, new String[0], new String[]{}, "control")).get();
   }
   
   private void awaitLater(RemoteNexus nexus, String remoteId, long expectedMessages) {
@@ -127,7 +127,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         final Object metadata = control.getSessionId();
         final CompletableFuture<BindResponseFrame> f = 
             nexus.bind(new BindFrame(UUID.randomUUID(), generateSessionId(), null,
-                                     new String[]{interest.getTopic().toString()}, null, metadata));
+                                     new String[]{interest.getTopic().toString()}, new String[]{}, metadata));
         futures.add(f);
       }
     }
@@ -195,7 +195,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
       }
     });
     nexus.bind(new BindFrame(UUID.randomUUID(), sessionId, null,
-                             new String[0], null, null)).get();
+                             new String[0], new String[]{}, null)).get();
     
     lastRemoteTransmitTime.set(System.nanoTime());
     nexus.publish(new PublishTextFrame(outTopic, new Sync(lastRemoteTransmitTime.get()).marshal(subframeGson)));
@@ -217,7 +217,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     node.close();
   }
   
-  private void closeNexuses() throws Exception, InterruptedException {
+  private void closeNexuses() throws Exception {
     final List<RemoteNexus> nexuses = node.getNexuses();
     if (nexuses.isEmpty()) return;
     

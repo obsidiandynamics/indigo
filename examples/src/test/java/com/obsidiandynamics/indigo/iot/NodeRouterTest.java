@@ -71,8 +71,8 @@ public final class NodeRouterTest {
     final BindFrame bind = new BindFrame(messageId, 
                                          Long.toHexString(Crypto.machineRandom()),
                                          null,
-                                         new String[]{"a/b/c"}, 
-                                         null,
+                                         new String[]{"a/b/c"},
+                                         new String[]{},
                                          "some-context");
     final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     
@@ -115,8 +115,8 @@ public final class NodeRouterTest {
     final BindFrame bind = new BindFrame(messageId, 
                                          Long.toHexString(Crypto.machineRandom()),
                                          null,
-                                         new String[]{"a/b/c"}, 
-                                         null,
+                                         new String[]{"a/b/c"},
+                                         new String[]{},
                                          "some-context");
     final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     

@@ -64,7 +64,7 @@ public final class NodeCommsTest {
   @Test
   public void testText() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+    when(bridge.onBind(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
     final String sessionId = Long.toHexString(Crypto.machineRandom());
@@ -73,7 +73,7 @@ public final class NodeCommsTest {
                                          sessionId,
                                          null,
                                          subscribe, 
-                                         null,
+                                         new String[]{},
                                          "some-context");
     final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     
@@ -101,7 +101,7 @@ public final class NodeCommsTest {
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
     ordered(bridge, inOrder -> {
       inOrder.verify(bridge).onConnect(anyNotNull());
-      inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics));
+      inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
       inOrder.verify(bridge).onDisconnect(anyNotNull());
     });
@@ -116,7 +116,7 @@ public final class NodeCommsTest {
   @Test
   public void testBinary() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    when(bridge.onBind(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+    when(bridge.onBind(any(), any(), anyNotNull())).thenReturn(CompletableFuture.completedFuture(null));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
     final String sessionId = Long.toHexString(Crypto.machineRandom());
@@ -124,8 +124,8 @@ public final class NodeCommsTest {
     final BindFrame bind = new BindFrame(messageId, 
                                          sessionId,
                                          null,
-                                         subscribe, 
-                                         null,
+                                         subscribe,
+                                         new String[]{},
                                          "some-context");
     final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     
@@ -154,7 +154,7 @@ public final class NodeCommsTest {
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
     ordered(bridge, inOrder -> {
       inOrder.verify(bridge).onConnect(anyNotNull());
-      inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics));
+      inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
       inOrder.verify(bridge).onDisconnect(anyNotNull());
     });

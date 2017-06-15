@@ -31,8 +31,8 @@ public final class PubAuthTest extends AbstractAuthTest {
     final BindFrame bind = new BindFrame(UUID.randomUUID(), 
                                          sessionId,
                                          null,
-                                         new String[]{"test"}, 
-                                         null,
+                                         new String[]{"test"},
+                                         new String[]{},
                                          null);
     final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
     assertTrue(bindRes.isSuccess());
@@ -131,8 +131,8 @@ public final class PubAuthTest extends AbstractAuthTest {
     assertTrue(remoteNexus.bind(new BindFrame(UUID.randomUUID(), 
                                               sessionId,
                                               new BasicAuth("user", "badpass"),
-                                              new String[] {customBasic, customBasic + "/#"}, 
-                                              null,
+                                              new String[] {customBasic, customBasic + "/#"},
+                                              new String[]{},
                                               null)).get().isSuccess());
 
     // publish to custom/basic without with a bad auth; expect an error
@@ -156,8 +156,8 @@ public final class PubAuthTest extends AbstractAuthTest {
     assertTrue(remoteNexus.bind(new BindFrame(UUID.randomUUID(), 
                                               sessionId,
                                               new BearerAuth("badtoken"),
-                                              new String[] {customBearer, customBearer + "/#"}, 
-                                              null,
+                                              new String[] {customBearer, customBearer + "/#"},
+                                              new String[]{},
                                               null)).get().isSuccess());
     
     // publish to custom/bearer without with a bad auth; expect an error
@@ -173,8 +173,8 @@ public final class PubAuthTest extends AbstractAuthTest {
     assertTrue(remoteNexus.bind(new BindFrame(UUID.randomUUID(), 
                                               sessionId,
                                               new BasicAuth("user", "pass"),
-                                              new String[] {customBasic, customBasic + "/#"}, 
-                                              null,
+                                              new String[] {customBasic, customBasic + "/#"},
+                                              new String[]{},
                                               null)).get().isSuccess());
     
     // publish to custom/basic with good auth; expect success
@@ -196,8 +196,8 @@ public final class PubAuthTest extends AbstractAuthTest {
     assertTrue(remoteNexus.bind(new BindFrame(UUID.randomUUID(), 
                                               sessionId,
                                               new BearerAuth("token"),
-                                              new String[] {customBearer, customBearer + "/#"}, 
-                                              null,
+                                              new String[] {customBearer, customBearer + "/#"},
+                                              new String[]{},
                                               null)).get().isSuccess());
     
     // publish to custom/bearer with good auth; expect success

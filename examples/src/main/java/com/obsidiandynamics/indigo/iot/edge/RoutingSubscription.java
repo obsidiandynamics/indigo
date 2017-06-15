@@ -21,6 +21,8 @@ final class RoutingSubscription implements Subscription {
   void addTopic(Topic topic) {
     topics.add(topic);
   }
+
+  void removeTopic(Topic topic) { topics.remove(topic); }
   
   void addTopics(List<Topic> toAdd) {
     topics.addAll(toAdd);

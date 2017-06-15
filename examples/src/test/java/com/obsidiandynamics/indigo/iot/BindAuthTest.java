@@ -28,25 +28,25 @@ public final class BindAuthTest extends AbstractAuthTest {
 
     // bind to our own RX topic
     final BindFrame bind1 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         null,
-                                         new String[]{"a/b/c",
-                                                      Flywheel.getRxTopicPrefix(sessionId),
-                                                      Flywheel.getRxTopicPrefix(sessionId) + "/#"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          null,
+                                          new String[]{"a/b/c",
+                                                       Flywheel.getRxTopicPrefix(sessionId),
+                                                       Flywheel.getRxTopicPrefix(sessionId) + "/#"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind1Res = remoteNexus.bind(bind1).get();
     assertTrue(bind1Res.isSuccess());
     
     // bind to someone else's RX and TX topics
     final BindFrame bind2 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         null,
-                                         new String[]{Flywheel.getRxTopicPrefix(sessionId) + "/#",
-                                                      Flywheel.getRxTopicPrefix("12345") + "/#",
-                                                      Flywheel.getTxTopicPrefix("12346") + "/#"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          null,
+                                          new String[]{Flywheel.getRxTopicPrefix(sessionId) + "/#",
+                                                       Flywheel.getRxTopicPrefix("12345") + "/#",
+                                                       Flywheel.getTxTopicPrefix("12346") + "/#"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind2Res = remoteNexus.bind(bind2).get();
     assertEquals(2, bind2Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind2Res.getErrors()[0].getClass());
@@ -54,13 +54,13 @@ public final class BindAuthTest extends AbstractAuthTest {
 
     // bind to the TX topic; should pass
     final BindFrame bind3 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         null,
-                                         new String[]{"a/b/c",
-                                                      Flywheel.getTxTopicPrefix(sessionId),
-                                                      Flywheel.getTxTopicPrefix(sessionId) + "/#"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          null,
+                                          new String[]{"a/b/c",
+                                                       Flywheel.getTxTopicPrefix(sessionId),
+                                                       Flywheel.getTxTopicPrefix(sessionId) + "/#"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind3Res = remoteNexus.bind(bind3).get();
     assertTrue(bind3Res.isSuccess());
   }
@@ -77,68 +77,68 @@ public final class BindAuthTest extends AbstractAuthTest {
 
     // test with the right user/pass on the correct topic; should pass
     final BindFrame bind1 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         new BasicAuth("user", "pass"),
-                                         new String[]{"a/b/c",
-                                                      Flywheel.getRxTopicPrefix(sessionId) + "/#",
-                                                      "custom/basic/1"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          new BasicAuth("user", "pass"),
+                                          new String[]{"a/b/c",
+                                                       Flywheel.getRxTopicPrefix(sessionId) + "/#",
+                                                       "custom/basic/1"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind1Res = remoteNexus.bind(bind1).get();
     assertTrue(bind1Res.isSuccess());
 
     // test with a wrong password; should fail
     final BindFrame bind2 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         new BasicAuth("user", "badpass"),
-                                         new String[]{"a/b/c",
-                                                      Flywheel.getRxTopicPrefix(sessionId) + "/#",
-                                                      "custom/basic/2"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          new BasicAuth("user", "badpass"),
+                                          new String[]{"a/b/c",
+                                                       Flywheel.getRxTopicPrefix(sessionId) + "/#",
+                                                       "custom/basic/2"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind2Res = remoteNexus.bind(bind2).get();
     assertEquals(1, bind2Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind2Res.getErrors()[0].getClass());
 
     // test with a wrong password; should fail
     final BindFrame bind3 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         new BasicAuth("user", "badpass"),
-                                         new String[]{"custom/basic"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          new BasicAuth("user", "badpass"),
+                                          new String[]{"custom/basic"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind3Res = remoteNexus.bind(bind3).get();
     assertEquals(1, bind3Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind3Res.getErrors()[0].getClass());
     
     // test with a null auth object; should fail
     final BindFrame bind4 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         null,
-                                         new String[]{"custom/basic/4"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          null,
+                                          new String[]{"custom/basic/4"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind4Res = remoteNexus.bind(bind4).get();
     assertEquals(1, bind4Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind4Res.getErrors()[0].getClass());
 
     // test with the right token on the correct topic; should pass
     final BindFrame bind5 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         new BearerAuth("token"),
-                                         new String[]{"custom/bearer/1"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          new BearerAuth("token"),
+                                          new String[]{"custom/bearer/1"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind5Res = remoteNexus.bind(bind5).get();
     assertTrue(bind5Res.isSuccess());
 
     // bind to a wildcard with the wrong token; should fail with multiple errors
     final BindFrame bind6 = new BindFrame(UUID.randomUUID(), 
-                                         sessionId,
-                                         new BearerAuth("badtoken"),
-                                         new String[]{"#"}, 
-                                         null,
-                                         null);
+                                          sessionId,
+                                          new BearerAuth("badtoken"),
+                                          new String[]{"#"},
+                                          new String[]{},
+                                          null);
     final BindResponseFrame bind6Res = remoteNexus.bind(bind6).get();
     assertEquals(3, bind6Res.getErrors().length);
     assertEquals(TopicAccessError.class, bind6Res.getErrors()[0].getClass());
