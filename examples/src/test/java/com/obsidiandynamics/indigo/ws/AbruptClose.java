@@ -64,7 +64,9 @@ public final class AbruptClose implements TestSupport {
       }
     };
     final WSServerConfig serverConfig = getServerConfig();
-    server = serverFactory.create(serverConfig, Mocks.logger(EndpointListener.class, serverListener));
+    server = serverFactory.create(serverConfig, Mocks.logger(EndpointListener.class, 
+                                                             serverListener,
+                                                             new LoggingInterceptor<>("s: ")));
     client = clientFactory.create(getClientConfig());
 
     final EndpointListener<WSEndpoint> clientListener = new EndpointListener<WSEndpoint>() {
@@ -95,6 +97,9 @@ public final class AbruptClose implements TestSupport {
       }
     };
     final WSEndpoint endpoint = client.connect(new URI("ws://localhost:" + serverConfig.port + "/"),
-                                               Mocks.logger(EndpointListener.class, clientListener));
+                                               Mocks.logger(EndpointListener.class, 
+                                                            clientListener,
+                                                            new LoggingInterceptor<>("c: ")));
+    endpoint.terminate();
   }
 }
