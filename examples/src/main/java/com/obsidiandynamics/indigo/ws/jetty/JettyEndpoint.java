@@ -142,6 +142,15 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   }
 
   @Override
+  public void terminate() throws IOException {
+    final Session session = getSession();
+    if (session.isOpen()) {
+      session.close();
+    }
+    fireCloseEvent();
+  }
+
+  @Override
   public InetSocketAddress getRemoteAddress() {
     return getRemote().getInetSocketAddress();
   }

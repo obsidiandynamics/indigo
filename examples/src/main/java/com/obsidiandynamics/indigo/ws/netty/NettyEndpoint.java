@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo.ws.netty;
 
+import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
@@ -89,6 +90,14 @@ public final class NettyEndpoint implements WSEndpoint {
   @Override
   public void flush() {
     handlerContext.channel().flush();
+  }
+
+  @Override
+  public void terminate() throws IOException {
+    if (handlerContext.channel().isOpen()) {
+      handlerContext.channel().close();
+    }
+    fireCloseEvent();
   }
 
   @Override

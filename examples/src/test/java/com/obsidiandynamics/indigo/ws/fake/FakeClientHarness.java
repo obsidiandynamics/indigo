@@ -25,6 +25,8 @@ public final class FakeClientHarness extends ClientHarness implements TestSuppor
     @Override public long getBacklog() {
       return 0;
     }
+    @Override public void terminate() throws IOException {
+    }
     @Override public <T> T getContext() {
       return null;
     }

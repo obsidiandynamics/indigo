@@ -159,6 +159,14 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
 
   @Override
+  public void terminate() throws IOException {
+    if (channel.isOpen()) {
+      channel.close();
+    }
+    fireCloseEvent();
+  }
+
+  @Override
   public boolean isOpen() {
     return channel.isOpen();
   }

@@ -25,7 +25,7 @@ public final class UnsubscribeTest extends AbstractAuthTest {
                                           sessionId,
                                           null,
                                           new String[]{"a", "b"},
-                                           new String[]{},
+                                          new String[]{},
                                          null);
     final BindResponseFrame bind1Res = remoteNexus.bind(bind1).get();
     assertTrue(bind1Res.isSuccess());

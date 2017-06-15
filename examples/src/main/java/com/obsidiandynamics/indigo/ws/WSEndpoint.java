@@ -74,6 +74,13 @@ public interface WSEndpoint extends AutoCloseable {
    *  @return The number of backlogged messages.
    */
   long getBacklog();
+
+  /**
+   *  Terminate the connection without sending the standard WebSocket close opcode.
+   *
+   *  @throws IOException If an I/O error occurs.
+   */
+  void terminate() throws IOException, IOException;
   
   /**
    *  Awaits the closure of the underlying channel, which implies that the close frame handshake
