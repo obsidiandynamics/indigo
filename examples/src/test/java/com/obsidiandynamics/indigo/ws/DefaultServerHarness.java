@@ -25,8 +25,7 @@ final class DefaultServerHarness extends ServerHarness implements TestSupport {
         received.incrementAndGet();
       }
 
-      @Override
-      public void onBinary(WSEndpoint endpoint, ByteBuffer message) {
+      @Override public void onBinary(WSEndpoint endpoint, ByteBuffer message) {
         log("s: received %d bytes\n", message.limit());
         received.incrementAndGet();
       }

@@ -20,7 +20,7 @@ public final class JettyClient implements WSClient<JettyEndpoint> {
     client = new WebSocketClient(httpClient);
     client.setMaxIdleTimeout(config.idleTimeoutMillis);
     client.start();
-    scanner = new Scanner<>(config.scanIntervalMillis, false);
+    scanner = new Scanner<>(config.scanIntervalMillis, 0);
   }
 
   @Override

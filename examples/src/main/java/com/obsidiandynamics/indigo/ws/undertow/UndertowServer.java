@@ -28,7 +28,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
                                              .set(Options.TCP_NODELAY, true)
                                              .getMap());
     
-    scanner = new Scanner<>(config.scanIntervalMillis, true);
+    scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
     final UndertowEndpointConfig endpointConfig = new UndertowEndpointConfig() {{
       highWaterMark = config.highWaterMark;
     }};

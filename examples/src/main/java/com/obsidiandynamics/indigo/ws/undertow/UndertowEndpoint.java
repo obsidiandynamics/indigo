@@ -26,6 +26,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   UndertowEndpoint(UndertowEndpointManager manager, WebSocketChannel channel) {
     this.manager = manager;
     this.channel = channel;
+    touchLastActivityTime();
   }
   
   static UndertowEndpoint clientOf(Scanner<UndertowEndpoint> scanner, 

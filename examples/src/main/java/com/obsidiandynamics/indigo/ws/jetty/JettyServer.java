@@ -21,7 +21,7 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
     final ContextHandler context = new ContextHandler(config.contextPath);
     server.setHandler(context);
 
-    scanner = new Scanner<>(config.scanIntervalMillis, true);
+    scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
     final JettyEndpointConfig endpointConfig = new JettyEndpointConfig() {{
       highWaterMark = config.highWaterMark;
     }};

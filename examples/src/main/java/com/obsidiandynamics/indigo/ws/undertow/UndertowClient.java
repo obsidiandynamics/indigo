@@ -25,7 +25,7 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
     this.config = config;
     this.worker = worker;
     this.bufferSize = bufferSize;
-    scanner = new Scanner<>(config.scanIntervalMillis, false);
+    scanner = new Scanner<>(config.scanIntervalMillis, 0);
   }
 
   @Override

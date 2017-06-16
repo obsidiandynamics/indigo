@@ -85,7 +85,7 @@ public interface WSEndpoint extends AutoCloseable {
   /**
    *  Obtains the timestamp of the last send or receive activity.
    *  
-   *  @return The last RX/TX timestamp, or 0 if this endpoint hasn't been exercised.
+   *  @return The last RX/TX timestamp.
    */
   long getLastActivityTime();
   
