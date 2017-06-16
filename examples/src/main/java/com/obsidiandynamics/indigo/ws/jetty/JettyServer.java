@@ -12,7 +12,7 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
   private final Scanner<JettyEndpoint> scanner;
   
   private JettyServer(WSServerConfig config,
-                      EndpointListener<? super JettyEndpoint> listener) throws Exception {
+                      WSEndpointListener<? super JettyEndpoint> listener) throws Exception {
     server = new Server(new QueuedThreadPool(100));
     final ServerConnector connector = new ServerConnector(server);
     connector.setPort(config.port);

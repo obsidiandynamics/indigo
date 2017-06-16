@@ -13,7 +13,7 @@ final class DefaultServerHarness extends ServerHarness implements TestSupport {
   private final SendCallback writeCallback;
   
   DefaultServerHarness(WSServerConfig config, WSServerFactory<WSEndpoint> factory, ServerProgress progress) throws Exception {
-    final EndpointListener<WSEndpoint> serverListener = new EndpointListener<WSEndpoint>() {
+    final WSEndpointListener<WSEndpoint> serverListener = new WSEndpointListener<WSEndpoint>() {
       @Override public void onConnect(WSEndpoint endpoint) {
         log("s: connected %s\n", endpoint.getRemoteAddress());
         connected.incrementAndGet();

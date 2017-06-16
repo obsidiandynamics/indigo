@@ -47,7 +47,7 @@ public final class EdgeNode implements AutoCloseable {
     this.bridge = bridge;
     this.pubAuthChain = pubAuthChain;
     this.subAuthChain = subAuthChain;
-    server = serverFactory.create(config, new EndpointListener<E>() {
+    server = serverFactory.create(config, new WSEndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
         handleConnect(endpoint);
       }

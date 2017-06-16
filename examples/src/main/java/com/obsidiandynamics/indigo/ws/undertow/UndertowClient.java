@@ -29,7 +29,7 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
   }
 
   @Override
-  public UndertowEndpoint connect(URI uri, EndpointListener<? super UndertowEndpoint> listener) throws Exception {
+  public UndertowEndpoint connect(URI uri, WSEndpointListener<? super UndertowEndpoint> listener) throws Exception {
     final ByteBufferPool pool = new DefaultByteBufferPool(false, bufferSize);
     final WebSocketChannel channel = WebSocketClient.connectionBuilder(worker, pool, uri).connect().get();
     if (config.hasIdleTimeout()) {

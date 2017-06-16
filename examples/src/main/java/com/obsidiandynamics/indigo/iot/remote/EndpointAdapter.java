@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
 
-final class EndpointAdapter<E extends WSEndpoint> implements EndpointListener<E> {
+final class EndpointAdapter<E extends WSEndpoint> implements WSEndpointListener<E> {
   private static final Logger LOG = LoggerFactory.getLogger(EndpointAdapter.class);
   
   private final RemoteNode node;

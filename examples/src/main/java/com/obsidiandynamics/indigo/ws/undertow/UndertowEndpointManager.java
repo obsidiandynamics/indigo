@@ -19,12 +19,12 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
   
   private final UndertowEndpointConfig config;
   
-  private final EndpointListener<? super UndertowEndpoint> listener;
+  private final WSEndpointListener<? super UndertowEndpoint> listener;
   
   private final Scanner<UndertowEndpoint> scanner;
   
   public UndertowEndpointManager(Scanner<UndertowEndpoint> scanner, int idleTimeoutMillis, UndertowEndpointConfig config, 
-                                 EndpointListener<? super UndertowEndpoint> listener) {
+                                 WSEndpointListener<? super UndertowEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;
@@ -53,7 +53,7 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
     return endpoint;
   }
   
-  EndpointListener<? super UndertowEndpoint> getListener() {
+  WSEndpointListener<? super UndertowEndpoint> getListener() {
     return listener;
   }
   

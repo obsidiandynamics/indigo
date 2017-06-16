@@ -29,7 +29,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   static UndertowEndpoint clientOf(Scanner<UndertowEndpoint> scanner, 
-                                   WebSocketChannel channel, UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
+                                   WebSocketChannel channel, UndertowEndpointConfig config, WSEndpointListener<? super UndertowEndpoint> listener) {
     return new UndertowEndpointManager(scanner, 0, config, listener).createEndpoint(channel);
   }
   

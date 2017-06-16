@@ -16,7 +16,7 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
   
   private final Channel channel;
   
-  private NettyServer(WSServerConfig config, EndpointListener<? super NettyEndpoint> listener) throws InterruptedException {
+  private NettyServer(WSServerConfig config, WSEndpointListener<? super NettyEndpoint> listener) throws InterruptedException {
     scanner = new Scanner<>(config.scanIntervalMillis, true);
     final NettyEndpointConfig endpointConfig = new NettyEndpointConfig() {{
       highWaterMark = config.highWaterMark;

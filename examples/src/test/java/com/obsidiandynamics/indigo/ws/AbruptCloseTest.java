@@ -67,8 +67,8 @@ public final class AbruptCloseTest implements TestSupport {
   
   @SuppressWarnings("unchecked")
   private void createServer(WSServerFactory<? extends WSEndpoint> serverFactory,
-                            WSServerConfig serverConfig, EndpointListener<WSEndpoint> serverListener) throws Exception {
-    server = serverFactory.create(serverConfig, Mocks.logger(EndpointListener.class, 
+                            WSServerConfig serverConfig, WSEndpointListener<WSEndpoint> serverListener) throws Exception {
+    server = serverFactory.create(serverConfig, Mocks.logger(WSEndpointListener.class, 
                                                              serverListener,
                                                              new LoggingInterceptor<>("s: ")));
   }
@@ -78,9 +78,9 @@ public final class AbruptCloseTest implements TestSupport {
   }
   
   @SuppressWarnings("unchecked")
-  private WSEndpoint openClientEndpoint(int port, EndpointListener<WSEndpoint> clientListener) throws URISyntaxException, Exception {
+  private WSEndpoint openClientEndpoint(int port, WSEndpointListener<WSEndpoint> clientListener) throws URISyntaxException, Exception {
     return client.connect(new URI("ws://localhost:" + port + "/"),
-                          Mocks.logger(EndpointListener.class, 
+                          Mocks.logger(WSEndpointListener.class, 
                                        clientListener,
                                        new LoggingInterceptor<>("c: ")));
   }
@@ -94,18 +94,18 @@ public final class AbruptCloseTest implements TestSupport {
   }
   
   @SuppressWarnings("unchecked")
-  private static EndpointListener<WSEndpoint> createMockListener() {
-    return Mockito.mock(EndpointListener.class);
+  private static WSEndpointListener<WSEndpoint> createMockListener() {
+    return Mockito.mock(WSEndpointListener.class);
   }
 
   private void testClientClose(WSServerFactory<? extends WSEndpoint> serverFactory,
                                WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
     final WSServerConfig serverConfig = getServerConfig();
-    final EndpointListener<WSEndpoint> serverListener = createMockListener();
+    final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
     createClient(clientFactory);
 
-    final EndpointListener<WSEndpoint> clientListener = createMockListener();
+    final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
     final WSEndpoint endpoint = openClientEndpoint(serverConfig.port, clientListener);
     endpoint.terminate();
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
@@ -117,11 +117,11 @@ public final class AbruptCloseTest implements TestSupport {
   private void testServerClose(WSServerFactory<? extends WSEndpoint> serverFactory,
                                WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
     final WSServerConfig serverConfig = getServerConfig();
-    final EndpointListener<WSEndpoint> serverListener = createMockListener();
+    final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
     createClient(clientFactory);
 
-    final EndpointListener<WSEndpoint> clientListener = createMockListener();
+    final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
     
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).until(this::hasServerEndpoint);

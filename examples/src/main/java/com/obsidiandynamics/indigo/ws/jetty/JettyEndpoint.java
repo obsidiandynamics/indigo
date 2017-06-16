@@ -25,7 +25,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   }
   
   public static JettyEndpoint clientOf(Scanner<JettyEndpoint> scanner, 
-                                       JettyEndpointConfig config, EndpointListener<? super JettyEndpoint> listener) {
+                                       JettyEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
     return new JettyEndpointManager(scanner, 0, config, listener).createEndpoint();
   }
   

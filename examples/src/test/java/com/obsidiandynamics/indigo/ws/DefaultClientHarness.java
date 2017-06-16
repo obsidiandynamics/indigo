@@ -11,7 +11,7 @@ public final class DefaultClientHarness extends ClientHarness implements TestSup
   private final WSEndpoint endpoint;
   
   DefaultClientHarness(WSClient<?> client, int port, boolean echo) throws Exception {
-    final EndpointListener<WSEndpoint> clientListener = new EndpointListener<WSEndpoint>() {
+    final WSEndpointListener<WSEndpoint> clientListener = new WSEndpointListener<WSEndpoint>() {
       @Override public void onConnect(WSEndpoint endpoint) {
         log("c: connected: %s\n", endpoint.getRemoteAddress());
         connected.set(true);

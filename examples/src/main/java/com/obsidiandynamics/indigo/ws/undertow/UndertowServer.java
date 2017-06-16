@@ -15,7 +15,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
   private final Scanner<UndertowEndpoint> scanner;
   
   private UndertowServer(WSServerConfig config,
-                         EndpointListener<? super UndertowEndpoint> listener) throws Exception {
+                         WSEndpointListener<? super UndertowEndpoint> listener) throws Exception {
     final int ioThreads = Runtime.getRuntime().availableProcessors();
     final int coreWorkerThreads = 100;
     final int maxWorkerThreads = coreWorkerThreads * 100;
@@ -57,7 +57,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
   
   public static final class Factory implements WSServerFactory<UndertowEndpoint> {
     @Override public WSServer<UndertowEndpoint> create(WSServerConfig config,
-                                                       EndpointListener<? super UndertowEndpoint> listener) throws Exception {
+                                                       WSEndpointListener<? super UndertowEndpoint> listener) throws Exception {
       return new UndertowServer(config, listener);
     }
   }
