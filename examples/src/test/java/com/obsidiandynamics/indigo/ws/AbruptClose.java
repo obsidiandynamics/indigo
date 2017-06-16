@@ -1,11 +1,15 @@
 package com.obsidiandynamics.indigo.ws;
 
-import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.undertow.*;
-import org.junit.*;
-
 import java.net.*;
 import java.nio.*;
+import java.util.concurrent.*;
+
+import org.awaitility.*;
+import org.junit.*;
+import org.mockito.*;
+
+import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class AbruptClose implements TestSupport {
   private WSServer<? extends WSEndpoint> server;
@@ -21,6 +25,7 @@ public final class AbruptClose implements TestSupport {
   private static WSServerConfig getServerConfig() {
     return new WSServerConfig() {{
       port = SocketTestSupport.getAvailablePort(6667);
+      scanIntervalMillis = 10;
     }};
   }
 
@@ -36,70 +41,22 @@ public final class AbruptClose implements TestSupport {
   @SuppressWarnings("unchecked") 
   private void testClientClose(WSServerFactory<? extends WSEndpoint> serverFactory,
                                WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
-    final EndpointListener<WSEndpoint> serverListener = new EndpointListener<WSEndpoint>() {
-      @Override public void onConnect(WSEndpoint endpoint) {
-        //        log("%s connected\n", endpoint);
-      }
-
-      @Override public void onText(WSEndpoint endpoint, String message) {
-
-      }
-
-      @Override public void onBinary(WSEndpoint endpoint, ByteBuffer message) {
-
-      }
-
-      @Override public void onDisconnect(WSEndpoint endpoint, int statusCode, String reason) {
-        //        log("%s disconnected; statusCode: %d, reason: %s\n", endpoint, statusCode, reason);
-
-      }
-
-      @Override public void onClose(WSEndpoint endpoint) {
-        //        log("%s closed\n", endpoint);
-
-      }
-
-      @Override public void onError(WSEndpoint endpoint, Throwable cause) {
-        //        log("%s error; cause: %s\n", endpoint, cause);
-      }
-    };
     final WSServerConfig serverConfig = getServerConfig();
+    final EndpointListener<WSEndpoint> serverListener = Mockito.mock(EndpointListener.class);
     server = serverFactory.create(serverConfig, Mocks.logger(EndpointListener.class, 
                                                              serverListener,
                                                              new LoggingInterceptor<>("s: ")));
     client = clientFactory.create(getClientConfig());
 
-    final EndpointListener<WSEndpoint> clientListener = new EndpointListener<WSEndpoint>() {
-      @Override public void onConnect(WSEndpoint endpoint) {
-        //        log("%s connected\n", endpoint);
-      }
-
-      @Override public void onText(WSEndpoint endpoint, String message) {
-
-      }
-
-      @Override public void onBinary(WSEndpoint endpoint, ByteBuffer message) {
-
-      }
-
-      @Override public void onDisconnect(WSEndpoint endpoint, int statusCode, String reason) {
-        //        log("%s disconnected; statusCode: %d, reason: %s\n", endpoint, statusCode, reason);
-
-      }
-
-      @Override public void onClose(WSEndpoint endpoint) {
-        //        log("%s closed\n", endpoint);
-
-      }
-
-      @Override public void onError(WSEndpoint endpoint, Throwable cause) {
-        //        log("%s error; cause: %s\n", endpoint, cause);
-      }
-    };
+    final EndpointListener<WSEndpoint> clientListener = Mockito.mock(EndpointListener.class);
     final WSEndpoint endpoint = client.connect(new URI("ws://localhost:" + serverConfig.port + "/"),
                                                Mocks.logger(EndpointListener.class, 
                                                             clientListener,
                                                             new LoggingInterceptor<>("c: ")));
     endpoint.terminate();
+    Awaitility.await().dontCatchUncaughtExceptions().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+      Mockito.verify(serverListener).onClose(Mocks.anyNotNull());
+      Mockito.verify(clientListener).onClose(Mocks.anyNotNull());
+    });
   }
 }

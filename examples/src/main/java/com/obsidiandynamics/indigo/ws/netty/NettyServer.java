@@ -15,7 +15,7 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
   
   private final Channel channel;
   
-  public NettyServer(int port, String contextPath, NettyEndpointManager manager) throws InterruptedException {
+  private NettyServer(int port, String contextPath, NettyEndpointManager manager) throws InterruptedException {
     this.manager = manager;
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup();
@@ -29,14 +29,11 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
     channel = b.bind(port).sync().channel();
   }
   
-  public void awaitTermination() throws InterruptedException {
-    channel.closeFuture().sync();
-  }
-  
   @Override
   public void close() throws Exception {
     bossGroup.shutdownGracefully();
     workerGroup.shutdownGracefully();
+    channel.closeFuture().sync();
   }
 
   @Override

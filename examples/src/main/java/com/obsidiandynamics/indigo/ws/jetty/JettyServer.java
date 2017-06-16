@@ -10,7 +10,7 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
   private final JettyEndpointManager manager;
   private final Server server;
   
-  public JettyServer(int port, String contextPath, JettyEndpointManager manager) throws Exception {
+  private JettyServer(int port, String contextPath, JettyEndpointManager manager) throws Exception {
     this.manager = manager;
     server = new Server(new QueuedThreadPool(100));
     final ServerConnector connector = new ServerConnector(server);

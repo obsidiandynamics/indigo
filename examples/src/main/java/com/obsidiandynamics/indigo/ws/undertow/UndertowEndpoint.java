@@ -5,6 +5,7 @@ import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
+import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.*;
@@ -20,14 +21,16 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   private final AtomicBoolean closeFired = new AtomicBoolean();
   
   private volatile Object context;
+  
+  private volatile long lastActivityTime;
 
   UndertowEndpoint(UndertowEndpointManager manager, WebSocketChannel channel) {
     this.manager = manager;
     this.channel = channel;
   }
   
-  public static UndertowEndpoint clientOf(WebSocketChannel channel, UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
-    return new UndertowEndpointManager(config, listener).createEndpoint(channel);
+  static UndertowEndpoint clientOf(Scanner<UndertowEndpoint> scanner, WebSocketChannel channel, UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
+    return new UndertowEndpointManager(scanner, 0, config, listener).createEndpoint(channel);
   }
   
   @Override
@@ -40,11 +43,24 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   public void setContext(Object context) {
     this.context = context;
   }
+
+  @Override
+  protected void onFullPingMessage(final WebSocketChannel channel, BufferedBinaryMessage message) throws IOException {
+    super.onFullPingMessage(channel, message);
+    touchLastActivityTime();
+  }
+
+  @Override
+  protected void onFullPongMessage(final WebSocketChannel channel, BufferedBinaryMessage message) throws IOException {
+    super.onFullPongMessage(channel, message);
+    touchLastActivityTime();
+  }
   
   @Override
   protected void onFullTextMessage(final WebSocketChannel channel, BufferedTextMessage message) throws IOException {
     manager.getListener().onText(this, message.getData());
     super.onFullTextMessage(channel, message);
+    touchLastActivityTime();
   }
 
   @Override
@@ -52,6 +68,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     final ByteBuffer buf = WebSockets.mergeBuffers(message.getData().getResource());
     manager.getListener().onBinary(this, buf);
     super.onFullBinaryMessage(channel, message);
+    touchLastActivityTime();
   }
 
   @Override
@@ -59,6 +76,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     super.onCloseMessage(message, channel);
     manager.getListener().onDisconnect(this, message.getCode(), message.getReason());
     channel.addCloseTask(ch -> fireCloseEvent());
+    touchLastActivityTime();
   }
   
   @Override
@@ -72,6 +90,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendText(payload, channel, wrapCallback(callback));
+      touchLastActivityTime();
     }
   }
   
@@ -80,6 +99,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendBinary(payload, channel, wrapCallback(callback));
+      touchLastActivityTime();
     }
   }
   
@@ -169,6 +189,15 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   @Override
   public boolean isOpen() {
     return channel.isOpen();
+  }
+
+  @Override
+  public long getLastActivityTime() {
+    return lastActivityTime;
+  }
+  
+  private void touchLastActivityTime() {
+    lastActivityTime = System.currentTimeMillis();
   }
 
   @Override

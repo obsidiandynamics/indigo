@@ -9,5 +9,7 @@ public class WSServerConfig {
   
   public int pingIntervalMillis;
   
+  public int scanIntervalMillis = 100;
+  
   public long highWaterMark = Long.MAX_VALUE;
 }

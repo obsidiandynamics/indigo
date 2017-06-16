@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.iot.edge;
 
 import com.obsidiandynamics.indigo.iot.frame.*;
 
-public class TopicListenerAdapter implements TopicListener {
+public abstract class TopicListenerBase implements TopicListener {
   @Override public void onConnect(EdgeNexus nexus) {}
   
   @Override public void onDisconnect(EdgeNexus nexus) {}

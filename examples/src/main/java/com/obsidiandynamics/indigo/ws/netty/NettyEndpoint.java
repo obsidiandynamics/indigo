@@ -125,4 +125,10 @@ public final class NettyEndpoint implements WSEndpoint {
   public long getBacklog() {
     return backlog.get();
   }
+
+  @Override
+  public long getLastActivityTime() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 }

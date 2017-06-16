@@ -12,7 +12,7 @@ public final class JettyClient implements WSClient<JettyEndpoint> {
   
   private final WebSocketClient client;
   
-  public JettyClient(WSClientConfig config, HttpClient httpClient) throws Exception {
+  private JettyClient(WSClientConfig config, HttpClient httpClient) throws Exception {
     this.httpClient = httpClient;
     client = new WebSocketClient(httpClient);
     client.setMaxIdleTimeout(config.idleTimeoutMillis);

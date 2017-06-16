@@ -6,6 +6,7 @@ import java.util.concurrent.*;
 
 import org.xnio.*;
 
+import com.obsidiandynamics.indigo.iot.Scanner;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.websockets.*;
@@ -15,15 +16,20 @@ import io.undertow.websockets.spi.*;
 public final class UndertowEndpointManager implements WebSocketConnectionCallback, WSEndpointManager<UndertowEndpoint> {
   private static final boolean NODELAY = true;
   
+  private final int idleTimeoutMillis;
+  
   private final UndertowEndpointConfig config;
   
   private final EndpointListener<? super UndertowEndpoint> listener;
   
-  private final Set<UndertowEndpoint> endpoints = new CopyOnWriteArraySet<>();
+  private final Scanner<UndertowEndpoint> scanner;
   
-  public UndertowEndpointManager(UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
+  public UndertowEndpointManager(Scanner<UndertowEndpoint> scanner, int idleTimeoutMillis, UndertowEndpointConfig config, 
+                                 EndpointListener<? super UndertowEndpoint> listener) {
+    this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;
+    this.scanner = scanner;
   }
   
   @Override
@@ -40,7 +46,10 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
     } catch (IOException e) {
       e.printStackTrace();
     }
-    endpoints.add(endpoint);
+    if (idleTimeoutMillis != 0) {
+      channel.setIdleTimeout(idleTimeoutMillis);
+    }
+    scanner.addEndpoint(endpoint);
     listener.onConnect(endpoint);
     return endpoint;
   }
@@ -55,10 +64,10 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
   
   @Override
   public Collection<UndertowEndpoint> getEndpoints() {
-    return endpoints;
+    return scanner.getEndpoints();
   }
   
   void remove(UndertowEndpoint endpoint) {
-    endpoints.remove(endpoint);
+    scanner.removeEndpoint(endpoint);
   }
 }

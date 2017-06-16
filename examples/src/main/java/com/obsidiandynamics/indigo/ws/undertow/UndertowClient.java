@@ -5,6 +5,7 @@ import java.net.*;
 
 import org.xnio.*;
 
+import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.connector.*;
@@ -19,21 +20,23 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
   
   private final int bufferSize;
   
-  public UndertowClient(WSClientConfig config, XnioWorker worker, int bufferSize) {
+  private final Scanner<UndertowEndpoint> scanner;
+  
+  private UndertowClient(WSClientConfig config, XnioWorker worker, int bufferSize) {
     this.config = config;
     this.worker = worker;
     this.bufferSize = bufferSize;
+    scanner = new Scanner<>(config.scanIntervalMillis, false);
   }
 
   @Override
   public UndertowEndpoint connect(URI uri, EndpointListener<? super UndertowEndpoint> listener) throws Exception {
     final ByteBufferPool pool = new DefaultByteBufferPool(false, bufferSize);
-    final WebSocketChannel channel = WebSocketClient.connectionBuilder(worker, pool, uri)
-        .connect().get();
+    final WebSocketChannel channel = WebSocketClient.connectionBuilder(worker, pool, uri).connect().get();
     if (config.hasIdleTimeout()) {
       channel.setIdleTimeout(config.idleTimeoutMillis);
     }
-    final UndertowEndpoint endpoint = UndertowEndpoint.clientOf(channel, new UndertowEndpointConfig(), listener);
+    final UndertowEndpoint endpoint = UndertowEndpoint.clientOf(scanner, channel, new UndertowEndpointConfig(), listener);
     channel.getReceiveSetter().set(endpoint);
     channel.resumeReceives();
     return endpoint;
@@ -41,6 +44,7 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
 
   @Override
   public void close() throws Exception {
+    scanner.close();
     worker.shutdown();
     worker.awaitTermination();
   }

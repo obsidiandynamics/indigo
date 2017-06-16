@@ -4,6 +4,7 @@ import static io.undertow.Handlers.*;
 
 import org.xnio.*;
 
+import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.*;
@@ -12,9 +13,10 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
   private final Undertow server;
   private final UndertowEndpointManager manager;
   private final XnioWorker worker;
+  private final Scanner<UndertowEndpoint> scanner;
   
-  public UndertowServer(int port, String contextPath, UndertowEndpointManager manager) throws Exception {
-    this.manager = manager;
+  private UndertowServer(WSServerConfig config,
+                         EndpointListener<? super UndertowEndpoint> listener) throws Exception {
     final int ioThreads = Runtime.getRuntime().availableProcessors();
     final int coreWorkerThreads = 100;
     final int maxWorkerThreads = coreWorkerThreads * 100;
@@ -27,16 +29,23 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
                                              .set(Options.TCP_NODELAY, true)
                                              .getMap());
     
+    scanner = new Scanner<>(config.scanIntervalMillis, false);
+    final UndertowEndpointConfig endpointConfig = new UndertowEndpointConfig() {{
+      highWaterMark = config.highWaterMark;
+    }};
+    manager = new UndertowEndpointManager(scanner, config.idleTimeoutMillis, endpointConfig, listener);
+    
     server = Undertow.builder()
         .setWorker(worker)
-        .addHttpListener(port, "0.0.0.0")
-        .setHandler(path().addPrefixPath(contextPath, websocket(manager)))
+        .addHttpListener(config.port, "0.0.0.0")
+        .setHandler(path().addPrefixPath(config.contextPath, websocket(manager)))
         .build();
         server.start();
   }
   
   @Override
   public void close() throws Exception {
+    scanner.close();
     server.stop();
     worker.shutdown();
     worker.awaitTermination();
@@ -51,10 +60,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
     @Override
     public WSServer<UndertowEndpoint> create(WSServerConfig config,
                                              EndpointListener<? super UndertowEndpoint> listener) throws Exception {
-      final UndertowEndpointManager manager = new UndertowEndpointManager(new UndertowEndpointConfig() {{
-        highWaterMark = config.highWaterMark;
-      }}, listener);
-      return new UndertowServer(config.port, config.contextPath, manager);
+      return new UndertowServer(config, listener);
     }
   }
   

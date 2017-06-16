@@ -7,7 +7,7 @@ import java.nio.*;
 import com.obsidiandynamics.indigo.util.*;
 
 /**
- *  The abstract definition of a websocket endpoint.
+ *  The abstract definition of a WebSocket endpoint.
  *
  *  @param <E> The endpoint type.
  */
@@ -81,6 +81,13 @@ public interface WSEndpoint extends AutoCloseable {
    *  @throws IOException If an I/O error occurs.
    */
   void terminate() throws IOException, IOException;
+  
+  /**
+   *  Obtains the timestamp of the last send or receive activity.
+   *  
+   *  @return The last RX/TX timestamp, or 0 if this endpoint hasn't been exercised.
+   */
+  long getLastActivityTime();
   
   /**
    *  Awaits the closure of the underlying channel, which implies that the close frame handshake

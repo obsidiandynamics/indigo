@@ -422,7 +422,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     assertEquals(expectedReceive, server.sent.get());
 
     if (c.log.stages) c.log.out.format("s: awaiting client.received\n");
-    long waitStart = System.currentTimeMillis();
+    final long waitStart = System.currentTimeMillis();
     long lastPrint = System.currentTimeMillis();
     for (;;) {
       final long totalReceived = totalReceived(clients);
