@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+  package com.obsidiandynamics.indigo.ws;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -27,7 +27,7 @@ public final class Scanner<E extends WSEndpoint> extends Thread implements AutoC
       try {
         for (E endpoint : endpoints) {
           if (! endpoint.isOpen()) {
-              endpoint.close();
+            endpoint.close();
           }
         }
       } catch (Exception e) {
