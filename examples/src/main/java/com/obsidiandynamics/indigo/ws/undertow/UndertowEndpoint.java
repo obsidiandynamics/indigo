@@ -140,6 +140,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   @Override
   public void sendPing() {
     if (channel.isOpen()) {
+      touchLastActivityTime();
       WebSockets.sendPing(ByteBuffer.allocate(0), channel, null);
     }
   }

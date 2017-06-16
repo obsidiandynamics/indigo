@@ -11,75 +11,72 @@ import com.obsidiandynamics.indigo.ws.jetty.*;
 import com.obsidiandynamics.indigo.ws.netty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
-public final class AbruptCloseTest extends BaseClientServerTest {
+public final class IdleTimeoutTest extends BaseClientServerTest {
   @Test
-  public void testJtJtClientClose() throws Exception {
-    testClientClose(JettyServer.factory(), JettyClient.factory());
+  public void testJtJtServerTimeout() throws Exception {
+    // Note: Jetty requires more idle time allowance than others, otherwise the connection
+    // times out before it is upgraded to a WebSocket.
+    testServerTimeout(JettyServer.factory(), JettyClient.factory(), 500);
   }
   
   @Test
-  public void testUtUtClientClose() throws Exception {
-    testClientClose(UndertowServer.factory(), UndertowClient.factory());
+  public void testUtUtServerTimeout() throws Exception {
+    testServerTimeout(UndertowServer.factory(), UndertowClient.factory(), 1);
   }
   
   @Test
-  public void testNtUtClientClose() throws Exception {
-    testClientClose(NettyServer.factory(), UndertowClient.factory());
-  }
-
-  @Test
-  public void testJtJtServerClose() throws Exception {
-    testServerClose(JettyServer.factory(), JettyClient.factory());
+  public void testNtUtServerTimeout() throws Exception {
+    testServerTimeout(NettyServer.factory(), UndertowClient.factory(), 1);
   }
   
   @Test
-  public void testUtUtServerClose() throws Exception {
-    testServerClose(UndertowServer.factory(), UndertowClient.factory());
+  public void testJtJtClientTimeout() throws Exception {
+    // Note: Jetty requires more idle time allowance than others, otherwise the connection
+    // times out before it is upgraded to a WebSocket.
+    testClientTimeout(JettyServer.factory(), JettyClient.factory(), 500);
   }
   
   @Test
-  public void testNtUtServerClose() throws Exception {
-    testServerClose(NettyServer.factory(), UndertowClient.factory());
+  public void testUtUtClientTimeout() throws Exception {
+    testClientTimeout(UndertowServer.factory(), UndertowClient.factory(), 1);
   }
-
-  private void testClientClose(WSServerFactory<? extends WSEndpoint> serverFactory,
-                               WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
+  
+  private void testClientTimeout(WSServerFactory<? extends WSEndpoint> serverFactory,
+                                 WSClientFactory<? extends WSEndpoint> clientFactory,
+                                 int idleTimeoutMillis) throws Exception {
     final WSServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
     final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
-    
+
     final WSClientConfig clientConfig = getDefaultClientConfig();
+    clientConfig.idleTimeoutMillis = idleTimeoutMillis;
     clientConfig.scanIntervalMillis = 1;
     createClient(clientFactory, clientConfig);
 
     final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
-    final WSEndpoint endpoint = openClientEndpoint(serverConfig.port, clientListener);
-    endpoint.terminate();
+    openClientEndpoint(serverConfig.port, clientListener);
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());
       Mockito.verify(clientListener).onClose(Mocks.anyNotNull());
     });
   }
 
-  private void testServerClose(WSServerFactory<? extends WSEndpoint> serverFactory,
-                               WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
+  private void testServerTimeout(WSServerFactory<? extends WSEndpoint> serverFactory,
+                                 WSClientFactory<? extends WSEndpoint> clientFactory,
+                                 int idleTimeoutMillis) throws Exception {
     final WSServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
+    serverConfig.idleTimeoutMillis = idleTimeoutMillis;
     final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
-    
+
     final WSClientConfig clientConfig = getDefaultClientConfig();
     clientConfig.scanIntervalMillis = 1;
     createClient(clientFactory, clientConfig);
 
     final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
-    
-    await().dontCatchUncaughtExceptions().atMost(10, SECONDS).until(this::hasServerEndpoint);
-    
-    final WSEndpoint endpoint = getServerEndpoint();
-    endpoint.terminate();
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());
       Mockito.verify(clientListener).onClose(Mocks.anyNotNull());

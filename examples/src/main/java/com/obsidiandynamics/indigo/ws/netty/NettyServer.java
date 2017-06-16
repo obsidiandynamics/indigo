@@ -29,7 +29,8 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
     b.group(bossGroup, workerGroup)
     .channel(NioServerSocketChannel.class)
     .handler(new LoggingHandler(LogLevel.INFO))
-    .childHandler(new WebSocketServerInitializer(manager, config.contextPath, null));
+    .childHandler(new WebSocketServerInitializer(manager, config.contextPath, null, 
+                                                 config.idleTimeoutMillis));
 
     channel = b.bind(config.port).sync().channel();
   }

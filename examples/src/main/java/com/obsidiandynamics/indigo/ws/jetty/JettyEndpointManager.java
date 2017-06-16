@@ -8,7 +8,7 @@ import org.eclipse.jetty.websocket.servlet.*;
 import com.obsidiandynamics.indigo.ws.*;
 import com.obsidiandynamics.indigo.ws.Scanner;
 
-public final class JettyEndpointManager extends WebSocketHandler implements WSEndpointManager<JettyEndpoint> {
+final class JettyEndpointManager extends WebSocketHandler implements WSEndpointManager<JettyEndpoint> {
   private final int idleTimeoutMillis;
   
   private final JettyEndpointConfig config;
@@ -17,8 +17,8 @@ public final class JettyEndpointManager extends WebSocketHandler implements WSEn
   
   private final Scanner<JettyEndpoint> scanner;
 
-  public JettyEndpointManager(Scanner<JettyEndpoint> scanner, int idleTimeoutMillis, 
-                              JettyEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
+  JettyEndpointManager(Scanner<JettyEndpoint> scanner, int idleTimeoutMillis, 
+                       JettyEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;

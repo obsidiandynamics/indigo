@@ -8,17 +8,17 @@ import com.obsidiandynamics.indigo.ws.Scanner;
 
 import io.netty.channel.*;
 
-public final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
+final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
   private final NettyEndpointConfig config;
   
   private final WSEndpointListener<? super NettyEndpoint> listener;
   
-  private final Map<ChannelHandlerContext, NettyEndpoint> endpoints = new ConcurrentHashMap<>();
+  private final Map<Channel, NettyEndpoint> endpoints = new ConcurrentHashMap<>();
   
   private final Scanner<NettyEndpoint> scanner;
   
-  public NettyEndpointManager(Scanner<NettyEndpoint> scanner, NettyEndpointConfig config, 
-                              WSEndpointListener<? super NettyEndpoint> listener) {
+  NettyEndpointManager(Scanner<NettyEndpoint> scanner, NettyEndpointConfig config, 
+                       WSEndpointListener<? super NettyEndpoint> listener) {
     this.scanner = scanner;
     this.config = config;
     this.listener = listener;
@@ -26,18 +26,18 @@ public final class NettyEndpointManager implements WSEndpointManager<NettyEndpoi
 
   NettyEndpoint createEndpoint(ChannelHandlerContext context) {
     final NettyEndpoint endpoint = new NettyEndpoint(this, context);
-    endpoints.put(context, endpoint);
+    endpoints.put(context.channel(), endpoint);
     scanner.addEndpoint(endpoint);
     listener.onConnect(endpoint);
     return endpoint;
   }
   
-  public NettyEndpoint get(ChannelHandlerContext context) {
-    return endpoints.get(context);
+  NettyEndpoint get(Channel channel) {
+    return endpoints.get(channel);
   }
   
-  NettyEndpoint remove(ChannelHandlerContext context) {
-    final NettyEndpoint endpoint = endpoints.remove(context);
+  NettyEndpoint remove(Channel channel) {
+    final NettyEndpoint endpoint = endpoints.remove(channel);
     scanner.removeEndpoint(endpoint);
     return endpoint;
   }

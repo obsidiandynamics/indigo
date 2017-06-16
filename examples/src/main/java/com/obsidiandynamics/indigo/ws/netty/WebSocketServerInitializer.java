@@ -17,6 +17,7 @@ package com.obsidiandynamics.indigo.ws.netty;
 
 import java.nio.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 import io.netty.buffer.*;
 import io.netty.channel.*;
@@ -25,18 +26,20 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.handler.codec.http.websocketx.extensions.compression.*;
 import io.netty.handler.ssl.*;
+import io.netty.handler.timeout.*;
 
-/**
- */
 final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
   private final String contextPath;
   private final SslContext sslCtx;
   private final NettyEndpointManager manager;
+  private final int idleTimeoutMillis;
 
-  WebSocketServerInitializer(NettyEndpointManager manager, String contextPath, SslContext sslCtx) {
+  WebSocketServerInitializer(NettyEndpointManager manager, String contextPath, 
+                             SslContext sslCtx, int idleTimeoutMillis) {
     this.manager = manager;
     this.contextPath = contextPath;
     this.sslCtx = sslCtx;
+    this.idleTimeoutMillis = idleTimeoutMillis;
   }
 
   @Override
@@ -47,6 +50,15 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
     }
     pipeline.addLast(new HttpServerCodec());
     pipeline.addLast(new HttpObjectAggregator(65536));
+    pipeline.addLast(new IdleStateHandler(0, 0, idleTimeoutMillis, TimeUnit.MILLISECONDS) {
+      @Override protected void channelIdle(ChannelHandlerContext ctx, IdleStateEvent evt) throws Exception {
+        super.channelIdle(ctx, evt);
+        final NettyEndpoint endpoint = manager.remove(ctx.channel());
+        if (endpoint != null) {
+          endpoint.terminate();
+        }
+      }
+    });
     pipeline.addLast(new WebSocketServerCompressionHandler());
     pipeline.addLast(new WebSocketServerProtocolHandler(contextPath, null, true) {
       @Override public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -58,20 +70,20 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
       protected void decode(ChannelHandlerContext ctx, WebSocketFrame frame, List<Object> out) throws Exception {
         super.decode(ctx, frame, out);
         if (frame instanceof CloseWebSocketFrame) {
-          final NettyEndpoint endpoint = manager.remove(ctx);
+          final NettyEndpoint endpoint = manager.remove(ctx.channel());
           if (endpoint != null) {
             final CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
             manager.getListener().onDisconnect(endpoint, closeFrame.statusCode(), closeFrame.reasonText());
             endpoint.fireCloseEvent();
           }
         } else if (frame instanceof TextWebSocketFrame) {
-          final NettyEndpoint endpoint = manager.get(ctx);
+          final NettyEndpoint endpoint = manager.get(ctx.channel());
           if (endpoint != null) {
             final TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
             manager.getListener().onText(endpoint, textFrame.text());
           }
         } else if (frame instanceof BinaryWebSocketFrame) {
-          final NettyEndpoint endpoint = manager.get(ctx);
+          final NettyEndpoint endpoint = manager.get(ctx.channel());
           if (endpoint != null) {
             final BinaryWebSocketFrame binaryFrame = (BinaryWebSocketFrame) frame;
             final ByteBuf buf = binaryFrame.content();
@@ -79,13 +91,18 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
             buf.readBytes(message);
             manager.getListener().onBinary(endpoint, message);
           }
+        } else if (frame instanceof PongWebSocketFrame) {
+          final NettyEndpoint endpoint = manager.get(ctx.channel());
+          if (endpoint != null) {
+            endpoint.onPong();
+          }
         }
       }
       
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
-        final NettyEndpoint endpoint = manager.get(ctx);
+        final NettyEndpoint endpoint = manager.get(ctx.channel());
         if (endpoint != null) {
           manager.getListener().onError(endpoint, cause);
         }

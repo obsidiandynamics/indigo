@@ -12,7 +12,7 @@ import io.undertow.websockets.*;
 import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.*;
 
-public final class UndertowEndpointManager implements WebSocketConnectionCallback, WSEndpointManager<UndertowEndpoint> {
+final class UndertowEndpointManager implements WebSocketConnectionCallback, WSEndpointManager<UndertowEndpoint> {
   private static final boolean NODELAY = true;
   
   private final int idleTimeoutMillis;
@@ -23,8 +23,8 @@ public final class UndertowEndpointManager implements WebSocketConnectionCallbac
   
   private final Scanner<UndertowEndpoint> scanner;
   
-  public UndertowEndpointManager(Scanner<UndertowEndpoint> scanner, int idleTimeoutMillis, UndertowEndpointConfig config, 
-                                 WSEndpointListener<? super UndertowEndpoint> listener) {
+  UndertowEndpointManager(Scanner<UndertowEndpoint> scanner, int idleTimeoutMillis, UndertowEndpointConfig config, 
+                          WSEndpointListener<? super UndertowEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;

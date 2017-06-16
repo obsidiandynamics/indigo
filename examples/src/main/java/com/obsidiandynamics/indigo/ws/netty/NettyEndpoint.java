@@ -111,9 +111,13 @@ public final class NettyEndpoint implements WSEndpoint {
   
   void fireCloseEvent() {
     if (closeFired.compareAndSet(false, true)) {
-      manager.remove(handlerContext);
+      manager.remove(handlerContext.channel());
       manager.getListener().onClose(this);
     }
+  }
+  
+  void onPong() {
+    //TODO
   }
 
   @Override
