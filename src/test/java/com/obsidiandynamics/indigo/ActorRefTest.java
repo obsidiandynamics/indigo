@@ -32,7 +32,7 @@ public class ActorRefTest {
   
   @Test
   public void testEqualsWrongType() {
-    assertFalse(ActorRef.of("foo").equals(3));
+    assertFalse(((Object) ActorRef.of("foo")).equals(3));
   }
   
   @Test
