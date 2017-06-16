@@ -20,15 +20,15 @@ public final class Mocks {
     inOrder.verifyNoMoreInteractions();
   }
   
-  public static <T> T logger(T mock) {
-    return InterceptingProxy.of(mock, new LoggingInterceptor<>());
+  public static <T> T logger(T delegate) {
+    return InterceptingProxy.of(delegate, new LoggingInterceptor<>());
   }
   
-  public static <T> T logger(Class<T> cls, T mock) {
-    return logger(cls, mock, new LoggingInterceptor<>());
+  public static <T> T logger(Class<T> cls, T delegate) {
+    return logger(cls, delegate, new LoggingInterceptor<>());
   }
   
-  public static <T> T logger(Class<T> cls, T mock, LoggingInterceptor<T> interceptor) {
-    return InterceptingProxy.of(cls, mock, interceptor);
+  public static <T> T logger(Class<T> cls, T delegate, LoggingInterceptor<T> interceptor) {
+    return InterceptingProxy.of(cls, delegate, interceptor);
   }
 }

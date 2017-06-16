@@ -14,10 +14,12 @@ public class UtilConformanceTest {
     assertUtilityClassWellDefined(ActorConfig.Key.class);
     assertUtilityClassWellDefined(ActorSystemConfig.Key.class);
     assertUtilityClassWellDefined(Assertions.class);
-    assertUtilityClassWellDefined(Diagnostics.Key.class);
+    assertUtilityClassWellDefined(BashInteractor.class);
     assertUtilityClassWellDefined(Crypto.class);
+    assertUtilityClassWellDefined(Diagnostics.Key.class);
     assertUtilityClassWellDefined(Functions.class);
     assertUtilityClassWellDefined(IndigoVersion.class);
+    assertUtilityClassWellDefined(Mocks.class);
     assertUtilityClassWellDefined(PropertyUtils.class);
     assertUtilityClassWellDefined(Threads.class);
   }

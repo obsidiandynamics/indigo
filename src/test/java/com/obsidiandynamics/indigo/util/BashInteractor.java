@@ -3,6 +3,8 @@ import java.io.*;
 import java.util.function.*;
 
 public final class BashInteractor {
+  private BashInteractor() {}
+  
   public static int execute(String command, boolean waitForResponse, Consumer<String> handler) {
     int shellExitStatus = -1;
     final ProcessBuilder pb = new ProcessBuilder("bash", "-c", command);
