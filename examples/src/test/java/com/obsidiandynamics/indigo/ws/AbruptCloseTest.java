@@ -84,19 +84,29 @@ public final class AbruptCloseTest implements TestSupport {
                                        clientListener,
                                        new LoggingInterceptor<>("c: ")));
   }
+  
+  private boolean hasServerEndpoint() {
+    return ! server.getEndpointManager().getEndpoints().isEmpty();
+  }
+  
+  private WSEndpoint getServerEndpoint() {
+    return server.getEndpointManager().getEndpoints().iterator().next();
+  }
+  
+  @SuppressWarnings("unchecked")
+  private static EndpointListener<WSEndpoint> createMockListener() {
+    return Mockito.mock(EndpointListener.class);
+  }
 
   private void testClientClose(WSServerFactory<? extends WSEndpoint> serverFactory,
                                WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
     final WSServerConfig serverConfig = getServerConfig();
-    @SuppressWarnings("unchecked")
-    final EndpointListener<WSEndpoint> serverListener = Mockito.mock(EndpointListener.class);
+    final EndpointListener<WSEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
     createClient(clientFactory);
 
-    @SuppressWarnings("unchecked")
-    final EndpointListener<WSEndpoint> clientListener = Mockito.mock(EndpointListener.class);
+    final EndpointListener<WSEndpoint> clientListener = createMockListener();
     final WSEndpoint endpoint = openClientEndpoint(serverConfig.port, clientListener);
-    
     endpoint.terminate();
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());
@@ -107,21 +117,17 @@ public final class AbruptCloseTest implements TestSupport {
   private void testServerClose(WSServerFactory<? extends WSEndpoint> serverFactory,
                                WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
     final WSServerConfig serverConfig = getServerConfig();
-    @SuppressWarnings("unchecked")
-    final EndpointListener<WSEndpoint> serverListener = Mockito.mock(EndpointListener.class);
+    final EndpointListener<WSEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
     createClient(clientFactory);
 
-    @SuppressWarnings("unchecked")
-    final EndpointListener<WSEndpoint> clientListener = Mockito.mock(EndpointListener.class);
+    final EndpointListener<WSEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
     
-    await().dontCatchUncaughtExceptions().atMost(10, SECONDS)
-    .until(() -> ! server.getEndpointManager().getEndpoints().isEmpty());
+    await().dontCatchUncaughtExceptions().atMost(10, SECONDS).until(this::hasServerEndpoint);
     
-    final WSEndpoint endpoint = server.getEndpointManager().getEndpoints().iterator().next();
+    final WSEndpoint endpoint = getServerEndpoint();
     endpoint.terminate();
-    
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());
       Mockito.verify(clientListener).onClose(Mocks.anyNotNull());
