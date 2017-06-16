@@ -12,11 +12,16 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
   private final NettyEndpointManager manager;
   private final EventLoopGroup bossGroup;
   private final EventLoopGroup workerGroup;
+  private final Scanner<NettyEndpoint> scanner;
   
   private final Channel channel;
   
-  private NettyServer(int port, String contextPath, NettyEndpointManager manager) throws InterruptedException {
-    this.manager = manager;
+  private NettyServer(WSServerConfig config, EndpointListener<? super NettyEndpoint> listener) throws InterruptedException {
+    scanner = new Scanner<>(config.scanIntervalMillis, true);
+    final NettyEndpointConfig endpointConfig = new NettyEndpointConfig() {{
+      highWaterMark = config.highWaterMark;
+    }};
+    manager = new NettyEndpointManager(scanner, endpointConfig, listener);
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup();
     
@@ -24,13 +29,14 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
     b.group(bossGroup, workerGroup)
     .channel(NioServerSocketChannel.class)
     .handler(new LoggingHandler(LogLevel.INFO))
-    .childHandler(new WebSocketServerInitializer(manager, contextPath, null));
+    .childHandler(new WebSocketServerInitializer(manager, config.contextPath, null));
 
-    channel = b.bind(port).sync().channel();
+    channel = b.bind(config.port).sync().channel();
   }
   
   @Override
   public void close() throws Exception {
+    scanner.close();
     bossGroup.shutdownGracefully();
     workerGroup.shutdownGracefully();
     channel.closeFuture().sync();
@@ -42,11 +48,6 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
   }
   
   public static WSServerFactory<NettyEndpoint> factory() {
-    return (config, listener) -> {
-      final NettyEndpointManager manager = new NettyEndpointManager(new NettyEndpointConfig() {{
-        highWaterMark = config.highWaterMark;
-      }}, listener);
-      return new NettyServer(config.port, config.contextPath, manager);
-    };
+    return NettyServer::new;
   }
 }

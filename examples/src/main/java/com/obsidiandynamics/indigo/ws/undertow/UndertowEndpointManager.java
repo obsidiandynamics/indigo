@@ -2,12 +2,11 @@ package com.obsidiandynamics.indigo.ws.undertow;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 
 import org.xnio.*;
 
-import com.obsidiandynamics.indigo.iot.Scanner;
 import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.ws.Scanner;
 
 import io.undertow.websockets.*;
 import io.undertow.websockets.core.*;

@@ -1,11 +1,9 @@
-package com.obsidiandynamics.indigo.iot;
+package com.obsidiandynamics.indigo.ws;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 import org.slf4j.*;
-
-import com.obsidiandynamics.indigo.ws.*;
 
 public final class Scanner<E extends WSEndpoint> extends Thread implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(Scanner.class);
@@ -17,7 +15,7 @@ public final class Scanner<E extends WSEndpoint> extends Thread implements AutoC
   private volatile boolean running = true;
   
   public Scanner(int scanIntervalMillis, boolean pingEnabled) {
-    super(String.format("Scanner-%dms-ping=%b", scanIntervalMillis, pingEnabled));
+    super(String.format("Scanner[scanInterval=%dms,ping=%b]", scanIntervalMillis, pingEnabled));
     this.scanIntervalMillis = scanIntervalMillis;
     this.pingEnabled = pingEnabled;
     start();
@@ -26,14 +24,14 @@ public final class Scanner<E extends WSEndpoint> extends Thread implements AutoC
   @Override
   public void run() {
     while (running) {
-      for (E endpoint : endpoints) {
-        if (! endpoint.isOpen()) {
-          try {
-            endpoint.close();
-          } catch (Exception e) {
-            LOG.warn("Unexpected error while closing endpoint", e);
+      try {
+        for (E endpoint : endpoints) {
+          if (! endpoint.isOpen()) {
+              endpoint.close();
           }
         }
+      } catch (Exception e) {
+        LOG.warn("Unexpected error", e);
       }
       
       try {

@@ -24,8 +24,9 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
     this.manager = manager;
   }
   
-  public static JettyEndpoint clientOf(JettyEndpointConfig config, EndpointListener<? super JettyEndpoint> listener) {
-    return new JettyEndpointManager(0, config, listener).createEndpoint();
+  public static JettyEndpoint clientOf(Scanner<JettyEndpoint> scanner, 
+                                       JettyEndpointConfig config, EndpointListener<? super JettyEndpoint> listener) {
+    return new JettyEndpointManager(scanner, 0, config, listener).createEndpoint();
   }
   
   @Override
@@ -121,13 +122,13 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
 
   @Override
   public boolean isOpen() {
-    return getSession().isOpen();
+    return isConnected();
   }
 
   @Override
   public void close() throws IOException {
     final Session session = getSession();
-    if (session.isOpen()) {
+    if (session != null && session.isOpen()) {
       getSession().close();
     } else {
       fireCloseEvent();
@@ -164,5 +165,10 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   public long getLastActivityTime() {
     // TODO Auto-generated method stub
     return 0;
+  }
+
+  @Override
+  public String toString() {
+    return "JettyEndpoint [session=" + getSession() + "]";
   }
 }

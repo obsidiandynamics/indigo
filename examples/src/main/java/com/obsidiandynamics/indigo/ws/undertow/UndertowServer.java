@@ -4,7 +4,6 @@ import static io.undertow.Handlers.*;
 
 import org.xnio.*;
 
-import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.*;
@@ -29,7 +28,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
                                              .set(Options.TCP_NODELAY, true)
                                              .getMap());
     
-    scanner = new Scanner<>(config.scanIntervalMillis, false);
+    scanner = new Scanner<>(config.scanIntervalMillis, true);
     final UndertowEndpointConfig endpointConfig = new UndertowEndpointConfig() {{
       highWaterMark = config.highWaterMark;
     }};
@@ -57,9 +56,8 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
   }
   
   public static final class Factory implements WSServerFactory<UndertowEndpoint> {
-    @Override
-    public WSServer<UndertowEndpoint> create(WSServerConfig config,
-                                             EndpointListener<? super UndertowEndpoint> listener) throws Exception {
+    @Override public WSServer<UndertowEndpoint> create(WSServerConfig config,
+                                                       EndpointListener<? super UndertowEndpoint> listener) throws Exception {
       return new UndertowServer(config, listener);
     }
   }

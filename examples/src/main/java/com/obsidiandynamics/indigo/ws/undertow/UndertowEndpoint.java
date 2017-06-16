@@ -5,7 +5,6 @@ import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
-import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.*;
@@ -29,7 +28,8 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     this.channel = channel;
   }
   
-  static UndertowEndpoint clientOf(Scanner<UndertowEndpoint> scanner, WebSocketChannel channel, UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
+  static UndertowEndpoint clientOf(Scanner<UndertowEndpoint> scanner, 
+                                   WebSocketChannel channel, UndertowEndpointConfig config, EndpointListener<? super UndertowEndpoint> listener) {
     return new UndertowEndpointManager(scanner, 0, config, listener).createEndpoint(channel);
   }
   

@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.*;
 
 import org.awaitility.*;
 import org.eclipse.jetty.client.*;
-import org.eclipse.jetty.util.thread.*;
 import org.junit.*;
 import org.xnio.*;
 
@@ -105,22 +104,11 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   }
   
   private static XnioWorker createXnioWorker() throws IllegalArgumentException, IOException {
-    return Xnio.getInstance().createWorker(OptionMap.builder()
-                                           .set(Options.WORKER_IO_THREADS, Runtime.getRuntime().availableProcessors())
-                                           .set(Options.THREAD_DAEMON, true)
-                                           .set(Options.CONNECTION_HIGH_WATER, 1_000_000)
-                                           .set(Options.CONNECTION_LOW_WATER, 1_000_000)
-                                           .set(Options.WORKER_TASK_CORE_THREADS, 100)
-                                           .set(Options.WORKER_TASK_MAX_THREADS, 10_000)
-                                           .set(Options.TCP_NODELAY, true)
-                                           .getMap());
+    return UndertowClient.createDefaultXnioWorker();
   }
   
   private static HttpClient createHttpClient() throws Exception {
-    final HttpClient httpClient = new HttpClient();
-    httpClient.setExecutor(new QueuedThreadPool(10_000, 100));
-    httpClient.start();
-    return httpClient;
+    return JettyClient.createDefaultHttpClient();
   }
   
   @SuppressWarnings("unchecked")

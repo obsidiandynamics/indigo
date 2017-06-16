@@ -9,22 +9,31 @@ import com.obsidiandynamics.indigo.ws.*;
 public final class JettyServer implements WSServer<JettyEndpoint> {
   private final JettyEndpointManager manager;
   private final Server server;
+  private final Scanner<JettyEndpoint> scanner;
   
-  private JettyServer(int port, String contextPath, JettyEndpointManager manager) throws Exception {
-    this.manager = manager;
+  private JettyServer(WSServerConfig config,
+                      EndpointListener<? super JettyEndpoint> listener) throws Exception {
     server = new Server(new QueuedThreadPool(100));
     final ServerConnector connector = new ServerConnector(server);
-    connector.setPort(port);
+    connector.setPort(config.port);
     server.setConnectors(new Connector[]{connector});
     
-    final ContextHandler context = new ContextHandler(contextPath);
+    final ContextHandler context = new ContextHandler(config.contextPath);
     server.setHandler(context);
+
+    scanner = new Scanner<>(config.scanIntervalMillis, true);
+    final JettyEndpointConfig endpointConfig = new JettyEndpointConfig() {{
+      highWaterMark = config.highWaterMark;
+    }};
+    manager = new JettyEndpointManager(scanner, config.idleTimeoutMillis, 
+                                                                  endpointConfig, listener);
     context.setHandler(manager);
     server.start();
   }
   
   @Override
   public void close() throws Exception {
+    scanner.close();
     server.stop();
   }
 
@@ -34,11 +43,6 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
   }
   
   public static WSServerFactory<JettyEndpoint> factory() {
-    return (config, listener) -> {
-      final JettyEndpointManager manager = new JettyEndpointManager(config.idleTimeoutMillis, new JettyEndpointConfig() {{
-        highWaterMark = config.highWaterMark;
-      }}, listener);
-      return new JettyServer(config.port, config.contextPath, manager);
-    };
+    return JettyServer::new;
   }
 }

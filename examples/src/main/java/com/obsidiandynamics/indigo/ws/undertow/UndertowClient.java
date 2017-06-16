@@ -5,7 +5,6 @@ import java.net.*;
 
 import org.xnio.*;
 
-import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 import io.undertow.connector.*;
@@ -50,9 +49,8 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
   }
   
   public static final class Factory implements WSClientFactory<UndertowEndpoint> {
-    @Override
-    public WSClient<UndertowEndpoint> create(WSClientConfig config) throws Exception {
-      return new UndertowClient(config, createXnioWorker(), 1024);
+    @Override public WSClient<UndertowEndpoint> create(WSClientConfig config) throws Exception {
+      return new UndertowClient(config, createDefaultXnioWorker(), 1024);
     }
   }
   
@@ -64,7 +62,7 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
     return config -> new UndertowClient(config, worker, bufferSize);
   }
   
-  private static XnioWorker createXnioWorker() throws IllegalArgumentException, IOException {
+  public static XnioWorker createDefaultXnioWorker() throws IllegalArgumentException, IOException {
     return Xnio.getInstance().createWorker(OptionMap.builder()
                                            .set(Options.WORKER_IO_THREADS, Runtime.getRuntime().availableProcessors())
                                            .set(Options.THREAD_DAEMON, true)

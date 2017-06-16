@@ -1,7 +1,6 @@
 package com.obsidiandynamics.indigo.ws;
 
 import java.net.*;
-import java.nio.*;
 import java.util.concurrent.*;
 
 import org.awaitility.*;
@@ -9,6 +8,8 @@ import org.junit.*;
 import org.mockito.*;
 
 import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.indigo.ws.jetty.*;
+import com.obsidiandynamics.indigo.ws.netty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class AbruptClose implements TestSupport {
@@ -34,8 +35,18 @@ public final class AbruptClose implements TestSupport {
   }
 
   @Test
+  public void testJtJtClientClose() throws Exception {
+    testClientClose(JettyServer.factory(), JettyClient.factory());
+  }
+  
+  @Test
   public void testUtUtClientClose() throws Exception {
     testClientClose(UndertowServer.factory(), UndertowClient.factory());
+  }
+  
+  @Test
+  public void testNtUtClientClose() throws Exception {
+    testClientClose(NettyServer.factory(), UndertowClient.factory());
   }
 
   @SuppressWarnings("unchecked") 

@@ -131,4 +131,9 @@ public final class NettyEndpoint implements WSEndpoint {
     // TODO Auto-generated method stub
     return 0;
   }
+
+  @Override
+  public String toString() {
+    return "NettyEndpoint [channel=" + handlerContext.channel() + "]";
+  }
 }
