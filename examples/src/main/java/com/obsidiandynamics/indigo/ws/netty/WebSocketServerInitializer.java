@@ -85,18 +85,26 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
         } else if (frame instanceof BinaryWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx.channel());
           if (endpoint != null) {
-            final BinaryWebSocketFrame binaryFrame = (BinaryWebSocketFrame) frame;
-            final ByteBuf buf = binaryFrame.content();
-            final ByteBuffer message = ByteBuffer.allocate(buf.readableBytes());
-            buf.readBytes(message);
-            manager.getListener().onBinary(endpoint, message);
+            manager.getListener().onBinary(endpoint, toByteBuffer(frame.content()));
+          }
+        } else if (frame instanceof PingWebSocketFrame) {
+          final NettyEndpoint endpoint = manager.get(ctx.channel());
+          if (endpoint != null) {
+            endpoint.onPing(toByteBuffer(frame.content()));
           }
         } else if (frame instanceof PongWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx.channel());
           if (endpoint != null) {
-            endpoint.onPong();
+            endpoint.onPong(toByteBuffer(frame.content()));
           }
         }
+      }
+      
+      private ByteBuffer toByteBuffer(ByteBuf buf) {
+        final ByteBuffer data = ByteBuffer.allocate(buf.readableBytes());
+        buf.readBytes(buf);
+        data.flip();
+        return data;
       }
       
       @Override

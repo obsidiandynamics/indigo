@@ -9,7 +9,7 @@ import org.eclipse.jetty.websocket.api.*;
 
 import com.obsidiandynamics.indigo.ws.*;
 
-public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint {
+public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint, WebSocketPingPongListener {
   private static final byte[] ZERO_ARRAY = new byte[0];
   
   private final JettyEndpointManager manager;
@@ -170,5 +170,15 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint 
   @Override
   public String toString() {
     return "JettyEndpoint [session=" + getSession() + "]";
+  }
+
+  @Override
+  public void onWebSocketPing(ByteBuffer payload) {
+    manager.getListener().onPing(payload);
+  }
+
+  @Override
+  public void onWebSocketPong(ByteBuffer payload) {
+    manager.getListener().onPong(payload);
   }
 }

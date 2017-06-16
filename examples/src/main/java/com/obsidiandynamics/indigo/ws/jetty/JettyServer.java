@@ -26,7 +26,7 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
       highWaterMark = config.highWaterMark;
     }};
     manager = new JettyEndpointManager(scanner, config.idleTimeoutMillis, 
-                                                                  endpointConfig, listener);
+                                       endpointConfig, listener);
     context.setHandler(manager);
     server.start();
   }

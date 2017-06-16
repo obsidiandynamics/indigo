@@ -9,6 +9,10 @@ public interface WSEndpointListener<E extends WSEndpoint> {
   
   void onBinary(E endpoint, ByteBuffer message);
   
+  void onPing(ByteBuffer data);
+  
+  void onPong(ByteBuffer data);
+  
   void onDisconnect(E endpoint, int statusCode, String reason);
   
   void onClose(E endpoint);

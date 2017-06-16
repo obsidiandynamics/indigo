@@ -92,4 +92,10 @@ final class EndpointAdapter<E extends WSEndpoint> implements WSEndpointListener<
   public void onError(E endpoint, Throwable cause) {
     LOG.warn("Unexpected error", cause);
   }
+
+  @Override
+  public void onPing(ByteBuffer data) {}
+
+  @Override
+  public void onPong(ByteBuffer data) {}
 }

@@ -47,6 +47,14 @@ public final class DefaultClientHarness extends ClientHarness implements TestSup
         log("c: closed\n");
         closed.set(true);
       }
+
+      @Override public void onPing(ByteBuffer data) {
+        log("c: ping\n");
+      }
+
+      @Override public void onPong(ByteBuffer data) {
+        log("c: pong\n");
+      }
     };
     
     endpoint = client.connect(URI.create("ws://127.0.0.1:" + port + "/"), clientListener);

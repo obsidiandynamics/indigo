@@ -116,8 +116,12 @@ public final class NettyEndpoint implements WSEndpoint {
     }
   }
   
-  void onPong() {
-    //TODO
+  void onPing(ByteBuffer data) {
+    manager.getListener().onPing(data);
+  }
+  
+  void onPong(ByteBuffer data) {
+    manager.getListener().onPong(data);
   }
 
   @Override

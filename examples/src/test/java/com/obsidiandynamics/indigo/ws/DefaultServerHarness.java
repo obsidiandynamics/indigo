@@ -46,6 +46,14 @@ final class DefaultServerHarness extends ServerHarness implements TestSupport {
         closed.incrementAndGet();
         ping.set(false);
       }
+
+      @Override public void onPing(ByteBuffer data) {
+        log("s: ping\n");
+      }
+
+      @Override public void onPong(ByteBuffer data) {
+        log("s: pong\n");
+      }
     };
     
     writeCallback = new SendCallback() {

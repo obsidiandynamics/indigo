@@ -48,12 +48,16 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   protected void onFullPingMessage(final WebSocketChannel channel, BufferedBinaryMessage message) throws IOException {
     super.onFullPingMessage(channel, message);
     touchLastActivityTime();
+    final ByteBuffer buf = WebSockets.mergeBuffers(message.getData().getResource());
+    manager.getListener().onPing(buf);
   }
 
   @Override
   protected void onFullPongMessage(final WebSocketChannel channel, BufferedBinaryMessage message) throws IOException {
     super.onFullPongMessage(channel, message);
     touchLastActivityTime();
+    final ByteBuffer buf = WebSockets.mergeBuffers(message.getData().getResource());
+    manager.getListener().onPong(buf);
   }
   
   @Override
