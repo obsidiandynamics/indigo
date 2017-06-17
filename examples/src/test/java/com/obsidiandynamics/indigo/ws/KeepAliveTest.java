@@ -32,11 +32,13 @@ public final class KeepAliveTest extends BaseClientServerTest {
     final WSServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
     serverConfig.pingIntervalMillis = 1;
+    serverConfig.idleTimeoutMillis = 2000;
     final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
 
     final WSClientConfig clientConfig = getDefaultClientConfig();
     clientConfig.scanIntervalMillis = 1;
+    clientConfig.idleTimeoutMillis = 2000;
     createClient(clientFactory, clientConfig);
 
     final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
