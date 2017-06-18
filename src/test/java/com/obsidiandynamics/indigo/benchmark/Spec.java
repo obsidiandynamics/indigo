@@ -2,6 +2,8 @@ package com.obsidiandynamics.indigo.benchmark;
 
 import java.util.*;
 
+import com.obsidiandynamics.indigo.util.*;
+
 public interface Spec {
   void init();
   
@@ -14,16 +16,26 @@ public interface Spec {
   public final class SpecMultiplier {
     private final Spec spec;
     private final int times;
+    private ThrowingRunnable onFinally = () -> {};
 
     SpecMultiplier(Spec spec, int times) {
       this.spec = spec;
       this.times = times;
     }
     
+    public SpecMultiplier andFinally(ThrowingRunnable onFinally) {
+      this.onFinally = onFinally;
+      return this;
+    }
+    
     public List<Summary> test() throws Exception {
       final List<Summary> summaries = new ArrayList<>(times);
-      for (int i = 0; i < times; i++) {
-        summaries.add(spec.test());
+      try {
+        for (int i = 0; i < times; i++) {
+          summaries.add(spec.test());
+        }
+      } finally {
+        onFinally.run();
       }
       return summaries;
     }
