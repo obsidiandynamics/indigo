@@ -208,6 +208,11 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
 
   @Override
   public String toString() {
-    return "UndertowEndpoint [channel=" + channel + "]";
+    return "UndertowEndpoint [channel=" + toString(channel) + "]";
+  }
+  
+  private static String toString(WebSocketChannel channel) {
+    return channel.getClass().getSimpleName() + " peer " + channel.getPeerAddress() + " local " 
+        + channel.getLocalAddress();
   }
 }
