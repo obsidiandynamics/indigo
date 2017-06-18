@@ -13,6 +13,7 @@ import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator;
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
@@ -43,7 +44,7 @@ public abstract class AbstractAuthTest {
   public void setup() throws Exception {
     port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
     
-    wire = new Wire(true);
+    wire = new Wire(true, LocationHint.UNSPECIFIED);
     handler = new RemoteNexusHandlerAdapter() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (topic.endsWith("/errors")) {

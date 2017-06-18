@@ -5,6 +5,7 @@ import com.obsidiandynamics.indigo.iot.edge.auth.*;
 import com.obsidiandynamics.indigo.iot.edge.auth.AuthChain.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.frame.Error;
+import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
@@ -324,7 +325,7 @@ public final class EdgeNode implements AutoCloseable {
   public static final class EdgeNodeBuilder {
     private WSServerFactory<?> serverFactory;
     private WSServerConfig serverConfig = new WSServerConfig();
-    private Wire wire = new Wire(false);
+    private Wire wire = new Wire(false, LocationHint.EDGE);
     private TopicBridge topicBridge;
     private AuthChain pubAuthChain = AuthChain.createPubDefault();
     private AuthChain subAuthChain = AuthChain.createSubDefault();

@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.ws.*;
 
 public final class RemoteNode implements AutoCloseable {
@@ -61,7 +62,7 @@ public final class RemoteNode implements AutoCloseable {
   public static final class RemoteNodeBuilder {
     private WSClientFactory<?> clientFactory;
     private WSClientConfig clientConfig = new WSClientConfig();
-    private Wire wire = new Wire(false);
+    private Wire wire = new Wire(false, LocationHint.REMOTE);
     
     public RemoteNodeBuilder withClientFactory(WSClientFactory<?> clientFactory) {
       this.clientFactory = clientFactory;

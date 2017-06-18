@@ -53,6 +53,6 @@ public final class BindResponseFrame extends IdFrame implements TextEncodedFrame
 
   @Override
   public String toString() {
-    return "BindResponse [messageId=" + getMessageId() + ", error=" + Arrays.toString(errors) + "]";
+    return "BindResponse [messageId=" + getMessageId() + ", errors=" + Arrays.toString(errors) + "]";
   }
 }

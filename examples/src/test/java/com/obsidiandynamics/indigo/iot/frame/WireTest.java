@@ -8,24 +8,28 @@ import java.util.*;
 
 import org.junit.*;
 
+import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class WireTest implements TestSupport {
-  private Wire wire;
-  
-  @Before
-  public void setup() {
-    wire = new Wire(false);
-  }
-  
   private static String requote(String singleQuotedString) {
     return singleQuotedString.replaceAll("'", "\"");
   }
   
   @Test
-  public void testMarshalSubscribe() {
+  public void testBindEqualsHashcode() {
+    final BindFrame b1 = new BindFrame(new UUID(0, 0), null, null, new String[0], new String[0], null);
+    final BindFrame b2 = new BindFrame();
+    assertEquals(b1.hashCode(), b2.hashCode());
+    assertEquals(b1, b2);
+  }
+  
+  @Test
+  public void testBind() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
     final UUID id = UUID.fromString("123e4567-e89b-12d3-a456-426655440000");
-    final BindFrame orig = new BindFrame(id, "123", new BearerAuth("xyz"), new String[]{"a", "a/b", "a/b/c"}, new String[0], "some-meta");
+    final BindFrame orig = new BindFrame(id, "123", new BearerAuth("xyz"), 
+                                         new String[]{"a", "a/b", "a/b/c"}, new String[0], "some-meta");
     final String enc = wire.encode(orig);
     log("encoded: '%s'\n", enc);
     final String expected = requote("B {"
@@ -43,50 +47,77 @@ public final class WireTest implements TestSupport {
   }
   
   @Test
-  public void testMarshalSubscribeResponse() {
-    testEncodeDecode(new BindResponseFrame(new UUID(0l, 0l), new GeneralError("some-error")));
+  public void testBindResponse() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
+    testEncodeDecode(wire, new BindResponseFrame(new UUID(0, 0), new GeneralError("some-error")));
+  }
+  
+  @Test
+  public void testBindWithHint() {
+    final Wire wire = new Wire(false, LocationHint.EDGE);
+    final String enc = requote("B {}");
+    final BindFrame decoded = (BindFrame) wire.decode(enc);
+    assertEquals(new BindFrame(), decoded);
+  }
+  
+  @Test
+  public void testBindResponseWithHint() {
+    final Wire wire = new Wire(false, LocationHint.REMOTE);
+    final String enc = requote("B {"
+        + "'messageId'='00000000-0000-0000-0000-000000000000',"
+        + "'errors'=[]"
+        + "}");
+    final BindResponseFrame decoded = (BindResponseFrame) wire.decode(enc);
+    assertEquals(new BindResponseFrame(null), decoded);
   }
   
   @Test
   public void testMarshalPublishText() {
-    testEncodeDecode(new PublishTextFrame("some/topic/to/publish", "some-payload"));
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
+    testEncodeDecode(wire, new PublishTextFrame("some/topic/to/publish", "some-payload"));
   }
   
   @Test
-  public void testMarshalText() {
-    testEncodeDecode(new TextFrame("some/topic", "some-text-here"));
+  public void testText() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
+    testEncodeDecode(wire, new TextFrame("some/topic", "some-text-here"));
   }
   
   @Test
-  public void testMarshalPublishBinary() {
-    testEncodeDecode(new PublishBinaryFrame("some/topic/to/publish", 
-                                            ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
+  public void testPublishBinary() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
+    testEncodeDecode(wire, new PublishBinaryFrame("some/topic/to/publish", 
+                                                  ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
   }
   
   @Test
-  public void testMarshalBinary() {
-    testEncodeDecode(new BinaryFrame("some/topic", ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
+  public void testBinary() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
+    testEncodeDecode(wire, new BinaryFrame("some/topic", ByteBuffer.wrap(toByteArray(0x00, 0x01, 0x02))));
   }
   
   @Test
-  public void testMarshalBinaryWithLong() {
+  public void testBinaryWithLong() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
     final ByteBuffer buf = ByteBuffer.allocate(8);
     buf.putLong(System.nanoTime());
     buf.flip();
-    testEncodeDecode(new BinaryFrame("some/topic", buf));
+    testEncodeDecode(wire, new BinaryFrame("some/topic", buf));
   }
   
   @Test(expected=IllegalArgumentException.class)
   public void testIncompleteSubscribeFrame() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
     wire.decode("T");
   }
   
   @Test(expected=IllegalArgumentException.class)
   public void testIncompletePublishFrame() {
+    final Wire wire = new Wire(false, LocationHint.UNSPECIFIED);
     wire.decode("P topic");
   }
 
-  private void testEncodeDecode(TextEncodedFrame frame) {
+  private void testEncodeDecode(Wire wire, TextEncodedFrame frame) {
     final String enc = wire.encode(frame);
     log("encoded: '%s'\n", enc);
     final Frame decoded = wire.decode(enc);
@@ -94,7 +125,7 @@ public final class WireTest implements TestSupport {
     assertEquals(frame, decoded);
   }
 
-  private void testEncodeDecode(BinaryEncodedFrame frame) {
+  private void testEncodeDecode(Wire wire, BinaryEncodedFrame frame) {
     final ByteBuffer enc = wire.encode(frame);
     log("encoded: \n%s\n", dump(toByteArray(enc)));
     final BinaryEncodedFrame decoded = wire.decode(enc);

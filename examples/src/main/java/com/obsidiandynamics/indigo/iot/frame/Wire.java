@@ -12,9 +12,16 @@ public final class Wire {
   
   private static final int MAX_UNSIGNED_SHORT = (1 << 16) - 1;
   
+  public static enum LocationHint {
+    REMOTE, EDGE, UNSPECIFIED
+  }
+  
   private final Gson gson;
 
-  public Wire(boolean prettyPrinting) {
+  private final LocationHint locationHint;
+  
+  public Wire(boolean prettyPrinting, LocationHint locationHint) {
+    this.locationHint = locationHint;
     final GsonBuilder builder = new GsonBuilder()
         .registerTypeAdapterFactory(RuntimeTypeAdapterFactory
                                     .of(IdFrame.class, "type")
@@ -125,7 +132,7 @@ public final class Wire {
     if (str.length() <= 2) return throwError(type, str);
     switch (type) {
       case BIND: {
-        return (TextEncodedFrame) gson.fromJson(str.substring(2), IdFrame.class);
+        return (TextEncodedFrame) gson.fromJson(str.substring(2), getBindClass());
       }
         
       case RECEIVE: {
@@ -146,6 +153,22 @@ public final class Wire {
       
       default:
         throw new IllegalArgumentException("Unsupported frame content '" + str + "'");
+    }
+  }
+  
+  private Class<? extends Frame> getBindClass() {
+    switch (locationHint) {
+      case REMOTE:
+        return BindResponseFrame.class;
+        
+      case EDGE:
+        return BindFrame.class;
+        
+      case UNSPECIFIED:
+        return IdFrame.class;
+        
+      default:
+        throw new UnsupportedOperationException("Unsupported location hint " + locationHint);
     }
   }
   

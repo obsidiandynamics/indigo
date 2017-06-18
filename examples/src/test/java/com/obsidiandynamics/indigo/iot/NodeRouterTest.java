@@ -15,6 +15,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.frame.Error;
+import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.*;
@@ -38,7 +39,7 @@ public final class NodeRouterTest {
   public void setup() throws Exception {
     port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
     
-    wire = new Wire(true);
+    wire = new Wire(true, LocationHint.UNSPECIFIED);
     bridge = new RoutingTopicBridge();
     handler = mock(RemoteNexusHandler.class);
     
