@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.iot.frame;
 import java.util.*;
 
 public abstract class IdFrame implements Frame {
-  private final UUID messageId;
+  private UUID messageId;
   
   protected IdFrame(UUID messageId) {
     this.messageId = messageId;
@@ -11,6 +11,10 @@ public abstract class IdFrame implements Frame {
 
   public final UUID getMessageId() {
     return messageId;
+  }
+  
+  protected void setMessageId(UUID messageId) {
+    this.messageId = messageId;
   }
 
   @Override

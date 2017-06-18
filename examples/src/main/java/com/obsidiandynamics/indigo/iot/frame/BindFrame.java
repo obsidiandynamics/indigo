@@ -5,17 +5,22 @@ import java.util.*;
 public final class BindFrame extends IdFrame implements TextEncodedFrame {
   public static String JSON_TYPE_NAME = "Bind";
   
-  private final String sessionId;
+  private String sessionId;
   
-  private final Auth auth;
+  private Auth auth;
   
-  private final String[] subscribe;
+  private String[] subscribe;
   
-  private final String[] unsubscribe;
+  private String[] unsubscribe;
   
-  private final Object metadata;
+  private Object metadata;
+  
+  public BindFrame() {
+    this(null, null, null, null, null, null);
+  }
 
-  public BindFrame(UUID messageId, String sessionId, Auth auth, String[] subscribe, String[] unsubscribe, Object metadata) {
+  public BindFrame(UUID messageId, String sessionId, Auth auth, 
+                   String[] subscribe, String[] unsubscribe, Object metadata) {
     super(messageId);
     this.sessionId = sessionId;
     this.auth = auth;
@@ -29,24 +34,54 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
     return FrameType.BIND;
   }
   
+  public BindFrame withMessageId(UUID messageId) {
+    setMessageId(messageId);
+    return this;
+  }
+  
   public String getSessionId() {
     return sessionId;
+  }
+  
+  public BindFrame withSessionId(String sessionId) {
+    this.sessionId = sessionId;
+    return this;
   }
   
   public Auth getAuth() {
     return auth;
   }
+  
+  public BindFrame withAuth(Auth auth) {
+    this.auth = auth;
+    return this;
+  }
 
-  public final String[] getSubscribe() {
+  public String[] getSubscribe() {
     return subscribe;
   }
-
-  public final String[] getUnsubscribe() {
-    return unsubscribe;
+  
+  public BindFrame withSubscribe(String[] subscribe) {
+    this.subscribe = subscribe;
+    return this;
   }
 
-  public final Object getMetadata() {
+  public String[] getUnsubscribe() {
+    return unsubscribe;
+  }
+  
+  public BindFrame withUnsubscribe(String[] unsubscribe) {
+    this.unsubscribe = unsubscribe;
+    return this;
+  }
+
+  public Object getMetadata() {
     return metadata;
+  }
+  
+  public BindFrame withMetadata(Object metadata) {
+    this.metadata = metadata;
+    return this;
   }
 
   @Override
@@ -98,13 +133,7 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
            + ", unsubscribe=" + Arrays.toString(unsubscribe) + ", metadata=" + metadata + "]";
   }
 
-  public String getValidationError() {
-    if (subscribe == null) {
-      return "Missing attribute 'subscribe";
-    }
-    if (unsubscribe == null) {
-      return "Missing attribute 'unsubscribe'";
-    }
-    return null;
+  public void reconstitute() {
+    
   }
 }
