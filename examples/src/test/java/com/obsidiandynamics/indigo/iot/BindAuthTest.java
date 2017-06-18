@@ -17,6 +17,12 @@ public final class BindAuthTest extends AbstractAuthTest {
   @Test(expected=NoAuthenticatorException.class)
   public void testEmptySubChain() throws Exception {
     setupEdgeNode(AuthChain.createPubDefault(), AuthChain.createSubDefault().clear());
+
+    final RemoteNexus remoteNexus = openNexus();
+
+    final BindFrame bind = new BindFrame();
+    final BindResponseFrame bindRes = remoteNexus.bind(bind).get();
+    assertTrue(bindRes.isSuccess());
   }
 
   @Test

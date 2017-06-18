@@ -8,9 +8,9 @@ public abstract class IdFrame implements Frame {
   protected IdFrame(UUID messageId) {
     this.messageId = messageId;
   }
-
-  public final UUID getMessageId() {
-    return messageId;
+  
+  public UUID getMessageId() {
+    return messageId != null ? messageId : new UUID(0, 0);
   }
   
   protected void setMessageId(UUID messageId) {
@@ -21,7 +21,7 @@ public abstract class IdFrame implements Frame {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((messageId == null) ? 0 : messageId.hashCode());
+    result = prime * result + getMessageId().hashCode();
     return result;
   }
 
@@ -34,10 +34,7 @@ public abstract class IdFrame implements Frame {
     if (getClass() != obj.getClass())
       return false;
     IdFrame other = (IdFrame) obj;
-    if (messageId == null) {
-      if (other.messageId != null)
-        return false;
-    } else if (!messageId.equals(other.messageId))
+    if (!getMessageId().equals(other.getMessageId()))
       return false;
     return true;
   }

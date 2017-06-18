@@ -58,7 +58,7 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
   }
 
   public String[] getSubscribe() {
-    return subscribe;
+    return subscribe != null ? subscribe : new String[0];
   }
   
   public BindFrame withSubscribe(String[] subscribe) {
@@ -67,7 +67,7 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
   }
 
   public String[] getUnsubscribe() {
-    return unsubscribe;
+    return unsubscribe != null ? unsubscribe : new String[0];
   }
   
   public BindFrame withUnsubscribe(String[] unsubscribe) {
@@ -91,8 +91,8 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
     result = prime * result + ((auth == null) ? 0 : auth.hashCode());
     result = prime * result + ((metadata == null) ? 0 : metadata.hashCode());
     result = prime * result + ((sessionId == null) ? 0 : sessionId.hashCode());
-    result = prime * result + Arrays.hashCode(subscribe);
-    result = prime * result + Arrays.hashCode(unsubscribe);
+    result = prime * result + Arrays.hashCode(getSubscribe());
+    result = prime * result + Arrays.hashCode(getUnsubscribe());
     return result;
   }
 
@@ -120,9 +120,9 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
         return false;
     } else if (!sessionId.equals(other.sessionId))
       return false;
-    if (!Arrays.equals(subscribe, other.subscribe))
+    if (!Arrays.equals(getSubscribe(), other.getSubscribe()))
       return false;
-    if (!Arrays.equals(unsubscribe, other.unsubscribe))
+    if (!Arrays.equals(getUnsubscribe(), other.getUnsubscribe()))
       return false;
     return true;
   }
@@ -131,9 +131,5 @@ public final class BindFrame extends IdFrame implements TextEncodedFrame {
   public String toString() {
     return "BindFrame [messageId=" + getMessageId() + ", sessionId=" + sessionId + ", auth=" + auth + ", subscribe=" + Arrays.toString(subscribe)
            + ", unsubscribe=" + Arrays.toString(unsubscribe) + ", metadata=" + metadata + "]";
-  }
-
-  public void reconstitute() {
-    
   }
 }
