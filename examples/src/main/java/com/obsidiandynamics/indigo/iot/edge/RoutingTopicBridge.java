@@ -39,7 +39,7 @@ public final class RoutingTopicBridge implements TopicBridge {
   }
 
   @Override
-  public void onDisconnect(EdgeNexus nexus) {
+  public void onClose(EdgeNexus nexus) {
     if (LOG.isDebugEnabled()) LOG.debug("{}: disconnected", nexus);
     final RoutingSubscription subscription = nexus.getSession().getSubscription();
     if (subscription == null) {

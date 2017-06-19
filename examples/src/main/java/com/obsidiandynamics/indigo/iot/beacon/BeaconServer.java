@@ -38,8 +38,8 @@ public final class BeaconServer extends Thread implements TopicListener {
   }
 
   @Override
-  public void onDisconnect(EdgeNexus nexus) {
-    System.out.format("%s: disconnected\n", nexus);
+  public void onClose(EdgeNexus nexus) {
+    System.out.format("%s: closed\n", nexus);
   }
 
   @Override

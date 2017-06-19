@@ -98,14 +98,12 @@ public final class EdgeNode implements AutoCloseable {
         }
       }
 
-      @Override public void onDisconnect(E endpoint, int statusCode, String reason) {
-        final EdgeNexus nexus = endpoint.getContext();
-        handleDisconnect(nexus);
-      }
+      @Override public void onDisconnect(E endpoint, int statusCode, String reason) {}
 
       @Override public void onClose(E endpoint) {
         final EdgeNexus nexus = endpoint.getContext();
         nexuses.remove(nexus);
+        handleClose(nexus);
       }
 
       @Override public void onError(E endpoint, Throwable cause) {
@@ -246,9 +244,9 @@ public final class EdgeNode implements AutoCloseable {
     }
   }
   
-  private void fireDisconnectEvent(EdgeNexus nexus) {
+  private void fireCloseEvent(EdgeNexus nexus) {
     for (TopicListener l : topicListeners) {
-      l.onDisconnect(nexus);
+      l.onClose(nexus);
     }
   }
   
@@ -270,9 +268,9 @@ public final class EdgeNode implements AutoCloseable {
     }
   }
   
-  private void handleDisconnect(EdgeNexus nexus) {
-    bridge.onDisconnect(nexus);
-    fireDisconnectEvent(nexus);
+  private void handleClose(EdgeNexus nexus) {
+    bridge.onClose(nexus);
+    fireCloseEvent(nexus);
   }
   
   public void addTopicListener(TopicListener l) {

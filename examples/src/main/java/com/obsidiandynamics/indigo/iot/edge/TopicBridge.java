@@ -8,7 +8,7 @@ import com.obsidiandynamics.indigo.iot.frame.*;
 public interface TopicBridge extends AutoCloseable {
   void onConnect(EdgeNexus nexus);
   
-  void onDisconnect(EdgeNexus nexus);
+  void onClose(EdgeNexus nexus);
   
   CompletableFuture<Void> onBind(EdgeNexus nexus, Set<String> subscribe, Set<String> unsubscribe);
   

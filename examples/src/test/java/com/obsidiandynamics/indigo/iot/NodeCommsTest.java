@@ -92,7 +92,7 @@ public final class NodeCommsTest {
     remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(bridge).onDisconnect(anyNotNull());
+      verify(bridge).onClose(anyNotNull());
       verify(handler).onDisconnect(anyNotNull());
     });
     
@@ -104,7 +104,7 @@ public final class NodeCommsTest {
       inOrder.verify(bridge).onConnect(anyNotNull());
       inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
-      inOrder.verify(bridge).onDisconnect(anyNotNull());
+      inOrder.verify(bridge).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {
@@ -145,7 +145,7 @@ public final class NodeCommsTest {
     remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(bridge).onDisconnect(anyNotNull());
+      verify(bridge).onClose(anyNotNull());
       verify(handler).onDisconnect(anyNotNull());
     });
 
@@ -157,7 +157,7 @@ public final class NodeCommsTest {
       inOrder.verify(bridge).onConnect(anyNotNull());
       inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
-      inOrder.verify(bridge).onDisconnect(anyNotNull());
+      inOrder.verify(bridge).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {

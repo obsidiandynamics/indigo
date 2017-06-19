@@ -5,7 +5,7 @@ import com.obsidiandynamics.indigo.iot.frame.*;
 public interface TopicListener {
   void onConnect(EdgeNexus nexus);
   
-  void onDisconnect(EdgeNexus nexus);
+  void onClose(EdgeNexus nexus);
   
   void onBind(EdgeNexus nexus, BindFrame bind, BindResponseFrame bindRes);
   
