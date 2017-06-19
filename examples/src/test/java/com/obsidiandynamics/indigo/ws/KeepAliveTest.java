@@ -29,10 +29,10 @@ public final class KeepAliveTest extends BaseClientServerTest {
     testKeepAlive(CYCLES, NettyServer.factory(), UndertowClient.factory());
   }
 
-  private void testKeepAlive(int n,
+  private void testKeepAlive(int cycles,
                              WSServerFactory<? extends WSEndpoint> serverFactory,
                              WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
-    for (int i = 0; i < n; i++) {
+    for (int cycle = 0; cycle < cycles; cycle++) {
       testKeepAlive(serverFactory, clientFactory);
       cleanup();
     }
