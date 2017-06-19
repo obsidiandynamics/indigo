@@ -5,11 +5,11 @@ public class WSServerConfig {
   
   public String contextPath = "/";
   
-  public int idleTimeoutMillis;
+  public int idleTimeoutMillis = 300_000;
   
-  public int pingIntervalMillis;
+  public int pingIntervalMillis = 60_000;
   
-  public int scanIntervalMillis = 100;
+  public int scanIntervalMillis = 1_000;
   
   public WSEndpointConfig endpointConfig = new WSEndpointConfig();
 }
