@@ -73,21 +73,18 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
           final NettyEndpoint endpoint = manager.remove(ctx.channel());
           if (endpoint != null) {
             final CloseWebSocketFrame closeFrame = (CloseWebSocketFrame) frame;
-            manager.getListener().onDisconnect(endpoint, closeFrame.statusCode(), closeFrame.reasonText());
-            endpoint.fireCloseEvent();
+            endpoint.onDisconnect(closeFrame.statusCode(), closeFrame.reasonText());
           }
         } else if (frame instanceof TextWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx.channel());
           if (endpoint != null) {
             final TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
-            manager.getListener().onText(endpoint, textFrame.text());
-            endpoint.touchLastActivityTime();
+            endpoint.onText(textFrame.text());
           }
         } else if (frame instanceof BinaryWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx.channel());
           if (endpoint != null) {
-            manager.getListener().onBinary(endpoint, toByteBuffer(frame.content()));
-            endpoint.touchLastActivityTime();
+            endpoint.onBinary(toByteBuffer(frame.content()));
           }
         } else if (frame instanceof PingWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx.channel());
@@ -114,7 +111,7 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
         super.exceptionCaught(ctx, cause);
         final NettyEndpoint endpoint = manager.get(ctx.channel());
         if (endpoint != null) {
-          manager.getListener().onError(endpoint, cause);
+          endpoint.onError(cause);
         }
       }
     });

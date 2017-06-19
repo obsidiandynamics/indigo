@@ -115,11 +115,21 @@ public final class NettyEndpoint implements WSEndpoint {
     }
   }
   
-  void fireCloseEvent() {
+  private void fireCloseEvent() {
     if (closeFired.compareAndSet(false, true)) {
       manager.remove(handlerContext.channel());
       manager.getListener().onClose(this);
     }
+  }
+  
+  void onBinary(ByteBuffer message) {
+    manager.getListener().onBinary(this, message);
+    touchLastActivityTime();
+  }
+  
+  void onText(String message) {
+    manager.getListener().onText(this, message);
+    touchLastActivityTime();
   }
   
   void onPing(ByteBuffer data) {
@@ -130,6 +140,16 @@ public final class NettyEndpoint implements WSEndpoint {
   void onPong(ByteBuffer data) {
     manager.getListener().onPong(data);
     touchLastActivityTime();
+  }
+  
+  void onDisconnect(int statusCode, String reason) {
+    manager.getListener().onDisconnect(this, statusCode, reason);
+    touchLastActivityTime();
+    fireCloseEvent();
+  }
+  
+  void onError(Throwable cause) {
+    manager.getListener().onError(this, cause);
   }
 
   @Override
@@ -147,7 +167,7 @@ public final class NettyEndpoint implements WSEndpoint {
     return lastActivityTime;
   }
   
-  void touchLastActivityTime() {
+  private void touchLastActivityTime() {
     lastActivityTime = System.currentTimeMillis();
   }
 
