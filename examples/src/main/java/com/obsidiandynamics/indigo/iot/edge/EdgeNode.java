@@ -77,7 +77,7 @@ public final class EdgeNode implements AutoCloseable {
               return;
           }
         } catch (Throwable e) {
-          if (loggingEnabled) LOG.warn(String.format("%s: error processing frame\n%s", nexus,message), e);
+          if (loggingEnabled) LOG.warn(String.format("%s: error processing frame\n%s", nexus, message), e);
           return;
         }
       }
