@@ -40,12 +40,15 @@ final class JettyEndpointManager extends WebSocketHandler implements WSEndpointM
   
   JettyEndpoint createEndpoint() {
     final JettyEndpoint endpoint = new JettyEndpoint(JettyEndpointManager.this);
-    scanner.addEndpoint(endpoint);
     return endpoint;
   }
   
-  void remove(JettyEndpoint endpoint) {
+  void add(JettyEndpoint endpoint) {
     scanner.addEndpoint(endpoint);
+  }
+  
+  void remove(JettyEndpoint endpoint) {
+    scanner.removeEndpoint(endpoint);
   }
   
   WSEndpointListener<? super JettyEndpoint> getListener() {

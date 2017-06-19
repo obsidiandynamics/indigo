@@ -81,11 +81,13 @@ final class WebSocketServerInitializer extends ChannelInitializer<SocketChannel>
           if (endpoint != null) {
             final TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
             manager.getListener().onText(endpoint, textFrame.text());
+            endpoint.touchLastActivityTime();
           }
         } else if (frame instanceof BinaryWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx.channel());
           if (endpoint != null) {
             manager.getListener().onBinary(endpoint, toByteBuffer(frame.content()));
+            endpoint.touchLastActivityTime();
           }
         } else if (frame instanceof PingWebSocketFrame) {
           final NettyEndpoint endpoint = manager.get(ctx.channel());

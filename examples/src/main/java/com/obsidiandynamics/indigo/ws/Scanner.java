@@ -34,7 +34,7 @@ public final class Scanner<E extends WSEndpoint> extends Thread implements AutoC
           } else if (pingIntervalMillis != 0) {
             final long lastActivity = endpoint.getLastActivityTime();
             if (now - lastActivity > pingIntervalMillis) {
-              if (LOG.isTraceEnabled()) LOG.debug("Pinging {}", endpoint);
+              if (LOG.isTraceEnabled()) LOG.trace("Pinging {}", endpoint);
               endpoint.sendPing();
             }
           }

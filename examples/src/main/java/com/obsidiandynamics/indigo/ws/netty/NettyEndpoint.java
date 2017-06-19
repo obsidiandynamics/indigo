@@ -19,10 +19,13 @@ public final class NettyEndpoint implements WSEndpoint {
   private final AtomicBoolean closeFired = new AtomicBoolean();
   
   private volatile Object context;
+  
+  private volatile long lastActivityTime;
 
   NettyEndpoint(NettyEndpointManager manager, ChannelHandlerContext handlerContext) {
     this.manager = manager;
     this.handlerContext = handlerContext;
+    touchLastActivityTime();
   }
   
   public ChannelHandlerContext getHandlerContext() {
@@ -47,6 +50,7 @@ public final class NettyEndpoint implements WSEndpoint {
       final ByteBuf buf = Unpooled.wrappedBuffer(payload);
       final ChannelFuture f = handlerContext.channel().writeAndFlush(new BinaryWebSocketFrame(buf));
       f.addListener(wrapCallback(callback));
+      touchLastActivityTime();
     }
   }
   
@@ -56,6 +60,7 @@ public final class NettyEndpoint implements WSEndpoint {
       backlog.incrementAndGet();
       final ChannelFuture f = handlerContext.channel().writeAndFlush(new TextWebSocketFrame(payload));
       f.addListener(wrapCallback(callback));
+      touchLastActivityTime();
     }
   }
   
@@ -80,6 +85,7 @@ public final class NettyEndpoint implements WSEndpoint {
   @Override
   public void sendPing() {
     handlerContext.channel().writeAndFlush(new PingWebSocketFrame());
+    touchLastActivityTime();
   }
 
   @Override
@@ -118,10 +124,12 @@ public final class NettyEndpoint implements WSEndpoint {
   
   void onPing(ByteBuffer data) {
     manager.getListener().onPing(data);
+    touchLastActivityTime();
   }
   
   void onPong(ByteBuffer data) {
     manager.getListener().onPong(data);
+    touchLastActivityTime();
   }
 
   @Override
@@ -136,12 +144,15 @@ public final class NettyEndpoint implements WSEndpoint {
 
   @Override
   public long getLastActivityTime() {
-    // TODO Auto-generated method stub
-    return 0;
+    return lastActivityTime;
+  }
+  
+  void touchLastActivityTime() {
+    lastActivityTime = System.currentTimeMillis();
   }
 
   @Override
   public String toString() {
-    return "NettyEndpoint [channel=" + handlerContext.channel() + "]";
+    return "NettyEndpoint [channel=" + handlerContext.channel() + ", lastActivity=" + getLastActivityTimeInstant() + "]";
   }
 }

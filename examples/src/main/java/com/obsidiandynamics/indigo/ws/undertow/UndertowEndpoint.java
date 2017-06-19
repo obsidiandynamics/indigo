@@ -208,7 +208,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
 
   @Override
   public String toString() {
-    return "UndertowEndpoint [channel=" + toString(channel) + "]";
+    return "UndertowEndpoint [channel=" + toString(channel) + ", lastActivity=" + getLastActivityTimeInstant() + "]";
   }
   
   private static String toString(WebSocketChannel channel) {

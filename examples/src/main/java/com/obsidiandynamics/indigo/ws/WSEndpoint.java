@@ -3,6 +3,7 @@ package com.obsidiandynamics.indigo.ws;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
+import java.time.*;
 
 import com.obsidiandynamics.indigo.util.*;
 
@@ -88,6 +89,15 @@ public interface WSEndpoint extends AutoCloseable {
    *  @return The last RX/TX timestamp.
    */
   long getLastActivityTime();
+  
+  /**
+   *  Obtains the last activity time as an {@link Instant}.
+   *  
+   *  @return The last activity time.
+   */
+  default Instant getLastActivityTimeInstant() {
+    return Instant.ofEpochMilli(getLastActivityTime());
+  }
   
   /**
    *  Awaits the closure of the underlying channel, which implies that the close frame handshake

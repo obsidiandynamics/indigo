@@ -19,9 +19,12 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
   private final AtomicBoolean closeFired = new AtomicBoolean();
   
   private volatile Object context;
+  
+  private volatile long lastActivityTime;
 
   JettyEndpoint(JettyEndpointManager manager) {
     this.manager = manager;
+    touchLastActivityTime();
   }
   
   static JettyEndpoint clientOf(Scanner<JettyEndpoint> scanner, 
@@ -43,13 +46,16 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
   @Override 
   public void onWebSocketConnect(Session session) {
     super.onWebSocketConnect(session);
+    manager.add(this);
     manager.getListener().onConnect(this);
+    touchLastActivityTime();
   }
 
   @Override 
   public void onWebSocketText(String message) {
     super.onWebSocketText(message);
     manager.getListener().onText(this, message);
+    touchLastActivityTime();
   }
 
   @Override
@@ -57,6 +63,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
     super.onWebSocketBinary(payload, offset, len);
     final ByteBuffer message = ByteBuffer.wrap(payload, offset, len);
     manager.getListener().onBinary(this, message);
+    touchLastActivityTime();
   }
   
   @Override 
@@ -64,6 +71,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
     super.onWebSocketClose(statusCode, reason);
     manager.getListener().onDisconnect(this, statusCode, reason);
     fireCloseEvent();
+    touchLastActivityTime();
   }
   
   @Override 
@@ -77,6 +85,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendString(payload, wrapCallback(callback));
+      touchLastActivityTime();
     }
   }
   
@@ -85,6 +94,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       getRemote().sendBytes(payload, wrapCallback(callback));
+      touchLastActivityTime();
     }
   }
   
@@ -113,10 +123,13 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
   }
   
   public void sendPing() {
-    try {
-      getRemote().sendPing(ByteBuffer.wrap(ZERO_ARRAY));
-    } catch (IOException e) {
-      throw new RuntimeException(e); // sendPing() is async; it shouldn't throw an IOException
+    if (isOpen()) {
+      try {
+        getRemote().sendPing(ByteBuffer.wrap(ZERO_ARRAY));
+        touchLastActivityTime();
+      } catch (IOException e) {
+        throw new RuntimeException(e); // sendPing() is async; it shouldn't throw an IOException
+      }
     }
   }
 
@@ -145,7 +158,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
   @Override
   public void terminate() throws IOException {
     final Session session = getSession();
-    if (session.isOpen()) {
+    if (session != null && session.isOpen()) {
       session.close();
     }
     fireCloseEvent();
@@ -163,22 +176,27 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
 
   @Override
   public long getLastActivityTime() {
-    // TODO Auto-generated method stub
-    return 0;
+    return lastActivityTime;
+  }
+  
+  private void touchLastActivityTime() {
+    lastActivityTime = System.currentTimeMillis();
   }
 
   @Override
   public String toString() {
-    return "JettyEndpoint [session=" + getSession() + "]";
+    return "JettyEndpoint [session=" + getSession() + ", lastActivity=" + getLastActivityTimeInstant() + "]";
   }
 
   @Override
   public void onWebSocketPing(ByteBuffer payload) {
     manager.getListener().onPing(payload);
+    touchLastActivityTime();
   }
 
   @Override
   public void onWebSocketPong(ByteBuffer payload) {
     manager.getListener().onPong(payload);
+    touchLastActivityTime();
   }
 }

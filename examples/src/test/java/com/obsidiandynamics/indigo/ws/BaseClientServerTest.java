@@ -14,8 +14,15 @@ public abstract class BaseClientServerTest implements TestSupport {
 
   @After
   public void teardown() throws Exception {
+    cleanup();
+  }
+  
+  protected void cleanup() throws Exception {
     if (server != null) server.close();
     if (client != null) client.close();
+    
+    server = null;
+    client = null;
   }
 
   protected static WSServerConfig getDefaultServerConfig() {

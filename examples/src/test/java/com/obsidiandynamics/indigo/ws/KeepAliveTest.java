@@ -12,21 +12,32 @@ import com.obsidiandynamics.indigo.ws.netty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class KeepAliveTest extends BaseClientServerTest {
+  private static final int CYCLES = 2;
+  
   @Test
   public void testJtJtKeepAlive() throws Exception {
-    testKeepAlive(JettyServer.factory(), JettyClient.factory());
+    testKeepAlive(CYCLES, JettyServer.factory(), JettyClient.factory());
   }
-  
+
   @Test
   public void testUtUtKeepAlive() throws Exception {
-    testKeepAlive(UndertowServer.factory(), UndertowClient.factory());
+    testKeepAlive(CYCLES, UndertowServer.factory(), UndertowClient.factory());
   }
-  
+
   @Test
   public void testNtUtKeepAlive() throws Exception {
-    testKeepAlive(NettyServer.factory(), UndertowClient.factory());
+    testKeepAlive(CYCLES, NettyServer.factory(), UndertowClient.factory());
   }
-  
+
+  private void testKeepAlive(int n,
+                             WSServerFactory<? extends WSEndpoint> serverFactory,
+                             WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
+    for (int i = 0; i < n; i++) {
+      testKeepAlive(serverFactory, clientFactory);
+      cleanup();
+    }
+  }
+
   private void testKeepAlive(WSServerFactory<? extends WSEndpoint> serverFactory,
                              WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
     final WSServerConfig serverConfig = getDefaultServerConfig();
