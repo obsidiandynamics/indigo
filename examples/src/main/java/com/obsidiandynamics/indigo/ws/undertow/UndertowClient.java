@@ -35,7 +35,7 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
     if (config.hasIdleTimeout()) {
       channel.setIdleTimeout(config.idleTimeoutMillis);
     }
-    final UndertowEndpoint endpoint = UndertowEndpoint.clientOf(scanner, channel, new UndertowEndpointConfig(), listener);
+    final UndertowEndpoint endpoint = UndertowEndpoint.clientOf(scanner, channel, new WSEndpointConfig(), listener);
     channel.getReceiveSetter().set(endpoint);
     channel.resumeReceives();
     return endpoint;

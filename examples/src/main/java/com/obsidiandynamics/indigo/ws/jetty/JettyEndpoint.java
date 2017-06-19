@@ -28,7 +28,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
   }
   
   static JettyEndpoint clientOf(Scanner<JettyEndpoint> scanner, 
-                                JettyEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
+                                WSEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
     return new JettyEndpointManager(scanner, 0, config, listener).createEndpoint();
   }
   
@@ -113,7 +113,7 @@ public final class JettyEndpoint extends WebSocketAdapter implements WSEndpoint,
   }
   
   private boolean isBelowHWM() {
-    final JettyEndpointConfig config = manager.getConfig();
+    final WSEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
   }
   

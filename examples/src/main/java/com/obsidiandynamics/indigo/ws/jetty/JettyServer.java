@@ -22,11 +22,8 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
     server.setHandler(context);
 
     scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
-    final JettyEndpointConfig endpointConfig = new JettyEndpointConfig() {{
-      highWaterMark = config.highWaterMark;
-    }};
     manager = new JettyEndpointManager(scanner, config.idleTimeoutMillis, 
-                                       endpointConfig, listener);
+                                       config.endpointConfig, listener);
     context.setHandler(manager);
     server.start();
   }

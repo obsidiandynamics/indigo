@@ -29,10 +29,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
                                              .getMap());
     
     scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
-    final UndertowEndpointConfig endpointConfig = new UndertowEndpointConfig() {{
-      highWaterMark = config.highWaterMark;
-    }};
-    manager = new UndertowEndpointManager(scanner, config.idleTimeoutMillis, endpointConfig, listener);
+    manager = new UndertowEndpointManager(scanner, config.idleTimeoutMillis, config.endpointConfig, listener);
     
     server = Undertow.builder()
         .setWorker(worker)

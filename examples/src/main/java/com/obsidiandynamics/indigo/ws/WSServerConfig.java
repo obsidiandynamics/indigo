@@ -11,5 +11,5 @@ public class WSServerConfig {
   
   public int scanIntervalMillis = 100;
   
-  public long highWaterMark = Long.MAX_VALUE;
+  public WSEndpointConfig endpointConfig = new WSEndpointConfig();
 }

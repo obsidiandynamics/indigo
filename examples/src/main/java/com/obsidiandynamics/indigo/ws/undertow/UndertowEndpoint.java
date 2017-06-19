@@ -30,7 +30,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   static UndertowEndpoint clientOf(Scanner<UndertowEndpoint> scanner, 
-                                   WebSocketChannel channel, UndertowEndpointConfig config, WSEndpointListener<? super UndertowEndpoint> listener) {
+                                   WebSocketChannel channel, WSEndpointConfig config, WSEndpointListener<? super UndertowEndpoint> listener) {
     return new UndertowEndpointManager(scanner, 0, config, listener).createEndpoint(channel);
   }
   
@@ -129,7 +129,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   private boolean isBelowHWM() {
-    final UndertowEndpointConfig config = manager.getConfig();
+    final WSEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
   }
   

@@ -78,7 +78,7 @@ public final class NettyEndpoint implements WSEndpoint {
   }
   
   private boolean isBelowHWM() {
-    final NettyEndpointConfig config = manager.getConfig();
+    final WSEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
   }
   

@@ -18,10 +18,7 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
   
   private NettyServer(WSServerConfig config, WSEndpointListener<? super NettyEndpoint> listener) throws InterruptedException {
     scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
-    final NettyEndpointConfig endpointConfig = new NettyEndpointConfig() {{
-      highWaterMark = config.highWaterMark;
-    }};
-    manager = new NettyEndpointManager(scanner, endpointConfig, listener);
+    manager = new NettyEndpointManager(scanner, config.endpointConfig, listener);
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup();
     

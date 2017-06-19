@@ -25,7 +25,7 @@ public final class JettyClient implements WSClient<JettyEndpoint> {
 
   @Override
   public JettyEndpoint connect(URI uri, WSEndpointListener<? super JettyEndpoint> listener) throws Exception {
-    final JettyEndpoint endpoint = JettyEndpoint.clientOf(scanner, new JettyEndpointConfig(), listener);
+    final JettyEndpoint endpoint = JettyEndpoint.clientOf(scanner, new WSEndpointConfig(), listener);
     client.connect(endpoint, uri).get();
     return endpoint;
   }

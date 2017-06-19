@@ -9,7 +9,7 @@ import com.obsidiandynamics.indigo.ws.Scanner;
 import io.netty.channel.*;
 
 final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
-  private final NettyEndpointConfig config;
+  private final WSEndpointConfig config;
   
   private final WSEndpointListener<? super NettyEndpoint> listener;
   
@@ -17,7 +17,7 @@ final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
   
   private final Scanner<NettyEndpoint> scanner;
   
-  NettyEndpointManager(Scanner<NettyEndpoint> scanner, NettyEndpointConfig config, 
+  NettyEndpointManager(Scanner<NettyEndpoint> scanner, WSEndpointConfig config, 
                        WSEndpointListener<? super NettyEndpoint> listener) {
     this.scanner = scanner;
     this.config = config;
@@ -46,7 +46,7 @@ final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
     return listener;
   }
   
-  NettyEndpointConfig getConfig() {
+  WSEndpointConfig getConfig() {
     return config;
   }
 

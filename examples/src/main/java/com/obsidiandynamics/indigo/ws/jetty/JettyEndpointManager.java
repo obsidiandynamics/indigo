@@ -11,14 +11,14 @@ import com.obsidiandynamics.indigo.ws.Scanner;
 final class JettyEndpointManager extends WebSocketHandler implements WSEndpointManager<JettyEndpoint> {
   private final int idleTimeoutMillis;
   
-  private final JettyEndpointConfig config;
+  private final WSEndpointConfig config;
   
   private final WSEndpointListener<? super JettyEndpoint> listener;
   
   private final Scanner<JettyEndpoint> scanner;
 
   JettyEndpointManager(Scanner<JettyEndpoint> scanner, int idleTimeoutMillis, 
-                       JettyEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
+                       WSEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;
@@ -55,7 +55,7 @@ final class JettyEndpointManager extends WebSocketHandler implements WSEndpointM
     return listener;
   }
   
-  JettyEndpointConfig getConfig() {
+  WSEndpointConfig getConfig() {
     return config;
   }
   
