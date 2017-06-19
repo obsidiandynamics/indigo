@@ -45,7 +45,7 @@ public abstract class AbstractAuthTest {
     port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
     
     wire = new Wire(true, LocationHint.UNSPECIFIED);
-    handler = new RemoteNexusHandlerAdapter() {
+    handler = new RemoteNexusHandlerBase() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (topic.endsWith("/errors")) {
           errors = wire.decodeJson(payload, Errors.class);

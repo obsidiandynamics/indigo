@@ -67,7 +67,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   private void openControlNexus() throws Exception {
     final String sessionId = generateSessionId();
     if (config.log.stages) config.log.out.format("r: opening control nexus (%s)...\n", sessionId);
-    control = node.open(config.uri, new RemoteNexusHandlerAdapter() {
+    control = node.open(config.uri, new RemoteNexusHandlerBase() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (config.log.verbose) config.log.out.format("r: control received %s\n", payload);
         final RigSubframe subframe = RigSubframe.unmarshal(payload, subframeGson);
@@ -162,7 +162,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
     final AtomicLong lastRemoteTransmitTime = new AtomicLong();
     final List<Long> timeDeltas = new CopyOnWriteArrayList<>();
     
-    final RemoteNexus nexus = node.open(config.uri, new RemoteNexusHandlerAdapter() {
+    final RemoteNexus nexus = node.open(config.uri, new RemoteNexusHandlerBase() {
       @Override public void onText(RemoteNexus nexus, String topic, String payload) {
         if (! topic.endsWith("/rx")) {
           config.log.out.format("r: unexpected frame on topic %s: %s\n", topic, payload);
@@ -190,7 +190,7 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
         }
       }
       
-      @Override public void onDisconnect(RemoteNexus nexus) {
+      @Override public void onClose(RemoteNexus nexus) {
         syncComplete.set(true);
       }
     });
@@ -237,13 +237,13 @@ public final class RemoteRig implements TestSupport, AutoCloseable, ThrowingRunn
   }
 
   @Override
-  public void onConnect(RemoteNexus nexus) {
-    if (config.log.verbose) config.log.out.format("r: connected %s\n", nexus);
+  public void onOpen(RemoteNexus nexus) {
+    if (config.log.verbose) config.log.out.format("r: opened %s\n", nexus);
   }
 
   @Override
-  public void onDisconnect(RemoteNexus nexus) {
-    if (config.log.verbose) config.log.out.format("r: disconnected %s\n", nexus);
+  public void onClose(RemoteNexus nexus) {
+    if (config.log.verbose) config.log.out.format("r: closed %s\n", nexus);
   }
 
   @Override

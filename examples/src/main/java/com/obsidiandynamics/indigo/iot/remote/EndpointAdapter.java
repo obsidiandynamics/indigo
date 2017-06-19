@@ -25,7 +25,7 @@ final class EndpointAdapter<E extends WSEndpoint> implements WSEndpointListener<
   @Override 
   public void onConnect(E endpoint) {
     nexus.setEndpoint(endpoint);
-    handler.onConnect(nexus);
+    handler.onOpen(nexus);
   }
 
   @Override 
@@ -79,13 +79,12 @@ final class EndpointAdapter<E extends WSEndpoint> implements WSEndpointListener<
   }
 
   @Override 
-  public void onDisconnect(E endpoint, int statusCode, String reason) {
-    handler.onDisconnect(nexus);
-  }
+  public void onDisconnect(E endpoint, int statusCode, String reason) {}
 
   @Override
   public void onClose(E endpoint) {
     node.removeNexus(nexus);
+    handler.onClose(nexus);
   }
 
   @Override 

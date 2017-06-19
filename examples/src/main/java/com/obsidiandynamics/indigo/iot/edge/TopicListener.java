@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.iot.edge;
 import com.obsidiandynamics.indigo.iot.frame.*;
 
 public interface TopicListener {
-  void onConnect(EdgeNexus nexus);
+  void onOpen(EdgeNexus nexus);
   
   void onClose(EdgeNexus nexus);
   

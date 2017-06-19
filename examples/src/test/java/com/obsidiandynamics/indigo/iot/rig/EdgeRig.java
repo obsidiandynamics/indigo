@@ -234,13 +234,13 @@ public final class EdgeRig extends Thread implements TestSupport, AutoCloseable,
   }
 
   @Override
-  public void onConnect(EdgeNexus nexus) {
-    if (config.log.verbose) config.log.out.format("e: connect %s\n", nexus);
+  public void onOpen(EdgeNexus nexus) {
+    if (config.log.verbose) config.log.out.format("e: opened %s\n", nexus);
   }
 
   @Override
   public void onClose(EdgeNexus nexus) {
-    if (config.log.verbose) config.log.out.format("e: close %s\n", nexus);
+    if (config.log.verbose) config.log.out.format("e: closed %s\n", nexus);
   }
 
   @Override

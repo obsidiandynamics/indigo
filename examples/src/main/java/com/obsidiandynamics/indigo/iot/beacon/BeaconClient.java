@@ -21,13 +21,13 @@ public final class BeaconClient {
     final RemoteNode remote = RemoteNode.builder().build();
     remote.open(new URI(String.format("ws://%s:%d%s", HOST, PORT, CONTEXT_PATH)), new RemoteNexusHandler() {
       @Override
-      public void onConnect(RemoteNexus nexus) {
-        System.out.format("%s: connected\n", nexus);
+      public void onOpen(RemoteNexus nexus) {
+        System.out.format("%s: opened\n", nexus);
       }
 
       @Override
-      public void onDisconnect(RemoteNexus nexus) {
-        System.out.format("%s: disconnected\n", nexus);
+      public void onClose(RemoteNexus nexus) {
+        System.out.format("%s: closed\n", nexus);
       }
 
       @Override

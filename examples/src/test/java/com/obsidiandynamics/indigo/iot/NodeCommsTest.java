@@ -93,7 +93,7 @@ public final class NodeCommsTest {
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
       verify(bridge).onClose(anyNotNull());
-      verify(handler).onDisconnect(anyNotNull());
+      verify(handler).onClose(anyNotNull());
     });
     
     final Set<String> expectedTopics = new HashSet<>();
@@ -101,16 +101,16 @@ public final class NodeCommsTest {
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
     ordered(bridge, inOrder -> {
-      inOrder.verify(bridge).onConnect(anyNotNull());
+      inOrder.verify(bridge).onOpen(anyNotNull());
       inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
       inOrder.verify(bridge).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {
-      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onOpen(anyNotNull());
       inOrder.verify(handler).onText(anyNotNull(), eq(textEdge.getTopic()), eq(textEdge.getPayload()));
-      inOrder.verify(handler).onDisconnect(anyNotNull());
+      inOrder.verify(handler).onClose(anyNotNull());
     });
   }
 
@@ -146,7 +146,7 @@ public final class NodeCommsTest {
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
       verify(bridge).onClose(anyNotNull());
-      verify(handler).onDisconnect(anyNotNull());
+      verify(handler).onClose(anyNotNull());
     });
 
     final Set<String> expectedTopics = new HashSet<>();
@@ -154,16 +154,16 @@ public final class NodeCommsTest {
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
     ordered(bridge, inOrder -> {
-      inOrder.verify(bridge).onConnect(anyNotNull());
+      inOrder.verify(bridge).onOpen(anyNotNull());
       inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
       inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
       inOrder.verify(bridge).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {
-      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onOpen(anyNotNull());
       inOrder.verify(handler).onBinary(anyNotNull(), eq(binaryEdge.getTopic()), eq(binaryEdge.getPayload()));
-      inOrder.verify(handler).onDisconnect(anyNotNull());
+      inOrder.verify(handler).onClose(anyNotNull());
     });
   }
 }

@@ -82,7 +82,7 @@ public final class NodeRouterTest {
     assertArrayEquals(new Error[0], bindRes.getErrors());
 
     ordered(handler, inOrder -> { // shouldn't have received any data yet
-      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onOpen(anyNotNull());
     });
     
     edge.publish(topic, payload); // a single subscriber at this point
@@ -94,13 +94,13 @@ public final class NodeRouterTest {
     remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(handler).onDisconnect(anyNotNull());
+      verify(handler).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {
-      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onOpen(anyNotNull());
       inOrder.verify(handler).onText(anyNotNull(), eq(topic), eq(payload));
-      inOrder.verify(handler).onDisconnect(anyNotNull());
+      inOrder.verify(handler).onClose(anyNotNull());
     });
   }
 
@@ -126,7 +126,7 @@ public final class NodeRouterTest {
     assertArrayEquals(new Error[0], bindRes.getErrors());
 
     ordered(handler, inOrder -> { // shouldn't have received any data yet
-      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onOpen(anyNotNull());
     });
     
     remoteNexus.publish(new PublishTextFrame(topic, payload)); // itself is a subscriber
@@ -138,13 +138,13 @@ public final class NodeRouterTest {
     remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(handler).onDisconnect(anyNotNull());
+      verify(handler).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {
-      inOrder.verify(handler).onConnect(anyNotNull());
+      inOrder.verify(handler).onOpen(anyNotNull());
       inOrder.verify(handler).onText(anyNotNull(), eq(topic), eq(payload));
-      inOrder.verify(handler).onDisconnect(anyNotNull());
+      inOrder.verify(handler).onClose(anyNotNull());
     });
   }
 }

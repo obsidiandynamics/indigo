@@ -29,8 +29,8 @@ public final class RoutingTopicBridge implements TopicBridge {
   }
 
   @Override
-  public void onConnect(EdgeNexus nexus) {
-    if (LOG.isDebugEnabled()) LOG.debug("{}: connected", nexus);
+  public void onOpen(EdgeNexus nexus) {
+    if (LOG.isDebugEnabled()) LOG.debug("{}: opened", nexus);
     final Subscriber subscriber = d -> {
       if (LOG.isTraceEnabled()) LOG.trace("{}: delivering {}", nexus, d.getPayload());
       nexus.sendAuto(d.getPayload());
@@ -40,7 +40,7 @@ public final class RoutingTopicBridge implements TopicBridge {
 
   @Override
   public void onClose(EdgeNexus nexus) {
-    if (LOG.isDebugEnabled()) LOG.debug("{}: disconnected", nexus);
+    if (LOG.isDebugEnabled()) LOG.debug("{}: closed", nexus);
     final RoutingSubscription subscription = nexus.getSession().getSubscription();
     if (subscription == null) {
       LOG.error("{}: no subscription", nexus);

@@ -50,7 +50,7 @@ public final class EdgeNode implements AutoCloseable {
     this.subAuthChain = subAuthChain;
     server = serverFactory.create(config, new WSEndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
-        handleConnect(endpoint);
+        handleOpen(endpoint);
       }
 
       @Override public void onText(E endpoint, String message) {
@@ -230,17 +230,17 @@ public final class EdgeNode implements AutoCloseable {
     nexus.send(new TextFrame(errorTopic, wire.encodeJson(new Errors(errors))));
   }
   
-  private void handleConnect(WSEndpoint endpoint) {
+  private void handleOpen(WSEndpoint endpoint) {
     final EdgeNexus nexus = new EdgeNexus(this, new WSEndpointPeer(endpoint));
     nexuses.add(nexus);
     endpoint.setContext(nexus);
-    bridge.onConnect(nexus);
+    bridge.onOpen(nexus);
     fireConnectEvent(nexus);
   }
   
   private void fireConnectEvent(EdgeNexus nexus) {
     for (TopicListener l : topicListeners) {
-      l.onConnect(nexus);
+      l.onOpen(nexus);
     }
   }
   

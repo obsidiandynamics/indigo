@@ -33,8 +33,8 @@ public final class BeaconServer extends Thread implements TopicListener {
   }
   
   @Override
-  public void onConnect(EdgeNexus nexus) {
-    System.out.format("%s: connected\n", nexus);
+  public void onOpen(EdgeNexus nexus) {
+    System.out.format("%s: opened\n", nexus);
   }
 
   @Override
