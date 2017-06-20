@@ -173,6 +173,6 @@ public final class NettyEndpoint implements WSEndpoint {
 
   @Override
   public String toString() {
-    return "NettyEndpoint [channel=" + handlerContext.channel() + ", lastActivity=" + getLastActivityTimeInstant() + "]";
+    return "NettyEndpoint [channel=" + handlerContext.channel() + ", lastActivity=" + getLastActivityZoned() + "]";
   }
 }

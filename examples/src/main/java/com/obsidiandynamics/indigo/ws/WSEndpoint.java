@@ -70,7 +70,7 @@ public interface WSEndpoint extends AutoCloseable {
   InetSocketAddress getRemoteAddress();
   
   /**
-   *  Obtains the send backlog - the number of messages sent but yet to be confirmed.
+   *  Obtains the send backlog - the number of messages queued for sending but yet to be confirmed.
    *  
    *  @return The number of backlogged messages.
    */
@@ -86,17 +86,17 @@ public interface WSEndpoint extends AutoCloseable {
   /**
    *  Obtains the timestamp of the last send or receive activity.
    *  
-   *  @return The last RX/TX timestamp.
+   *  @return The last activity time.
    */
   long getLastActivityTime();
   
   /**
-   *  Obtains the last activity time as an {@link Instant}.
+   *  Obtains the last activity time as a {@link ZonedDateTime}.
    *  
    *  @return The last activity time.
    */
-  default Instant getLastActivityTimeInstant() {
-    return Instant.ofEpochMilli(getLastActivityTime());
+  default ZonedDateTime getLastActivityZoned() {
+    return ZonedDateTime.ofInstant(Instant.ofEpochMilli(getLastActivityTime()), ZoneOffset.systemDefault());
   }
   
   /**
