@@ -16,7 +16,8 @@ import com.obsidiandynamics.indigo.ws.undertow.*;
 public final class ConnectDisconnectTest extends BaseClientServerTest {
   private static final int CYCLES = 2;
   private static final int CONNECTIONS = 10;
-  private static final int PROGRESS_INTERVAL = 50;
+  private static final int PROGRESS_INTERVAL = 10;
+  private static final int MAX_PORT_USE_COUNT = 10_000;
 
   @Test
   public void testJtJt() throws Exception {
@@ -67,8 +68,8 @@ public final class ConnectDisconnectTest extends BaseClientServerTest {
       endpoints.add(openClientEndpoint(serverConfig.port, clientListener));
     }
 
-    // assert connection on server
-    await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
+    // assert connections on server
+    await().dontCatchUncaughtExceptions().atMost(60, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener, Mockito.times(connections)).onConnect(Mocks.anyNotNull());
       Mockito.verify(clientListener, Mockito.times(connections)).onConnect(Mocks.anyNotNull());
     });
@@ -82,10 +83,12 @@ public final class ConnectDisconnectTest extends BaseClientServerTest {
       endpoint.awaitClose(Integer.MAX_VALUE);
     }
     
-    // await disconnection on server
-    await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
+    // assert disconnections on server
+    await().dontCatchUncaughtExceptions().atMost(60, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener, Mockito.times(connections)).onClose(Mocks.anyNotNull());
       Mockito.verify(clientListener, Mockito.times(connections)).onClose(Mocks.anyNotNull());
     });
+    
+    SocketTestSupport.drainPort(serverConfig.port, MAX_PORT_USE_COUNT);
   }
 }

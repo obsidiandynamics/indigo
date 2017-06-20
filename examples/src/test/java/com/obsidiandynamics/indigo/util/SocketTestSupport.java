@@ -1,13 +1,18 @@
 package com.obsidiandynamics.indigo.util;
 
+import static com.obsidiandynamics.indigo.util.TestSupport.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 public interface SocketTestSupport {
   static int MIN_PORT = 1024;
   static int MAX_PORT = 49151;
+  static int PORT_DRAIN_INTERVAL_MILLIS = 100;
   static boolean LOG_PORT_SCAVENGE = true;
+  static boolean LOG_PORT_DRAIN = true;
   
   static byte[] randomBytes(int length) {
     final byte[] bytes = new byte[length];
@@ -38,7 +43,7 @@ public interface SocketTestSupport {
         return port;
       } else {
         port++;
-        if (LOG_PORT_SCAVENGE) TestSupport.LOG_STREAM.format("Port %d unavailable for binding; trying %d\n", preferredPort, port);
+        if (LOG_PORT_SCAVENGE) LOG_STREAM.format("Port %d unavailable for binding; trying %d\n", preferredPort, port);
       }
     }
     throw new NoAvailablePortsException("No available ports in the range " + preferredPort + " - " + MAX_PORT);
@@ -57,5 +62,28 @@ public interface SocketTestSupport {
       return true;
     } catch (IOException e) {}
     return false;
+  }
+  
+  static int getPortUseCount(int port) {
+    final String cmd = String.format("netstat -an | grep %d | wc -l", port);
+    final AtomicReference<String> outputHolder = new AtomicReference<>();
+    final int exitCode = BashInteractor.execute(cmd, true, outputHolder::set);
+    if (exitCode != 0) {
+      throw new RuntimeException(String.format("Command '%s' exited with code %d", cmd, exitCode));
+    }
+    final String output = outputHolder.get();
+    return Integer.parseInt(output.trim());
+  }
+  
+  static void drainPort(int port, int maxUseCount) throws InterruptedException {
+    final AtomicBoolean logged = new AtomicBoolean();
+    Await.bounded(Integer.MAX_VALUE, PORT_DRAIN_INTERVAL_MILLIS, () -> {
+      final int useCount = getPortUseCount(port);
+      if (LOG_PORT_DRAIN && useCount > maxUseCount && ! logged.get()) {
+        logged.set(true);
+        LOG_STREAM.format("Port %d at %,d connections; draining to %,d\n", port, useCount, maxUseCount);
+      }
+      return useCount <= maxUseCount;
+    });
   }
 }
