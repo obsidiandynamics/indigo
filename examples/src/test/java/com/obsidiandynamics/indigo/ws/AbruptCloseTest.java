@@ -55,6 +55,11 @@ public final class AbruptCloseTest extends BaseClientServerTest {
 
     final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
     final WSEndpoint endpoint = openClientEndpoint(serverConfig.port, clientListener);
+    await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
+      Mockito.verify(serverListener).onConnect(Mocks.anyNotNull());
+      Mockito.verify(clientListener).onConnect(Mocks.anyNotNull());
+    });
+    
     endpoint.terminate();
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());

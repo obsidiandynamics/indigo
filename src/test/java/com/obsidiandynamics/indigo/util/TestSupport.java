@@ -15,6 +15,10 @@ public interface TestSupport {
   PrintStream LOG_STREAM = System.out;
 
   default void log(String format, Object ... args) {
+    logStatic(format, args);
+  }
+  
+  static void logStatic(String format, Object ... args) {
     if (LOG) LOG_STREAM.printf(format, args);
   }
 
@@ -59,7 +63,7 @@ public interface TestSupport {
   }
 
   /**
-   *  Verifies that the given object overrides the <code>toString()</code> implementation, and that
+   *  Verifies that the given object overrides the {@link Object#toString()} implementation, and that
    *  the implementation operates without throwing any exceptions.
    *
    *  @param obj The object to test.

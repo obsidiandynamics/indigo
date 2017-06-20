@@ -55,6 +55,11 @@ public final class KeepAliveTest extends BaseClientServerTest {
     final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
+      Mockito.verify(serverListener).onConnect(Mocks.anyNotNull());
+      Mockito.verify(clientListener).onConnect(Mocks.anyNotNull());
+    });
+    
+    await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(clientListener, Mockito.atLeastOnce()).onPing(Mocks.anyNotNull());
       Mockito.verify(serverListener, Mockito.atLeastOnce()).onPong(Mocks.anyNotNull());
     });

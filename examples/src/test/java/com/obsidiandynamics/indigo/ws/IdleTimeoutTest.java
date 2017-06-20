@@ -57,6 +57,11 @@ public final class IdleTimeoutTest extends BaseClientServerTest {
     final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
+      Mockito.verify(serverListener).onConnect(Mocks.anyNotNull());
+      Mockito.verify(clientListener).onConnect(Mocks.anyNotNull());
+    });
+    
+    await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());
       Mockito.verify(clientListener).onClose(Mocks.anyNotNull());
     });
