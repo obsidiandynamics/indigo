@@ -17,7 +17,7 @@ public abstract class BaseClientServerTest implements TestSupport {
     cleanup();
   }
   
-  protected void cleanup() throws Exception {
+  protected final void cleanup() throws Exception {
     if (server != null) server.close();
     if (client != null) client.close();
     
@@ -36,30 +36,30 @@ public abstract class BaseClientServerTest implements TestSupport {
   }
   
   @SuppressWarnings("unchecked")
-  protected void createServer(WSServerFactory<? extends WSEndpoint> serverFactory,
-                              WSServerConfig config, WSEndpointListener<WSEndpoint> serverListener) throws Exception {
+  protected final void createServer(WSServerFactory<? extends WSEndpoint> serverFactory,
+                                    WSServerConfig config, WSEndpointListener<WSEndpoint> serverListener) throws Exception {
     server = serverFactory.create(config, Mocks.logger(WSEndpointListener.class, 
                                                              serverListener,
                                                              new LoggingInterceptor<>("s: ")));
   }
   
-  protected void createClient(WSClientFactory<? extends WSEndpoint> clientFactory, WSClientConfig config) throws Exception {
+  protected final void createClient(WSClientFactory<? extends WSEndpoint> clientFactory, WSClientConfig config) throws Exception {
     client = clientFactory.create(config);
   }
   
   @SuppressWarnings("unchecked")
-  protected WSEndpoint openClientEndpoint(int port, WSEndpointListener<WSEndpoint> clientListener) throws URISyntaxException, Exception {
+  protected final WSEndpoint openClientEndpoint(int port, WSEndpointListener<WSEndpoint> clientListener) throws URISyntaxException, Exception {
     return client.connect(new URI("ws://localhost:" + port + "/"),
                           Mocks.logger(WSEndpointListener.class, 
                                        clientListener,
                                        new LoggingInterceptor<>("c: ")));
   }
   
-  protected boolean hasServerEndpoint() {
+  protected final boolean hasServerEndpoint() {
     return ! server.getEndpointManager().getEndpoints().isEmpty();
   }
   
-  protected WSEndpoint getServerEndpoint() {
+  protected final WSEndpoint getServerEndpoint() {
     return server.getEndpointManager().getEndpoints().iterator().next();
   }
   

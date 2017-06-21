@@ -2,10 +2,12 @@ package com.obsidiandynamics.indigo.ws.undertow;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 import org.xnio.*;
 
 import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.ws.Scanner;
 
 import io.undertow.connector.*;
 import io.undertow.server.*;
@@ -46,6 +48,11 @@ public final class UndertowClient implements WSClient<UndertowEndpoint> {
     scanner.close();
     worker.shutdown();
     worker.awaitTermination();
+  }
+  
+  @Override
+  public Collection<UndertowEndpoint> getEndpoints() {
+    return scanner.getEndpoints();
   }
   
   public static final class Factory implements WSClientFactory<UndertowEndpoint> {

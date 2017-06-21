@@ -1,12 +1,14 @@
 package com.obsidiandynamics.indigo.ws.jetty;
 
 import java.net.*;
+import java.util.*;
 
 import org.eclipse.jetty.client.*;
 import org.eclipse.jetty.util.thread.*;
 import org.eclipse.jetty.websocket.client.*;
 
 import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.ws.Scanner;
 
 public final class JettyClient implements WSClient<JettyEndpoint> {
   private final HttpClient httpClient;
@@ -35,6 +37,11 @@ public final class JettyClient implements WSClient<JettyEndpoint> {
     scanner.close();
     httpClient.stop();
     client.stop();
+  }
+  
+  @Override
+  public Collection<JettyEndpoint> getEndpoints() {
+    return scanner.getEndpoints();
   }
   
   public static HttpClient createDefaultHttpClient() throws Exception {

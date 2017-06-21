@@ -5,13 +5,15 @@ import static org.awaitility.Awaitility.*;
 
 import java.util.*;
 
-import org.junit.*;
+import org.junit.Test;
 import org.mockito.*;
 
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.ws.jetty.*;
 import com.obsidiandynamics.indigo.ws.netty.*;
 import com.obsidiandynamics.indigo.ws.undertow.*;
+
+import junit.framework.*;
 
 public final class ConnectDisconnectTest extends BaseClientServerTest {
   private static final int CYCLES = 2;
@@ -88,6 +90,9 @@ public final class ConnectDisconnectTest extends BaseClientServerTest {
       Mockito.verify(serverListener, Mockito.times(connections)).onClose(Mocks.anyNotNull());
       Mockito.verify(clientListener, Mockito.times(connections)).onClose(Mocks.anyNotNull());
     });
+    
+    TestCase.assertEquals(0, server.getEndpointManager().getEndpoints().size());
+    TestCase.assertEquals(0, client.getEndpoints().size());
     
     SocketTestSupport.drainPort(serverConfig.port, MAX_PORT_USE_COUNT);
   }
