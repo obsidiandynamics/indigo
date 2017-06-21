@@ -68,7 +68,7 @@ Indigo is -
 Give it a whirl.
 
 # Authors
-Emil Koutanov and other contributors as listed in CONTRIBUTORS.md.
+Emil Koutanov and other contributors as listed in [CONTRIBUTORS](http://github.com/obsidiandynamics/indigo/blob/master/CONTRIBUTORS).
 
 # License
-This project is licensed under the BSD (3-clause) License - see the LICENSE.md file for details.
+This project is licensed under the BSD (3-clause) License - see [LICENSE](http://github.com/obsidiandynamics/indigo/blob/master/LICENSE) for details.
