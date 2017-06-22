@@ -3,11 +3,17 @@ package com.obsidiandynamics.indigo.util;
 import static junit.framework.TestCase.*;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
 
 import org.junit.*;
 
 public class PropertyUtilsTest {
+  @Test
+  public void testSystemGet() {
+    assertEquals("bar", PropertyUtils.get("_foo", String::valueOf, "bar"));
+  }
+  
   @Test
   public void testExistingValue() {
     final Properties props = new Properties();
@@ -72,5 +78,19 @@ public class PropertyUtilsTest {
     assertTrue(filtered.containsKey("a.foo"));
     assertTrue(filtered.containsKey("a.bar"));
     assertFalse(filtered.containsKey("b.foo"));
+  }
+  
+  @Test
+  public void assertPrivateConstructor() throws NoSuchMethodException, SecurityException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    assertUtilityClassWellDefined(PropertyUtils.class);
+  }
+  
+  private static void assertUtilityClassWellDefined(Class<?> cls) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    final Constructor<?> constructor = cls.getDeclaredConstructor();
+    if (constructor.isAccessible() || ! Modifier.isPrivate(constructor.getModifiers())) {
+      Assert.fail("Constructor is not private");
+    }
+    constructor.setAccessible(true);
+    constructor.newInstance();
   }
 }

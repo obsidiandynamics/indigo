@@ -28,7 +28,7 @@ public final class PropertyUtils {
   }
   
   public static Properties load(String resourceFile) throws IOException {
-    final URL url = IndigoVersion.class.getClassLoader().getResource(resourceFile);
+    final URL url = PropertyUtils.class.getClassLoader().getResource(resourceFile);
     if (url == null) throw new FileNotFoundException("resource not found");
     
     final Properties props = new Properties();

@@ -1,0 +1,112 @@
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'java'
+apply plugin: 'jacoco'
+
+repositories {
+  jcenter()
+}
+
+project(':').version 
+
+dependencies {
+  compile project(':indigo-commons')
+  compile 'org.slf4j:slf4j-api:1.7.6'
+  compile 'org.slf4j:slf4j-api:1.7.6'
+  compile 'junit:junit:4.12'
+  compile 'org.apache.commons:commons-math3:3.2'
+  compile 'org.awaitility:awaitility:3.0.0'
+  compile 'org.mockito:mockito-core:1.9.5'
+}
+
+jar {
+  baseName 'indigo-assurance'
+  finalizedBy jacocoTestReport
+}
+
+jacoco {
+  toolVersion = "0.7.9"
+}
+
+jacocoTestReport {
+  dependsOn test
+  reports {
+    xml.enabled false
+    html.enabled true
+  }
+}
+
+def envKey = 'BINTRAY_KEY'
+
+bintray {
+  user = 'ekoutanov'
+  key = System.getenv(envKey)
+  publications = ['mavenJava']
+  pkg {
+    repo = 'indigo'
+    name = 'indigo-assurance'
+    userOrg = 'obsidiandynamics'
+    desc = 'Test and benchmarking support for Indigo'
+    websiteUrl = 'https://github.com/obsidiandynamics/indigo'
+    licenses = ['BSD New']
+    vcsUrl = 'https://github.com/obsidiandynamics/indigo.git'
+    publicDownloadNumbers = true
+    githubRepo = 'obsidiandynamics/indigo'
+    override = true
+    publish = false
+    version {
+      name = project(':').version
+      desc = 'Test and benchmarking support for Indigo'
+      released  = new Date()
+      vcsTag = project(':').version
+    }
+  }
+}
+
+// invoke this task when ready to publish to Bintray
+bintrayUpload {
+  dependsOn ':bintrayCredentialsCheck'
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  baseName 'indigo-assurance'
+  classifier = 'javadoc'
+  from "$buildDir/docs/javadoc"
+}
+ 
+task sourcesJar(type: Jar) {
+  baseName 'indigo-assurance'
+  from sourceSets.main.allSource
+  classifier = 'sources'
+}
+ 
+artifacts {
+  archives jar
+  archives javadocJar
+  archives sourcesJar
+}
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+    }
+   }
+  }
+
+/*
+publishing {
+  publications {
+    mavenJava(MavenPublication) {
+      groupId 'com.obsidiandynamics.indigo'
+      artifactId 'indigo-assurance'
+      version project(':').version
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+    }
+  }
+  repositories {
+    maven {
+      url "${project(':').projectDir}/../repo"
+    }
+  }
+}*/

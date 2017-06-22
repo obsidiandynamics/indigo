@@ -1,4 +1,10 @@
 rootProject.name = 'indigo'
 
+include 'indigo-commons'
+project(':indigo-commons').projectDir = new File(settingsDir, 'commons')
+
+include 'indigo-assurance'
+project(':indigo-assurance').projectDir = new File(settingsDir, 'assurance')
+
 include 'indigo-examples'
 project(':indigo-examples').projectDir = new File(settingsDir, 'examples')

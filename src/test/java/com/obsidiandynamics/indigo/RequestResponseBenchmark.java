@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo;
 
 import static junit.framework.TestCase.*;
 
@@ -7,8 +7,8 @@ import java.util.function.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
+import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.benchmark.Summary.*;
 import com.obsidiandynamics.indigo.util.*;
 

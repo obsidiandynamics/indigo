@@ -1,0 +1,27 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  testCompile 'junit:junit:4.12'
+}
+
+jar {
+  baseName 'indigo-commons'
+  finalizedBy jacocoTestReport
+}
+
+jacoco {
+  toolVersion = "0.7.9"
+}
+
+jacocoTestReport {
+  dependsOn test
+  reports {
+    xml.enabled false
+    html.enabled true
+  }
+}

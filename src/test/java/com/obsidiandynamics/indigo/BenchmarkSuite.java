@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo;
 
-import com.obsidiandynamics.indigo.*;
+import com.obsidiandynamics.indigo.benchmark.*;
 
 /**
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC

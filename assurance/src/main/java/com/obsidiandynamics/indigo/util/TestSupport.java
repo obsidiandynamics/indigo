@@ -80,24 +80,23 @@ public interface TestSupport {
    *  Taken from
    *  https://github.com/trajano/maven-jee6/blob/master/maven-jee6-test/src/test/java/net/trajano/maven_jee6/test/test/UtilityClassTestUtilTest.java
    *
-   *  @param clazz Utility class to verify.
+   *  @param cls Utility class to verify.
+   *  @throws Exception If an error occurred.
    */
-  static void assertUtilityClassWellDefined(final Class<?> clazz) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+  static void assertUtilityClassWellDefined(Class<?> cls) throws Exception {
     Assert.assertTrue("Class must be final",
-                      Modifier.isFinal(clazz.getModifiers()));
+                      Modifier.isFinal(cls.getModifiers()));
     Assert.assertEquals("There must be only one constructor", 1,
-                        clazz.getDeclaredConstructors().length);
-    final Constructor<?> constructor = clazz.getDeclaredConstructor();
-    if (constructor.isAccessible() ||
-        !Modifier.isPrivate(constructor.getModifiers())) {
+                        cls.getDeclaredConstructors().length);
+    final Constructor<?> constructor = cls.getDeclaredConstructor();
+    if (constructor.isAccessible() || ! Modifier.isPrivate(constructor.getModifiers())) {
       Assert.fail("Constructor is not private");
     }
     constructor.setAccessible(true);
     constructor.newInstance();
     constructor.setAccessible(false);
-    for (final Method method : clazz.getMethods()) {
-      if (! Modifier.isStatic(method.getModifiers())
-          && method.getDeclaringClass().equals(clazz)) {
+    for (Method method : cls.getMethods()) {
+      if (! Modifier.isStatic(method.getModifiers()) && method.getDeclaringClass().equals(cls)) {
         Assert.fail("There exists a non-static method: " + method);
       }
     }

@@ -1,11 +1,11 @@
-package com.obsidiandynamics.indigo.benchmark;
+package com.obsidiandynamics.indigo;
 
 import java.util.concurrent.*;
 
 import org.junit.*;
 
-import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
+import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public final class ThroughputBenchmark implements TestSupport {

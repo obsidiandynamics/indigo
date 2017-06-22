@@ -2,15 +2,13 @@ package com.obsidiandynamics.indigo.util;
 
 import static com.obsidiandynamics.indigo.util.TestSupport.*;
 
-import java.lang.reflect.*;
-
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.*;
 
 public class UtilConformanceTest {
   @Test
-  public void test() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+  public void test() throws Exception {
     assertUtilityClassWellDefined(ActorConfig.Key.class);
     assertUtilityClassWellDefined(ActorSystemConfig.Key.class);
     assertUtilityClassWellDefined(Assertions.class);

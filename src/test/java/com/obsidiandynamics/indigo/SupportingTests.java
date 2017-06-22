@@ -16,7 +16,6 @@ import com.obsidiandynamics.indigo.util.*;
   Integral64Test.class,
   JvmVersionProviderTest.class,
   MessageBuilderTest.class,
-  PropertyUtilsTest.class,
   StatefulLambdaActorBuilderTest.class,
   StatelessLambdaActorBuilderTest.class,
   TaskSchedulerTest.class,
