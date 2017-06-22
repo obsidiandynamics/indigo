@@ -1,12 +1,16 @@
+apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
+group = project(':').group
+version = project(':').version
+
+def packageName = 'indigo-assurance'
+
 repositories {
   jcenter()
 }
-
-project(':').version 
 
 dependencies {
   compile project(':indigo-commons')
@@ -19,7 +23,7 @@ dependencies {
 }
 
 jar {
-  baseName 'indigo-assurance'
+  baseName packageName
   finalizedBy jacocoTestReport
 }
 
@@ -43,7 +47,7 @@ bintray {
   publications = ['mavenJava']
   pkg {
     repo = 'indigo'
-    name = 'indigo-assurance'
+    name = packageName
     userOrg = 'obsidiandynamics'
     desc = 'Test and benchmarking support for Indigo'
     websiteUrl = 'https://github.com/obsidiandynamics/indigo'
@@ -68,13 +72,13 @@ bintrayUpload {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  baseName 'indigo-assurance'
+  baseName packageName
   classifier = 'javadoc'
   from "$buildDir/docs/javadoc"
 }
  
 task sourcesJar(type: Jar) {
-  baseName 'indigo-assurance'
+  baseName packageName
   from sourceSets.main.allSource
   classifier = 'sources'
 }
@@ -88,16 +92,8 @@ artifacts {
 publishing {
   publications {
     mavenJava(MavenPublication) {
-    }
-   }
-  }
-
-/*
-publishing {
-  publications {
-    mavenJava(MavenPublication) {
-      groupId 'com.obsidiandynamics.indigo'
-      artifactId 'indigo-assurance'
+      groupId project(':').group
+      artifactId packageName
       version project(':').version
       from components.java
       artifact sourcesJar
@@ -109,4 +105,4 @@ publishing {
       url "${project(':').projectDir}/../repo"
     }
   }
-}*/
+}

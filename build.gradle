@@ -4,6 +4,7 @@ plugins {
 apply plugin: 'maven-publish'
 apply plugin: 'java'
 apply plugin: 'jacoco'
+apply plugin: 'com.jfrog.bintray'
 
 def packageVersion = {
   def versionFile = sourceSets.main.resources.srcDirs[0].path + '/' + project.name + '.version'
@@ -14,7 +15,7 @@ def packageVersion = {
 group = 'com.obsidiandynamics.indigo'
 version = packageVersion
 
-println "> Build: Indigo version $version"
+def packageName = 'indigo-core'
 
 repositories {
   jcenter()
@@ -42,7 +43,7 @@ task testJar(type: Jar) {
     configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
     configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) }
   }   
-  baseName 'indigo-core-test'
+  baseName packageName + '-test'
 }
 
 jar {
@@ -51,7 +52,7 @@ jar {
   from { // bundle all compile dependencies (there should only be indigo-commons)
     configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
   } 
-  baseName 'indigo-core'
+  baseName packageName
   finalizedBy jacocoTestReport
 }
 
@@ -98,7 +99,7 @@ bintray {
   publications = ['mavenJava']
   pkg {
     repo = 'indigo'
-    name = 'indigo-core'
+    name = packageName
     userOrg = 'obsidiandynamics'
     desc = 'A dynamic actor framework for the JVM'
     websiteUrl = 'https://github.com/obsidiandynamics/indigo'
@@ -123,13 +124,13 @@ bintrayUpload {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  baseName 'indigo-core'
+  baseName packageName
   classifier = 'javadoc'
   from "$buildDir/docs/javadoc"
 }
  
 task sourcesJar(type: Jar) {
-  baseName 'indigo-core'
+  baseName packageName
   from sourceSets.main.allSource
   classifier = 'sources'
 }
@@ -140,12 +141,11 @@ artifacts {
   archives sourcesJar
 }
 
-
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      groupId 'com.obsidiandynamics.indigo'
-      artifactId 'indigo-core'
+      groupId group
+      artifactId packageName
       version packageVersion
       from components.java
       artifact sourcesJar
