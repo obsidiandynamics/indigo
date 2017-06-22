@@ -48,10 +48,10 @@ task testJar(type: Jar) {
 
 jar {
   dependsOn ':indigo-commons:jar'
-  from sourceSets.main.output
-  from { // bundle all compile dependencies (there should only be indigo-commons)
-    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-  } 
+  from {
+    configurations.compile.filter({it.name =~ /indigo-commons.jar/}).collect { 
+    it.isDirectory() ? it : zipTree(it) }
+  }
   baseName packageName
   finalizedBy jacocoTestReport
 }

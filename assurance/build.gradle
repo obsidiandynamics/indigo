@@ -23,6 +23,11 @@ dependencies {
 }
 
 jar {
+  dependsOn ':indigo-commons:jar'
+  from {
+    configurations.compile.filter({it.name =~ /indigo-commons.jar/}).collect { 
+    it.isDirectory() ? it : zipTree(it) }
+  }
   baseName packageName
   finalizedBy jacocoTestReport
 }
