@@ -8,18 +8,18 @@ import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.frame.Wire.*;
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 public final class RemoteNode implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(RemoteNode.class);
   
-  private final WSClient<?> client;
+  private final XClient<?> client;
   
   private final Wire wire;
   
   private final List<RemoteNexus> nexuses = new CopyOnWriteArrayList<>();
   
-  public RemoteNode(WSClientFactory<?> clientFactory, WSClientConfig config, Wire wire) throws Exception {
+  public RemoteNode(XClientFactory<?> clientFactory, XClientConfig config, Wire wire) throws Exception {
     this.client = clientFactory.create(config);
     this.wire = wire;
   }
@@ -27,7 +27,7 @@ public final class RemoteNode implements AutoCloseable {
   public RemoteNexus open(URI uri, RemoteNexusHandler handler) throws Exception {
     if (LOG.isDebugEnabled()) LOG.debug("Connecting to {}", uri);
     final RemoteNexus nexus = new RemoteNexus(RemoteNode.this);
-    final EndpointAdapter<WSEndpoint> adapter = new EndpointAdapter<>(RemoteNode.this, nexus, handler);
+    final EndpointAdapter<XEndpoint> adapter = new EndpointAdapter<>(RemoteNode.this, nexus, handler);
     client.connect(uri, adapter);
     nexuses.add(nexus);
     return nexus;
@@ -60,16 +60,16 @@ public final class RemoteNode implements AutoCloseable {
   }
   
   public static final class RemoteNodeBuilder {
-    private WSClientFactory<?> clientFactory;
-    private WSClientConfig clientConfig = new WSClientConfig();
+    private XClientFactory<?> clientFactory;
+    private XClientConfig clientConfig = new XClientConfig();
     private Wire wire = new Wire(false, LocationHint.REMOTE);
     
-    public RemoteNodeBuilder withClientFactory(WSClientFactory<?> clientFactory) {
+    public RemoteNodeBuilder withClientFactory(XClientFactory<?> clientFactory) {
       this.clientFactory = clientFactory;
       return this;
     }
     
-    public RemoteNodeBuilder withClientConfig(WSClientConfig clientConfig) {
+    public RemoteNodeBuilder withClientConfig(XClientConfig clientConfig) {
       this.clientConfig = clientConfig;
       return this;
     }
@@ -81,7 +81,7 @@ public final class RemoteNode implements AutoCloseable {
     
     private void init() throws Exception {
       if (clientFactory == null) {
-        clientFactory = (WSClientFactory<?>) Class.forName("com.obsidiandynamics.indigo.ws.undertow.UndertowClient$Factory").newInstance();
+        clientFactory = (XClientFactory<?>) Class.forName("com.obsidiandynamics.indigo.socketx.undertow.UndertowClient$Factory").newInstance();
       }
     }
     

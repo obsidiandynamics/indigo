@@ -1,16 +1,16 @@
-package com.obsidiandynamics.indigo.ws.undertow;
+package com.obsidiandynamics.indigo.socketx.undertow;
 
 import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 import io.undertow.*;
 import io.undertow.websockets.core.*;
 
-public final class UndertowEndpoint extends AbstractReceiveListener implements WSEndpoint {
+public final class UndertowEndpoint extends AbstractReceiveListener implements XEndpoint {
   private final UndertowEndpointManager manager;
   
   private final WebSocketChannel channel;
@@ -29,8 +29,8 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     touchLastActivityTime();
   }
   
-  static UndertowEndpoint clientOf(Scanner<UndertowEndpoint> scanner, 
-                                   WebSocketChannel channel, WSEndpointConfig config, WSEndpointListener<? super UndertowEndpoint> listener) {
+  static UndertowEndpoint clientOf(XEndpointScanner<UndertowEndpoint> scanner, 
+                                   WebSocketChannel channel, XEndpointConfig config, XEndpointListener<? super UndertowEndpoint> listener) {
     return new UndertowEndpointManager(scanner, 0, config, listener).createEndpoint(channel);
   }
   
@@ -91,7 +91,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   @Override
-  public void send(String payload, SendCallback callback) {
+  public void send(String payload, XSendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendText(payload, channel, wrapCallback(callback));
@@ -100,7 +100,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   @Override
-  public void send(ByteBuffer payload, SendCallback callback) {
+  public void send(ByteBuffer payload, XSendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       WebSockets.sendBinary(payload, channel, wrapCallback(callback));
@@ -108,7 +108,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
     }
   }
   
-  private WebSocketCallback<Void> wrapCallback(SendCallback callback) {
+  private WebSocketCallback<Void> wrapCallback(XSendCallback callback) {
     return new WebSocketCallback<Void>() {
       private final AtomicBoolean onceOnly = new AtomicBoolean();
       
@@ -129,7 +129,7 @@ public final class UndertowEndpoint extends AbstractReceiveListener implements W
   }
   
   private boolean isBelowHWM() {
-    final WSEndpointConfig config = manager.getConfig();
+    final XEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
   }
   

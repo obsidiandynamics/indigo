@@ -10,9 +10,9 @@ import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
 import com.obsidiandynamics.indigo.iot.rig.EdgeRig.*;
 import com.obsidiandynamics.indigo.iot.rig.RemoteRig.*;
+import com.obsidiandynamics.indigo.socketx.*;
 import com.obsidiandynamics.indigo.topic.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
 
 public final class RigBenchmark implements TestSupport {
   private static final String HOST = "localhost";
@@ -106,7 +106,7 @@ public final class RigBenchmark implements TestSupport {
 
   private static Summary test(Config c) throws Exception {
     final EdgeNode edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = c.port; }})
+        .withServerConfig(new XServerConfig() {{ port = c.port; }})
         .build();
     final EdgeRig edgeRig = new EdgeRig(edge, new EdgeRigConfig() {{
       topicSpec = c.topicSpec;

@@ -1,30 +1,29 @@
-package com.obsidiandynamics.indigo.ws.undertow;
+package com.obsidiandynamics.indigo.socketx.undertow;
 
 import java.io.*;
 import java.util.*;
 
 import org.xnio.*;
 
-import com.obsidiandynamics.indigo.ws.*;
-import com.obsidiandynamics.indigo.ws.Scanner;
+import com.obsidiandynamics.indigo.socketx.*;
 
 import io.undertow.websockets.*;
 import io.undertow.websockets.core.*;
 import io.undertow.websockets.spi.*;
 
-final class UndertowEndpointManager implements WebSocketConnectionCallback, WSEndpointManager<UndertowEndpoint> {
+final class UndertowEndpointManager implements WebSocketConnectionCallback, XEndpointManager<UndertowEndpoint> {
   private static final boolean NODELAY = true;
   
   private final int idleTimeoutMillis;
   
-  private final WSEndpointConfig config;
+  private final XEndpointConfig config;
   
-  private final WSEndpointListener<? super UndertowEndpoint> listener;
+  private final XEndpointListener<? super UndertowEndpoint> listener;
   
-  private final Scanner<UndertowEndpoint> scanner;
+  private final XEndpointScanner<UndertowEndpoint> scanner;
   
-  UndertowEndpointManager(Scanner<UndertowEndpoint> scanner, int idleTimeoutMillis, WSEndpointConfig config, 
-                          WSEndpointListener<? super UndertowEndpoint> listener) {
+  UndertowEndpointManager(XEndpointScanner<UndertowEndpoint> scanner, int idleTimeoutMillis, XEndpointConfig config, 
+                          XEndpointListener<? super UndertowEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;
@@ -53,11 +52,11 @@ final class UndertowEndpointManager implements WebSocketConnectionCallback, WSEn
     return endpoint;
   }
   
-  WSEndpointListener<? super UndertowEndpoint> getListener() {
+  XEndpointListener<? super UndertowEndpoint> getListener() {
     return listener;
   }
   
-  WSEndpointConfig getConfig() {
+  XEndpointConfig getConfig() {
     return config;
   }
   

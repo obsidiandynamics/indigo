@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws.jetty;
+package com.obsidiandynamics.indigo.socketx.jetty;
 
 import java.net.*;
 import java.util.*;
@@ -7,27 +7,26 @@ import org.eclipse.jetty.client.*;
 import org.eclipse.jetty.util.thread.*;
 import org.eclipse.jetty.websocket.client.*;
 
-import com.obsidiandynamics.indigo.ws.*;
-import com.obsidiandynamics.indigo.ws.Scanner;
+import com.obsidiandynamics.indigo.socketx.*;
 
-public final class JettyClient implements WSClient<JettyEndpoint> {
+public final class JettyClient implements XClient<JettyEndpoint> {
   private final HttpClient httpClient;
   
   private final WebSocketClient client;
   
-  private final Scanner<JettyEndpoint> scanner;
+  private final XEndpointScanner<JettyEndpoint> scanner;
   
-  private JettyClient(WSClientConfig config, HttpClient httpClient) throws Exception {
+  private JettyClient(XClientConfig config, HttpClient httpClient) throws Exception {
     this.httpClient = httpClient;
     client = new WebSocketClient(httpClient);
     client.setMaxIdleTimeout(config.idleTimeoutMillis);
     client.start();
-    scanner = new Scanner<>(config.scanIntervalMillis, 0);
+    scanner = new XEndpointScanner<>(config.scanIntervalMillis, 0);
   }
 
   @Override
-  public JettyEndpoint connect(URI uri, WSEndpointListener<? super JettyEndpoint> listener) throws Exception {
-    final JettyEndpoint endpoint = JettyEndpoint.clientOf(scanner, new WSEndpointConfig(), listener);
+  public JettyEndpoint connect(URI uri, XEndpointListener<? super JettyEndpoint> listener) throws Exception {
+    final JettyEndpoint endpoint = JettyEndpoint.clientOf(scanner, new XEndpointConfig(), listener);
     client.connect(endpoint, uri).get();
     return endpoint;
   }
@@ -51,11 +50,11 @@ public final class JettyClient implements WSClient<JettyEndpoint> {
     return httpClient;
   }
   
-  public static WSClientFactory<JettyEndpoint> factory() {
+  public static XClientFactory<JettyEndpoint> factory() {
     return config -> new JettyClient(config, createDefaultHttpClient());
   }
   
-  public static WSClientFactory<JettyEndpoint> factory(HttpClient httpClient) {
+  public static XClientFactory<JettyEndpoint> factory(HttpClient httpClient) {
     return config -> new JettyClient(config, httpClient);
   }
 }

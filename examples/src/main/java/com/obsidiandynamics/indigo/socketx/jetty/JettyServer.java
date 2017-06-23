@@ -1,18 +1,18 @@
-package com.obsidiandynamics.indigo.ws.jetty;
+package com.obsidiandynamics.indigo.socketx.jetty;
 
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.util.thread.*;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
-public final class JettyServer implements WSServer<JettyEndpoint> {
+public final class JettyServer implements XServer<JettyEndpoint> {
   private final JettyEndpointManager manager;
   private final Server server;
-  private final Scanner<JettyEndpoint> scanner;
+  private final XEndpointScanner<JettyEndpoint> scanner;
   
-  private JettyServer(WSServerConfig config,
-                      WSEndpointListener<? super JettyEndpoint> listener) throws Exception {
+  private JettyServer(XServerConfig config,
+                      XEndpointListener<? super JettyEndpoint> listener) throws Exception {
     server = new Server(new QueuedThreadPool(100));
     final ServerConnector connector = new ServerConnector(server);
     connector.setPort(config.port);
@@ -21,7 +21,7 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
     final ContextHandler context = new ContextHandler(config.contextPath);
     server.setHandler(context);
 
-    scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
+    scanner = new XEndpointScanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
     manager = new JettyEndpointManager(scanner, config.idleTimeoutMillis, 
                                        config.endpointConfig, listener);
     context.setHandler(manager);
@@ -35,11 +35,11 @@ public final class JettyServer implements WSServer<JettyEndpoint> {
   }
 
   @Override
-  public WSEndpointManager<JettyEndpoint> getEndpointManager() {
+  public XEndpointManager<JettyEndpoint> getEndpointManager() {
     return manager;
   }
   
-  public static WSServerFactory<JettyEndpoint> factory() {
+  public static XServerFactory<JettyEndpoint> factory() {
     return JettyServer::new;
   }
 }

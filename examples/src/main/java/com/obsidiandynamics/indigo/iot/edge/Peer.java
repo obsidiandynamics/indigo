@@ -2,12 +2,12 @@ package com.obsidiandynamics.indigo.iot.edge;
 
 import java.net.*;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 public interface Peer extends AutoCloseable {
   InetSocketAddress getAddress();
   
-  WSEndpoint getEndpoint();
+  XEndpoint getEndpoint();
   
   default boolean hasEndpoint() {
     return getEndpoint() != null;

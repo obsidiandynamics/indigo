@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import static java.util.concurrent.TimeUnit.*;
 import static org.awaitility.Awaitility.*;
@@ -8,10 +8,10 @@ import java.util.*;
 import org.junit.Test;
 import org.mockito.*;
 
+import com.obsidiandynamics.indigo.socketx.jetty.*;
+import com.obsidiandynamics.indigo.socketx.netty.*;
+import com.obsidiandynamics.indigo.socketx.undertow.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.jetty.*;
-import com.obsidiandynamics.indigo.ws.netty.*;
-import com.obsidiandynamics.indigo.ws.undertow.*;
 
 import junit.framework.*;
 
@@ -40,8 +40,8 @@ public final class ConnectDisconnectTest extends BaseClientServerTest {
   }
 
   private void test(boolean clean, int cycles, int connections,
-                    WSServerFactory<? extends WSEndpoint> serverFactory,
-                    WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
+                    XServerFactory<? extends XEndpoint> serverFactory,
+                    XClientFactory<? extends XEndpoint> clientFactory) throws Exception {
     for (int cycle = 0; cycle < cycles; cycle++) {
       test(clean, connections, serverFactory, clientFactory);
       cleanup();
@@ -52,18 +52,18 @@ public final class ConnectDisconnectTest extends BaseClientServerTest {
   }
 
   private void test(boolean clean, int connections,
-                    WSServerFactory<? extends WSEndpoint> serverFactory,
-                    WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
-    final WSServerConfig serverConfig = getDefaultServerConfig();
+                    XServerFactory<? extends XEndpoint> serverFactory,
+                    XClientFactory<? extends XEndpoint> clientFactory) throws Exception {
+    final XServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
-    final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
+    final XEndpointListener<XEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
 
-    final WSClientConfig clientConfig = getDefaultClientConfig();
+    final XClientConfig clientConfig = getDefaultClientConfig();
     clientConfig.scanIntervalMillis = 1;
     createClient(clientFactory, clientConfig);
-    final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
-    final List<WSEndpoint> endpoints = new ArrayList<>(connections);
+    final XEndpointListener<XEndpoint> clientListener = createMockListener();
+    final List<XEndpoint> endpoints = new ArrayList<>(connections);
     
     // connect all endpoints
     for (int i = 0; i < connections; i++) {
@@ -77,11 +77,11 @@ public final class ConnectDisconnectTest extends BaseClientServerTest {
     });
 
     // disconnect all endpoints and await closure
-    for (WSEndpoint endpoint : endpoints) {
+    for (XEndpoint endpoint : endpoints) {
       if (clean) endpoint.close();
       else endpoint.terminate();
     }
-    for (WSEndpoint endpoint : endpoints) {
+    for (XEndpoint endpoint : endpoints) {
       endpoint.awaitClose(Integer.MAX_VALUE);
     }
     

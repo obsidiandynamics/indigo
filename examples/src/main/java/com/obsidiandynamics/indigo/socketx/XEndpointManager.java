@@ -1,7 +1,7 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.util.*;
 
-public interface WSEndpointManager<E extends WSEndpoint> {
+public interface XEndpointManager<E extends XEndpoint> {
   Collection<E> getEndpoints();
 }

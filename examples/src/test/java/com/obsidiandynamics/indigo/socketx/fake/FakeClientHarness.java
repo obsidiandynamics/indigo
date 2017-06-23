@@ -1,10 +1,10 @@
-package com.obsidiandynamics.indigo.ws.fake;
+package com.obsidiandynamics.indigo.socketx.fake;
 
 import java.io.*;
 import java.net.*;
 
+import com.obsidiandynamics.indigo.socketx.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
 
 public final class FakeClientHarness extends ClientHarness implements TestSupport {
   private final FakeClient client;

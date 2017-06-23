@@ -1,10 +1,10 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.net.*;
 import java.util.*;
 
-public interface WSClient<E extends WSEndpoint> extends AutoCloseable {
-  E connect(URI uri, WSEndpointListener<? super E> listener) throws Exception;
+public interface XClient<E extends XEndpoint> extends AutoCloseable {
+  E connect(URI uri, XEndpointListener<? super E> listener) throws Exception;
 
   Collection<E> getEndpoints();
 }

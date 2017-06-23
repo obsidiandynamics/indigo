@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
-public class WSServerConfig {
+public class XServerConfig {
   public int port = 6667;
   
   public String contextPath = "/";
@@ -11,5 +11,5 @@ public class WSServerConfig {
   
   public int scanIntervalMillis = 1_000;
   
-  public WSEndpointConfig endpointConfig = new WSEndpointConfig();
+  public XEndpointConfig endpointConfig = new XEndpointConfig();
 }

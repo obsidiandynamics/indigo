@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 @FunctionalInterface
-public interface WSServerFactory<E extends WSEndpoint> {
-  WSServer<E> create(WSServerConfig config, WSEndpointListener<? super E> listener) throws Exception;
+public interface XServerFactory<E extends XEndpoint> {
+  XServer<E> create(XServerConfig config, XEndpointListener<? super E> listener) throws Exception;
 }

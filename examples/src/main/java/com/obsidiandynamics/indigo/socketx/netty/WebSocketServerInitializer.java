@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package com.obsidiandynamics.indigo.ws.netty;
+package com.obsidiandynamics.indigo.socketx.netty;
 
 import java.nio.*;
 import java.util.*;

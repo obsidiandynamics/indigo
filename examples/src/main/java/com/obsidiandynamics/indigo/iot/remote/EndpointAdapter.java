@@ -6,10 +6,10 @@ import java.util.concurrent.*;
 import org.slf4j.*;
 
 import com.obsidiandynamics.indigo.iot.frame.*;
+import com.obsidiandynamics.indigo.socketx.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
 
-final class EndpointAdapter<E extends WSEndpoint> implements WSEndpointListener<E> {
+final class EndpointAdapter<E extends XEndpoint> implements XEndpointListener<E> {
   private static final Logger LOG = LoggerFactory.getLogger(EndpointAdapter.class);
   
   private final RemoteNode node;

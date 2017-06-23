@@ -1,21 +1,21 @@
-package com.obsidiandynamics.indigo.ws.undertow;
+package com.obsidiandynamics.indigo.socketx.undertow;
 
 import static io.undertow.Handlers.*;
 
 import org.xnio.*;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 import io.undertow.*;
 
-public final class UndertowServer implements WSServer<UndertowEndpoint> {
+public final class UndertowServer implements XServer<UndertowEndpoint> {
   private final Undertow server;
   private final UndertowEndpointManager manager;
   private final XnioWorker worker;
-  private final Scanner<UndertowEndpoint> scanner;
+  private final XEndpointScanner<UndertowEndpoint> scanner;
   
-  private UndertowServer(WSServerConfig config,
-                         WSEndpointListener<? super UndertowEndpoint> listener) throws Exception {
+  private UndertowServer(XServerConfig config,
+                         XEndpointListener<? super UndertowEndpoint> listener) throws Exception {
     final int ioThreads = Runtime.getRuntime().availableProcessors();
     final int coreWorkerThreads = 100;
     final int maxWorkerThreads = coreWorkerThreads * 100;
@@ -28,7 +28,7 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
                                              .set(Options.TCP_NODELAY, true)
                                              .getMap());
     
-    scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
+    scanner = new XEndpointScanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
     manager = new UndertowEndpointManager(scanner, config.idleTimeoutMillis, config.endpointConfig, listener);
     
     server = Undertow.builder()
@@ -52,14 +52,14 @@ public final class UndertowServer implements WSServer<UndertowEndpoint> {
     return manager;
   }
   
-  public static final class Factory implements WSServerFactory<UndertowEndpoint> {
-    @Override public WSServer<UndertowEndpoint> create(WSServerConfig config,
-                                                       WSEndpointListener<? super UndertowEndpoint> listener) throws Exception {
+  public static final class Factory implements XServerFactory<UndertowEndpoint> {
+    @Override public XServer<UndertowEndpoint> create(XServerConfig config,
+                                                       XEndpointListener<? super UndertowEndpoint> listener) throws Exception {
       return new UndertowServer(config, listener);
     }
   }
   
-  public static WSServerFactory<UndertowEndpoint> factory() {
+  public static XServerFactory<UndertowEndpoint> factory() {
     return new Factory();
   }
 }

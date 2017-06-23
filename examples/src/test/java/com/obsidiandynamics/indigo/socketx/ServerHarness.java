@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.io.*;
 import java.util.*;
@@ -10,17 +10,17 @@ public abstract class ServerHarness extends BaseHarness {
   public final AtomicLong connected = new AtomicLong();
   public final AtomicLong closed = new AtomicLong();
   
-  public abstract List<WSEndpoint> getEndpoints();
+  public abstract List<XEndpoint> getEndpoints();
   
-  public abstract void broadcast(List<WSEndpoint> endpoints, byte[] payload);
+  public abstract void broadcast(List<XEndpoint> endpoints, byte[] payload);
   
-  public abstract void broadcast(List<WSEndpoint> endpoints, String payload);
+  public abstract void broadcast(List<XEndpoint> endpoints, String payload);
   
-  public abstract void flush(List<WSEndpoint> endpoints) throws IOException;
+  public abstract void flush(List<XEndpoint> endpoints) throws IOException;
   
-  public abstract void sendPing(WSEndpoint endpoint);
+  public abstract void sendPing(XEndpoint endpoint);
   
-  protected final void keepAlive(WSEndpoint endpoint, AtomicBoolean ping, int idleTimeout) {
+  protected final void keepAlive(XEndpoint endpoint, AtomicBoolean ping, int idleTimeout) {
     if (idleTimeout != 0) Threads.asyncDaemon(() -> {
       while (ping.get()) {
         sendPing(endpoint);

@@ -15,8 +15,8 @@ import com.obsidiandynamics.indigo.iot.edge.auth.Authenticator;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
+import com.obsidiandynamics.indigo.socketx.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
 
 public abstract class AbstractAuthTest {
   private static final int PREFERRED_PORT = 6667;
@@ -84,7 +84,7 @@ public abstract class AbstractAuthTest {
   
   protected void setupEdgeNode(AuthChain pubAuthChain, AuthChain subAuthChain) throws Exception {
     edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = AbstractAuthTest.this.port; }})
+        .withServerConfig(new XServerConfig() {{ port = AbstractAuthTest.this.port; }})
         .withWire(wire)
         .withPubAuthChain(pubAuthChain)
         .withSubAuthChain(subAuthChain)

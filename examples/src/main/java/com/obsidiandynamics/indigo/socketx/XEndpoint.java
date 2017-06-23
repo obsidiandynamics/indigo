@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.io.*;
 import java.net.*;
@@ -12,7 +12,7 @@ import com.obsidiandynamics.indigo.util.*;
  *
  *  @param <E> The endpoint type.
  */
-public interface WSEndpoint extends AutoCloseable {
+public interface XEndpoint extends AutoCloseable {
   /**
    *  Obtains the context associated with this endpoint.
    *  
@@ -33,7 +33,7 @@ public interface WSEndpoint extends AutoCloseable {
    *  @param payload The payload.
    *  @param callback Optional callback, invoked when the send completes (or fails).
    */
-  void send(String payload, SendCallback callback);
+  void send(String payload, XSendCallback callback);
 
   /**
    *  Asynchronously sends a binary frame.
@@ -41,7 +41,7 @@ public interface WSEndpoint extends AutoCloseable {
    *  @param payload The payload.
    *  @param callback Optional callback, invoked when the send completes (or fails).
    */
-  void send(ByteBuffer payload, SendCallback callback);
+  void send(ByteBuffer payload, XSendCallback callback);
   
   /**
    *  Flushing the underlying stream. Depending on the implementation, this method may block.

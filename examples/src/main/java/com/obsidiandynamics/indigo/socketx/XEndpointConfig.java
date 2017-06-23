@@ -1,5 +1,5 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
-public class WSEndpointConfig {
+public class XEndpointConfig {
   public long highWaterMark = Long.MAX_VALUE;
 }

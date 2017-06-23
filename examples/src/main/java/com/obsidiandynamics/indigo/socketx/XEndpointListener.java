@@ -1,8 +1,8 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.nio.*;
 
-public interface WSEndpointListener<E extends WSEndpoint> {
+public interface XEndpointListener<E extends XEndpoint> {
   void onConnect(E endpoint);
   
   void onText(E endpoint, String message);

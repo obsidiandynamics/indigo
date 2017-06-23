@@ -2,12 +2,12 @@ package com.obsidiandynamics.indigo.iot.edge;
 
 import java.net.*;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 final class WSEndpointPeer implements Peer {
-  private final WSEndpoint endpoint;
+  private final XEndpoint endpoint;
 
-  WSEndpointPeer(WSEndpoint endpoint) {
+  WSEndpointPeer(XEndpoint endpoint) {
     this.endpoint = endpoint;
   }
 
@@ -17,7 +17,7 @@ final class WSEndpointPeer implements Peer {
   }
 
   @Override
-  public WSEndpoint getEndpoint() {
+  public XEndpoint getEndpoint() {
     return endpoint;
   }
 

@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.ws.netty;
+package com.obsidiandynamics.indigo.socketx.netty;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 import io.netty.bootstrap.*;
 import io.netty.channel.*;
@@ -8,16 +8,16 @@ import io.netty.channel.nio.*;
 import io.netty.channel.socket.nio.*;
 import io.netty.handler.logging.*;
 
-public final class NettyServer implements WSServer<NettyEndpoint> {
+public final class NettyServer implements XServer<NettyEndpoint> {
   private final NettyEndpointManager manager;
   private final EventLoopGroup bossGroup;
   private final EventLoopGroup workerGroup;
-  private final Scanner<NettyEndpoint> scanner;
+  private final XEndpointScanner<NettyEndpoint> scanner;
   
   private final Channel channel;
   
-  private NettyServer(WSServerConfig config, WSEndpointListener<? super NettyEndpoint> listener) throws InterruptedException {
-    scanner = new Scanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
+  private NettyServer(XServerConfig config, XEndpointListener<? super NettyEndpoint> listener) throws InterruptedException {
+    scanner = new XEndpointScanner<>(config.scanIntervalMillis, config.pingIntervalMillis);
     manager = new NettyEndpointManager(scanner, config.endpointConfig, listener);
     bossGroup = new NioEventLoopGroup(1);
     workerGroup = new NioEventLoopGroup();
@@ -45,7 +45,7 @@ public final class NettyServer implements WSServer<NettyEndpoint> {
     return manager;
   }
   
-  public static WSServerFactory<NettyEndpoint> factory() {
+  public static XServerFactory<NettyEndpoint> factory() {
     return NettyServer::new;
   }
 }

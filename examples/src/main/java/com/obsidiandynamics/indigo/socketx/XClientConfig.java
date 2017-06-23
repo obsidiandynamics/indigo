@@ -1,11 +1,11 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
-public class WSClientConfig {
+public class XClientConfig {
   public int idleTimeoutMillis = 300_000;
   
   public int scanIntervalMillis = 1_000;
   
-  public WSEndpointConfig endpointConfig = new WSEndpointConfig();
+  public XEndpointConfig endpointConfig = new XEndpointConfig();
   
   public boolean hasIdleTimeout() {
     return idleTimeoutMillis != 0;

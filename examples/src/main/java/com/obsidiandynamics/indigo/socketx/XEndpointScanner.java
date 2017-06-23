@@ -1,12 +1,12 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 import org.slf4j.*;
 
-public final class Scanner<E extends WSEndpoint> extends Thread implements AutoCloseable {
-  private static final Logger LOG = LoggerFactory.getLogger(Scanner.class);
+public final class XEndpointScanner<E extends XEndpoint> extends Thread implements AutoCloseable {
+  private static final Logger LOG = LoggerFactory.getLogger(XEndpointScanner.class);
   
   private final int scanIntervalMillis;
   private final int pingIntervalMillis;
@@ -14,7 +14,7 @@ public final class Scanner<E extends WSEndpoint> extends Thread implements AutoC
   
   private volatile boolean running = true;
   
-  public Scanner(int scanIntervalMillis, int pingIntervalMillis) {
+  public XEndpointScanner(int scanIntervalMillis, int pingIntervalMillis) {
     super(String.format("Scanner[scanInterval=%dms,pingInterval=%dms]", 
                         scanIntervalMillis, pingIntervalMillis));
     this.scanIntervalMillis = scanIntervalMillis;

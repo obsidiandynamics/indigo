@@ -6,7 +6,7 @@ import java.util.concurrent.*;
 
 import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 public final class RemoteNexus implements AutoCloseable {
   private final RemoteNode node;
@@ -15,17 +15,17 @@ public final class RemoteNexus implements AutoCloseable {
   
   private volatile String sessionId;
   
-  private volatile WSEndpoint endpoint;
+  private volatile XEndpoint endpoint;
   
   RemoteNexus(RemoteNode node) {
     this.node = node;
   }
 
-  public WSEndpoint getEndpoint() {
+  public XEndpoint getEndpoint() {
     return endpoint;
   }
 
-  void setEndpoint(WSEndpoint endpoint) {
+  void setEndpoint(XEndpoint endpoint) {
     this.endpoint = endpoint;
   }
   

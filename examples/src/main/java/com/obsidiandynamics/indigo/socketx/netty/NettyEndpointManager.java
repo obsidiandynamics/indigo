@@ -1,24 +1,23 @@
-package com.obsidiandynamics.indigo.ws.netty;
+package com.obsidiandynamics.indigo.socketx.netty;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-import com.obsidiandynamics.indigo.ws.*;
-import com.obsidiandynamics.indigo.ws.Scanner;
+import com.obsidiandynamics.indigo.socketx.*;
 
 import io.netty.channel.*;
 
-final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
-  private final WSEndpointConfig config;
+final class NettyEndpointManager implements XEndpointManager<NettyEndpoint> {
+  private final XEndpointConfig config;
   
-  private final WSEndpointListener<? super NettyEndpoint> listener;
+  private final XEndpointListener<? super NettyEndpoint> listener;
   
   private final Map<Channel, NettyEndpoint> endpoints = new ConcurrentHashMap<>();
   
-  private final Scanner<NettyEndpoint> scanner;
+  private final XEndpointScanner<NettyEndpoint> scanner;
   
-  NettyEndpointManager(Scanner<NettyEndpoint> scanner, WSEndpointConfig config, 
-                       WSEndpointListener<? super NettyEndpoint> listener) {
+  NettyEndpointManager(XEndpointScanner<NettyEndpoint> scanner, XEndpointConfig config, 
+                       XEndpointListener<? super NettyEndpoint> listener) {
     this.scanner = scanner;
     this.config = config;
     this.listener = listener;
@@ -42,11 +41,11 @@ final class NettyEndpointManager implements WSEndpointManager<NettyEndpoint> {
     return endpoint;
   }
   
-  WSEndpointListener<? super NettyEndpoint> getListener() {
+  XEndpointListener<? super NettyEndpoint> getListener() {
     return listener;
   }
   
-  WSEndpointConfig getConfig() {
+  XEndpointConfig getConfig() {
     return config;
   }
 

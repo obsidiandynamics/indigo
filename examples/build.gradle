@@ -33,10 +33,10 @@ task testJar(type: Jar) {
 
 def perfJvmArgs = '-server -XX:-MaxFDLimit -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1G -Xmx4G -Xss1M -XX:+UseParallelGC'
 
-task wsBench(type: JavaExec) {
+task fanOutBench(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
   jvmArgs = Arrays.asList perfJvmArgs.split(' ')
-  main = 'com.obsidiandynamics.indigo.ws.WSFanOutBenchmark'
+  main = 'com.obsidiandynamics.indigo.socketx.FanOutBenchmark'
 }
 
 task rigBench(type: JavaExec) {

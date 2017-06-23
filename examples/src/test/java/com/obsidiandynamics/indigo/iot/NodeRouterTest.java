@@ -17,8 +17,8 @@ import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.frame.Error;
 import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
+import com.obsidiandynamics.indigo.socketx.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
 
 public final class NodeRouterTest {
   private static final int PREFERRED_PORT = 6667;
@@ -44,7 +44,7 @@ public final class NodeRouterTest {
     handler = mock(RemoteNexusHandler.class);
     
     edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = NodeRouterTest.this.port; }})
+        .withServerConfig(new XServerConfig() {{ port = NodeRouterTest.this.port; }})
         .withWire(wire)
         .withInterchange(logger(interchange))
         .build();

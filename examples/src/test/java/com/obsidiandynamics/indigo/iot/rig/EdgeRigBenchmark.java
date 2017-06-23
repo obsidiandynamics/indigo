@@ -6,9 +6,9 @@ import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.rig.EdgeRig.*;
 import com.obsidiandynamics.indigo.iot.rig.RigBenchmark.*;
+import com.obsidiandynamics.indigo.socketx.*;
 import com.obsidiandynamics.indigo.topic.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
 
 public final class EdgeRigBenchmark implements TestSupport {
   private static final int PORT = get("flywheel.rig.port", Integer::valueOf, 6667);
@@ -21,7 +21,7 @@ public final class EdgeRigBenchmark implements TestSupport {
   
   private static Summary run(Config c) throws Exception {
     final EdgeNode edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{ port = c.port; }})
+        .withServerConfig(new XServerConfig() {{ port = c.port; }})
         .build();
     final EdgeRig edgeRig = new EdgeRig(edge, new EdgeRigConfig() {{
       topicSpec = c.topicSpec;

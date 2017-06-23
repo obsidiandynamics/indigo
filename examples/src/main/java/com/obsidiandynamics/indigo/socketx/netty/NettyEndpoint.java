@@ -1,18 +1,18 @@
-package com.obsidiandynamics.indigo.ws.netty;
+package com.obsidiandynamics.indigo.socketx.netty;
 
 import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.util.concurrent.atomic.*;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 import io.netty.buffer.*;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.concurrent.*;
 
-public final class NettyEndpoint implements WSEndpoint {
+public final class NettyEndpoint implements XEndpoint {
   private final NettyEndpointManager manager;
   private final ChannelHandlerContext handlerContext;
   private final AtomicLong backlog = new AtomicLong();
@@ -44,7 +44,7 @@ public final class NettyEndpoint implements WSEndpoint {
   }
   
   @Override
-  public void send(ByteBuffer payload, SendCallback callback) {
+  public void send(ByteBuffer payload, XSendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       final ByteBuf buf = Unpooled.wrappedBuffer(payload);
@@ -55,7 +55,7 @@ public final class NettyEndpoint implements WSEndpoint {
   }
   
   @Override
-  public void send(String payload, SendCallback callback) {
+  public void send(String payload, XSendCallback callback) {
     if (isBelowHWM()) {
       backlog.incrementAndGet();
       final ChannelFuture f = handlerContext.channel().writeAndFlush(new TextWebSocketFrame(payload));
@@ -64,7 +64,7 @@ public final class NettyEndpoint implements WSEndpoint {
     }
   }
   
-  private GenericFutureListener<ChannelFuture> wrapCallback(SendCallback callback) {
+  private GenericFutureListener<ChannelFuture> wrapCallback(XSendCallback callback) {
     return f -> {
       backlog.decrementAndGet();
       if (callback != null) {
@@ -78,7 +78,7 @@ public final class NettyEndpoint implements WSEndpoint {
   }
   
   private boolean isBelowHWM() {
-    final WSEndpointConfig config = manager.getConfig();
+    final XEndpointConfig config = manager.getConfig();
     return backlog.get() < config.highWaterMark;
   }
   

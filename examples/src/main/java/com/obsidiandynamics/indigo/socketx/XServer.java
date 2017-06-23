@@ -1,5 +1,5 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
-public interface WSServer<E extends WSEndpoint> extends AutoCloseable {
-  WSEndpointManager<E> getEndpointManager();
+public interface XServer<E extends XEndpoint> extends AutoCloseable {
+  XEndpointManager<E> getEndpointManager();
 }

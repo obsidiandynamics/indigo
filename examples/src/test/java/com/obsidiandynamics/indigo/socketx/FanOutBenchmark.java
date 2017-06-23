@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import static com.obsidiandynamics.indigo.util.SocketTestSupport.*;
 import static junit.framework.TestCase.*;
@@ -14,13 +14,13 @@ import org.junit.*;
 import org.xnio.*;
 
 import com.obsidiandynamics.indigo.benchmark.*;
+import com.obsidiandynamics.indigo.socketx.fake.*;
+import com.obsidiandynamics.indigo.socketx.jetty.*;
+import com.obsidiandynamics.indigo.socketx.netty.*;
+import com.obsidiandynamics.indigo.socketx.undertow.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.fake.*;
-import com.obsidiandynamics.indigo.ws.jetty.*;
-import com.obsidiandynamics.indigo.ws.netty.*;
-import com.obsidiandynamics.indigo.ws.undertow.*;
 
-public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
+public final class FanOutBenchmark implements TestSupport, SocketTestSupport {
   private static final int PREFERRED_PORT = 6667;
   private static final int BACKLOG_HWM = 1_000_000;
   private static final int BYTES = 16;
@@ -83,7 +83,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
 
     @Override
     public Summary run() throws Exception {
-      return WSFanOutBenchmark.test(this);
+      return FanOutBenchmark.test(this);
     }
   }
   
@@ -120,20 +120,20 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     return Math.max(1024, bytes);
   }
   
-  private static ServerHarnessFactory serverHarnessFactory(WSServerFactory<? extends WSEndpoint> serverFactory) throws Exception {
-    return (port_, progress, idleTimeout) -> new DefaultServerHarness(new WSServerConfig() {{
+  private static ServerHarnessFactory serverHarnessFactory(XServerFactory<? extends XEndpoint> serverFactory) throws Exception {
+    return (port_, progress, idleTimeout) -> new DefaultServerHarness(new XServerConfig() {{
       port = port_;
       contextPath = "/";
       idleTimeoutMillis = idleTimeout;
     }}, unsafeCast(serverFactory), progress);
   }
   
-  private static ClientHarnessFactory clientHarnessFactory(WSClient<?> client) {
+  private static ClientHarnessFactory clientHarnessFactory(XClient<?> client) {
     return (port, echo) -> new DefaultClientHarness(client, port, echo);
   }
   
-  private static WSClient<?> createClient(WSClientFactory<? extends WSEndpoint> clientFactory, int idleTimeout) throws Exception {
-    return unsafeCast(clientFactory.create(new WSClientConfig() {{
+  private static XClient<?> createClient(XClientFactory<? extends XEndpoint> clientFactory, int idleTimeout) throws Exception {
+    return unsafeCast(clientFactory.create(new XClientConfig() {{
       idleTimeoutMillis = idleTimeout;
     }}));
   }
@@ -144,7 +144,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testNtUt() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
+    final XClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(NettyServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -155,7 +155,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testUtUt_noEcho_binary() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
+    final XClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -166,7 +166,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testUtUt_echo_binary() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
+    final XClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -177,7 +177,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testUtUt_noEcho_text() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
+    final XClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -188,7 +188,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testUtUt_echo_text() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
+    final XClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -209,7 +209,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testJtJt() throws Exception {
-    final WSClient<?> client = createClient(JettyClient.factory(createHttpClient()), IDLE_TIMEOUT);
+    final XClient<?> client = createClient(JettyClient.factory(createHttpClient()), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(JettyServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -220,7 +220,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testUtJt() throws Exception {
-    final WSClient<?> client = createClient(JettyClient.factory(createHttpClient()),  IDLE_TIMEOUT);
+    final XClient<?> client = createClient(JettyClient.factory(createHttpClient()),  IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -231,7 +231,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
   
   @Test
   public void testJtUt() throws Exception {
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
+    final XClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(BYTES)), IDLE_TIMEOUT);
     new Config() {{
       serverHarnessFactory = serverHarnessFactory(JettyServer.factory());
       clientHarnessFactory = clientHarnessFactory(client);
@@ -240,13 +240,13 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     }}.assignDefaults().andFinally(client::close).test();
   }
   
-  private static void throttle(Config c, AtomicBoolean throttleInProgress, List<? extends WSEndpoint> endpoints, int backlogHwm) {
+  private static void throttle(Config c, AtomicBoolean throttleInProgress, List<? extends XEndpoint> endpoints, int backlogHwm) {
     boolean logged = false;
     int waits = 0;
     for (;;) {
       long minTotalBacklog = 0;
       boolean overflow = false;
-      inner: for (WSEndpoint endpoint : endpoints) {
+      inner: for (XEndpoint endpoint : endpoints) {
         minTotalBacklog += endpoint.getBacklog();
         if (minTotalBacklog > backlogHwm) {
           overflow = true;
@@ -350,7 +350,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     final byte[] binPayload = c.text ? null : randomBytes(c.bytes);
     final String textPayload = c.text ? randomString(c.bytes) : null;
     
-    final List<WSEndpoint> endpoints = server.getEndpoints();
+    final List<XEndpoint> endpoints = server.getEndpoints();
 
     final int progressInterval = Math.max(1, c.n / 25);
     if (c.log.stages) c.log.out.format("s: warming up...\n");
@@ -475,7 +475,7 @@ public final class WSFanOutBenchmark implements TestSupport, SocketTestSupport {
     BashInteractor.Ulimit.main(null);
     final int bytes_ = 16;
     final int idleTimeout_ = 0;
-    final WSClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(bytes_)), idleTimeout_);
+    final XClient<?> client = createClient(UndertowClient.factory(createXnioWorker(), getUtBufferSize(bytes_)), idleTimeout_);
     try {
       new Config() {{
         serverHarnessFactory = serverHarnessFactory(UndertowServer.factory());

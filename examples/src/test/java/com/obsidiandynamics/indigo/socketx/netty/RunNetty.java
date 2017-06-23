@@ -1,11 +1,11 @@
-package com.obsidiandynamics.indigo.ws.netty;
+package com.obsidiandynamics.indigo.socketx.netty;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 public final class RunNetty {
   public static void main(String[] args) throws Exception {
     System.setProperty("io.netty.noUnsafe", Boolean.toString(true));
-    final WSServer<NettyEndpoint> netty = NettyServer.factory().create(new WSServerConfig() {{
+    final XServer<NettyEndpoint> netty = NettyServer.factory().create(new XServerConfig() {{
       port = 6667;
       contextPath = "/";
     }}, null);

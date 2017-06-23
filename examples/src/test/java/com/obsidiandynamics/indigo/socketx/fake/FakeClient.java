@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws.fake;
+package com.obsidiandynamics.indigo.socketx.fake;
 
 import java.io.*;
 import java.net.*;

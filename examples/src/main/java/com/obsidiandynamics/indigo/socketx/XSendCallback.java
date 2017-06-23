@@ -1,7 +1,7 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
-public interface SendCallback {
-  void onComplete(WSEndpoint endpoint);
+public interface XSendCallback {
+  void onComplete(XEndpoint endpoint);
 
-  void onError(WSEndpoint endpoint, Throwable cause);
+  void onError(XEndpoint endpoint, Throwable cause);
 }

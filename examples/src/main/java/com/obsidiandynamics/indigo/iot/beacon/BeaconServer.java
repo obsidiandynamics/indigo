@@ -7,7 +7,7 @@ import java.util.*;
 import com.obsidiandynamics.indigo.iot.*;
 import com.obsidiandynamics.indigo.iot.edge.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 public final class BeaconServer extends Thread implements TopicListener {
   private static final Properties PROPS = new Properties(System.getProperties());
@@ -23,7 +23,7 @@ public final class BeaconServer extends Thread implements TopicListener {
     .map(e -> String.format("%-30s: %s", e.getKey(), e.getValue())).forEach(System.out::println);
     
     edge = EdgeNode.builder()
-        .withServerConfig(new WSServerConfig() {{
+        .withServerConfig(new XServerConfig() {{
           contextPath = CONTEXT_PATH;
           port = PORT;
         }})

@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.iot.edge;
 
 import java.net.*;
 
-import com.obsidiandynamics.indigo.ws.*;
+import com.obsidiandynamics.indigo.socketx.*;
 
 final class LocalPeer implements Peer {
   private static final LocalPeer INSTANCE = new LocalPeer();
@@ -15,7 +15,7 @@ final class LocalPeer implements Peer {
   }
 
   @Override
-  public WSEndpoint getEndpoint() {
+  public XEndpoint getEndpoint() {
     return null;
   }
   

@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.io.*;
 import java.nio.*;
@@ -9,38 +9,38 @@ import com.obsidiandynamics.indigo.util.*;
 
 final class DefaultServerHarness extends ServerHarness implements TestSupport {
   private final AtomicBoolean ping = new AtomicBoolean(true);
-  private final WSServer<WSEndpoint> server;
-  private final SendCallback writeCallback;
+  private final XServer<XEndpoint> server;
+  private final XSendCallback writeCallback;
   
-  DefaultServerHarness(WSServerConfig config, WSServerFactory<WSEndpoint> factory, ServerProgress progress) throws Exception {
-    final WSEndpointListener<WSEndpoint> serverListener = new WSEndpointListener<WSEndpoint>() {
-      @Override public void onConnect(WSEndpoint endpoint) {
+  DefaultServerHarness(XServerConfig config, XServerFactory<XEndpoint> factory, ServerProgress progress) throws Exception {
+    final XEndpointListener<XEndpoint> serverListener = new XEndpointListener<XEndpoint>() {
+      @Override public void onConnect(XEndpoint endpoint) {
         log("s: connected %s\n", endpoint.getRemoteAddress());
         connected.incrementAndGet();
         keepAlive(endpoint, ping, config.idleTimeoutMillis);
       }
 
-      @Override public void onText(WSEndpoint endpoint, String message) {
+      @Override public void onText(XEndpoint endpoint, String message) {
         log("s: received: %s\n", message);
         received.incrementAndGet();
       }
 
-      @Override public void onBinary(WSEndpoint endpoint, ByteBuffer message) {
+      @Override public void onBinary(XEndpoint endpoint, ByteBuffer message) {
         log("s: received %d bytes\n", message.limit());
         received.incrementAndGet();
       }
       
-      @Override public void onDisconnect(WSEndpoint endpoint, int statusCode, String reason) {
+      @Override public void onDisconnect(XEndpoint endpoint, int statusCode, String reason) {
         log("s: disconnected: statusCode=%d, reason=%s\n", statusCode, reason);
       }
       
-      @Override public void onError(WSEndpoint endpoint, Throwable cause) {
+      @Override public void onError(XEndpoint endpoint, Throwable cause) {
         log("s: socket error\n");
         System.err.println("server socket error");
         cause.printStackTrace();
       }
 
-      @Override public void onClose(WSEndpoint endpoint) {
+      @Override public void onClose(XEndpoint endpoint) {
         log("s: closed\n");
         closed.incrementAndGet();
         ping.set(false);
@@ -55,13 +55,13 @@ final class DefaultServerHarness extends ServerHarness implements TestSupport {
       }
     };
     
-    writeCallback = new SendCallback() {
-      @Override public void onComplete(WSEndpoint endpoint) {
+    writeCallback = new XSendCallback() {
+      @Override public void onComplete(XEndpoint endpoint) {
         final long s = sent.getAndIncrement();
         if (s % 1000 == 0) progress.update(DefaultServerHarness.this, s);
       }
 
-      @Override public void onError(WSEndpoint endpoint, Throwable cause) {
+      @Override public void onError(XEndpoint endpoint, Throwable cause) {
         System.err.println("server write error");
         cause.printStackTrace();
       }
@@ -75,33 +75,33 @@ final class DefaultServerHarness extends ServerHarness implements TestSupport {
   }
 
   @Override
-  public List<WSEndpoint> getEndpoints() {
+  public List<XEndpoint> getEndpoints() {
     return new ArrayList<>(server.getEndpointManager().getEndpoints());
   }
 
   @Override
-  public void broadcast(List<WSEndpoint> endpoints, byte[] payload) {
-    for (WSEndpoint endpoint : endpoints) {
+  public void broadcast(List<XEndpoint> endpoints, byte[] payload) {
+    for (XEndpoint endpoint : endpoints) {
       endpoint.send(ByteBuffer.wrap(payload), writeCallback);
     }
   }
 
   @Override
-  public void broadcast(List<WSEndpoint> endpoints, String payload) {
-    for (WSEndpoint endpoint : endpoints) {
+  public void broadcast(List<XEndpoint> endpoints, String payload) {
+    for (XEndpoint endpoint : endpoints) {
       endpoint.send(payload, writeCallback);
     }
   }
 
   @Override
-  public void flush(List<WSEndpoint> endpoints) throws IOException {
-    for (WSEndpoint endpoint : endpoints) {
+  public void flush(List<XEndpoint> endpoints) throws IOException {
+    for (XEndpoint endpoint : endpoints) {
       endpoint.flush();
     }
   }
 
   @Override
-  public void sendPing(WSEndpoint endpoint) {
+  public void sendPing(XEndpoint endpoint) {
     endpoint.sendPing();
   }
 }

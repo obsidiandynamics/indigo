@@ -1,24 +1,23 @@
-package com.obsidiandynamics.indigo.ws.jetty;
+package com.obsidiandynamics.indigo.socketx.jetty;
 
 import java.util.*;
 
 import org.eclipse.jetty.websocket.server.*;
 import org.eclipse.jetty.websocket.servlet.*;
 
-import com.obsidiandynamics.indigo.ws.*;
-import com.obsidiandynamics.indigo.ws.Scanner;
+import com.obsidiandynamics.indigo.socketx.*;
 
-final class JettyEndpointManager extends WebSocketHandler implements WSEndpointManager<JettyEndpoint> {
+final class JettyEndpointManager extends WebSocketHandler implements XEndpointManager<JettyEndpoint> {
   private final int idleTimeoutMillis;
   
-  private final WSEndpointConfig config;
+  private final XEndpointConfig config;
   
-  private final WSEndpointListener<? super JettyEndpoint> listener;
+  private final XEndpointListener<? super JettyEndpoint> listener;
   
-  private final Scanner<JettyEndpoint> scanner;
+  private final XEndpointScanner<JettyEndpoint> scanner;
 
-  JettyEndpointManager(Scanner<JettyEndpoint> scanner, int idleTimeoutMillis, 
-                       WSEndpointConfig config, WSEndpointListener<? super JettyEndpoint> listener) {
+  JettyEndpointManager(XEndpointScanner<JettyEndpoint> scanner, int idleTimeoutMillis, 
+                       XEndpointConfig config, XEndpointListener<? super JettyEndpoint> listener) {
     this.idleTimeoutMillis = idleTimeoutMillis;
     this.config = config;
     this.listener = listener;
@@ -51,11 +50,11 @@ final class JettyEndpointManager extends WebSocketHandler implements WSEndpointM
     scanner.removeEndpoint(endpoint);
   }
   
-  WSEndpointListener<? super JettyEndpoint> getListener() {
+  XEndpointListener<? super JettyEndpoint> getListener() {
     return listener;
   }
   
-  WSEndpointConfig getConfig() {
+  XEndpointConfig getConfig() {
     return config;
   }
   

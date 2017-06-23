@@ -1,6 +1,6 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 @FunctionalInterface
-public interface WSClientFactory<E extends WSEndpoint> {
-  WSClient<E> create(WSClientConfig config) throws Exception;
+public interface XClientFactory<E extends XEndpoint> {
+  XClient<E> create(XClientConfig config) throws Exception;
 }

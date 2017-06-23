@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import static java.util.concurrent.TimeUnit.*;
 import static org.awaitility.Awaitility.*;
@@ -6,10 +6,10 @@ import static org.awaitility.Awaitility.*;
 import org.junit.*;
 import org.mockito.*;
 
+import com.obsidiandynamics.indigo.socketx.jetty.*;
+import com.obsidiandynamics.indigo.socketx.netty.*;
+import com.obsidiandynamics.indigo.socketx.undertow.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.jetty.*;
-import com.obsidiandynamics.indigo.ws.netty.*;
-import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class IdleTimeoutTest extends BaseClientServerTest {
   @Test
@@ -41,20 +41,20 @@ public final class IdleTimeoutTest extends BaseClientServerTest {
     testClientTimeout(UndertowServer.factory(), UndertowClient.factory(), 1);
   }
   
-  private void testClientTimeout(WSServerFactory<? extends WSEndpoint> serverFactory,
-                                 WSClientFactory<? extends WSEndpoint> clientFactory,
+  private void testClientTimeout(XServerFactory<? extends XEndpoint> serverFactory,
+                                 XClientFactory<? extends XEndpoint> clientFactory,
                                  int idleTimeoutMillis) throws Exception {
-    final WSServerConfig serverConfig = getDefaultServerConfig();
+    final XServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
-    final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
+    final XEndpointListener<XEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
 
-    final WSClientConfig clientConfig = getDefaultClientConfig();
+    final XClientConfig clientConfig = getDefaultClientConfig();
     clientConfig.idleTimeoutMillis = idleTimeoutMillis;
     clientConfig.scanIntervalMillis = 1;
     createClient(clientFactory, clientConfig);
 
-    final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
+    final XEndpointListener<XEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onConnect(Mocks.anyNotNull());
@@ -67,20 +67,20 @@ public final class IdleTimeoutTest extends BaseClientServerTest {
     });
   }
 
-  private void testServerTimeout(WSServerFactory<? extends WSEndpoint> serverFactory,
-                                 WSClientFactory<? extends WSEndpoint> clientFactory,
+  private void testServerTimeout(XServerFactory<? extends XEndpoint> serverFactory,
+                                 XClientFactory<? extends XEndpoint> clientFactory,
                                  int idleTimeoutMillis) throws Exception {
-    final WSServerConfig serverConfig = getDefaultServerConfig();
+    final XServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
     serverConfig.idleTimeoutMillis = idleTimeoutMillis;
-    final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
+    final XEndpointListener<XEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
 
-    final WSClientConfig clientConfig = getDefaultClientConfig();
+    final XClientConfig clientConfig = getDefaultClientConfig();
     clientConfig.scanIntervalMillis = 1;
     createClient(clientFactory, clientConfig);
 
-    final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
+    final XEndpointListener<XEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());

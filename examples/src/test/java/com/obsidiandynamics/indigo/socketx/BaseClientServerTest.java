@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import java.net.*;
 
@@ -8,9 +8,9 @@ import org.mockito.*;
 import com.obsidiandynamics.indigo.util.*;
 
 public abstract class BaseClientServerTest implements TestSupport {
-  protected WSServer<? extends WSEndpoint> server;
+  protected XServer<? extends XEndpoint> server;
 
-  protected WSClient<? extends WSEndpoint> client;
+  protected XClient<? extends XEndpoint> client;
 
   @After
   public void teardown() throws Exception {
@@ -25,32 +25,32 @@ public abstract class BaseClientServerTest implements TestSupport {
     client = null;
   }
 
-  protected static WSServerConfig getDefaultServerConfig() {
-    return new WSServerConfig() {{
+  protected static XServerConfig getDefaultServerConfig() {
+    return new XServerConfig() {{
       port = SocketTestSupport.getAvailablePort(6667);
     }};
   }
 
-  protected static WSClientConfig getDefaultClientConfig() {
-    return new WSClientConfig();
+  protected static XClientConfig getDefaultClientConfig() {
+    return new XClientConfig();
   }
   
   @SuppressWarnings("unchecked")
-  protected final void createServer(WSServerFactory<? extends WSEndpoint> serverFactory,
-                                    WSServerConfig config, WSEndpointListener<WSEndpoint> serverListener) throws Exception {
-    server = serverFactory.create(config, Mocks.logger(WSEndpointListener.class, 
+  protected final void createServer(XServerFactory<? extends XEndpoint> serverFactory,
+                                    XServerConfig config, XEndpointListener<XEndpoint> serverListener) throws Exception {
+    server = serverFactory.create(config, Mocks.logger(XEndpointListener.class, 
                                                              serverListener,
                                                              new LoggingInterceptor<>("s: ")));
   }
   
-  protected final void createClient(WSClientFactory<? extends WSEndpoint> clientFactory, WSClientConfig config) throws Exception {
+  protected final void createClient(XClientFactory<? extends XEndpoint> clientFactory, XClientConfig config) throws Exception {
     client = clientFactory.create(config);
   }
   
   @SuppressWarnings("unchecked")
-  protected final WSEndpoint openClientEndpoint(int port, WSEndpointListener<WSEndpoint> clientListener) throws URISyntaxException, Exception {
+  protected final XEndpoint openClientEndpoint(int port, XEndpointListener<XEndpoint> clientListener) throws URISyntaxException, Exception {
     return client.connect(new URI("ws://localhost:" + port + "/"),
-                          Mocks.logger(WSEndpointListener.class, 
+                          Mocks.logger(XEndpointListener.class, 
                                        clientListener,
                                        new LoggingInterceptor<>("c: ")));
   }
@@ -59,12 +59,12 @@ public abstract class BaseClientServerTest implements TestSupport {
     return ! server.getEndpointManager().getEndpoints().isEmpty();
   }
   
-  protected final WSEndpoint getServerEndpoint() {
+  protected final XEndpoint getServerEndpoint() {
     return server.getEndpointManager().getEndpoints().iterator().next();
   }
   
   @SuppressWarnings("unchecked")
-  protected static WSEndpointListener<WSEndpoint> createMockListener() {
-    return Mockito.mock(WSEndpointListener.class);
+  protected static XEndpointListener<XEndpoint> createMockListener() {
+    return Mockito.mock(XEndpointListener.class);
   }
 }

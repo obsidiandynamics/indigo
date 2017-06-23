@@ -1,4 +1,4 @@
-package com.obsidiandynamics.indigo.ws;
+package com.obsidiandynamics.indigo.socketx;
 
 import static java.util.concurrent.TimeUnit.*;
 import static org.awaitility.Awaitility.*;
@@ -6,10 +6,10 @@ import static org.awaitility.Awaitility.*;
 import org.junit.*;
 import org.mockito.*;
 
+import com.obsidiandynamics.indigo.socketx.jetty.*;
+import com.obsidiandynamics.indigo.socketx.netty.*;
+import com.obsidiandynamics.indigo.socketx.undertow.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.jetty.*;
-import com.obsidiandynamics.indigo.ws.netty.*;
-import com.obsidiandynamics.indigo.ws.undertow.*;
 
 public final class AbruptCloseTest extends BaseClientServerTest {
   @Test
@@ -42,19 +42,19 @@ public final class AbruptCloseTest extends BaseClientServerTest {
     testServerClose(NettyServer.factory(), UndertowClient.factory());
   }
 
-  private void testClientClose(WSServerFactory<? extends WSEndpoint> serverFactory,
-                               WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
-    final WSServerConfig serverConfig = getDefaultServerConfig();
+  private void testClientClose(XServerFactory<? extends XEndpoint> serverFactory,
+                               XClientFactory<? extends XEndpoint> clientFactory) throws Exception {
+    final XServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
-    final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
+    final XEndpointListener<XEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
     
-    final WSClientConfig clientConfig = getDefaultClientConfig();
+    final XClientConfig clientConfig = getDefaultClientConfig();
     clientConfig.scanIntervalMillis = 1;
     createClient(clientFactory, clientConfig);
 
-    final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
-    final WSEndpoint endpoint = openClientEndpoint(serverConfig.port, clientListener);
+    final XEndpointListener<XEndpoint> clientListener = createMockListener();
+    final XEndpoint endpoint = openClientEndpoint(serverConfig.port, clientListener);
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onConnect(Mocks.anyNotNull());
       Mockito.verify(clientListener).onConnect(Mocks.anyNotNull());
@@ -67,23 +67,23 @@ public final class AbruptCloseTest extends BaseClientServerTest {
     });
   }
 
-  private void testServerClose(WSServerFactory<? extends WSEndpoint> serverFactory,
-                               WSClientFactory<? extends WSEndpoint> clientFactory) throws Exception {
-    final WSServerConfig serverConfig = getDefaultServerConfig();
+  private void testServerClose(XServerFactory<? extends XEndpoint> serverFactory,
+                               XClientFactory<? extends XEndpoint> clientFactory) throws Exception {
+    final XServerConfig serverConfig = getDefaultServerConfig();
     serverConfig.scanIntervalMillis = 1;
-    final WSEndpointListener<WSEndpoint> serverListener = createMockListener();
+    final XEndpointListener<XEndpoint> serverListener = createMockListener();
     createServer(serverFactory, serverConfig, serverListener);
     
-    final WSClientConfig clientConfig = getDefaultClientConfig();
+    final XClientConfig clientConfig = getDefaultClientConfig();
     clientConfig.scanIntervalMillis = 1;
     createClient(clientFactory, clientConfig);
 
-    final WSEndpointListener<WSEndpoint> clientListener = createMockListener();
+    final XEndpointListener<XEndpoint> clientListener = createMockListener();
     openClientEndpoint(serverConfig.port, clientListener);
     
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).until(this::hasServerEndpoint);
     
-    final WSEndpoint endpoint = getServerEndpoint();
+    final XEndpoint endpoint = getServerEndpoint();
     endpoint.terminate();
     await().dontCatchUncaughtExceptions().atMost(10, SECONDS).untilAsserted(() -> {
       Mockito.verify(serverListener).onClose(Mocks.anyNotNull());

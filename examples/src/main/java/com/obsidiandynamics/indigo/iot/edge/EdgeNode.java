@@ -7,8 +7,9 @@ import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.iot.frame.Error;
 import com.obsidiandynamics.indigo.iot.frame.Wire.*;
 import com.obsidiandynamics.indigo.iot.remote.*;
+import com.obsidiandynamics.indigo.socketx.*;
 import com.obsidiandynamics.indigo.util.*;
-import com.obsidiandynamics.indigo.ws.*;
+
 import org.slf4j.*;
 
 import java.nio.*;
@@ -20,7 +21,7 @@ public final class EdgeNode implements AutoCloseable {
   
   private final EdgeNexus localNexus = new EdgeNexus(this, LocalPeer.instance());
   
-  private final WSServer<?> server;
+  private final XServer<?> server;
   
   private final Wire wire;
   
@@ -36,8 +37,8 @@ public final class EdgeNode implements AutoCloseable {
   
   private boolean loggingEnabled = true;
 
-  public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory,
-                                         WSServerConfig config,
+  public <E extends XEndpoint> EdgeNode(XServerFactory<E> serverFactory,
+                                         XServerConfig config,
                                          Wire wire,
                                          Interchange interchange,
                                          AuthChain pubAuthChain,
@@ -48,7 +49,7 @@ public final class EdgeNode implements AutoCloseable {
     this.interchange = interchange;
     this.pubAuthChain = pubAuthChain;
     this.subAuthChain = subAuthChain;
-    server = serverFactory.create(config, new WSEndpointListener<E>() {
+    server = serverFactory.create(config, new XEndpointListener<E>() {
       @Override public void onConnect(E endpoint) {
         handleOpen(endpoint);
       }
@@ -230,7 +231,7 @@ public final class EdgeNode implements AutoCloseable {
     nexus.send(new TextFrame(errorTopic, wire.encodeJson(new Errors(errors))));
   }
   
-  private void handleOpen(WSEndpoint endpoint) {
+  private void handleOpen(XEndpoint endpoint) {
     final EdgeNexus nexus = new EdgeNexus(this, new WSEndpointPeer(endpoint));
     nexuses.add(nexus);
     endpoint.setContext(nexus);
@@ -321,8 +322,8 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   public static final class EdgeNodeBuilder {
-    private WSServerFactory<?> serverFactory;
-    private WSServerConfig serverConfig = new WSServerConfig();
+    private XServerFactory<?> serverFactory;
+    private XServerConfig serverConfig = new XServerConfig();
     private Wire wire = new Wire(false, LocationHint.EDGE);
     private Interchange interchange;
     private AuthChain pubAuthChain = AuthChain.createPubDefault();
@@ -330,7 +331,7 @@ public final class EdgeNode implements AutoCloseable {
     
     private void init() throws Exception {
       if (serverFactory == null) {
-        serverFactory = (WSServerFactory<?>) Class.forName("com.obsidiandynamics.indigo.ws.undertow.UndertowServer$Factory").newInstance();
+        serverFactory = (XServerFactory<?>) Class.forName("com.obsidiandynamics.indigo.socketx.undertow.UndertowServer$Factory").newInstance();
       }
       
       if (interchange == null) {
@@ -338,12 +339,12 @@ public final class EdgeNode implements AutoCloseable {
       }
     }
     
-    public EdgeNodeBuilder withServerFactory(WSServerFactory<?> serverFactory) {
+    public EdgeNodeBuilder withServerFactory(XServerFactory<?> serverFactory) {
       this.serverFactory = serverFactory;
       return this;
     }
     
-    public EdgeNodeBuilder withServerConfig(WSServerConfig serverConfig) {
+    public EdgeNodeBuilder withServerConfig(XServerConfig serverConfig) {
       this.serverConfig = serverConfig;
       return this;
     }
