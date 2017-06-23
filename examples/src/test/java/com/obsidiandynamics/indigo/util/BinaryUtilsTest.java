@@ -41,4 +41,9 @@ public final class BinaryUtilsTest {
     assertEquals("80", toHex((byte) 0x80));
     assertEquals("FF", toHex((byte) 0xFF));
   }
+  
+  @Test
+  public void testConformance() throws Exception {
+    TestSupport.assertUtilityClassWellDefined(BinaryUtils.class);
+  }
 }
