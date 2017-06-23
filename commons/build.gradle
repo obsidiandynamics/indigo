@@ -1,6 +1,8 @@
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
+def packageName = 'indigo-commons'
+
 repositories {
   jcenter()
 }
@@ -10,8 +12,20 @@ dependencies {
 }
 
 jar {
-  baseName 'indigo-commons'
+  baseName packageName
   finalizedBy jacocoTestReport
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  baseName packageName
+  classifier = 'javadoc'
+  from "$buildDir/docs/javadoc"
+}
+ 
+task sourcesJar(type: Jar) {
+  baseName packageName
+  from sourceSets.main.allSource
+  classifier = 'sources'
 }
 
 jacoco {

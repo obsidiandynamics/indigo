@@ -48,10 +48,7 @@ task testJar(type: Jar) {
 
 jar {
   dependsOn ':indigo-commons:jar'
-  from {
-    configurations.compile.filter({it.name =~ /indigo-commons.jar/}).collect { 
-    it.isDirectory() ? it : zipTree(it) }
-  }
+  from zipTree("${project(':indigo-commons').buildDir}/libs/indigo-commons.jar")
   baseName packageName
   finalizedBy jacocoTestReport
 }
@@ -124,14 +121,18 @@ bintrayUpload {
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
+  dependsOn ':indigo-commons:javadocJar'
   baseName packageName
   classifier = 'javadoc'
   from "$buildDir/docs/javadoc"
+  from "${project(':indigo-commons').buildDir}/docs/javadoc"
 }
  
 task sourcesJar(type: Jar) {
+  dependsOn ':indigo-commons:sourcesJar'
   baseName packageName
   from sourceSets.main.allSource
+  from zipTree("${project(':indigo-commons').buildDir}/libs/indigo-commons-sources.jar")
   classifier = 'sources'
 }
  
