@@ -31,40 +31,6 @@ task testJar(type: Jar) {
   baseName 'indigo-examples-test'
 }
 
-def perfJvmArgs = '-server -XX:-MaxFDLimit -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1G -Xmx4G -Xss1M -XX:+UseParallelGC'
-
-task fanOutBench(type: JavaExec) {
-  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
-  main = 'com.obsidiandynamics.indigo.socketx.FanOutBenchmark'
-}
-
-task rigBench(type: JavaExec) {
-  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
-  main = 'com.obsidiandynamics.indigo.iot.rig.RigBenchmark'
-}
-
-task edgeRigBench(type: JavaExec) {
-  systemProperties = System.properties
-  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
-  main = 'com.obsidiandynamics.indigo.iot.rig.EdgeRigBenchmark'
-}
-
-task remoteRigBench(type: JavaExec) {
-  systemProperties = System.properties
-  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
-  main = 'com.obsidiandynamics.indigo.iot.rig.RemoteRigBenchmark'
-}
-
-task beaconServer(type: JavaExec) {
-  systemProperties = System.properties
-  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  main = 'com.obsidiandynamics.indigo.iot.beacon.BeaconServer'
-}
-
 dependencies {
   compile project(':')
   compile project(':indigo-commons')

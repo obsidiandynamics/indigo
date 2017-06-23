@@ -21,13 +21,6 @@ dependencies {
   compile 'org.mockito:mockito-core:1.9.5'
 }
 
-jar {
-  dependsOn ':indigo-commons:jar'
-  from zipTree("${project(':indigo-commons').buildDir}/libs/indigo-commons.jar")
-  baseName packageName
-  finalizedBy jacocoTestReport
-}
-
 jacoco {
   toolVersion = "0.7.9"
 }
@@ -72,19 +65,20 @@ bintrayUpload {
   dependsOn ':bintrayCredentialsCheck'
 }
 
+jar {
+  baseName packageName
+  finalizedBy jacocoTestReport
+}
+
 task javadocJar(type: Jar, dependsOn: javadoc) {
-  dependsOn ':indigo-commons:javadocJar'
   baseName packageName
   classifier = 'javadoc'
   from "$buildDir/docs/javadoc"
-  from "${project(':indigo-commons').buildDir}/docs/javadoc"
 }
  
 task sourcesJar(type: Jar) {
-  dependsOn ':indigo-commons:sourcesJar'
   baseName packageName
   from sourceSets.main.allSource
-  from zipTree("${project(':indigo-commons').buildDir}/libs/indigo-commons-sources.jar")
   classifier = 'sources'
 }
  
