@@ -25,7 +25,7 @@ public final class NodeRouterTest {
   
   private Wire wire;
 
-  private TopicBridge bridge;
+  private Interchange interchange;
   
   private RemoteNexusHandler handler;
  
@@ -40,13 +40,13 @@ public final class NodeRouterTest {
     port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
     
     wire = new Wire(true, LocationHint.UNSPECIFIED);
-    bridge = new RoutingTopicBridge();
+    interchange = new RoutingInterchange();
     handler = mock(RemoteNexusHandler.class);
     
     edge = EdgeNode.builder()
         .withServerConfig(new WSServerConfig() {{ port = NodeRouterTest.this.port; }})
         .withWire(wire)
-        .withTopicBridge(logger(bridge))
+        .withInterchange(logger(interchange))
         .build();
     
     remote = RemoteNode.builder()

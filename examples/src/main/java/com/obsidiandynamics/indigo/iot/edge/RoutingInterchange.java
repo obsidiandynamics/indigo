@@ -10,18 +10,18 @@ import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.iot.frame.*;
 import com.obsidiandynamics.indigo.topic.*;
 
-public final class RoutingTopicBridge implements TopicBridge {
-  private static final Logger LOG = LoggerFactory.getLogger(RoutingTopicBridge.class);
+public final class RoutingInterchange implements Interchange {
+  private static final Logger LOG = LoggerFactory.getLogger(RoutingInterchange.class);
 
   private final ActorSystem system;
 
   private final ActorRef routerRef = ActorRef.of(TopicRouter.ROLE);
 
-  public RoutingTopicBridge() {
+  public RoutingInterchange() {
     this(ActorSystem.create());
   }
 
-  private RoutingTopicBridge(ActorSystem system) {
+  private RoutingInterchange(ActorSystem system) {
     this.system = system;
     system.on(TopicRouter.ROLE).withConfig(new ActorConfig() {{
       bias = 10;
@@ -124,7 +124,7 @@ public final class RoutingTopicBridge implements TopicBridge {
 
   @Override
   public void close() throws Exception {
-    if (LOG.isDebugEnabled()) LOG.trace("Closing bridge");
+    if (LOG.isDebugEnabled()) LOG.trace("Closing interchange");
     system.shutdown();
     final List<Fault> dlq = system.getDeadLetterQueue();
     if (! dlq.isEmpty()) {

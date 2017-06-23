@@ -24,7 +24,7 @@ public final class EdgeNode implements AutoCloseable {
   
   private final Wire wire;
   
-  private final TopicBridge bridge;
+  private final Interchange interchange;
   
   private final AuthChain pubAuthChain;
   
@@ -39,13 +39,13 @@ public final class EdgeNode implements AutoCloseable {
   public <E extends WSEndpoint> EdgeNode(WSServerFactory<E> serverFactory,
                                          WSServerConfig config,
                                          Wire wire,
-                                         TopicBridge bridge,
+                                         Interchange interchange,
                                          AuthChain pubAuthChain,
                                          AuthChain subAuthChain) throws Exception {
     pubAuthChain.validate();
     subAuthChain.validate();
     this.wire = wire;
-    this.bridge = bridge;
+    this.interchange = interchange;
     this.pubAuthChain = pubAuthChain;
     this.subAuthChain = subAuthChain;
     server = serverFactory.create(config, new WSEndpointListener<E>() {
@@ -169,7 +169,7 @@ public final class EdgeNode implements AutoCloseable {
     }
     
     authenticateSubTopics(nexus, bind.getMessageId(), toSubscribe, () -> {
-      final CompletableFuture<Void> f = bridge.onBind(nexus, toSubscribe, toUnsubscribe);
+      final CompletableFuture<Void> f = interchange.onBind(nexus, toSubscribe, toUnsubscribe);
       f.whenComplete((void_, cause) -> {
         if (cause == null) {
           final BindResponseFrame bindRes = new BindResponseFrame(bind.getMessageId());
@@ -199,14 +199,14 @@ public final class EdgeNode implements AutoCloseable {
   
   private void handlePublish(EdgeNexus nexus, PublishTextFrame pub) {
     authenticatePubTopic(nexus, pub.getTopic(), () -> {
-      bridge.onPublish(nexus, pub);
+      interchange.onPublish(nexus, pub);
       firePublishEvent(nexus, pub);
     });
   }
   
   private void handlePublish(EdgeNexus nexus, PublishBinaryFrame pub) {
     authenticatePubTopic(nexus, pub.getTopic(), () -> {
-      bridge.onPublish(nexus, pub);
+      interchange.onPublish(nexus, pub);
       firePublishEvent(nexus, pub);
     });
   }
@@ -234,7 +234,7 @@ public final class EdgeNode implements AutoCloseable {
     final EdgeNexus nexus = new EdgeNexus(this, new WSEndpointPeer(endpoint));
     nexuses.add(nexus);
     endpoint.setContext(nexus);
-    bridge.onOpen(nexus);
+    interchange.onOpen(nexus);
     fireConnectEvent(nexus);
   }
   
@@ -269,7 +269,7 @@ public final class EdgeNode implements AutoCloseable {
   }
   
   private void handleClose(EdgeNexus nexus) {
-    bridge.onClose(nexus);
+    interchange.onClose(nexus);
     fireCloseEvent(nexus);
   }
   
@@ -300,13 +300,13 @@ public final class EdgeNode implements AutoCloseable {
   
   public void publish(String topic, String payload) {
     final PublishTextFrame pub = new PublishTextFrame(topic, payload);
-    bridge.onPublish(localNexus, pub);
+    interchange.onPublish(localNexus, pub);
     firePublishEvent(localNexus, pub);
   }
   
   public void publish(String topic, ByteBuffer payload) {
     final PublishBinaryFrame pub = new PublishBinaryFrame(topic, payload);
-    bridge.onPublish(localNexus, pub);
+    interchange.onPublish(localNexus, pub);
     firePublishEvent(localNexus, pub);
   }
   
@@ -317,14 +317,14 @@ public final class EdgeNode implements AutoCloseable {
   @Override
   public void close() throws Exception {
     server.close();
-    bridge.close();
+    interchange.close();
   }
   
   public static final class EdgeNodeBuilder {
     private WSServerFactory<?> serverFactory;
     private WSServerConfig serverConfig = new WSServerConfig();
     private Wire wire = new Wire(false, LocationHint.EDGE);
-    private TopicBridge topicBridge;
+    private Interchange interchange;
     private AuthChain pubAuthChain = AuthChain.createPubDefault();
     private AuthChain subAuthChain = AuthChain.createSubDefault();
     
@@ -333,8 +333,8 @@ public final class EdgeNode implements AutoCloseable {
         serverFactory = (WSServerFactory<?>) Class.forName("com.obsidiandynamics.indigo.ws.undertow.UndertowServer$Factory").newInstance();
       }
       
-      if (topicBridge == null) {
-        topicBridge = new RoutingTopicBridge();
+      if (interchange == null) {
+        interchange = new RoutingInterchange();
       }
     }
     
@@ -353,8 +353,8 @@ public final class EdgeNode implements AutoCloseable {
       return this;
     }
 
-    public EdgeNodeBuilder withTopicBridge(TopicBridge topicBridge) {
-      this.topicBridge = topicBridge;
+    public EdgeNodeBuilder withInterchange(Interchange interchange) {
+      this.interchange = interchange;
       return this;
     }
     
@@ -370,7 +370,7 @@ public final class EdgeNode implements AutoCloseable {
 
     public EdgeNode build() throws Exception {
       init();
-      return new EdgeNode(serverFactory, serverConfig, wire, topicBridge, pubAuthChain, subAuthChain);
+      return new EdgeNode(serverFactory, serverConfig, wire, interchange, pubAuthChain, subAuthChain);
     }
   }
   

@@ -27,7 +27,7 @@ public final class NodeCommsTest {
   
   private Wire wire;
 
-  private TopicBridge bridge;
+  private Interchange interchange;
   
   private RemoteNexusHandler handler;
  
@@ -42,13 +42,13 @@ public final class NodeCommsTest {
     port = SocketTestSupport.getAvailablePort(PREFERRED_PORT);
     
     wire = new Wire(true, LocationHint.UNSPECIFIED);
-    bridge = mock(TopicBridge.class);
+    interchange = mock(Interchange.class);
     handler = mock(RemoteNexusHandler.class);
     
     edge = EdgeNode.builder()
         .withServerConfig(new WSServerConfig() {{ port = NodeCommsTest.this.port; }})
         .withWire(wire)
-        .withTopicBridge(logger(bridge))
+        .withInterchange(logger(interchange))
         .build();
     
     remote = RemoteNode.builder()
@@ -65,7 +65,7 @@ public final class NodeCommsTest {
   @Test
   public void testText() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    when(bridge.onBind(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+    when(interchange.onBind(any(), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
     final String sessionId = Long.toHexString(Crypto.machineRandom());
@@ -92,7 +92,7 @@ public final class NodeCommsTest {
     remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(bridge).onClose(anyNotNull());
+      verify(interchange).onClose(anyNotNull());
       verify(handler).onClose(anyNotNull());
     });
     
@@ -100,11 +100,11 @@ public final class NodeCommsTest {
     expectedTopics.addAll(Arrays.asList(subscribe));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
-    ordered(bridge, inOrder -> {
-      inOrder.verify(bridge).onOpen(anyNotNull());
-      inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
-      inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
-      inOrder.verify(bridge).onClose(anyNotNull());
+    ordered(interchange, inOrder -> {
+      inOrder.verify(interchange).onOpen(anyNotNull());
+      inOrder.verify(interchange).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
+      inOrder.verify(interchange).onPublish(anyNotNull(), eq(pubRemote));
+      inOrder.verify(interchange).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {
@@ -117,7 +117,7 @@ public final class NodeCommsTest {
   @Test
   public void testBinary() throws Exception {
     final UUID messageId = UUID.randomUUID();
-    when(bridge.onBind(any(), any(), anyNotNull())).thenReturn(CompletableFuture.completedFuture(null));
+    when(interchange.onBind(any(), any(), anyNotNull())).thenReturn(CompletableFuture.completedFuture(null));
     
     final RemoteNexus remoteNexus = remote.open(new URI("ws://localhost:" + port + "/"), logger(handler));
     final String sessionId = Long.toHexString(Crypto.machineRandom());
@@ -145,7 +145,7 @@ public final class NodeCommsTest {
     remoteNexus.close();
     
     given().ignoreException(AssertionError.class).await().atMost(10, SECONDS).untilAsserted(() -> {
-      verify(bridge).onClose(anyNotNull());
+      verify(interchange).onClose(anyNotNull());
       verify(handler).onClose(anyNotNull());
     });
 
@@ -153,11 +153,11 @@ public final class NodeCommsTest {
     expectedTopics.addAll(Arrays.asList(subscribe));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId));
     expectedTopics.add(Flywheel.getRxTopicPrefix(sessionId) + "/#");
-    ordered(bridge, inOrder -> {
-      inOrder.verify(bridge).onOpen(anyNotNull());
-      inOrder.verify(bridge).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
-      inOrder.verify(bridge).onPublish(anyNotNull(), eq(pubRemote));
-      inOrder.verify(bridge).onClose(anyNotNull());
+    ordered(interchange, inOrder -> {
+      inOrder.verify(interchange).onOpen(anyNotNull());
+      inOrder.verify(interchange).onBind(anyNotNull(), eq(expectedTopics), anyNotNull());
+      inOrder.verify(interchange).onPublish(anyNotNull(), eq(pubRemote));
+      inOrder.verify(interchange).onClose(anyNotNull());
     });
     
     ordered(handler, inOrder -> {
