@@ -5,38 +5,37 @@ import java.util.function.*;
 
 import com.obsidiandynamics.indigo.*;
 import com.obsidiandynamics.indigo.marketstrategy.*;
-import com.obsidiandynamics.indigo.xbus.*;
 
 public final class StrategyActor implements Actor {
   private final Supplier<Strategy> strategyFactory;
   
-  private final XBus bus;
+  private final Supplier<OrderHandler> orderHandlerFactory;
   
   private Strategy strategy;
   
-  private XPublisher publisher;
+  private OrderHandler orderHandler;
   
-  public StrategyActor(Supplier<Strategy> strategyFactory, XBus bus) {
+  public StrategyActor(Supplier<Strategy> strategyFactory, Supplier<OrderHandler> orderHandlerFactory) {
     this.strategyFactory = strategyFactory;
-    this.bus = bus;
+    this.orderHandlerFactory = orderHandlerFactory;
   }
 
   @Override
   public void activated(Activation a) {
     strategy = strategyFactory.get();
-    publisher = bus.getPublisher("orders");
+    orderHandler = orderHandlerFactory.get();
   }
   
   @Override
   public void passivated(Activation a) {
-    publisher.close();
+    orderHandler.close();
   }
 
   @Override
   public void act(Activation a, Message m) {
     m.select()
     .when(Bar.class).then(bar -> {
-      Optional.ofNullable(strategy.onBar(bar)).ifPresent(publisher::send);
+      Optional.ofNullable(strategy.onBar(bar)).ifPresent(orderHandler::accept);
     })
     .otherwise(a::messageFault);
   }

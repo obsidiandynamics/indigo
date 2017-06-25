@@ -28,17 +28,18 @@ jacocoTestReport {
   }
 }
 
+def envUser = 'BINTRAY_USER'
 def envKey = 'BINTRAY_KEY'
-
+def packageDesc = 'Common utilities for Indigo'
 bintray {
-  user = 'ekoutanov'
+  user = System.getenv(envUser)
   key = System.getenv(envKey)
   publications = ['mavenJava']
   pkg {
     repo = 'indigo'
     name = packageName
     userOrg = 'obsidiandynamics'
-    desc = 'Common utilities for Indigo'
+    desc = packageDesc
     websiteUrl = 'https://github.com/obsidiandynamics/indigo'
     licenses = ['BSD New']
     vcsUrl = 'https://github.com/obsidiandynamics/indigo.git'
@@ -48,7 +49,7 @@ bintray {
     publish = false
     version {
       name = project(':').version
-      desc = 'Common utilities for Indigo'
+      desc = packageDesc
       released  = new Date()
       vcsTag = project(':').version
     }

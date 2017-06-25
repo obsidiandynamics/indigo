@@ -73,25 +73,29 @@ task testSoak(type: JavaExec) {
   main = 'com.obsidiandynamics.indigo.PrimaryTestsSoak'
 }
 
+def envUser = 'BINTRAY_USER'
 def envKey = 'BINTRAY_KEY'
-
 task bintrayCredentialsCheck {
   doLast {
+    if (System.getenv(envUser) == null) {
+      throw new GradleException("No Bintray username specified; set with 'export ${envUser}=<username>'")
+    }
     if (System.getenv(envKey) == null) {
       throw new GradleException("No Bintray key specified; set with 'export ${envKey}=<key>'")
     }
   }
 }
 
+def packageDesc = 'A dynamic actor framework for the JVM'
 bintray {
-  user = 'ekoutanov'
+  user = System.getenv(envUser)
   key = System.getenv(envKey)
   publications = ['mavenJava']
   pkg {
     repo = 'indigo'
     name = packageName
     userOrg = 'obsidiandynamics'
-    desc = 'A dynamic actor framework for the JVM'
+    desc = packageDesc
     websiteUrl = 'https://github.com/obsidiandynamics/indigo'
     licenses = ['BSD New']
     vcsUrl = 'https://github.com/obsidiandynamics/indigo.git'
@@ -101,7 +105,7 @@ bintray {
     publish = false
     version {
       name = packageVersion
-      desc = 'A dynamic actor framework for the JVM'
+      desc = packageDesc
       released  = new Date()
       vcsTag = packageVersion
     }
