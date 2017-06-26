@@ -6,9 +6,6 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-dir=$( dirname $0 )
-cd ${dir}/../../..
-
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 CYAN='\033[0;36m'
