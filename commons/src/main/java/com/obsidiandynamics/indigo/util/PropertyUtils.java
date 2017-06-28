@@ -12,13 +12,13 @@ public final class PropertyUtils {
     return get(System.getProperties(), key, parser, defaultValue);
   }
   
-  public static <T> T get(Hashtable<?, ?> props, String key, Function<String, T> parser, T defaultValue) {
-    final String str = (String) props.get(key);
+  public static <T> T get(Properties props, String key, Function<String, T> parser, T defaultValue) {
+    final String str = props.getProperty(key);
     return str != null ? parser.apply(str) : defaultValue;
   }
   
-  public static <T> T getOrSet(Hashtable<Object, Object> props, String key, Function<String, T> parser, T defaultValue) {
-    final String str = (String) props.get(key);
+  public static <T> T getOrSet(Properties props, String key, Function<String, T> parser, T defaultValue) {
+    final String str = props.getProperty(key);
     if (str == null) {
       props.put(key, defaultValue);
       return defaultValue;
@@ -38,19 +38,22 @@ public final class PropertyUtils {
     return props;
   }
   
-  public static Properties load(String resourceFile, Properties defaultHashtable) {
+  public static Properties load(String resourceFile, Properties defaultProps) {
     try {
       return load(resourceFile);
     } catch (IOException e) {
-      return defaultHashtable;
+      return defaultProps;
     }
   }
   
-  public static Properties filter(String keyPrefix, Hashtable<Object, Object> props) {
+  public static Properties filter(String keyPrefix, Properties props) {
     final Properties filtered = new Properties();
-    for (Map.Entry<Object, Object> entry : props.entrySet()) {
-      if (((String) entry.getKey()).startsWith(keyPrefix)) {
-        filtered.put(entry.getKey(), entry.getValue());
+    final Enumeration<?> keys = props.propertyNames();
+    while (keys.hasMoreElements()) {
+      final String key = (String) keys.nextElement();
+      final String value = props.getProperty(key);
+      if (key.startsWith(keyPrefix)) {
+        filtered.put(key, value);
       }
     }
     return filtered;
