@@ -6,11 +6,35 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.bintray'
 
-def packageVersion = {
-  def versionFile = sourceSets.main.resources.srcDirs[0].path + '/' + project.name + '.version'
-  def version = new BufferedReader(new FileReader(versionFile)).readLine().trim()
+def versionFile(extension) {
+  sourceSets.main.resources.srcDirs[0].path + '/' + project.name + extension
+}
+
+def getVersion(extension) {
+  def versionFile = versionFile extension
+  def reader = new BufferedReader(new FileReader(versionFile))
+  def version = reader.readLine().trim()
+  reader.close()
   return version
-}()
+}
+
+def setVersion(extension, version) {
+  def versionFile = versionFile extension
+  def writer = new BufferedWriter(new FileWriter(versionFile))
+  writer.write(String.valueOf(version))
+  writer.close()
+}
+
+def packageVersion = getVersion '.version'
+def packageBuild = getVersion '.build'
+
+task nextBuild() {
+  doLast {
+    def build = Integer.parseInt(getVersion('.build'))
+    setVersion('.build', build + 1)
+    println "At ${getVersion('.version')}_${getVersion('.build')}"
+  }
+}
 
 group = 'com.obsidiandynamics.indigo'
 version = packageVersion

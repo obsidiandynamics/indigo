@@ -9,7 +9,9 @@ import org.junit.*;
 public class IndigoVersionTest implements TestSupport {
   @Test
   public void testValid() throws IOException {
-    assertNotNull(IndigoVersion.get());
+    final String version = IndigoVersion.get();
+    assertNotNull(version);
+    assertTrue(version.contains("_"));
   }
   
   @Test(expected=IOException.class)

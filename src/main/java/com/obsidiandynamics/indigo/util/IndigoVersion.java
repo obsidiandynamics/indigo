@@ -7,7 +7,7 @@ public final class IndigoVersion {
   private IndigoVersion() {}
   
   public static String get() throws IOException {
-    return get("indigo.version");
+    return get("indigo.version") + "_" + get("indigo.build");
   }
   
   static String get(String versionFile) throws IOException {
