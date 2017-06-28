@@ -94,6 +94,19 @@ public class PropertyUtilsTest {
   }
   
   @Test
+  public void testFilterWithDefaultsNonStrings() {
+    final Properties props = new Properties();
+    props.put("a.foo", "foo");
+    props.put("a.bar", false);
+    props.put("b.foo", "bar");
+    final Properties filtered = PropertyUtils.filter("a.", new Properties(props));
+    assertEquals(1, filtered.size());
+    assertTrue(filtered.containsKey("a.foo"));
+    assertFalse(filtered.containsKey("a.bar"));
+    assertFalse(filtered.containsKey("b.foo"));
+  }
+  
+  @Test
   public void assertPrivateConstructor() throws NoSuchMethodException, SecurityException, InvocationTargetException, InstantiationException, IllegalAccessException {
     assertUtilityClassWellDefined(PropertyUtils.class);
   }

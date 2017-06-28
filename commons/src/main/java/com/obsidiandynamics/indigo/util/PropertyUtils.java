@@ -20,7 +20,7 @@ public final class PropertyUtils {
   public static <T> T getOrSet(Properties props, String key, Function<String, T> parser, T defaultValue) {
     final String str = props.getProperty(key);
     if (str == null) {
-      props.put(key, defaultValue);
+      props.setProperty(key, String.valueOf(defaultValue));
       return defaultValue;
     } else {
       return parser.apply(str);
@@ -52,8 +52,8 @@ public final class PropertyUtils {
     while (keys.hasMoreElements()) {
       final String key = (String) keys.nextElement();
       final String value = props.getProperty(key);
-      if (key.startsWith(keyPrefix)) {
-        filtered.put(key, value);
+      if (value != null && key.startsWith(keyPrefix)) {
+        filtered.setProperty(key, value);
       }
     }
     return filtered;
