@@ -21,6 +21,9 @@ repositories {
 
 task testJar(type: Jar) {
   dependsOn jar
+  dependsOn configurations.compile
+  dependsOn configurations.runtime
+  dependsOn configurations.testCompile
   from sourceSets.main.output
   from sourceSets.test.output
   from { // bundle all dependencies

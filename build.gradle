@@ -56,6 +56,9 @@ test {
 }
 
 task testJar(type: Jar) {
+  dependsOn configurations.compile
+  dependsOn configurations.runtime
+  dependsOn configurations.testCompile
   dependsOn jar
   manifest { 
     attributes "Main-Class": "com.obsidiandynamics.indigo.PrimaryTestsSoak"
