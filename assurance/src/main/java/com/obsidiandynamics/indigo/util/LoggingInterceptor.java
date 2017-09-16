@@ -21,7 +21,7 @@ public final class LoggingInterceptor<T> implements InvocationObserver<T>, TestS
     final boolean isVoid = method.getReturnType() == Void.TYPE;
     final String argsArray = args == null ? "" : arrayToString(args);
     if (isVoid) {
-      log("%s%s(%s) => void\n", prefix ,method.getName(), argsArray);
+      log("%s%s(%s) => void\n", prefix, method.getName(), argsArray);
     } else {
       log("%s%s(%s) => %s\n", prefix, method.getName(), argsArray, ret);
     }
