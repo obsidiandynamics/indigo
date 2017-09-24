@@ -14,9 +14,9 @@ public final class BashInteractor {
 
       if (waitForResponse) {
         final InputStream shellIn = shell.getInputStream();
-        shellExitStatus = shell.waitFor();
         convertStreamToStr(shellIn, handler);
         shellIn.close();
+        shellExitStatus = shell.waitFor();
       }
     } catch (IOException e) {
       System.err.println("Error occured while executing command: " + e.getMessage());
