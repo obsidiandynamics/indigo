@@ -29,7 +29,7 @@ public final class PropertyUtils {
   
   public static Properties load(String resourceFile) throws IOException {
     final URL url = PropertyUtils.class.getClassLoader().getResource(resourceFile);
-    if (url == null) throw new FileNotFoundException("resource not found");
+    if (url == null) throw new FileNotFoundException("Resource not found");
     
     final Properties props = new Properties();
     try (InputStream in = url.openStream()) {
