@@ -13,6 +13,7 @@ repositories {
 }
 
 dependencies {
+  testCompile 'com.obsidiandynamics.fulcrum:fulcrum-assert:0.2.0'
   testCompile 'junit:junit:4.12'
 }
 

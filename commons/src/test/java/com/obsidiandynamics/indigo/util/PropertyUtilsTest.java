@@ -3,10 +3,11 @@ package com.obsidiandynamics.indigo.util;
 import static junit.framework.TestCase.*;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
 
 import org.junit.*;
+
+import com.obsidiandynamics.assertion.*;
 
 public class PropertyUtilsTest {
   @Test
@@ -107,16 +108,7 @@ public class PropertyUtilsTest {
   }
   
   @Test
-  public void assertPrivateConstructor() throws NoSuchMethodException, SecurityException, InvocationTargetException, InstantiationException, IllegalAccessException {
-    assertUtilityClassWellDefined(PropertyUtils.class);
-  }
-  
-  private static void assertUtilityClassWellDefined(Class<?> cls) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-    final Constructor<?> constructor = cls.getDeclaredConstructor();
-    if (constructor.isAccessible() || ! Modifier.isPrivate(constructor.getModifiers())) {
-      Assert.fail("Constructor is not private");
-    }
-    constructor.setAccessible(true);
-    constructor.newInstance();
+  public void assertPrivateConstructor() throws Exception {
+    Assertions.assertUtilityClassWellDefined(PropertyUtils.class);
   }
 }

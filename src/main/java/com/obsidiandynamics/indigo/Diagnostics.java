@@ -5,7 +5,7 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import java.io.*;
 import java.util.concurrent.*;
 
-import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.assertion.*;
 
 public class Diagnostics {
   public static final class Key {

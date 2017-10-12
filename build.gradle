@@ -7,11 +7,12 @@ apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.bintray'
 
 def versionFile(extension) {
-  sourceSets.main.resources.srcDirs[0].path + '/' + project.name + extension
+  return new File(sourceSets.main.resources.srcDirs[0].path + '/' + project.name + extension)
 }
 
 def getVersion(extension) {
   def versionFile = versionFile extension
+  if (! versionFile.exists()) return '0'
   def reader = new BufferedReader(new FileReader(versionFile))
   def version = reader.readLine().trim()
   reader.close()
@@ -28,11 +29,16 @@ def setVersion(extension, version) {
 def packageVersion = getVersion '.version'
 def packageBuild = getVersion '.build'
 
-task nextBuild() {
+task getBuild() {
   doLast {
-    def build = Integer.parseInt(getVersion('.build'))
-    setVersion('.build', build + 1)
     println "At ${getVersion('.version')}_${getVersion('.build')}"
+  }
+}
+
+task setBuild() {
+  doLast {
+    def timestamp = new java.text.SimpleDateFormat('yyMMddHHmm').format(new Date())
+    setVersion('.build', timestamp)
   }
 }
 
@@ -43,11 +49,17 @@ def packageName = 'indigo-core'
 
 repositories {
   jcenter()
+  maven {
+    url 'https://oss.sonatype.org/content/repositories/snapshots'
+  }
 }
 
 dependencies {
   compile project(':indigo-commons')
+  compile 'com.obsidiandynamics.fulcrum:fulcrum-assert:0.2.0'
+  
   testCompile project(':indigo-assurance')
+  testCompile 'org.awaitility:awaitility:3.0.0'
 }
 
 test {
@@ -74,7 +86,7 @@ task testJar(type: Jar) {
 }
 
 jacoco {
-  toolVersion = "0.7.9"
+  toolVersion = '0.7.10-SNAPSHOT'
 }
 
 jacocoTestReport {
@@ -142,6 +154,10 @@ bintray {
 // invoke this task when ready to publish to Bintray
 bintrayUpload {
   dependsOn bintrayCredentialsCheck
+}
+
+processResources {
+  dependsOn setBuild
 }
 
 jar {

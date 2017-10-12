@@ -17,8 +17,6 @@ dependencies {
   compile 'org.slf4j:slf4j-api:1.7.6'
   compile 'junit:junit:4.12'
   compile 'org.apache.commons:commons-math3:3.2'
-  compile 'org.awaitility:awaitility:3.0.0'
-  compile 'org.mockito:mockito-core:1.9.5'
 }
 
 jacoco {

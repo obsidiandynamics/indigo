@@ -8,6 +8,7 @@ import org.awaitility.*;
 import org.junit.runner.*;
 import org.junit.runner.notification.*;
 
+import com.obsidiandynamics.assertion.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.util.OneShotContract.*;
 
