@@ -56,7 +56,8 @@ repositories {
 
 dependencies {
   compile project(':indigo-commons')
-  compile 'com.obsidiandynamics.fulcrum:fulcrum-assert:0.2.0'
+  compile 'com.obsidiandynamics.fulcrum:fulcrum-assert:0.3.0'
+  compile 'com.obsidiandynamics.fulcrum:fulcrum-version:0.3.0'
   
   testCompile project(':indigo-assurance')
   testCompile 'org.awaitility:awaitility:3.0.0'

@@ -28,7 +28,7 @@ For Maven:
 <dependency>
   <groupId>com.obsidiandynamics.indigo</groupId>
   <artifactId>indigo-core</artifactId>
-  <version>0.9.0</version>
+  <version>1.0.0</version>
   <type>pom</type>
 </dependency>
 ```
@@ -36,7 +36,7 @@ For Maven:
 For Gradle:
 
 ```groovy
-compile 'com.obsidiandynamics.indigo:indigo-core:0.9.0'
+compile 'com.obsidiandynamics.indigo:indigo-core:1.0.0'
 ```
 
 ## Hello world
