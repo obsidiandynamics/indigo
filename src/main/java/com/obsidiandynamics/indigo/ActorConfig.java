@@ -26,7 +26,7 @@ public class ActorConfig {
   /** The number of consecutive turns an actor is accorded before releasing its thread. */
   public int bias = get(BIAS, Integer::parseInt, 1);
   
-  /** The backlog level at which point throttling is enforced. Set to <code>Integer.MAX_VALUE</code> to
+  /** The backlog level at which point throttling is enforced. Set to <code>Long.MAX_VALUE</code> to
    *  avoid throttling. */
   public long backlogThrottleCapacity = get(BACKLOG_THROTTLE_CAPACITY, Long::parseLong, 10_000L);
   
