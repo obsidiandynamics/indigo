@@ -15,7 +15,7 @@ import com.obsidiandynamics.indigo.util.*;
  *  Benchmarks raw message throughput. Nearly identical to 
  *  http://letitcrash.com/post/20397701710/50-million-messages-per-second-on-a-single.
  *  
- *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC
+ *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms2G -Xmx2G -Xss1M -XX:+UseParallelGC
  */
 public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
   static abstract class Config implements Spec {
