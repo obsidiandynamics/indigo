@@ -1,6 +1,6 @@
-<img src="http://www.obsidiandynamics.com/indigo/images/indigo-logo.svg" alt="logo" width="80"/> Indigo
+<img src="https://raw.githubusercontent.com/wiki/obsidiandynamics/indigo/images/indigo-logo.png" width="90px" alt="logo"/> Indigo
 ===
-[ ![Download](https://api.bintray.com/packages/obsidiandynamics/indigo/indigo-core/images/download.svg) ](https://bintray.com/obsidiandynamics/indigo/indigo-core/_latestVersion)
+[![Download](https://api.bintray.com/packages/obsidiandynamics/indigo/indigo-core/images/download.svg) ](https://bintray.com/obsidiandynamics/indigo/indigo-core/_latestVersion)
 
 Indigo is a next generation dynamic [actor model](https://en.wikipedia.org/wiki/Actor_model) framework that makes writing asynchronous and concurrent applications easy.
 
@@ -20,7 +20,7 @@ Indigo is optimised for Java 8 and functional programming, while leaving the imp
 
 # Getting Started
 ## Get the binaries
-Indigo builds are hosted on JCenter (MavenCentral is coming soon). Just add the following snippet to your build file (replacing the version number in the snippet with the version shown on the Download badge at the top of this README).
+Indigo builds are hosted on JCenter (MavenCentral is coming soon). Just add the following snippet to your build file. Replace the version placeholder `x.y.z` in the snippet with the version shown on the Download badge at the top of this README.
 
 For Maven:
 
@@ -28,7 +28,7 @@ For Maven:
 <dependency>
   <groupId>com.obsidiandynamics.indigo</groupId>
   <artifactId>indigo-core</artifactId>
-  <version>1.1.0</version>
+  <version>x.y.z</version>
   <type>pom</type>
 </dependency>
 ```
@@ -36,7 +36,7 @@ For Maven:
 For Gradle:
 
 ```groovy
-compile 'com.obsidiandynamics.indigo:indigo-core:1.1.0'
+compile 'com.obsidiandynamics.indigo:indigo-core:x.y.z'
 ```
 
 ## Hello world
