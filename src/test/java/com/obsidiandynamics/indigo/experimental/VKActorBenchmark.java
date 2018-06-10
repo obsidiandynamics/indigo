@@ -22,7 +22,7 @@ public final class VKActorBenchmark {
     executor.shutdown();
     
     System.out.format("%,d took %,d s, %,d ops/sec\n",
-                      threads * n, took / 1000, threads * n / took * 1000);
+                      threads * n, took / 1000, (long) threads * n / took * 1000);
   }
   
   public static void main(String[] args) {

@@ -3,6 +3,9 @@ apply plugin: 'com.jfrog.bintray'
 apply plugin: 'java'
 apply plugin: 'jacoco'
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 group = project(':').group
 version = project(':').version
 
@@ -20,7 +23,7 @@ dependencies {
 }
 
 jacoco {
-  toolVersion = "0.7.9"
+  toolVersion = "0.8.1"
 }
 
 jacocoTestReport {

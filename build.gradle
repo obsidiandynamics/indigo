@@ -6,6 +6,9 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.bintray'
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 def versionFile(extension) {
   return new File(sourceSets.main.resources.srcDirs[0].path + '/' + project.name + extension)
 }
@@ -87,7 +90,7 @@ task testJar(type: Jar) {
 }
 
 jacoco {
-  toolVersion = '0.7.10-SNAPSHOT'
+  toolVersion = '0.8.1'
 }
 
 jacocoTestReport {
