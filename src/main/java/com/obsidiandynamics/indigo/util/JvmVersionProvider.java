@@ -17,7 +17,7 @@ public interface JvmVersionProvider {
 
     @Override
     public String toString() {
-      return "JvmVersion [major=" + major + ", minor=" + minor + ", update=" + update + ", build=" + build + "]";
+      return JvmVersion.class.getSimpleName() + " [major=" + major + ", minor=" + minor + ", update=" + update + ", build=" + build + "]";
     }
 
     @Override
@@ -67,9 +67,9 @@ public interface JvmVersionProvider {
     private static JvmVersion parse(String versionStr) {
       final String[] versionFrags = versionStr.split("\\.|_");
       final int major = Integer.parseInt(versionFrags[0]);
-      final int minor = Integer.parseInt(versionFrags[1]);
-      final int update = Integer.parseInt(versionFrags[2]);
-      final int build = Integer.parseInt(versionFrags[3]);
+      final int minor = versionFrags.length > 1 ? Integer.parseInt(versionFrags[1]) : 0;
+      final int update = versionFrags.length > 2 ? Integer.parseInt(versionFrags[2]) : 0;
+      final int build = versionFrags.length > 3 ? Integer.parseInt(versionFrags[3]) : 0;
       return new JvmVersion(major, minor, update, build);
     }
   }

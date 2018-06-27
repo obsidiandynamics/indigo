@@ -13,9 +13,45 @@ public final class JvmVersionProviderTest implements TestSupport {
   public void testDefault() {
     final JvmVersion version = new JvmVersionProvider.DefaultProvider().get();
     assertTrue("version=" + version, version.major >= 1);
-    assertTrue("version=" + version, version.minor >= 8);
+    assertTrue("version=" + version, version.minor >= 0);
     assertTrue("version=" + version, version.update >= 0);
-    assertTrue("version=" + version, version.build >= 1);
+    assertTrue("version=" + version, version.build >= 0);
+  }
+  
+  @Test
+  public void testCustomFourSegments() {
+    final JvmVersion version = new JvmVersionProvider.DefaultProvider("1.8.0_101").get();
+    assertEquals(1, version.major);
+    assertEquals(8, version.minor);
+    assertEquals(0, version.update);
+    assertEquals(101, version.build);
+  }
+  
+  @Test
+  public void testCustomThreeSegments() {
+    final JvmVersion version = new JvmVersionProvider.DefaultProvider("10.0.1").get();
+    assertEquals(10, version.major);
+    assertEquals(0, version.minor);
+    assertEquals(1, version.update);
+    assertEquals(0, version.build);
+  }
+  
+  @Test
+  public void testCustomTwoSegments() {
+    final JvmVersion version = new JvmVersionProvider.DefaultProvider("10.1").get();
+    assertEquals(10, version.major);
+    assertEquals(1, version.minor);
+    assertEquals(0, version.update);
+    assertEquals(0, version.build);
+  }
+  
+  @Test
+  public void testCustomOneSegment() {
+    final JvmVersion version = new JvmVersionProvider.DefaultProvider("10").get();
+    assertEquals(10, version.major);
+    assertEquals(0, version.minor);
+    assertEquals(0, version.update);
+    assertEquals(0, version.build);
   }
   
   @Test
