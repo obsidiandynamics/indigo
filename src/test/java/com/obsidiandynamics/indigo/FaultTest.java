@@ -744,7 +744,9 @@ public final class FaultTest implements IndigoTestSupport {
     final AtomicBoolean faulted = new AtomicBoolean();
     final AtomicBoolean timedOut = new AtomicBoolean();
     
-    new TestActorSystemConfig() {}
+    new TestActorSystemConfig() {{
+      parallelism = 2;
+    }}
     .createActorSystem()
     .on(SINK).cue((a, m) -> {
       // delay the fault so that it gets beaten by the timeout
