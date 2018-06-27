@@ -61,6 +61,7 @@ public final class Integral64Test implements TestSupport {
         if (LOG) log("sum is %d\n", sum);
         assertTrue("sum=" + sum, sum >= 0);
       }
+      Thread.yield();
     }
   }
 }
