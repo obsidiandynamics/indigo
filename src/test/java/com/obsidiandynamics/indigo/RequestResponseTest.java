@@ -93,7 +93,9 @@ public final class RequestResponseTest implements IndigoTestSupport {
     final AtomicBoolean responded = new AtomicBoolean();
     final AtomicBoolean timedOut = new AtomicBoolean();
     
-    new TestActorSystemConfig() {}
+    new TestActorSystemConfig() {{
+      parallelism = 2;
+    }}
     .createActorSystem()
     .on(SINK).cue((a, m) -> {
       // delay the response so that it gets beaten by the timeout
