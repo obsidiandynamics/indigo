@@ -16,12 +16,12 @@ repositories {
 }
 
 dependencies {
-  testCompile 'com.obsidiandynamics.fulcrum:fulcrum-assert:0.3.0'
+  compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
   testCompile 'junit:junit:4.12'
 }
 
 jacoco {
-  toolVersion = "0.8.1"
+  toolVersion = "0.8.2"
 }
 
 jacocoTestReport {

@@ -1,5 +1,5 @@
 plugins {
-  id 'com.jfrog.bintray' version '1.7.3'
+  id 'com.jfrog.bintray' version '1.8.4'
 }
 apply plugin: 'maven-publish'
 apply plugin: 'java'
@@ -48,6 +48,12 @@ task setBuild() {
 group = 'com.obsidiandynamics.indigo'
 version = packageVersion
 
+allprojects {
+  ext {
+    fulcrumVersion = "0.17.0"
+  }
+}
+
 def packageName = 'indigo-core'
 
 repositories {
@@ -59,8 +65,8 @@ repositories {
 
 dependencies {
   compile project(':indigo-commons')
-  compile 'com.obsidiandynamics.fulcrum:fulcrum-assert:0.3.0'
-  compile 'com.obsidiandynamics.fulcrum:fulcrum-version:0.3.0'
+  compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
+  compile "com.obsidiandynamics.fulcrum:fulcrum-version:0.3.0"
   
   testCompile project(':indigo-assurance')
   testCompile 'org.awaitility:awaitility:3.0.0'
@@ -90,7 +96,7 @@ task testJar(type: Jar) {
 }
 
 jacoco {
-  toolVersion = '0.8.1'
+  toolVersion = '0.8.2'
 }
 
 jacocoTestReport {

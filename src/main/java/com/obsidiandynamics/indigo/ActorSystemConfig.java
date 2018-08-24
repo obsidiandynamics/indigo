@@ -76,7 +76,7 @@ public class ActorSystemConfig {
    *  own uncaught exception handler. */
   public BiConsumer<ActorSystem, Throwable> exceptionHandler = get(EXCEPTION_HANDLER, ExceptionHandlerChoice::valueOf, CONSOLE_DRAIN);
   
-  /** Upper bound on the size of the DQL. Beyond this, truncation from the head (least recent) occurs. */
+  /** Upper bound on the size of the DLQ. Beyond this, truncation from the head (least recent) occurs. */
   public int deadLetterQueueSize = get(DEAD_LETTER_QUEUE_SIZE, Integer::parseInt, 10_000);
   
   /** The number of milliseconds to wait between each successive reaper run. Set to <code>0</code> to disable
@@ -84,10 +84,10 @@ public class ActorSystemConfig {
   public int reaperPeriodMillis = get(REAPER_PERIOD_MILLIS, Integer::parseInt, 10_000);
   
   /** In-memory diagnostics. */
-  public Diagnostics diagnostics = new Diagnostics() {};
+  public Diagnostics diagnostics = new Diagnostics();
   
   /** The default actor configuration. */
-  public ActorConfig defaultActorConfig = new ActorConfig() {};
+  public ActorConfig defaultActorConfig = new ActorConfig();
   
   public final ActorSystem createActorSystem() {
     return ActorSystem.create(this);
