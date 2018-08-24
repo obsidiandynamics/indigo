@@ -1,0 +1,12 @@
+commands:
+  build: ./gradlew test --info --stacktrace --no-daemon
+  publish: ./gradlew setBuild && ./gradlew -x test bintrayUpload --no-daemon
+modules:
+- path: .
+  dependencies:
+  - name: fulcrum
+    groupId: com.obsidiandynamics.fulcrum
+    artifactId: fulcrum-func
+versionist:
+  type: com.obsidiandynamics.warthog.versionist.FileVersionist
+  versionFile: src/main/resources/indigo.version
