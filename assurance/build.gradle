@@ -11,19 +11,15 @@ version = project(':').version
 
 def packageName = 'indigo-assurance'
 
-repositories {
-  jcenter()
-}
-
 dependencies {
   compile project(':indigo-commons')
   compile 'org.slf4j:slf4j-api:1.7.6'
   compile 'junit:junit:4.12'
   compile 'org.apache.commons:commons-math3:3.2'
 }
-
+  
 jacoco {
-  toolVersion = "0.8.2"
+  toolVersion = '0.8.2'
 }
 
 jacocoTestReport {
@@ -52,7 +48,7 @@ bintray {
     publicDownloadNumbers = true
     githubRepo = 'obsidiandynamics/indigo'
     override = true
-    publish = false
+    publish = true
     version {
       name = project(':').version
       desc = packageDesc

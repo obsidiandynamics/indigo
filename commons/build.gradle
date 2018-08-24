@@ -11,17 +11,13 @@ version = project(':').version
 
 def packageName = 'indigo-commons'
 
-repositories {
-  jcenter()
-}
-
 dependencies {
   compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
   testCompile 'junit:junit:4.12'
 }
-
+  
 jacoco {
-  toolVersion = "0.8.2"
+  toolVersion = '0.8.2'
 }
 
 jacocoTestReport {
@@ -50,7 +46,7 @@ bintray {
     publicDownloadNumbers = true
     githubRepo = 'obsidiandynamics/indigo'
     override = true
-    publish = false
+    publish = true
     version {
       name = project(':').version
       desc = packageDesc

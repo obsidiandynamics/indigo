@@ -52,21 +52,39 @@ allprojects {
   ext {
     fulcrumVersion = "0.17.0"
   }
+
+  repositories {
+    jcenter()
+    maven {
+      url 'https://oss.sonatype.org/content/repositories/snapshots'
+    }
+  }
+
+  javadoc {
+    if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+      options.addStringOption("quiet", "-html5")
+    }
+  }
+}
+  
+jacoco {
+  toolVersion = '0.8.2'
+}
+
+jacocoTestReport {
+  dependsOn test
+  reports {
+    xml.enabled false
+    html.enabled true
+  }
 }
 
 def packageName = 'indigo-core'
 
-repositories {
-  jcenter()
-  maven {
-    url 'https://oss.sonatype.org/content/repositories/snapshots'
-  }
-}
-
 dependencies {
   compile project(':indigo-commons')
   compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
-  compile "com.obsidiandynamics.fulcrum:fulcrum-version:0.3.0"
+  compile "com.obsidiandynamics.fulcrum:fulcrum-version:${fulcrumVersion}"
   
   testCompile project(':indigo-assurance')
   testCompile 'org.awaitility:awaitility:3.0.0'
@@ -93,18 +111,6 @@ task testJar(type: Jar) {
     configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) }
   }   
   baseName packageName + '-test'
-}
-
-jacoco {
-  toolVersion = '0.8.2'
-}
-
-jacocoTestReport {
-  dependsOn test
-  reports {
-    xml.enabled false
-    html.enabled true
-  }
 }
 
 def perfJvmArgs = '-server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC'
@@ -151,7 +157,7 @@ bintray {
     publicDownloadNumbers = true
     githubRepo = 'obsidiandynamics/indigo'
     override = true
-    publish = false
+    publish = true
     version {
       name = packageVersion
       desc = packageDesc

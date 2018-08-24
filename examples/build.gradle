@@ -19,10 +19,6 @@ dependencyManagement {
   }
 }
 
-repositories {
-  jcenter()
-}
-
 task testJar(type: Jar) {
   dependsOn jar
   dependsOn configurations.compile
