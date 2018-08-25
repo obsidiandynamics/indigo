@@ -118,7 +118,7 @@ public final class ThroughputBenchmark implements TestSupport {
       })
     );
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
     
     final Summary summary = new Summary();
     summary.timedOps = o * c.actors;

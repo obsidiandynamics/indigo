@@ -30,7 +30,7 @@ public final class EgressTest implements IndigoTestSupport {
   
   @After
   public void teardown() {
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
   
   @Test

@@ -83,7 +83,7 @@ public final class FaultTest implements IndigoTestSupport {
         fail("Unexpected response\n");
       });
     });
-    system.shutdownQuietly();
+    system.shutdownSilently();
     external.shutdown();
     
     assertTrue(faulted.get());
@@ -129,7 +129,7 @@ public final class FaultTest implements IndigoTestSupport {
         fail("Unexpected response\n");
       });
     });
-    system.shutdownQuietly();
+    system.shutdownSilently();
     
     assertTrue(propagated.get());
   }
@@ -237,7 +237,7 @@ public final class FaultTest implements IndigoTestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdownQuietly();
+    system.shutdownSilently();
     
     final int failedActivations = failedAsyncActivations.get() + failedSyncActivations.get();
     log("activationAttempts: %s, failedAsyncActivations: %s, failedSyncActivations: %s, received: %s, passivated: %s\n",
@@ -319,7 +319,7 @@ public final class FaultTest implements IndigoTestSupport {
       log("telling sink %d\n", i);
       a.to(ActorRef.of(SINK)).tell(i);
     });
-    system.shutdownQuietly();
+    system.shutdownSilently();
 
     log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
     assertTrue("activationAttempts=" + activationAttempts, activationAttempts.get() >= 1);
@@ -417,7 +417,7 @@ public final class FaultTest implements IndigoTestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdownQuietly();
+    system.shutdownSilently();
     
     log("passivationAttempts: %s, failedPassivations: %s, received: %s, passivated: %s\n",
         passivationAttempts, failedPassivations, received, passivated);
@@ -489,7 +489,7 @@ public final class FaultTest implements IndigoTestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdownQuietly();
+    system.shutdownSilently();
     
     assertEquals(n, faults.get());
     assertEquals(n, system.getDeadLetterQueue().size());
@@ -547,7 +547,7 @@ public final class FaultTest implements IndigoTestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdownQuietly();
+    system.shutdownSilently();
     
     assertEquals(n, faults.get());
     assertEquals(n, system.getDeadLetterQueue().size());
@@ -588,7 +588,7 @@ public final class FaultTest implements IndigoTestSupport {
       external.shutdown();
       external.awaitTermination(10, TimeUnit.SECONDS);
     } catch (InterruptedException e) { throw new RuntimeException(e); }
-    system.shutdownQuietly();
+    system.shutdownSilently();
 
     assertEquals(n, faults.get());
     assertEquals(n, system.getDeadLetterQueue().size());
@@ -630,7 +630,7 @@ public final class FaultTest implements IndigoTestSupport {
       });
     });
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
     assertEquals(n * 2, system.getDeadLetterQueue().size());
     assertEquals(n, countFaults(ON_ACT, system.getDeadLetterQueue()));
     assertEquals(n, countFaults(ON_FAULT, system.getDeadLetterQueue()));
@@ -666,7 +666,7 @@ public final class FaultTest implements IndigoTestSupport {
       });
     });
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
     assertEquals(n, system.getDeadLetterQueue().size());
     assertEquals(n, countFaults(ON_TIMEOUT, system.getDeadLetterQueue()));
   }
@@ -683,7 +683,7 @@ public final class FaultTest implements IndigoTestSupport {
     });
     
     system.tell(ActorRef.of(SINK));
-    system.shutdownQuietly();
+    system.shutdownSilently();
     assertTrue(faulted.get());
   }
   
@@ -703,7 +703,7 @@ public final class FaultTest implements IndigoTestSupport {
       });
     });
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
     assertTrue(faulted.get());
     assertEquals(1, system.getDeadLetterQueue().size());
   }
@@ -732,7 +732,7 @@ public final class FaultTest implements IndigoTestSupport {
       });
     });
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
     assertTrue(faulted.get());
     assertTrue(handled.get());
     assertEquals(1, system.getDeadLetterQueue().size());
@@ -768,7 +768,7 @@ public final class FaultTest implements IndigoTestSupport {
         fail("Unexpected response");
       });
     })
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertTrue(faulted.get());
     assertTrue(timedOut.get());

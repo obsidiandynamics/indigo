@@ -76,7 +76,7 @@ public final class ParallelConsistencyTest implements IndigoTestSupport {
     })
     .on(DONE).cue(refCollector(doneRuns))
     .ingress().times(actors * fanIn).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
 
     assertEquals(actors * (fanIn + 1), doneRuns.size());
   }

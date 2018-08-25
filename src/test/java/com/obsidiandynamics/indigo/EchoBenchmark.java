@@ -185,7 +185,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
     })
     .on(TIMER).cue((a, m) -> states.add(m.body()))
     .ingress().times(c.actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
 
     assertEquals(c.actors, states.size());
     

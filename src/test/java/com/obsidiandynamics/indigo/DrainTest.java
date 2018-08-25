@@ -65,7 +65,7 @@ public final class DrainTest implements TestSupport {
     try {
       system.drain(0);
     } finally {
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
     fail("Interrupt not detected");
   }
@@ -88,9 +88,9 @@ public final class DrainTest implements TestSupport {
     final ActorSystem system = new TestActorSystemConfig() {}.createActorSystem();
     
     Thread.currentThread().interrupt();
-    system.shutdownQuietly();
+    system.shutdownSilently();
     assertTrue(Thread.interrupted());
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
   
   @Test
@@ -113,6 +113,6 @@ public final class DrainTest implements TestSupport {
     assertTrue("remaining=" + remaining, remaining >= 1);
     
     TestSupport.await(exit);
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
 }

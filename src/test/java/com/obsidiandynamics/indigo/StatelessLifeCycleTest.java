@@ -115,7 +115,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
         a.to(ActorRef.of(TARGET)).tell(i);
       }
     })
-    .shutdownQuietly();
+    .shutdownSilently();
 
     assertEquals(sequenceTo(n), received);
     assertFalse(activating.get());
@@ -182,7 +182,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
            passivated.set(true);
          }))
     .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertTrue(activated.get());
     assertTrue(passivated.get());
@@ -216,7 +216,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
            passivated.set(true);
          }))
     .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertTrue(responded.get());
     assertTrue(passivated.get());
@@ -247,7 +247,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
            passivated.set(true);
          }))
     .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertTrue(acted.get());
     assertFalse(passivated.get());
@@ -280,7 +280,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
            passivated.set(true);
          }))
     .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertEquals(1, activated.get());
     assertEquals(1, acted.get());
@@ -314,7 +314,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
       a.to(ActorRef.of(TARGET)).tell();
       a.to(ActorRef.of(TARGET)).tell(SleepingPill.instance());
     })
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertEquals(1, activated.get());
     assertEquals(1, acted.get());
@@ -345,7 +345,7 @@ public final class StatelessLifeCycleTest implements TestSupport {
            passivated.incrementAndGet();
          }))
     .ingress().act(a -> a.to(ActorRef.of(TARGET)).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertEquals(1, activated.get());
     assertEquals(1, acted.get());

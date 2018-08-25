@@ -19,7 +19,7 @@ public final class ActivationApiTest implements TestSupport {
   
   @After
   public void teardown() {
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
   
   @Test

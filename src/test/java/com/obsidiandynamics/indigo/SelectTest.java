@@ -25,7 +25,7 @@ public final class SelectTest implements TestSupport {
   
   @After
   public void teardown() {
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
   
   private static <B> Consumer<B> got(AtomicBoolean flag) {

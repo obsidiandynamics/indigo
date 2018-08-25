@@ -26,7 +26,7 @@ public final class DLQTest implements IndigoTestSupport {
     })
     .ingress().times(limit * 2).act((a, i) -> a.to(ActorRef.of(SINK)).tell());
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
 
     assertEquals(limit, system.getDeadLetterQueue().size());
     assertEquals(limit, countFaults(ON_ACT, system.getDeadLetterQueue()));

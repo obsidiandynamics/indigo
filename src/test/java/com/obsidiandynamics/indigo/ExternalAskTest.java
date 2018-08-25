@@ -23,7 +23,7 @@ public final class ExternalAskTest implements TestSupport {
       final int resp = f.get();
       assertEquals(42, resp);
     } finally {
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
   }
 
@@ -57,7 +57,7 @@ public final class ExternalAskTest implements TestSupport {
     system.drain(0);
     
     assertFalse(ran.get());
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
 
   @Test(expected=TimeoutException.class)
@@ -72,7 +72,7 @@ public final class ExternalAskTest implements TestSupport {
     } finally {
       f.cancel(false);
       f.cancel(false); // cancelling a second time should have no further effect
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
   }
 
@@ -87,7 +87,7 @@ public final class ExternalAskTest implements TestSupport {
       f.get(10, TimeUnit.MILLISECONDS);
     } finally {
       system.forceTimeout();
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
   }
   
@@ -105,7 +105,7 @@ public final class ExternalAskTest implements TestSupport {
       assertEquals(FaultException.class, e.getCause().getClass());
       assertEquals("some reason", ((FaultException) e.getCause()).getReason());
     } finally {
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
   }
   
@@ -128,7 +128,7 @@ public final class ExternalAskTest implements TestSupport {
       assertEquals(TestException.class, e.getCause().getClass());
       assertEquals("some reason", e.getCause().getMessage());
     } finally {
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
   }
 }

@@ -32,7 +32,7 @@ public final class ForwarderTest implements TestSupport {
     })
     .ingress().times(runs).act((a, i) -> a.to(ActorRef.of(FORWARDER)).tell());
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
 
     assertEquals(runs, forwarded.get());
     assertEquals(runs, received.get());

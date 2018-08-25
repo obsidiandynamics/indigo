@@ -416,11 +416,19 @@ public final class ActorSystem implements Endpoint {
    *  This method suppresses an <code>InterruptedException</code> and will re-assert the interrupt 
    *  prior to returning.
    */
-  public void shutdownQuietly() {
-    shutdownQuietly(true);
+  public void shutdownSilently() {
+    shutdownSilently(true);
   }
-
-  private void shutdownQuietly(boolean drain) {
+  
+  /**
+   *  Shuts down the actor system with the option of draining it of any pending tasks.<p>
+   *  
+   *  This method suppresses an <code>InterruptedException</code> and will re-assert the interrupt 
+   *  prior to returning.
+   *  
+   *  @param drain If set, will block until the actor system is drained of pending tasks.
+   */
+  public void shutdownSilently(boolean drain) {
     try {
       shutdown(drain);
     } catch (InterruptedException e) {
@@ -431,19 +439,25 @@ public final class ActorSystem implements Endpoint {
   void terminate() {
     timeoutScheduler.clear();
     backgroundScheduler.clear();
-    shutdownQuietly(false);
+    shutdownSilently(false);
   }
   
   /**
    *  Drains the actor system of any pending tasks and terminates it.
    *  
-   *  @throws InterruptedException If the thread is interrupted.
+   *  @throws InterruptedException If the thread was interrupted.
    */
   public void shutdown() throws InterruptedException {
     shutdown(true);
   }
 
-  private void shutdown(boolean drain) throws InterruptedException {
+  /**
+   *  Shuts down the actor system with the option of draining it of any pending tasks.
+   *  
+   *  @param drain If set, will block until the actor system is drained of pending tasks.
+   *  @throws InterruptedException If the thread was interrupted.
+   */
+  public void shutdown(boolean drain) throws InterruptedException {
     shuttingDown = true;
     reaper.stop();
     if (drain) {

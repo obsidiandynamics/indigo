@@ -25,7 +25,7 @@ public final class StrategyActorTest {
       a.to(ActorRef.of("router")).times(5).tell(new Bar("AAA", 9, 10, 9, 9.9f)); // should generate some sell signals
       a.to(ActorRef.of("router")).times(5).tell(new Bar("AAA", 9, 10, 9, 9.1f)); // should generate some buy signals
     })
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertEquals(6, orders.size());
     assertEquals(3, orders.stream().filter(o -> o.getSide() == Side.SELL).count());

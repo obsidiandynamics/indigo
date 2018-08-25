@@ -39,7 +39,7 @@ public final class RequestResponseTest implements IndigoTestSupport {
     .on(ADDER).cue((a, m) -> a.reply(m).tell(m.<Integer>body() + 1))
     .on(DONE_RUNS).cue(refCollector(doneRuns))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
 
     assertEquals(actors, doneRuns.size());
   }
@@ -59,7 +59,7 @@ public final class RequestResponseTest implements IndigoTestSupport {
       a.toSenderOf(m).tell();
     })
     .ingress(a -> a.to(ActorRef.of(DRIVER)).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertEquals(2, receivedRoles.size());
     assertTrue(receivedRoles.contains(ActorRef.INGRESS));
@@ -81,7 +81,7 @@ public final class RequestResponseTest implements IndigoTestSupport {
       a.reply(m).tell();
     })
     .ingress(a -> a.to(ActorRef.of(DRIVER)).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertEquals(1, receivedRoles.size());
     assertTrue(receivedRoles.contains(ActorRef.INGRESS));
@@ -114,7 +114,7 @@ public final class RequestResponseTest implements IndigoTestSupport {
         fail("Unexpected response");
       });
     })
-    .shutdownQuietly();
+    .shutdownSilently();
     
     assertTrue(responded.get());
     assertTrue(timedOut.get());

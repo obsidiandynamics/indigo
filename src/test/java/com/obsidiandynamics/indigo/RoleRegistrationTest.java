@@ -19,7 +19,7 @@ public final class RoleRegistrationTest implements TestSupport {
   
   @After
   public void teardown() {
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
   
   @Test(expected=DuplicateRoleException.class)

@@ -48,7 +48,7 @@ public final class TimeoutTest implements TestSupport {
     .on(ECHO).cue((a, m) -> { /* do nothing, stalling the reply */ })
     .on(DONE).cue((a, m) -> done.put(m.from(), m.body()))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .shutdownQuietly();
+    .shutdownSilently();
 
     assertEquals(actors, done.size());
     long totalDiff = 0;

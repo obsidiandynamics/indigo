@@ -24,7 +24,7 @@ public final class FrameworkErrorTest implements TestSupport {
   
   @After
   public void teardown() {
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
   
   @Test

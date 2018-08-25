@@ -30,7 +30,7 @@ public final class StatelessChainTest implements IndigoTestSupport {
     })
     .on(DONE_RUNS).cue(refCollector(doneRuns))
     .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(RUN, String.valueOf(i))).tell(1))
-    .shutdownQuietly();
+    .shutdownSilently();
 
     assertEquals(actors, doneRuns.size());
   }

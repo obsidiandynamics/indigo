@@ -24,7 +24,7 @@ public final class DiagnosticsTest implements TestSupport {
     .createActorSystem()
     .ingress().times(limit * 2).act((a, i) -> {});
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
 
     final int logLength = system.getConfig().diagnostics.getLog().length;
     assertTrue("logLength=" + logLength, logLength <= limit);

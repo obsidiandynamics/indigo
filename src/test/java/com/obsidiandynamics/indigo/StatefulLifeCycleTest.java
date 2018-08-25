@@ -162,7 +162,7 @@ public final class StatefulLifeCycleTest implements TestSupport {
         a.to(ActorRef.of(TARGET)).tell(i);
       }
     })
-    .shutdownQuietly();
+    .shutdownSilently();
 
     assertEquals(n, db.get(ActorRef.of(TARGET)).value);
 

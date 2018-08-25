@@ -67,7 +67,7 @@ public final class PrimaryTestsSoak {
       TestSupport.sleep(100);
     }
     
-    system.shutdownQuietly();
+    system.shutdownSilently();
     System.out.format("Soak completed\n");
   }
   

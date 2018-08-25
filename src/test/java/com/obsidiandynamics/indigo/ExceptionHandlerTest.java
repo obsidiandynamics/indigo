@@ -62,7 +62,7 @@ public final class ExceptionHandlerTest implements TestSupport {
       system.ingress(a -> a.to(ActorRef.of(SINK)).tell());
       
       try {
-        system.shutdownQuietly();
+        system.shutdownSilently();
       } catch (UnhandledMultiException e) {
         ume = e;
       }
@@ -70,7 +70,7 @@ public final class ExceptionHandlerTest implements TestSupport {
       customErr.flush();
       output = new String(out.toByteArray());
     } finally {
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
     
     log("output is %s\n", output);
@@ -97,7 +97,7 @@ public final class ExceptionHandlerTest implements TestSupport {
     try {
       system.drain(0);
     } finally {
-      system.shutdownQuietly();
+      system.shutdownSilently();
     }
   }
   

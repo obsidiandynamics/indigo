@@ -16,7 +16,7 @@ public final class ExecutorRegistrationTest implements TestSupport {
   
   @After
   public void teardown() {
-    system.shutdownQuietly();
+    system.shutdownSilently();
   }
   
   @Test(expected=DuplicateExecutorException.class)
