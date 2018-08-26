@@ -32,7 +32,7 @@ public final class ActorSystem implements Endpoint {
   
   private final Map<String, ActorSetup> setupRegistry = new HashMap<>();
   
-  private final Integral64 busyActors = new Integral64.TripleStriped();
+  private final Integral64 busyActors;
   
   private final TaskScheduler timeoutScheduler = new TaskScheduler("TimeoutScheduler-" + getIdAsHex());
   
@@ -66,6 +66,7 @@ public final class ActorSystem implements Endpoint {
   private ActorSystem(ActorSystemConfig config) {
     config.init();
     this.config = config;
+    busyActors = config.integral64Provider.get();
     globalExecutor = config.executor.apply(new ExecutorParams(config.getParallelism(),
                                                               new JvmVersionProvider.DefaultProvider().get()));
     ingressRefs = createIngressRefs(config.getIngressCount());

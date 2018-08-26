@@ -1,15 +1,15 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
+import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
+import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
+
 import java.io.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
 import com.obsidiandynamics.indigo.util.*;
-
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoice.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.ExecutorChoice.*;
-import static com.obsidiandynamics.indigo.ActorSystemConfig.Key.*;
-import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 
 public class ActorSystemConfig {
   public static final class Key {
@@ -88,6 +88,9 @@ public class ActorSystemConfig {
   
   /** The default actor configuration. */
   public ActorConfig defaultActorConfig = new ActorConfig();
+  
+  /** Which {@link Integral64} implementation to use. */
+  public Supplier<Integral64> integral64Provider = Integral64.TripleStriped::new;
   
   public final ActorSystem createActorSystem() {
     return ActorSystem.create(this);
