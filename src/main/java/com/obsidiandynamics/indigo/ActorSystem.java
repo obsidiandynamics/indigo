@@ -54,6 +54,8 @@ public final class ActorSystem implements Endpoint {
   
   private volatile boolean running = true;
   
+  private volatile boolean forciblyTerminated;
+  
   private static final class ActorSetup {
     final Supplier<? extends Actor> factory;
     final ActorConfig actorConfig;
@@ -305,7 +307,8 @@ public final class ActorSystem implements Endpoint {
   
   /**
    *  Waits until all actors have completely drained their mailbox backlog, returning an approximation
-   *  of the number of backlogged actors.
+   *  of the number of backlogged actors. If the actor system was forcibly terminated (if an error was
+   *  caught internally), then this method will return {@code 0} without waiting for the actors to drain.
    *  
    *  @param timeoutMillis The maximum amount of time to wait, or 0 for indefinite.
    *  @return The approximate number of backlogged actors remaining, in the range of 0 to the number of activated actors.
@@ -320,7 +323,7 @@ public final class ActorSystem implements Endpoint {
       if (Thread.interrupted()) throw new InterruptedException();
       
       busyActors.sum(sum);
-      if (! running || (sum.isCertain() && sum.get() == 0)) {
+      if (forciblyTerminated || (sum.isCertain() && sum.get() == 0)) {
         checkUncaughtExceptions();
         return 0;
       } else if (yields > 0) {
@@ -441,6 +444,7 @@ public final class ActorSystem implements Endpoint {
     timeoutScheduler.clear();
     backgroundScheduler.clear();
     shutdownSilently(false);
+    forciblyTerminated = true;
   }
   
   /**
@@ -462,10 +466,7 @@ public final class ActorSystem implements Endpoint {
     shuttingDown = true;
     reaper.stop();
     if (drain) {
-      for (;;) {
-        drain(0);
-        break;
-      }
+      drain(0);
     }
     timeoutScheduler.forceExecute();
     timeoutScheduler.terminate();
