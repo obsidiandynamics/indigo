@@ -24,7 +24,9 @@ public final class ReaperTest implements TestSupport {
   
   @After
   public void teardown() {
-    system.shutdownSilently();
+    if (system != null) {
+      system.shutdownSilently();
+    }
   }
   
   @Test
@@ -121,6 +123,16 @@ public final class ReaperTest implements TestSupport {
 
     TestSupport.sleep(200);
     assertEquals(0, counters.passivated.get());
+  }
+  
+  @Test(expected=IllegalStateException.class)
+  public void testNoScheduler() {
+    system = new TestActorSystemConfig() {{
+      reaperPeriodMillis = 0;
+      enableBackgroundScheduler = false;
+    }}.createActorSystem();
+    
+    system.getBackgroundScheduler();
   }
   
   private Supplier<Actor> instrumentedActor(Counters counters) {

@@ -85,6 +85,7 @@ def packageName = 'indigo-core'
 dependencies {
   compile project(':indigo-commons')
   compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
+  compile "com.obsidiandynamics.fulcrum:fulcrum-func:${fulcrumVersion}"
   compile "com.obsidiandynamics.fulcrum:fulcrum-version:${fulcrumVersion}"
   
   testCompile project(':indigo-assurance')

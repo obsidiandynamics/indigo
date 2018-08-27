@@ -18,6 +18,15 @@ public final class TimeoutTest implements TestSupport {
   private static final int MIN_TIMEOUT = 10;
   private static final int MAX_TIMEOUT = 100;
   
+  private ActorSystem system;
+  
+  @After
+  public void teardown() {
+    if (system != null) {
+      system.shutdownSilently();
+    }
+  }
+  
   private static final long generateRandomTimeout() {
     final int range = MAX_TIMEOUT - MIN_TIMEOUT;
     return MIN_TIMEOUT + (int) (Math.random() * range);
@@ -28,7 +37,7 @@ public final class TimeoutTest implements TestSupport {
     final int actors = 100;
     final Map<ActorRef, Long> done = new HashMap<>();
 
-    new TestActorSystemConfig() {}
+    system = new TestActorSystemConfig() {}
     .createActorSystem()
     .on(DRIVER).cue((a, m) -> {
       final long startTime = System.currentTimeMillis();
@@ -47,8 +56,9 @@ public final class TimeoutTest implements TestSupport {
     })
     .on(ECHO).cue((a, m) -> { /* do nothing, stalling the reply */ })
     .on(DONE).cue((a, m) -> done.put(m.from(), m.body()))
-    .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell())
-    .shutdownSilently();
+    .ingress().times(actors).act((a, i) -> a.to(ActorRef.of(DRIVER, String.valueOf(i))).tell());
+    
+    system.shutdownSilently();
 
     assertEquals(actors, done.size());
     long totalDiff = 0;
@@ -61,5 +71,14 @@ public final class TimeoutTest implements TestSupport {
     log("Average diff: %.1f\n", avgDiff);
     assertTrue(String.format("Average timeout threshold above tolerance: %.1f", avgDiff), 
                avgDiff <= timeoutTolerance);
+  }
+  
+  @Test(expected=IllegalStateException.class)
+  public void testNoTimeoutScheduler() {
+    system = new TestActorSystemConfig() {{
+      enableTimeoutScheduler = false;
+    }}.createActorSystem();
+
+    system.getTimeoutScheduler();
   }
 }

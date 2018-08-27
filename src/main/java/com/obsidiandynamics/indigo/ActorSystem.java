@@ -1,5 +1,6 @@
 package com.obsidiandynamics.indigo;
 
+import static com.obsidiandynamics.func.Functions.*;
 import static com.obsidiandynamics.indigo.ActorRef.*;
 
 import java.util.*;
@@ -7,6 +8,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
+import com.obsidiandynamics.func.*;
 import com.obsidiandynamics.indigo.task.*;
 import com.obsidiandynamics.indigo.util.*;
 
@@ -34,9 +36,9 @@ public final class ActorSystem implements Endpoint {
   
   private final Integral64 busyActors;
   
-  private final TaskScheduler timeoutScheduler = new TaskScheduler("TimeoutScheduler-" + getIdAsHex());
+  private final TaskScheduler timeoutScheduler;
   
-  private final TaskScheduler backgroundScheduler = new TaskScheduler("BackgroundScheduler-" + getIdAsHex());
+  private final TaskScheduler backgroundScheduler;
   
   private final Reaper reaper = new Reaper(this);
   
@@ -68,6 +70,10 @@ public final class ActorSystem implements Endpoint {
   private ActorSystem(ActorSystemConfig config) {
     config.init();
     this.config = config;
+    
+    timeoutScheduler = config.enableTimeoutScheduler ? new TaskScheduler("TimeoutScheduler-" + getIdAsHex()) : null;
+    backgroundScheduler = config.enableBackgroundScheduler ? new TaskScheduler("BackgroundScheduler-" + getIdAsHex()) : null; 
+    
     busyActors = config.integral64Provider.get();
     globalExecutor = config.executor.apply(new ExecutorParams(config.getParallelism(),
                                                               new JvmVersionProvider.DefaultProvider().get()));
@@ -75,8 +81,8 @@ public final class ActorSystem implements Endpoint {
     activations = new ConcurrentHashMap<>(16, .75f, config.getParallelism());
     registerStandardActors();
     registerStandardExecutors();
-    timeoutScheduler.start();
-    backgroundScheduler.start();
+    ifSet(timeoutScheduler, TaskScheduler::start);
+    ifSet(backgroundScheduler, TaskScheduler::start);
     reaper.init();
   }
   
@@ -219,6 +225,7 @@ public final class ActorSystem implements Endpoint {
    *  @return A future.
    */
   public <T> CompletableFuture<T> ask(ActorRef ref, long timeoutMillisUpperBound, Object requestBody) {
+    final TaskScheduler timeoutScheduler = getTimeoutScheduler();
     final CompletableFuture<T> future = new CompletableFuture<>();
     
     final AtomicBoolean taskRegion = new AtomicBoolean();
@@ -302,7 +309,7 @@ public final class ActorSystem implements Endpoint {
    *  messages enqueued after this call.
    */
   public void forceTimeout() {
-    timeoutScheduler.forceExecute();
+    getTimeoutScheduler().forceExecute();
   }
   
   /**
@@ -389,11 +396,11 @@ public final class ActorSystem implements Endpoint {
   }
   
   TaskScheduler getTimeoutScheduler() {
-    return timeoutScheduler;
+    return mustExist(timeoutScheduler, withMessage("Timeout scheduler is not in use", IllegalStateException::new));
   }
   
   TaskScheduler getBackgroundScheduler() {
-    return backgroundScheduler;
+    return mustExist(backgroundScheduler, withMessage("Background scheduler is not in use", IllegalStateException::new));
   }
   
   Reaper getReaper() {
@@ -440,9 +447,13 @@ public final class ActorSystem implements Endpoint {
     }
   }
   
+  private static <T, X extends Throwable> void ifSet(T value, CheckedConsumer<? super T, ? extends X> operation) throws X {
+    if (value != null) operation.accept(value);
+  }
+  
   void terminate() {
-    timeoutScheduler.clear();
-    backgroundScheduler.clear();
+    ifSet(timeoutScheduler, TaskScheduler::clear);
+    ifSet(backgroundScheduler, TaskScheduler::clear);
     shutdownSilently(false);
     forciblyTerminated = true;
   }
@@ -468,10 +479,10 @@ public final class ActorSystem implements Endpoint {
     if (drain) {
       drain(0);
     }
-    timeoutScheduler.forceExecute();
-    timeoutScheduler.terminate();
-    backgroundScheduler.forceExecute();
-    backgroundScheduler.terminate();
+    ifSet(timeoutScheduler, TaskScheduler::forceExecute);
+    ifSet(timeoutScheduler, TaskScheduler::terminate);
+    ifSet(backgroundScheduler, TaskScheduler::forceExecute);
+    ifSet(backgroundScheduler, TaskScheduler::terminate);
     globalExecutor.shutdown();
     running = false;
   }

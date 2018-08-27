@@ -92,6 +92,14 @@ public class ActorSystemConfig {
   /** Which {@link Integral64} implementation to use. */
   public Supplier<Integral64> integral64Provider = Integral64.TripleStriped::new;
   
+  /** Whether the timeout scheduler should be enabled. Disabling the timeout scheduler allows for stripped-down
+   *  actor systems that don't need timeout scheduling capabilities. */
+  public boolean enableTimeoutScheduler = true;
+  
+  /** Whether the background scheduler should be enabled. Disabling the background scheduler allows for stripped-down
+   *  actor systems that don't need background scheduling capabilities. */
+  public boolean enableBackgroundScheduler = true;
+  
   public final ActorSystem createActorSystem() {
     return ActorSystem.create(this);
   }
