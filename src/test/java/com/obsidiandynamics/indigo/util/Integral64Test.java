@@ -8,6 +8,7 @@ import java.util.function.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.Integral64.*;
+import com.obsidiandynamics.threads.*;
 
 public final class Integral64Test implements TestSupport {
   static final class FaultyIntegral extends LongAdder implements Integral64 {
@@ -41,9 +42,9 @@ public final class Integral64Test implements TestSupport {
   private void test(int baseThreads, int rotations, long runs, Integral64 integral) {
     final AtomicInteger workers = new AtomicInteger(baseThreads);
 
-    ParallelJob.nonBlocking(baseThreads, i -> {
+    Parallel.nonBlocking(baseThreads, i -> {
       for (int rotation = 0; rotation < rotations; rotation++) {
-        ParallelJob.blocking(baseThreads, j -> {
+        Parallel.blocking(baseThreads, j -> {
           for (long k = 0; k < runs; k++) {
             integral.add(1);
             integral.add(-1);

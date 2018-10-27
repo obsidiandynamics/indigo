@@ -7,6 +7,7 @@ import org.junit.*;
 import com.obsidiandynamics.indigo.ActorSystemConfig.*;
 import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.threads.*;
 
 public final class ThroughputBenchmark implements TestSupport {
   abstract static class Config implements Spec {
@@ -90,7 +91,7 @@ public final class ThroughputBenchmark implements TestSupport {
     
     if (c.warmup != 0) {
       if (c.log.stages) c.log.out.format("Warming up...\n");
-      ParallelJob.blocking(c.actors, i -> {
+      Parallel.blocking(c.actors, i -> {
         final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
         for (int j = 0; j < c.warmup; j++) {
@@ -108,7 +109,7 @@ public final class ThroughputBenchmark implements TestSupport {
     if (c.log.stages) c.log.out.format("Starting timed run...\n");
     final long o = n - c.warmup;
     final long took = TestSupport.took(
-      ParallelJob.blocking(c.actors, i -> {
+      Parallel.blocking(c.actors, i -> {
         final ActorRef to = refs[i];
         final Message m = Message.builder().to(to).build();
         for (int j = 0; j < o; j++) {

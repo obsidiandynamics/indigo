@@ -5,6 +5,8 @@ import static com.obsidiandynamics.indigo.util.PropertyUtils.*;
 import java.io.*;
 import java.util.concurrent.*;
 
+import com.obsidiandynamics.func.*;
+
 public interface TestSupport {
   boolean LOG = get(load("system-test.properties", System.getProperties()),
                     "TestSupport.log", Boolean::parseBoolean, false);
@@ -25,7 +27,7 @@ public interface TestSupport {
     return took / 1_000_000l;
   }
 
-  static long tookThrowing(ThrowingRunnable r) throws Exception {
+  static long tookThrowing(CheckedRunnable<Throwable> r) throws Throwable {
     final long started = System.nanoTime();
     r.run();
     final long took = System.nanoTime() - started;

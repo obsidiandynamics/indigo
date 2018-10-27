@@ -11,6 +11,8 @@ import org.junit.runner.notification.*;
 import com.obsidiandynamics.assertion.*;
 import com.obsidiandynamics.indigo.util.*;
 import com.obsidiandynamics.indigo.util.OneShotContract.*;
+import com.obsidiandynamics.indigo.util.Threads;
+import com.obsidiandynamics.threads.*;
 
 public final class PrimaryTestsSoak {
   public static void main(String[] args) throws InterruptedException, ExecutionException {
@@ -100,7 +102,7 @@ public final class PrimaryTestsSoak {
     final AtomicLong totalTests = new AtomicLong();
     final long took = TestSupport.took(() -> {
       for (int i = 1; i <= n; i++) {
-        ParallelJob.blocking(threads, t -> {
+        Parallel.blocking(threads, t -> {
           final Computer computer = new Computer();
           final JUnitCore core = new JUnitCore();
           core.addListener(new RunListener() {

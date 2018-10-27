@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.experimental.APActor.*;
 import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.threads.*;
 
 public final class APActorBenchmark {
   private static void benchmark() {
@@ -15,7 +16,7 @@ public final class APActorBenchmark {
 
     final CountDownLatch latch = new CountDownLatch(actors);
     final long took = TestSupport.took(
-      ParallelJob.blocking(actors, i -> {
+      Parallel.blocking(actors, i -> {
         send(countingActor(n, executor, latch), n);
         TestSupport.await(latch);
       })
@@ -39,9 +40,6 @@ public final class APActorBenchmark {
     for (long i = 0; i < messages; i++) {
       if (i % 100_000_000 == 0) Thread.yield();
       address.tell(m);
-//      while (address.getBacklog() > 10_000) {
-//        Thread.yield();
-//      }
     }
   }
   
@@ -55,7 +53,6 @@ public final class APActorBenchmark {
       counter.value = messages;
       return m -> {
         counter.value--;
-        //System.out.format("%x value=%d\n", System.identityHashCode(address), counter.value);
         if (counter.value == 0) {
           latch.countDown();
         }

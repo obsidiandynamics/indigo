@@ -13,7 +13,7 @@ public final class BenchmarkSuite {
     
     System.out.println("_\nExternal messages - burst throughput");
     new ThroughputBenchmark.Config() {{
-      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL;
+      executorChoice = ActorSystemConfig.ExecutorChoice.FIXED_THREAD_POOL; 
       threads = Runtime.getRuntime().availableProcessors() * 1;
       actors = threads * 1;
       n = 10_000_000;

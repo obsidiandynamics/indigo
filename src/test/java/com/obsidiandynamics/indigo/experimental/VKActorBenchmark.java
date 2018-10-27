@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 import com.obsidiandynamics.indigo.benchmark.*;
 import com.obsidiandynamics.indigo.experimental.VKBatchActor.*;
 import com.obsidiandynamics.indigo.util.*;
+import com.obsidiandynamics.threads.*;
 
 public final class VKActorBenchmark {
   private static void benchmark() {
@@ -14,7 +15,7 @@ public final class VKActorBenchmark {
 
     final CountDownLatch latch = new CountDownLatch(threads);
     final long took = TestSupport.took(() -> {
-      ParallelJob.blocking(threads, i -> {
+      Parallel.blocking(threads, i -> {
         send(countingActor(n, executor, latch), n);
         TestSupport.await(latch);
       }).run();

@@ -13,6 +13,7 @@ def packageName = "indigo-assurance"
 
 dependencies {
   compile project(":indigo-commons")
+  compile "com.obsidiandynamics.fulcrum:fulcrum-func:${fulcrumVersion}"
   compile "org.slf4j:slf4j-api:${slf4jVersion}"
   compile "junit:junit:${junitVersion}"
   compile "org.apache.commons:commons-math3:${commonsMathsVersion}"
