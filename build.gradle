@@ -50,7 +50,10 @@ version = packageVersion
 
 allprojects {
   ext {
-    fulcrumVersion = "0.18.0"
+    awaitilityVersion = "3.0.0"
+    equalsverifierVersion = "3.0"
+    fulcrumVersion = "0.24.0"
+    pojotesterVersion = "0.7.6"
   }
 
   repositories {
@@ -89,7 +92,13 @@ dependencies {
   compile "com.obsidiandynamics.fulcrum:fulcrum-version:${fulcrumVersion}"
   
   testCompile project(':indigo-assurance')
-  testCompile 'org.awaitility:awaitility:3.0.0'
+  testCompile "com.obsidiandynamics.fulcrum:fulcrum-await:${fulcrumVersion}"
+  testCompile "com.obsidiandynamics.fulcrum:fulcrum-junit:${fulcrumVersion}"
+  testCompile "com.obsidiandynamics.fulcrum:fulcrum-threads:${fulcrumVersion}"
+  testCompile "com.obsidiandynamics.fulcrum:fulcrum-verifier:${fulcrumVersion}"
+  testCompile "org.awaitility:awaitility:${awaitilityVersion}"
+  testCompile "nl.jqno.equalsverifier:equalsverifier:${equalsverifierVersion}"
+  testCompile "pl.pojo:pojo-tester:${pojotesterVersion}"
 }
 
 test {

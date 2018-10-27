@@ -4,6 +4,7 @@ import org.junit.runner.*;
 import org.junit.runners.*;
 import org.junit.runners.Suite.*;
 
+import com.obsidiandynamics.indigo.linear.*;
 import com.obsidiandynamics.indigo.task.*;
 import com.obsidiandynamics.indigo.util.*;
 
@@ -12,9 +13,11 @@ import com.obsidiandynamics.indigo.util.*;
   ActorRefTest.class,
   AwaitableAtomicReferenceTest.class,
   CappedForkJoinPoolTest.class,
+  ExecutorOptionsTest.class,
   IndigoVersionTest.class,
   Integral64Test.class,
   JvmVersionProviderTest.class,
+  LinearExecutorTest.class,
   MessageBuilderTest.class,
   StatefulLambdaActorBuilderTest.class,
   StatelessLambdaActorBuilderTest.class,

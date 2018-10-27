@@ -2,6 +2,7 @@
 /bin/
 /build/
 /.settings/
+.DS_Store
 .classpath
 .project
 .java-version

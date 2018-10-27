@@ -142,6 +142,7 @@ final class NodeQueueActivation extends Activation {
             cycles++;
             processMessage(head.m);
             yields = 0;
+            attemptedPark = false;
           } else {
             assert diagnostics().traceMacro("NQA.run: scheduling ref=%s", ref);
             scheduleRunStart(h1);
