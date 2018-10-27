@@ -1,21 +1,22 @@
 plugins {
-  id 'com.jfrog.bintray' version '1.8.4'
+  id "com.jfrog.bintray" version "1.8.4"
+  id "com.github.ben-manes.versions" version "0.20.0"
 }
-apply plugin: 'maven-publish'
-apply plugin: 'java'
-apply plugin: 'jacoco'
-apply plugin: 'com.jfrog.bintray'
+apply plugin: "maven-publish"
+apply plugin: "java"
+apply plugin: "jacoco"
+apply plugin: "com.jfrog.bintray"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 def versionFile(extension) {
-  return new File(sourceSets.main.resources.srcDirs[0].path + '/' + project.name + extension)
+  return new File(sourceSets.main.resources.srcDirs[0].path + "/" + project.name + extension)
 }
 
 def getVersion(extension) {
   def versionFile = versionFile extension
-  if (! versionFile.exists()) return '0'
+  if (! versionFile.exists()) return "0"
   def reader = new BufferedReader(new FileReader(versionFile))
   def version = reader.readLine().trim()
   reader.close()
@@ -29,37 +30,42 @@ def setVersion(extension, version) {
   writer.close()
 }
 
-def packageVersion = getVersion '.version'
-def packageBuild = getVersion '.build'
+def packageVersion = getVersion ".version"
+def packageBuild = getVersion ".build"
 
 task getBuild() {
   doLast {
-    println "At ${getVersion('.version')}_${getVersion('.build')}"
+    println "At ${getVersion(".version")}_${getVersion(".build")}"
   }
 }
 
 task setBuild() {
   doLast {
-    def timestamp = new java.text.SimpleDateFormat('yyMMddHHmm').format(new Date())
-    setVersion('.build', timestamp)
+    def timestamp = new java.text.SimpleDateFormat("yyMMddHHmm").format(new Date())
+    setVersion(".build", timestamp)
   }
 }
 
-group = 'com.obsidiandynamics.indigo'
+group = "com.obsidiandynamics.indigo"
 version = packageVersion
 
 allprojects {
   ext {
     awaitilityVersion = "3.0.0"
+    commonsMathsVersion = "3.6.1"
     equalsverifierVersion = "3.0"
     fulcrumVersion = "0.24.0"
+    gsonVersion = "2.8.5"
+    gsonExtrasVersion = "0.2.1"
+    junitVersion = "4.12"
     pojotesterVersion = "0.7.6"
+    slf4jVersion = "1.7.6"
   }
 
   repositories {
     jcenter()
     maven {
-      url 'https://oss.sonatype.org/content/repositories/snapshots'
+      url "https://oss.sonatype.org/content/repositories/snapshots"
     }
   }
 
@@ -71,7 +77,7 @@ allprojects {
 }
   
 jacoco {
-  toolVersion = '0.8.2'
+  toolVersion = "0.8.2"
 }
 
 jacocoTestReport {
@@ -83,15 +89,15 @@ jacocoTestReport {
   }
 }
 
-def packageName = 'indigo-core'
+def packageName = "indigo-core"
 
 dependencies {
-  compile project(':indigo-commons')
+  compile project(":indigo-commons")
   compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
   compile "com.obsidiandynamics.fulcrum:fulcrum-func:${fulcrumVersion}"
   compile "com.obsidiandynamics.fulcrum:fulcrum-version:${fulcrumVersion}"
   
-  testCompile project(':indigo-assurance')
+  testCompile project(":indigo-assurance")
   testCompile "com.obsidiandynamics.fulcrum:fulcrum-await:${fulcrumVersion}"
   testCompile "com.obsidiandynamics.fulcrum:fulcrum-junit:${fulcrumVersion}"
   testCompile "com.obsidiandynamics.fulcrum:fulcrum-threads:${fulcrumVersion}"
@@ -102,8 +108,8 @@ dependencies {
 }
 
 test {
-  include 'com/obsidiandynamics/indigo/CycledPrimaryTests.class'
-  include 'com/obsidiandynamics/indigo/SupportingTests.class'
+  include "com/obsidiandynamics/indigo/CycledPrimaryTests.class"
+  include "com/obsidiandynamics/indigo/SupportingTests.class"
 }
 
 task testJar(type: Jar) {
@@ -121,26 +127,26 @@ task testJar(type: Jar) {
     configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
     configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) }
   }   
-  baseName packageName + '-test'
+  baseName packageName + "-test"
 }
 
-def perfJvmArgs = '-server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC'
+def perfJvmArgs = "-server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC"
 
 task testBench(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(' ')
-  main = 'com.obsidiandynamics.indigo.BenchmarkSuite'
+  jvmArgs = Arrays.asList perfJvmArgs.split(" ")
+  main = "com.obsidiandynamics.indigo.BenchmarkSuite"
 }
 
 task testSoak(type: JavaExec) {
   classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(' ') + '-ea'
+  jvmArgs = Arrays.asList perfJvmArgs.split(" ") + "-ea"
   standardInput = System.in
-  main = 'com.obsidiandynamics.indigo.PrimaryTestsSoak'
+  main = "com.obsidiandynamics.indigo.PrimaryTestsSoak"
 }
 
-def envUser = 'BINTRAY_USER'
-def envKey = 'BINTRAY_KEY'
+def envUser = "BINTRAY_USER"
+def envKey = "BINTRAY_KEY"
 task bintrayCredentialsCheck {
   doLast {
     if (System.getenv(envUser) == null) {
@@ -152,21 +158,21 @@ task bintrayCredentialsCheck {
   }
 }
 
-def packageDesc = 'A dynamic actor framework for the JVM'
+def packageDesc = "A dynamic actor framework for the JVM"
 bintray {
   user = System.getenv(envUser)
   key = System.getenv(envKey)
-  publications = ['mavenJava']
+  publications = ["mavenJava"]
   pkg {
-    repo = 'indigo'
+    repo = "indigo"
     name = packageName
-    userOrg = 'obsidiandynamics'
+    userOrg = "obsidiandynamics"
     desc = packageDesc
-    websiteUrl = 'https://github.com/obsidiandynamics/indigo'
-    licenses = ['BSD New']
-    vcsUrl = 'https://github.com/obsidiandynamics/indigo.git'
+    websiteUrl = "https://github.com/obsidiandynamics/indigo"
+    licenses = ["BSD New"]
+    vcsUrl = "https://github.com/obsidiandynamics/indigo.git"
     publicDownloadNumbers = true
-    githubRepo = 'obsidiandynamics/indigo'
+    githubRepo = "obsidiandynamics/indigo"
     override = true
     publish = true
     version {
@@ -194,14 +200,14 @@ jar {
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
   baseName packageName
-  classifier = 'javadoc'
+  classifier = "javadoc"
   from "$buildDir/docs/javadoc"
 }
  
 task sourcesJar(type: Jar) {
   baseName packageName
   from sourceSets.main.allSource
-  classifier = 'sources'
+  classifier = "sources"
 }
  
 artifacts {

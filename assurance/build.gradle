@@ -1,25 +1,25 @@
-apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'java'
-apply plugin: 'jacoco'
+apply plugin: "maven-publish"
+apply plugin: "com.jfrog.bintray"
+apply plugin: "java"
+apply plugin: "jacoco"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-group = project(':').group
-version = project(':').version
+group = project(":").group
+version = project(":").version
 
-def packageName = 'indigo-assurance'
+def packageName = "indigo-assurance"
 
 dependencies {
-  compile project(':indigo-commons')
-  compile 'org.slf4j:slf4j-api:1.7.6'
-  compile 'junit:junit:4.12'
-  compile 'org.apache.commons:commons-math3:3.2'
+  compile project(":indigo-commons")
+  compile "org.slf4j:slf4j-api:${slf4jVersion}"
+  compile "junit:junit:${junitVersion}"
+  compile "org.apache.commons:commons-math3:${commonsMathsVersion}"
 }
   
 jacoco {
-  toolVersion = '0.8.2'
+  toolVersion = "0.8.2"
 }
 
 jacocoTestReport {
@@ -30,37 +30,37 @@ jacocoTestReport {
   }
 }
 
-def envUser = 'BINTRAY_USER'
-def envKey = 'BINTRAY_KEY'
-def packageDesc = 'Test and benchmarking support for Indigo'
+def envUser = "BINTRAY_USER"
+def envKey = "BINTRAY_KEY"
+def packageDesc = "Test and benchmarking support for Indigo"
 bintray {
   user = System.getenv(envUser)
   key = System.getenv(envKey)
-  publications = ['mavenJava']
+  publications = ["mavenJava"]
   pkg {
-    repo = 'indigo'
+    repo = "indigo"
     name = packageName
-    userOrg = 'obsidiandynamics'
+    userOrg = "obsidiandynamics"
     desc = packageDesc
-    websiteUrl = 'https://github.com/obsidiandynamics/indigo'
-    licenses = ['BSD New']
-    vcsUrl = 'https://github.com/obsidiandynamics/indigo.git'
+    websiteUrl = "https://github.com/obsidiandynamics/indigo"
+    licenses = ["BSD New"]
+    vcsUrl = "https://github.com/obsidiandynamics/indigo.git"
     publicDownloadNumbers = true
-    githubRepo = 'obsidiandynamics/indigo'
+    githubRepo = "obsidiandynamics/indigo"
     override = true
     publish = true
     version {
-      name = project(':').version
+      name = project(":").version
       desc = packageDesc
       released  = new Date()
-      vcsTag = project(':').version
+      vcsTag = project(":").version
     }
   }
 }
 
 // invoke this task when ready to publish to Bintray
 bintrayUpload {
-  dependsOn ':bintrayCredentialsCheck'
+  dependsOn ":bintrayCredentialsCheck"
 }
 
 jar {
@@ -70,14 +70,14 @@ jar {
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
   baseName packageName
-  classifier = 'javadoc'
+  classifier = "javadoc"
   from "$buildDir/docs/javadoc"
 }
  
 task sourcesJar(type: Jar) {
   baseName packageName
   from sourceSets.main.allSource
-  classifier = 'sources'
+  classifier = "sources"
 }
  
 artifacts {
@@ -89,9 +89,9 @@ artifacts {
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      groupId project(':').group
+      groupId project(":").group
       artifactId packageName
-      version project(':').version
+      version project(":").version
       from components.java
       artifact sourcesJar
       artifact javadocJar

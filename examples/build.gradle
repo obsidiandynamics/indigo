@@ -1,4 +1,4 @@
-apply plugin: 'java'
+apply plugin: "java"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -8,14 +8,14 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath "io.spring.gradle:dependency-management-plugin:1.0.0.RC2"
+    classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
   }
 }
 apply plugin: "io.spring.dependency-management"
 
 dependencyManagement {
   imports {
-    mavenBom 'com.amazonaws:aws-java-sdk-bom:1.11.126'
+    mavenBom "com.amazonaws:aws-java-sdk-bom:1.11.438"
   }
 }
 
@@ -31,15 +31,15 @@ task testJar(type: Jar) {
     configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
     configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) }
   }   
-  baseName 'indigo-examples-test'
+  baseName "indigo-examples-test"
 }
 
 dependencies {
-  compile project(':')
-  compile project(':indigo-commons')
-  compile 'com.amazonaws:aws-java-sdk-dynamodb'
-  compile 'com.google.code.gson:gson:2.8.0'
-  compile 'org.danilopianini:gson-extras:0.2.1'
+  compile project(":")
+  compile project(":indigo-commons")
+  compile "com.amazonaws:aws-java-sdk-dynamodb"
+  compile "com.google.code.gson:gson:${gsonVersion}"
+  compile "org.danilopianini:gson-extras:${gsonExtrasVersion}"
 
-  testCompile project(':indigo-assurance')
+  testCompile project(":indigo-assurance")
 }
