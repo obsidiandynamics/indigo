@@ -22,7 +22,7 @@ import java.util.concurrent.*;
  *  {@link Callable}s using the {@link LinearRunnable#decorate(Runnable, String)} and 
  *  {@link LinearCallable#decorate(Callable, String)} helper methods.
  */
-public interface LinearExecutor {
+public interface LinearExecutor extends ExecutorService {
   /**
    *  Attempts to stop all actively executing tasks, halts the processing of waiting tasks, 
    *  and returns a list of the tasks that were awaiting execution. <p>
