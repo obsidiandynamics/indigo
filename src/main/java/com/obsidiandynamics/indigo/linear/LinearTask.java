@@ -4,10 +4,10 @@ import java.util.concurrent.*;
 
 /**
  *  A decorator for a task that must be executed in some deterministic partial order with
- *  respect to other tasks sharing a {@link LinearExecutor}. This interface does not define 
+ *  respect to other tasks sharing a {@link ActorExecutor}. This interface does not define 
  *  the behaviour of the task — only the 'key', which associates the task with an ordered 
  *  set of peer tasks for serial execution in strict order of submission to the 
- *  {@link LinearExecutor}. <p>
+ *  {@link ActorExecutor}. <p>
  *  
  *  A {@link LinearTask} implementation should also extend either a {@link Runnable} or
  *  a {@link Callable} as appropriate (depending on the whether the task is expected
@@ -18,7 +18,7 @@ public interface LinearTask {
   /**
    *  Returns a key that associates this task with an ordered set of peer tasks. Tasks
    *  sharing the same key will be executed serially, in strict order of submission to the
-   *  {@link LinearExecutor}.
+   *  {@link ActorExecutor}.
    *  
    *  @return The key {@link String}, which may not be {@code null}.
    */

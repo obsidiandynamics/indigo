@@ -5,9 +5,9 @@ import com.obsidiandynamics.indigo.*;
 final class LinearAgent implements Actor {
   static final String ROLE = "agent";
   
-  private final LinearExecutor executor;
+  private final ActorExecutor executor;
   
-  LinearAgent(LinearExecutor executor) {
+  LinearAgent(ActorExecutor executor) {
     this.executor = executor;
   }
 

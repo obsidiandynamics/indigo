@@ -17,7 +17,7 @@ import com.obsidiandynamics.junit.*;
 import com.obsidiandynamics.threads.*;
 
 @RunWith(Parameterized.class)
-public final class LinearExecutorTest {
+public final class ActorExecutorTest {
   @Parameterized.Parameters
   public static List<Object[]> data() {
     return TestCycle.timesQuietly(1);
@@ -37,7 +37,7 @@ public final class LinearExecutorTest {
   
   private static final Timesert await = Timesert.wait(10_000);
   
-  private LinearExecutor executor;
+  private ActorExecutor executor;
   
   @After
   public void after() {
@@ -61,7 +61,7 @@ public final class LinearExecutorTest {
   
   @Test
   public void testCreateAndShutdownNowWithNoTasks() throws InterruptedException {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     assertFalse(executor.isShutdown());
     assertFalse(executor.isTerminated());
     assertFalse(executor.getActorSystem().isShuttingDown());
@@ -72,7 +72,7 @@ public final class LinearExecutorTest {
   
   @Test
   public void testCreateAndShutdownWithNoTasks() throws InterruptedException {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     assertFalse(executor.isShutdown());
     assertFalse(executor.isTerminated());
     assertFalse(executor.getActorSystem().isShuttingDown());
@@ -86,7 +86,7 @@ public final class LinearExecutorTest {
    */
   @Test
   public void testExecuteWithNullKey() {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     
     expectedException.expect(NullArgumentException.class);
     expectedException.expectMessage("Key cannot be null");
@@ -105,7 +105,7 @@ public final class LinearExecutorTest {
    */
   @Test
   public void testRejectNonLinearTasks() {
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(1)
                                   .withAllowNonLinearTasks(false));
     
@@ -120,10 +120,10 @@ public final class LinearExecutorTest {
   
   /**
    *  Submits {@link Runnable} tasks for unordered execution, shuts down the executor and awaits for termination. 
-   *  Tasks should all be complete by the time {@link LinearExecutor#awaitTermination(long, TimeUnit)}
+   *  Tasks should all be complete by the time {@link ActorExecutor#awaitTermination(long, TimeUnit)}
    *  returns. <p>
    *  
-   *  This test uses {@link LinearExecutor#submit(Runnable, Object)} with a nominated return value.
+   *  This test uses {@link ActorExecutor#submit(Runnable, Object)} with a nominated return value.
    *  
    *  @throws InterruptedException
    */
@@ -134,7 +134,7 @@ public final class LinearExecutorTest {
     final int keys = 100 * KEYS_SCALE;
 
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(parallelism));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(parallelism));
     final int expectedTasks = runs * keys;
     final List<Future<Integer>> tasks = new ArrayList<>(expectedTasks);
     for (int run = 0; run < runs; run++) {
@@ -159,10 +159,10 @@ public final class LinearExecutorTest {
   
   /**
    *  Submits {@link Callable} tasks for unordered execution, shuts down the executor and awaits for termination. 
-   *  Tasks should all be complete by the time {@link LinearExecutor#awaitTermination(long, TimeUnit)}
+   *  Tasks should all be complete by the time {@link ActorExecutor#awaitTermination(long, TimeUnit)}
    *  returns. <p>
    *  
-   *  This test uses {@link LinearExecutor#submit(Callable)}.
+   *  This test uses {@link ActorExecutor#submit(Callable)}.
    *  
    *  @throws InterruptedException
    */
@@ -173,7 +173,7 @@ public final class LinearExecutorTest {
     final int keys = 100 * KEYS_SCALE;
 
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(parallelism));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(parallelism));
     final int expectedTasks = runs * keys;
     final List<Future<Integer>> tasks = new ArrayList<>(expectedTasks);
     for (int run = 0; run < runs; run++) {
@@ -200,9 +200,9 @@ public final class LinearExecutorTest {
   /**
    *  Executes {@link Runnable} tasks for unordered execution, shuts down the executor and 
    *  awaits for termination. Tasks should all be complete by the time 
-   *  {@link LinearExecutor#awaitTermination(long, TimeUnit)} returns. <p>
+   *  {@link ActorExecutor#awaitTermination(long, TimeUnit)} returns. <p>
    *  
-   *  This test uses {@link LinearExecutor#execute(Runnable)}.
+   *  This test uses {@link ActorExecutor#execute(Runnable)}.
    *  
    *  @throws InterruptedException
    */
@@ -214,7 +214,7 @@ public final class LinearExecutorTest {
     
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
     final CountingAgentListener agentCounter = new CountingAgentListener();
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(parallelism)
                                   .withAgentListener(agentCounter));
     for (int run = 0; run < runs; run++) {
@@ -240,10 +240,10 @@ public final class LinearExecutorTest {
   /**
    *  Submits {@link LinearRunnable} tasks for deterministic execution, shuts down the executor and 
    *  awaits for termination. Tasks should all be complete by the time 
-   *  {@link LinearExecutor#awaitTermination(long, TimeUnit)} returns and the counters for each task 
+   *  {@link ActorExecutor#awaitTermination(long, TimeUnit)} returns and the counters for each task 
    *  should be assigned sequentially with no discontinuities. <p>
    *  
-   *  This test uses {@link LinearExecutor#submit(Runnable)}.
+   *  This test uses {@link ActorExecutor#submit(Runnable)}.
    *  
    *  @throws InterruptedException
    */
@@ -255,7 +255,7 @@ public final class LinearExecutorTest {
 
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
     final CountingAgentListener agentCounter = new CountingAgentListener();
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(parallelism)
                                   .withAgentListener(agentCounter));
     final int expectedTasks = runs * keys;
@@ -285,10 +285,10 @@ public final class LinearExecutorTest {
   /**
    *  Submits {@link HashedRunnable} tasks for deterministic execution, shuts down the executor and 
    *  awaits for termination. This is equivalent of using a {@link LinearRunnable} with an equivalent key.
-   *  Tasks should all be complete by the time {@link LinearExecutor#awaitTermination(long, TimeUnit)}
+   *  Tasks should all be complete by the time {@link ActorExecutor#awaitTermination(long, TimeUnit)}
    *  returns and the counters for each task should be assigned sequentially with no discontinuities. <p>
    *  
-   *  This test uses {@link LinearExecutor#submit(Runnable)}.
+   *  This test uses {@link ActorExecutor#submit(Runnable)}.
    *  
    *  @throws InterruptedException
    */
@@ -300,7 +300,7 @@ public final class LinearExecutorTest {
 
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
     final CountingAgentListener agentCounter = new CountingAgentListener();
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(parallelism)
                                   .withAgentListener(agentCounter));
     final int expectedTasks = runs * keys;
@@ -330,10 +330,10 @@ public final class LinearExecutorTest {
   /**
    *  Submits {@link LinearCallable} tasks for deterministic execution, shuts down the executor and 
    *  awaits for termination. Tasks should all be complete by the time 
-   *  {@link LinearExecutor#awaitTermination(long, TimeUnit)} returns and the counters for each task 
+   *  {@link ActorExecutor#awaitTermination(long, TimeUnit)} returns and the counters for each task 
    *  should be assigned sequentially with no discontinuities. <p>
    *  
-   *  This test uses {@link LinearExecutor#submit(Callable)} and also adds bias to the agent actors.
+   *  This test uses {@link ActorExecutor#submit(Callable)} and also adds bias to the agent actors.
    *  
    *  @throws InterruptedException
    */
@@ -346,7 +346,7 @@ public final class LinearExecutorTest {
 
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
     final CountingAgentListener agentCounter = new CountingAgentListener();
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(parallelism)
                                   .withAgentListener(agentCounter)
                                   .withActorBias(actorBias));
@@ -392,7 +392,7 @@ public final class LinearExecutorTest {
 
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
     final CountingAgentListener agentCounter = new CountingAgentListener();
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(parallelism)
                                   .withAgentListener(agentCounter)
                                   .withActorBias(actorBias));
@@ -427,10 +427,10 @@ public final class LinearExecutorTest {
   /**
    *  Executes {@link LinearRunnable} tasks deterministically, shuts down the executor and 
    *  awaits for termination. Tasks should all be complete by the time 
-   *  {@link LinearExecutor#awaitTermination(long, TimeUnit)} returns and the counters for each task 
+   *  {@link ActorExecutor#awaitTermination(long, TimeUnit)} returns and the counters for each task 
    *  should be assigned sequentially with no discontinuities. <p>
    *  
-   *  This test uses {@link LinearExecutor#execute(Runnable)}.
+   *  This test uses {@link ActorExecutor#execute(Runnable)}.
    *  
    *  @throws InterruptedException
    */
@@ -442,7 +442,7 @@ public final class LinearExecutorTest {
 
     final AtomicIntegerArray ints = new AtomicIntegerArray(keys);
     final CountingAgentListener agentCounter = new CountingAgentListener();
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(parallelism)
                                   .withAgentListener(agentCounter));
     for (int run = 1; run <= runs; run++) {
@@ -478,7 +478,7 @@ public final class LinearExecutorTest {
     final int runs = 10 * RUNS_SCALE;
     final int parallelism = 86;
     
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(parallelism));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(parallelism));
     final AtomicInteger executionCount = new AtomicInteger();
     final ArrayList<Future<?>> tasks = new ArrayList<>(runs);
     
@@ -502,7 +502,7 @@ public final class LinearExecutorTest {
    */
   @Test
   public void testAwaitTerminationWhileRunningWithTimeout() throws InterruptedException {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     assertFalse(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
     assertEquals(Collections.emptyList(), executor.shutdownNow());
     assertExecutorCleanedUp();
@@ -517,7 +517,7 @@ public final class LinearExecutorTest {
    */
   @Test
   public void testAwaitTerminationWhileRunningWithSuccess() throws InterruptedException {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     executor.execute(() -> {
       assertEquals(1, executor.getPendingTasks());
       Threads.sleep(10);
@@ -529,7 +529,7 @@ public final class LinearExecutorTest {
   }
   
   /**
-   *  Invokes {@link LinearExecutor#shutdownNow()} with pending tasks using the default 
+   *  Invokes {@link ActorExecutor#shutdownNow()} with pending tasks using the default 
    *  behaviour (to interrupt running tasks) and verifies that they have been cancelled.
    *  
    *  @throws InterruptedException
@@ -538,7 +538,7 @@ public final class LinearExecutorTest {
   public void testShutdownNowCancelPendingTasksWithInterrupt() throws InterruptedException {
     final int parallelism = PARALLELISM;
     final int numTasks = 10;
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(parallelism));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(parallelism));
     
     final CyclicBarrier startBarrier = new CyclicBarrier(2);
     final CyclicBarrier endBarrier = new CyclicBarrier(2);
@@ -573,7 +573,7 @@ public final class LinearExecutorTest {
   }
   
   /**
-   *  Invokes {@link LinearExecutor#shutdownNow(boolean)} with pending tasks without interrupting
+   *  Invokes {@link ActorExecutor#shutdownNow(boolean)} with pending tasks without interrupting
    *  them and verifies that they have been cancelled.
    *  
    *  @throws InterruptedException
@@ -582,7 +582,7 @@ public final class LinearExecutorTest {
   public void testShutdownNowCancelPendingTasksWithoutInterrupt() throws InterruptedException {
     final int parallelism = PARALLELISM;
     final int numTasks = 10;
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(parallelism));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(parallelism));
     
     final CyclicBarrier startBarrier = new CyclicBarrier(2);
     final CyclicBarrier endBarrier = new CyclicBarrier(2);
@@ -628,7 +628,7 @@ public final class LinearExecutorTest {
    */
   @Test
   public void testShutdownAndAwaitPendingTasksWithTimeout() throws InterruptedException, TimeoutException {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     
     final CyclicBarrier startBarrier = new CyclicBarrier(2);
     final CyclicBarrier endBarrier = new CyclicBarrier(2);
@@ -669,7 +669,7 @@ public final class LinearExecutorTest {
    */
   @Test
   public void testShutdownAndAwaitPendingTasksWithError() throws InterruptedException {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     
     final CyclicBarrier startBarrier = new CyclicBarrier(2);
     final CyclicBarrier endBarrier = new CyclicBarrier(2);
@@ -703,7 +703,7 @@ public final class LinearExecutorTest {
   @Test
   public void testCancelTaskTwice() throws InterruptedException, TimeoutException {
     final CountingAgentListener agentCounter = new CountingAgentListener();
-    executor = new LinearExecutor(new ExecutorOptions()
+    executor = new ActorExecutor(new ExecutorOptions()
                                   .withParallelism(1)
                                   .withAgentListener(agentCounter));
     
@@ -747,7 +747,7 @@ public final class LinearExecutorTest {
    */
   @Test
   public void testTaskError() throws InterruptedException, TimeoutException {
-    executor = new LinearExecutor(new ExecutorOptions().withParallelism(1));
+    executor = new ActorExecutor(new ExecutorOptions().withParallelism(1));
     
     final CyclicBarrier startBarrier = new CyclicBarrier(2);
     final CyclicBarrier endBarrier = new CyclicBarrier(2);

@@ -7,21 +7,21 @@ import java.util.concurrent.*;
 import com.obsidiandynamics.func.*;
 
 /**
- *  Encapsulation of a task that is scheduled to be executed within a {@link LinearExecutor}. <p>
+ *  Encapsulation of a task that is scheduled to be executed within a {@link ActorExecutor}. <p>
  *  
- *  This task should only be instantiated by the {@link LinearExecutor} instance, but is 
+ *  This task should only be instantiated by the {@link ActorExecutor} instance, but is 
  *  subsequently made available to the application so that it can be interrogated directly.
  *  
  *  @param <V> Result type.
  */
 public final class LinearFutureTask<V> implements RunnableFuture<V>, LinearTask {
-  private final LinearExecutor executor;
+  private final ActorExecutor executor;
   
   private final FutureTask<V> delegateTask;
   
   private final String key;
   
-  LinearFutureTask(LinearExecutor executor, FutureTask<V> delegateTask, String key) {
+  LinearFutureTask(ActorExecutor executor, FutureTask<V> delegateTask, String key) {
     mustExist(key, withMessage("Key cannot be null", NullArgumentException::new));
     this.executor = executor;
     this.delegateTask = delegateTask;

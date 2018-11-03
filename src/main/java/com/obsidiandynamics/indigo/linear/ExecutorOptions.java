@@ -4,7 +4,7 @@ import java.util.concurrent.*;
 import java.util.function.*;
 
 /**
- *  Options for configuring a new {@link LinearExecutor} instance.
+ *  Options for configuring a new {@link ActorExecutor} instance.
  */
 public final class ExecutorOptions {
   private static final int PROCESSOR_COUNT = Runtime.getRuntime().availableProcessors();
