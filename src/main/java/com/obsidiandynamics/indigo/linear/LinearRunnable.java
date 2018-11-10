@@ -18,8 +18,8 @@ public interface LinearRunnable extends Runnable, LinearTask {
    *  @return A {@link LinearRunnable} instance.
    */
   public static LinearRunnable decorate(Runnable runnable, String key) {
-    mustExist(runnable, withMessage("Runnable cannot be null", NullArgumentException::new));
-    mustExist(key, withMessage("Key cannot be null", NullArgumentException::new));
+    mustExist(runnable, "Runnable cannot be null");
+    mustExist(key, "Key cannot be null");
     return new LinearRunnable() {
       @Override
       public void run() {

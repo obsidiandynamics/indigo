@@ -21,8 +21,8 @@ public interface LinearCallable<V> extends Callable<V>, LinearTask {
    *  @return A {@link LinearCallable} instance.
    */
   public static <V> LinearCallable<V> decorate(Callable<V> callable, String key) {
-    mustExist(callable, withMessage("Callable cannot be null", NullArgumentException::new));
-    mustExist(key, withMessage("Key cannot be null", NullArgumentException::new));
+    mustExist(callable, "Callable cannot be null");
+    mustExist(key, "Key cannot be null");
     return new LinearCallable<V>() {
       @Override
       public V call() throws Exception {

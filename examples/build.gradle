@@ -15,7 +15,7 @@ apply plugin: "io.spring.dependency-management"
 
 dependencyManagement {
   imports {
-    mavenBom "com.amazonaws:aws-java-sdk-bom:1.11.438"
+    mavenBom "com.amazonaws:aws-java-sdk-bom:1.11.447"
   }
 }
 

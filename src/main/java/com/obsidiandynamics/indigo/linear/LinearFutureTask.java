@@ -22,7 +22,7 @@ public final class LinearFutureTask<V> implements RunnableFuture<V>, LinearTask 
   private final String key;
   
   LinearFutureTask(ActorExecutor executor, FutureTask<V> delegateTask, String key) {
-    mustExist(key, withMessage("Key cannot be null", NullArgumentException::new));
+    mustExist(key, "Key cannot be null");
     this.executor = executor;
     this.delegateTask = delegateTask;
     this.key = key;
