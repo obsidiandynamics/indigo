@@ -54,7 +54,7 @@ allprojects {
     awaitilityVersion = "3.1.2"
     commonsMathsVersion = "3.6.1"
     equalsverifierVersion = "3.0.2"
-    fulcrumVersion = "0.27.0"
+    fulcrumVersion = "0.28.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
     junitVersion = "4.12"
