@@ -4,8 +4,6 @@ import static com.obsidiandynamics.func.Functions.*;
 
 import java.util.concurrent.*;
 
-import com.obsidiandynamics.func.*;
-
 /**
  *  Encapsulation of a task that is scheduled to be executed within a {@link ActorExecutor}. <p>
  *  

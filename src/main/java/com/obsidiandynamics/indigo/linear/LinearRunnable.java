@@ -2,8 +2,6 @@ package com.obsidiandynamics.indigo.linear;
 
 import static com.obsidiandynamics.func.Functions.*;
 
-import com.obsidiandynamics.func.*;
-
 /**
  *  Combines {@link LinearTask} with {@link Runnable}, defining an ordered
  *  task that doesn't return a value or throw an exception.

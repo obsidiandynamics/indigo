@@ -4,8 +4,6 @@ import static com.obsidiandynamics.func.Functions.*;
 
 import java.util.concurrent.*;
 
-import com.obsidiandynamics.func.*;
-
 /**
  *  Combines {@link LinearTask} with {@link Callable}, defining an ordered
  *  task that may return a value or throw an exception.
