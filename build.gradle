@@ -51,9 +51,10 @@ version = packageVersion
 
 allprojects {
   ext {
-    awaitilityVersion = "3.1.2"
+    awaitilityVersion = "3.1.5"
+    commonsLangVersion = "3.8.1"
     commonsMathsVersion = "3.6.1"
-    equalsverifierVersion = "3.0.2"
+    equalsverifierVersion = "3.1"
     fulcrumVersion = "0.28.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
@@ -105,6 +106,10 @@ dependencies {
   testCompile "org.awaitility:awaitility:${awaitilityVersion}"
   testCompile "nl.jqno.equalsverifier:equalsverifier:${equalsverifierVersion}"
   testCompile "pl.pojo:pojo-tester:${pojotesterVersion}"
+    
+  // Dependency fix: pojo-tester:0.7.6 depends on commons-lang:3.7, which doesn't support Java 11;
+  // including commons-lang:3.8.1 fixes this in the interim.
+  testRuntime "org.apache.commons:commons-lang3:${commonsLangVersion}"
 }
 
 test {
