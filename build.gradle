@@ -51,10 +51,10 @@ version = packageVersion
 
 allprojects {
   ext {
-    awaitilityVersion = "3.1.5"
+    awaitilityVersion = "3.1.6"
     commonsLangVersion = "3.8.1"
     commonsMathsVersion = "3.6.1"
-    equalsverifierVersion = "3.1"
+    equalsverifierVersion = "3.1.4"
     fulcrumVersion = "0.28.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
