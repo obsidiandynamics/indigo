@@ -73,7 +73,7 @@ allprojects {
     commonsLangVersion = "3.8.1"
     commonsMathsVersion = "3.6.1"
     equalsverifierVersion = "3.1.4"
-    fulcrumVersion = "0.28.0"
+    fulcrumVersion = "0.29.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
     junitVersion = "4.12"
@@ -229,7 +229,11 @@ bintray {
 
 // invoke this task when ready to publish to Bintray
 bintrayUpload {
-  dependsOn bintrayCredentialsCheck
+  dependsOn ":bintrayCredentialsCheck"
+  dependsOn "jar"
+  dependsOn "sourcesJar"
+  dependsOn "javadocJar"
+  dependsOn "generatePomFileForMavenJavaPublication"
 }
 
 processResources {
