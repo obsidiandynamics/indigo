@@ -49,6 +49,24 @@ task setBuild() {
 group = "com.obsidiandynamics.indigo"
 version = packageVersion
 
+def baseJvmArgs = [
+  "--add-opens=java.base/java.io=ALL-UNNAMED",
+  "--add-opens=java.base/java.lang=ALL-UNNAMED",
+  "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+  "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+  "--add-opens=java.base/java.nio=ALL-UNNAMED",
+  "--add-opens=java.base/java.util=ALL-UNNAMED",
+  "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+  "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+  "-XX:-MaxFDLimit",
+  "-XX:+TieredCompilation",
+  "-XX:+UseNUMA",
+  "-XX:+UseCondCardMark",
+  "-XX:-UseBiasedLocking",
+  "-Djava.net.preferIPv4Stack=true"
+]
+project.ext.set("baseJvmArgs", baseJvmArgs)
+
 allprojects {
   ext {
     awaitilityVersion = "3.1.6"
@@ -75,10 +93,30 @@ allprojects {
       options.addStringOption("quiet", "-html5")
     }
   }
+  
+  compileJava {
+    options.compilerArgs += "-proc:none"
+    options.compilerArgs += "-Xlint:unchecked"
+  }
+
+  compileTestJava {
+    options.compilerArgs += "-proc:none"
+    options.compilerArgs += "-Xlint:unchecked"
+  }
+  
+  tasks.withType(JavaCompile) {
+    options.fork = true
+    options.incremental = true
+  }
+  
+  test {
+    include "**/*Test.class"
+    jvmArgs += baseJvmArgs
+  }
 }
   
 jacoco {
-  toolVersion = "0.8.2"
+  toolVersion = "0.8.3"
 }
 
 jacocoTestReport {
