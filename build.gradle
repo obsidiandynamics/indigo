@@ -88,12 +88,6 @@ allprojects {
     }
   }
 
-  javadoc {
-    if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-      options.addStringOption("quiet", "-html5")
-    }
-  }
-  
   compileJava {
     options.compilerArgs += "-proc:none"
     options.compilerArgs += "-Xlint:unchecked"
