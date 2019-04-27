@@ -1,6 +1,6 @@
 plugins {
   id "com.jfrog.bintray" version "1.8.4"
-  id "com.github.ben-manes.versions" version "0.20.0"
+  id "com.github.ben-manes.versions" version "0.21.0"
 }
 apply plugin: "maven-publish"
 apply plugin: "java"
@@ -70,10 +70,10 @@ project.ext.set("baseJvmArgs", baseJvmArgs)
 allprojects {
   ext {
     awaitilityVersion = "3.1.6"
-    commonsLangVersion = "3.8.1"
+    commonsLangVersion = "3.9"
     commonsMathsVersion = "3.6.1"
-    equalsverifierVersion = "3.1.4"
-    fulcrumVersion = "0.29.0"
+    equalsverifierVersion = "3.1.8"
+    fulcrumVersion = "0.31.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
     junitVersion = "4.12"
