@@ -70,14 +70,13 @@ project.ext.set("baseJvmArgs", baseJvmArgs)
 allprojects {
   ext {
     awaitilityVersion = "3.1.6"
-    commonsLangVersion = "3.9"
     commonsMathsVersion = "3.6.1"
     equalsverifierVersion = "3.1.8"
     fulcrumVersion = "0.32.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
     junitVersion = "4.12"
-    pojotesterVersion = "0.7.6"
+    pojotesterVersion = "0.9.0"
     slf4jVersion = "1.7.6"
   }
 
@@ -110,7 +109,7 @@ allprojects {
 }
   
 jacoco {
-  toolVersion = "0.8.3"
+  toolVersion = "0.8.4"
 }
 
 jacocoTestReport {
@@ -137,11 +136,7 @@ dependencies {
   testCompile "com.obsidiandynamics.fulcrum:fulcrum-verifier:${fulcrumVersion}"
   testCompile "org.awaitility:awaitility:${awaitilityVersion}"
   testCompile "nl.jqno.equalsverifier:equalsverifier:${equalsverifierVersion}"
-  testCompile "pl.pojo:pojo-tester:${pojotesterVersion}"
-    
-  // Dependency fix: pojo-tester:0.7.6 depends on commons-lang:3.7, which doesn't support Java 11;
-  // including commons-lang:3.8.1 fixes this in the interim.
-  testRuntime "org.apache.commons:commons-lang3:${commonsLangVersion}"
+  testCompile "com.obsidiandynamics.pojotester:pojotester:${pojotesterVersion}"
 }
 
 test {
