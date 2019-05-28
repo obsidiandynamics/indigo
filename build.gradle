@@ -71,7 +71,7 @@ allprojects {
   ext {
     awaitilityVersion = "3.1.6"
     commonsMathsVersion = "3.6.1"
-    equalsverifierVersion = "3.1.8"
+    equalsverifierVersion = "3.1.9"
     fulcrumVersion = "0.33.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
