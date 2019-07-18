@@ -37,7 +37,7 @@ public final class ParallelConsistencyTest implements IndigoTestSupport {
   }
 
   private void test(int actors, int runs, int fanIn, int sinkBias) {
-    final Set<ActorRef> doneRuns = new HashSet<>();
+    final Set<ActorRef> doneRuns = new HashSet<>(actors * (fanIn + 1), 1f);
 
     new TestActorSystemConfig() {}
     .createActorSystem()

@@ -101,7 +101,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       throw new IllegalArgumentException("Seed pairs cannot be greater than total number of pairs");
 
     final LogConfig log = c.log;
-    final Set<DriverState> states = new HashSet<>();
+    final Set<DriverState> states = new HashSet<>(c.actors, 1f);
     final Summary summary = new Summary();
     
     if (log.stages) log.out.format("Warming up...\n");

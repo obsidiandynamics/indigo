@@ -16,7 +16,7 @@ public final class StatelessChainTest implements IndigoTestSupport {
   public void test() {
     final int actors = 5;
     final int runs = 10;
-    final Set<ActorRef> doneRuns = new HashSet<>();
+    final Set<ActorRef> doneRuns = new HashSet<>(actors, 1f);
 
     new TestActorSystemConfig() {}
     .createActorSystem()

@@ -44,7 +44,7 @@ public final class EgressTest implements IndigoTestSupport {
   }
   
   private void testFunction(int actors, int runs, boolean parallel) throws InterruptedException {
-    final Set<ActorRef> doneRuns = new HashSet<>();
+    final Set<ActorRef> doneRuns = new HashSet<>(actors, 1f);
     
     system
     .addExecutor(EXECUTOR).named("custom")

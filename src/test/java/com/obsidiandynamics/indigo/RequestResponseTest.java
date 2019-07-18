@@ -20,7 +20,7 @@ public final class RequestResponseTest implements IndigoTestSupport {
   public void testRequestResponse() {
     final int actors = 5;
     final int runs = 10;
-    final Set<ActorRef> doneRuns = new HashSet<>();
+    final Set<ActorRef> doneRuns = new HashSet<>(actors, 1f);
 
     new TestActorSystemConfig() {}
     .createActorSystem()
@@ -46,7 +46,7 @@ public final class RequestResponseTest implements IndigoTestSupport {
   
   @Test
   public void testUnsolicitedReply_toSenderOf() {
-    final Set<String> receivedRoles = new HashSet<>();
+    final Set<String> receivedRoles = new HashSet<>(2, 1f);
     new TestActorSystemConfig() {}
     .createActorSystem()
     .on(DRIVER).cue((a, m) -> {
@@ -68,7 +68,7 @@ public final class RequestResponseTest implements IndigoTestSupport {
   
   @Test
   public void testUnsolicitedReply_reply() {
-    final Set<String> receivedRoles = new HashSet<>();
+    final Set<String> receivedRoles = new HashSet<>(1, 1f);
     new TestActorSystemConfig() {}
     .createActorSystem()
     .on(DRIVER).cue((a, m) -> {
