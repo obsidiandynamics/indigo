@@ -8,6 +8,8 @@ import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.JvmVersionProvider.*;
 
+import nl.jqno.equalsverifier.*;
+
 public final class JvmVersionProviderTest implements TestSupport {
   @Test
   public void testDefault() {
@@ -16,6 +18,11 @@ public final class JvmVersionProviderTest implements TestSupport {
     assertTrue("version=" + version, version.minor >= 0);
     assertTrue("version=" + version, version.update >= 0);
     assertTrue("version=" + version, version.build >= 0);
+  }
+  
+  @Test
+  public void testJvmVersion_equalsHashCode() {
+    EqualsVerifier.forClass(JvmVersion.class).verify();
   }
   
   @Test

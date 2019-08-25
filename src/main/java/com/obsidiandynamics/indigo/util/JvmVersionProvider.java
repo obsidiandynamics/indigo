@@ -39,6 +39,29 @@ public interface JvmVersionProvider {
         }
       }
     }
+    
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + major;
+      result = prime * result + minor;
+      result = prime * result + update;
+      result = prime * result + build;
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      } else if (obj instanceof JvmVersion) {
+        final JvmVersion that = (JvmVersion) obj;
+        return major == that.major && minor == that.minor && update == that.update && build == that.build;
+      } else {
+        return false;
+      }
+    }
   }
 
   public static final class DefaultProvider implements JvmVersionProvider {
