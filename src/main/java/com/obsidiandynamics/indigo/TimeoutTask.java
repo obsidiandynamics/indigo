@@ -7,14 +7,11 @@ import com.obsidiandynamics.indigo.task.*;
 final class TimeoutTask extends Task<UUID> {
   private final ActorRef actorRef;
   
-  private final PendingRequest request;
-  
   private final Endpoint endpoint;
   
-  TimeoutTask(long expiresAt, UUID requestId, ActorRef actorRef, PendingRequest request, Endpoint endpoint) {
+  TimeoutTask(long expiresAt, UUID requestId, ActorRef actorRef, Endpoint endpoint) {
     super(expiresAt, requestId);
     this.actorRef = actorRef;
-    this.request = request;
     this.endpoint = endpoint;
   }
   
@@ -25,7 +22,6 @@ final class TimeoutTask extends Task<UUID> {
   
   @Override
   public String toString() {
-    return "TimeoutTask [time=" + getTime() + ", id=" + getId() + ", actorRef=" + actorRef
-           + ", request=" + request + "]";
+    return TimeoutTask.class.getSimpleName() + " [time=" + getTime() + ", id=" + getId() + ", actorRef=" + actorRef + "]";
   }
 }

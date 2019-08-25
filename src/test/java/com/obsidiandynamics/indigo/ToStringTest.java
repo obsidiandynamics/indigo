@@ -19,7 +19,7 @@ public class ToStringTest {
     assertToStringOverride(new Activation(0, null, null, new ActorConfig(), null, null) {
       @Override public boolean enqueue(Message m) { return false; }
     });
-    assertToStringOverride(new TimeoutTask(0, null, null, null, null));
+    assertToStringOverride(new TimeoutTask(0, null, null, null));
     assertToStringOverride(new Task<Integer>(0, null) {
       @Override protected void execute() {}
     });

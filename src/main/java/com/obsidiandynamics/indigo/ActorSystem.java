@@ -22,7 +22,7 @@ public final class ActorSystem implements Endpoint {
   private static final long DRAIN_SLEEP_MILLIS = 1;
   
   /** A symbol for a task that's been cancelled. */
-  private static final TimeoutTask CANCELLED = new TimeoutTask(0, new UUID(0, 0), null, null, null);
+  private static final TimeoutTask CANCELLED = new TimeoutTask(0, new UUID(0, 0), null, null);
   
   private final long id = Crypto.machineRandom();
   

@@ -84,7 +84,6 @@ public class MessageBuilder {
         timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
                                       requestId,
                                       activation.ref,
-                                      req,
                                       activation.system);
         req.setTimeoutTask(timeoutTask);
         activation.system.getTimeoutScheduler().schedule(timeoutTask);
