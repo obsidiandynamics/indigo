@@ -15,6 +15,15 @@ dependencies {
   compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
   testCompile "junit:junit:${junitVersion}"
 }
+
+// invoke this task when ready to publish to Bintray
+bintrayUpload {
+  dependsOn ":bintrayCredentialsCheck"
+  dependsOn "jar"
+  dependsOn "sourcesJar"
+  dependsOn "javadocJar"
+  dependsOn "generatePomFileForMavenJavaPublication"
+}
   
 jacoco {
   toolVersion = "0.8.4"

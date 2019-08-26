@@ -18,6 +18,15 @@ dependencies {
   compile "junit:junit:${junitVersion}"
   compile "org.apache.commons:commons-math3:${commonsMathsVersion}"
 }
+
+// invoke this task when ready to publish to Bintray
+bintrayUpload {
+  dependsOn ":bintrayCredentialsCheck"
+  dependsOn "jar"
+  dependsOn "sourcesJar"
+  dependsOn "javadocJar"
+  dependsOn "generatePomFileForMavenJavaPublication"
+}
   
 jacoco {
   toolVersion = "0.8.4"
