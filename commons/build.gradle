@@ -56,11 +56,6 @@ bintray {
   }
 }
 
-// invoke this task when ready to publish to Bintray
-bintrayUpload {
-  dependsOn ":bintrayCredentialsCheck"
-}
-
 jar {
   baseName packageName
   finalizedBy jacocoTestReport
