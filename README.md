@@ -3,6 +3,7 @@
 [![Download](https://api.bintray.com/packages/obsidiandynamics/indigo/indigo-core/images/download.svg) ](https://bintray.com/obsidiandynamics/indigo/indigo-core/_latestVersion)
 [![Build](https://travis-ci.org/obsidiandynamics/indigo.svg?branch=master) ](https://travis-ci.org/obsidiandynamics/indigo#)
 [![codecov](https://codecov.io/gh/obsidiandynamics/indigo/branch/master/graph/badge.svg)](https://codecov.io/gh/obsidiandynamics/indigo)
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/obsidiandynamics/indigo.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/obsidiandynamics/indigo/context:java)
 
 Indigo is a next generation dynamic [actor model](https://en.wikipedia.org/wiki/Actor_model) framework that makes writing asynchronous and concurrent applications easy.
 
