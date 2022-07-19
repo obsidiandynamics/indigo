@@ -1,17 +1,21 @@
 plugins {
-  id "com.jfrog.bintray" version "1.8.4"
   id "com.github.ben-manes.versions" version "0.22.0"
+  id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
-apply plugin: "maven-publish"
-apply plugin: "java"
-apply plugin: "jacoco"
-apply plugin: "com.jfrog.bintray"
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+nexusPublishing {
+  repositories {
+    sonatype {
+      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+      username = findProperty('sonatype.username')
+      password = findProperty('sonatype.password')
+    }
+  }
+}
 
 def versionFile(extension) {
-  return new File(sourceSets.main.resources.srcDirs[0].path + "/" + project.name + extension)
+  return new File("src/main/resources/" + project.name + extension)
 }
 
 def getVersion(extension) {
@@ -46,9 +50,6 @@ task setBuild() {
   }
 }
 
-group = "com.obsidiandynamics.indigo"
-version = packageVersion
-
 def baseJvmArgs = [
   "--add-opens=java.base/java.io=ALL-UNNAMED",
   "--add-opens=java.base/java.lang=ALL-UNNAMED",
@@ -62,67 +63,65 @@ def baseJvmArgs = [
   "-XX:+TieredCompilation",
   "-XX:+UseNUMA",
   "-XX:+UseCondCardMark",
-  "-XX:-UseBiasedLocking",
   "-Djava.net.preferIPv4Stack=true"
 ]
 project.ext.set("baseJvmArgs", baseJvmArgs)
 
 allprojects {
+  apply plugin: "java-library"
+  apply plugin: "jacoco"
+  apply plugin: 'maven-publish'
+  apply plugin: 'signing'
+
+  group = "com.obsidiandynamics.indigo"
+  version = packageVersion
+
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
+
+  //TODO remove when Javadoc errors have been resolved
+  javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+
+  repositories {
+    mavenCentral()
+    maven {
+      url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+  }
+
+  java {
+    withJavadocJar()
+    withSourcesJar()
+  }
+
+  signing {
+    sign publishing.publications
+  }
+
   ext {
     awaitilityVersion = "3.1.6"
     commonsMathsVersion = "3.6.1"
-    equalsverifierVersion = "3.1.9"
-    fulcrumVersion = "0.36.0"
+    equalsverifierVersion = "3.10"
+    fulcrumVersion = "0.37.0"
     gsonVersion = "2.8.5"
     gsonExtrasVersion = "0.2.1"
     junitVersion = "4.12"
     pojotesterVersion = "0.9.0"
     slf4jVersion = "1.7.25"
   }
-
-  repositories {
-    jcenter()
-    maven {
-      url "https://oss.sonatype.org/content/repositories/snapshots"
-    }
-  }
-
-  compileJava {
-    options.compilerArgs += "-proc:none"
-    options.compilerArgs += "-Xlint:unchecked"
-  }
-
-  compileTestJava {
-    options.compilerArgs += "-proc:none"
-    options.compilerArgs += "-Xlint:unchecked"
-  }
-  
-  tasks.withType(JavaCompile) {
-    options.fork = true
-    options.incremental = true
-  }
   
   test {
     include "**/*Test.class"
     jvmArgs += baseJvmArgs
-    
+
     testLogging {
       info.events = ["started", "failed", "skipped", "passed"]
     }
   }
 }
-
-// invoke this task when ready to publish to Bintray
-bintrayUpload {
-  dependsOn ":bintrayCredentialsCheck"
-  dependsOn "jar"
-  dependsOn "sourcesJar"
-  dependsOn "javadocJar"
-  dependsOn "generatePomFileForMavenJavaPublication"
-}
   
 jacoco {
-  toolVersion = "0.8.4"
+  toolVersion = "0.8.8"
 }
 
 jacocoTestReport {
@@ -135,141 +134,57 @@ jacocoTestReport {
 }
 
 def packageName = "indigo-core"
+def packageDescription = "A dynamic actor framework for the JVM"
 
 dependencies {
-  compile project(":indigo-commons")
-  compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
-  compile "com.obsidiandynamics.fulcrum:fulcrum-func:${fulcrumVersion}"
-  compile "com.obsidiandynamics.fulcrum:fulcrum-version:${fulcrumVersion}"
+  api project(":indigo-commons")
+  api "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
+  api "com.obsidiandynamics.fulcrum:fulcrum-func:${fulcrumVersion}"
+  api "com.obsidiandynamics.fulcrum:fulcrum-version:${fulcrumVersion}"
   
-  testCompile project(":indigo-assurance")
-  testCompile "com.obsidiandynamics.fulcrum:fulcrum-await:${fulcrumVersion}"
-  testCompile "com.obsidiandynamics.fulcrum:fulcrum-junit:${fulcrumVersion}"
-  testCompile "com.obsidiandynamics.fulcrum:fulcrum-threads:${fulcrumVersion}"
-  testCompile "com.obsidiandynamics.fulcrum:fulcrum-verifier:${fulcrumVersion}"
-  testCompile "org.awaitility:awaitility:${awaitilityVersion}"
-  testCompile "nl.jqno.equalsverifier:equalsverifier:${equalsverifierVersion}"
-  testCompile "com.obsidiandynamics.pojotester:pojotester:${pojotesterVersion}"
-}
-
-test {
-  include "com/obsidiandynamics/indigo/CycledPrimaryTests.class"
-  include "com/obsidiandynamics/indigo/SupportingTests.class"
-}
-
-task testJar(type: Jar) {
-  dependsOn configurations.compile
-  dependsOn configurations.runtime
-  dependsOn configurations.testCompile
-  dependsOn jar
-  manifest { 
-    attributes "Main-Class": "com.obsidiandynamics.indigo.PrimaryTestsSoak"
-  }
-  from sourceSets.main.output
-  from sourceSets.test.output
-  from { // bundle all dependencies
-    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
-    configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) }
-  }   
-  baseName packageName + "-test"
-}
-
-def perfJvmArgs = "-server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms1024M -Xmx2048M -Xss1M -XX:+UseParallelGC"
-
-task testBench(type: JavaExec) {
-  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(" ")
-  main = "com.obsidiandynamics.indigo.BenchmarkSuite"
-}
-
-task testSoak(type: JavaExec) {
-  classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-  jvmArgs = Arrays.asList perfJvmArgs.split(" ") + "-ea"
-  standardInput = System.in
-  main = "com.obsidiandynamics.indigo.PrimaryTestsSoak"
-}
-
-def envUser = "BINTRAY_USER"
-def envKey = "BINTRAY_KEY"
-task bintrayCredentialsCheck {
-  doLast {
-    if (System.getenv(envUser) == null) {
-      throw new GradleException("No Bintray username specified; set with 'export ${envUser}=<username>'")
-    }
-    if (System.getenv(envKey) == null) {
-      throw new GradleException("No Bintray key specified; set with 'export ${envKey}=<key>'")
-    }
-  }
-}
-
-def packageDesc = "A dynamic actor framework for the JVM"
-bintray {
-  user = System.getenv(envUser)
-  key = System.getenv(envKey)
-  publications = ["mavenJava"]
-  pkg {
-    repo = "indigo"
-    name = packageName
-    userOrg = "obsidiandynamics"
-    desc = packageDesc
-    websiteUrl = "https://github.com/obsidiandynamics/indigo"
-    licenses = ["BSD New"]
-    vcsUrl = "https://github.com/obsidiandynamics/indigo.git"
-    publicDownloadNumbers = true
-    githubRepo = "obsidiandynamics/indigo"
-    override = true
-    publish = true
-    version {
-      name = packageVersion
-      desc = packageDesc
-      released  = new Date()
-      vcsTag = packageVersion
-    }
-  }
-}
-
-processResources {
-  dependsOn setBuild
-}
-
-jar {
-  baseName packageName
-  finalizedBy jacocoTestReport
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-  baseName packageName
-  classifier = "javadoc"
-  from "$buildDir/docs/javadoc"
-}
- 
-task sourcesJar(type: Jar) {
-  baseName packageName
-  from sourceSets.main.allSource
-  classifier = "sources"
-}
- 
-artifacts {
-  archives jar
-  archives javadocJar
-  archives sourcesJar
+  testImplementation project(":indigo-assurance")
+  testImplementation "com.obsidiandynamics.fulcrum:fulcrum-await:${fulcrumVersion}"
+  testImplementation "com.obsidiandynamics.fulcrum:fulcrum-junit:${fulcrumVersion}"
+  testImplementation "com.obsidiandynamics.fulcrum:fulcrum-threads:${fulcrumVersion}"
+  testImplementation "com.obsidiandynamics.fulcrum:fulcrum-verifier:${fulcrumVersion}"
+  testImplementation "org.awaitility:awaitility:${awaitilityVersion}"
+  testImplementation "nl.jqno.equalsverifier:equalsverifier:${equalsverifierVersion}"
+  testImplementation "com.obsidiandynamics.pojotester:core:${pojotesterVersion}"
 }
 
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      groupId group
-      artifactId packageName
-      version packageVersion
+      artifactId = packageName
       from components.java
-      artifact sourcesJar
-      artifact javadocJar
+      pom {
+        name = packageName
+        description = packageDescription
+        url = 'https://github.com/obsidiandynamics/indigo'
+        licenses {
+          license {
+            name = 'BSD 3-Clause License'
+            url = 'https://opensource.org/licenses/BSD-3-Clause'
+          }
+        }
+        developers {
+          developer {
+            id = 'ekoutanov'
+            name = 'Emil Koutanov'
+            email = 'ekoutanov@gmail.com'
+          }
+        }
+        scm {
+          connection = 'scm:git:git://github.com/obsidiandynamics/indigo.git'
+          developerConnection = 'scm:git:ssh://github.com/obsidiandynamics/indigo.git'
+          url = 'https://github.com/obsidiandynamics/indigo'
+        }
+      }
     }
   }
-  repositories {
-    maven {
-      url "${project(':').projectDir}/../repo"
-    }
-  }
+}
+
+test {
+  include "com/obsidiandynamics/indigo/CycledPrimaryTests.class"
+  include "com/obsidiandynamics/indigo/SupportingTests.class"
 }

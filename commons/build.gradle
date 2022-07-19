@@ -1,107 +1,40 @@
-apply plugin: "maven-publish"
-apply plugin: "com.jfrog.bintray"
-apply plugin: "java"
-apply plugin: "jacoco"
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-group = project(":").group
-version = project(":").version
-
 def packageName = "indigo-commons"
+def packageDescription = "Common utilities for Indigo"
 
 dependencies {
-  compile "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
-  testCompile "junit:junit:${junitVersion}"
-}
+  api "com.obsidiandynamics.fulcrum:fulcrum-assert:${fulcrumVersion}"
 
-// invoke this task when ready to publish to Bintray
-bintrayUpload {
-  dependsOn ":bintrayCredentialsCheck"
-  dependsOn "jar"
-  dependsOn "sourcesJar"
-  dependsOn "javadocJar"
-  dependsOn "generatePomFileForMavenJavaPublication"
-}
-  
-jacoco {
-  toolVersion = "0.8.4"
-}
-
-jacocoTestReport {
-  dependsOn test
-  reports {
-    xml.enabled false
-    html.enabled true
-  }
-}
-
-def envUser = "BINTRAY_USER"
-def envKey = "BINTRAY_KEY"
-def packageDesc = "Common utilities for Indigo"
-bintray {
-  user = System.getenv(envUser)
-  key = System.getenv(envKey)
-  publications = ["mavenJava"]
-  pkg {
-    repo = "indigo"
-    name = packageName
-    userOrg = "obsidiandynamics"
-    desc = packageDesc
-    websiteUrl = "https://github.com/obsidiandynamics/indigo"
-    licenses = ["BSD New"]
-    vcsUrl = "https://github.com/obsidiandynamics/indigo.git"
-    publicDownloadNumbers = true
-    githubRepo = "obsidiandynamics/indigo"
-    override = true
-    publish = true
-    version {
-      name = project(":").version
-      desc = packageDesc
-      released  = new Date()
-      vcsTag = project(":").version
-    }
-  }
-}
-
-jar {
-  baseName packageName
-  finalizedBy jacocoTestReport
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-  baseName packageName
-  classifier = "javadoc"
-  from "$buildDir/docs/javadoc"
-}
- 
-task sourcesJar(type: Jar) {
-  baseName packageName
-  from sourceSets.main.allSource
-  classifier = "sources"
-}
- 
-artifacts {
-  archives jar
-  archives javadocJar
-  archives sourcesJar
+  testImplementation "junit:junit:${junitVersion}"
 }
 
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      groupId project(":").group
-      artifactId packageName
-      version project(":").version
+      artifactId = packageName
       from components.java
-      artifact sourcesJar
-      artifact javadocJar
-    }
-  }
-  repositories {
-    maven {
-      url "${project(':').projectDir}/../repo"
+      pom {
+        name = packageName
+        description = packageDescription
+        url = 'https://github.com/obsidiandynamics/indigo'
+        licenses {
+          license {
+            name = 'BSD 3-Clause License'
+            url = 'https://opensource.org/licenses/BSD-3-Clause'
+          }
+        }
+        developers {
+          developer {
+            id = 'ekoutanov'
+            name = 'Emil Koutanov'
+            email = 'ekoutanov@gmail.com'
+          }
+        }
+        scm {
+          connection = 'scm:git:git://github.com/obsidiandynamics/indigo.git'
+          developerConnection = 'scm:git:ssh://github.com/obsidiandynamics/indigo.git'
+          url = 'https://github.com/obsidiandynamics/indigo'
+        }
+      }
     }
   }
 }

@@ -20,7 +20,8 @@ public final class CappedForkJoinPool extends ForkJoinPool {
     private final int parallelism;
     private final int scale;
     private final int maxThreads;
-    
+    private int rejected;
+
     CappedThreadFactory(int parallelism, int scale, int maxThreads) {
       this.parallelism = parallelism;
       this.scale = scale;
@@ -33,11 +34,20 @@ public final class CappedForkJoinPool extends ForkJoinPool {
       if (pool.getPoolSize() <= min(parallelism * scale, maxThreads)) {
         return defaultForkJoinWorkerThreadFactory.newThread(pool) ;
       } else {
+        rejected++;
         return null;
       }
     }
   }
-  
+
+  @Override
+  public int getPoolSize() {
+    final CappedThreadFactory factory = (CappedThreadFactory) getFactory();
+    // There's an undocumented bug in ForkJoinPool that reports a greater pool size if the factory did not
+    // create a thread (i.e., returned null). Here, we compensate by considering the number of rejections.
+    return super.getPoolSize() - factory.rejected;
+  }
+
   /**
    *  Tests if the FJP is safe for use with the given JVM version. Specifically, it tests
    *  for the presence of the bug JDK-8078490, which can stall submissions to the FJP.

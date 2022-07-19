@@ -60,7 +60,7 @@ public final class CappedForkJoinPoolTest implements TestSupport {
 
       // note: the reported pool size may be one higher than the true number of active threads, as the former
       // is incremented just prior to attempting to add a new thread
-      assertTrue("poolSize=" + pool.getPoolSize(), pool.getPoolSize() <= cap + 1);
+      assertTrue("poolSize=" + pool.getPoolSize() + ", expected within " + (cap + 1), pool.getPoolSize() <= cap + 1);
       complete.set(true);
     } finally {
       pool.shutdownNow();

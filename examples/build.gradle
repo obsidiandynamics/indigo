@@ -1,8 +1,3 @@
-apply plugin: "java"
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 buildscript {
   repositories {
     mavenCentral()
@@ -19,27 +14,12 @@ dependencyManagement {
   }
 }
 
-task testJar(type: Jar) {
-  dependsOn jar
-  dependsOn configurations.compile
-  dependsOn configurations.runtime
-  dependsOn configurations.testCompile
-  from sourceSets.main.output
-  from sourceSets.test.output
-  from { // bundle all dependencies
-    configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
-    configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) }
-  }   
-  baseName "indigo-examples-test"
-}
-
 dependencies {
-  compile project(":")
-  compile project(":indigo-commons")
-  compile "com.amazonaws:aws-java-sdk-dynamodb"
-  compile "com.google.code.gson:gson:${gsonVersion}"
-  compile "org.danilopianini:gson-extras:${gsonExtrasVersion}"
+  api project(":")
+  api project(":indigo-commons")
+  api "com.amazonaws:aws-java-sdk-dynamodb"
+  api "com.google.code.gson:gson:${gsonVersion}"
+  api "org.danilopianini:gson-extras:${gsonExtrasVersion}"
 
-  testCompile project(":indigo-assurance")
+  testImplementation project(":indigo-assurance")
 }
