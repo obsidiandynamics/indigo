@@ -1,11 +1,11 @@
 <img src="https://raw.githubusercontent.com/wiki/obsidiandynamics/indigo/images/indigo-logo.png" width="90px" alt="logo"/> Indigo
 ===
-[![Download](https://api.bintray.com/packages/obsidiandynamics/indigo/indigo-core/images/download.svg) ](https://bintray.com/obsidiandynamics/indigo/indigo-core/_latestVersion)
-[![Build](https://travis-ci.org/obsidiandynamics/indigo.svg?branch=master) ](https://travis-ci.org/obsidiandynamics/indigo#)
-[![codecov](https://codecov.io/gh/obsidiandynamics/indigo/branch/master/graph/badge.svg)](https://codecov.io/gh/obsidiandynamics/indigo)
-[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/obsidiandynamics/indigo.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/obsidiandynamics/indigo/context:java)
+Indigo is a next generation dynamic [actor model](https://en.wikipedia.org/wiki/Actor_model) 
 
-Indigo is a next generation dynamic [actor model](https://en.wikipedia.org/wiki/Actor_model) framework that makes writing asynchronous and concurrent applications easy.
+[![Maven release](https://img.shields.io/maven-metadata/v.svg?color=blue&label=maven-central&metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fcom%2Fobsidiandynamics%2Findigo%2Findigo-core%2Fmaven-metadata.xml)](https://mvnrepository.com/artifact/com.obsidiandynamics.indigo)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/obsidiandynamics/indigo.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/obsidiandynamics/indigo/alerts/)
+[![Gradle build](https://github.com/obsidiandynamics/indigo/actions/workflows/master.yml/badge.svg)](https://github.com/obsidiandynamics/indigo/actions/workflows/master.yml)
+[![codecov](https://codecov.io/gh/obsidiandynamics/indigo/branch/master/graph/badge.svg)](https://codecov.io/gh/obsidiandynamics/indigo)
 
 ## The actor model, in one paragraph
 Rather than allowing multiple threads to contend for shared resources using locks, an actor is a unit of concurrency that provides serial execution closed over the actor's private state, using message passing for inter-actor communication. There can be millions of actors lying dormant in a system, consuming minimal resources (memory, but not CPU), and are activated by external stimuli. Compared to traditional lock-based concurrency, the actor model eliminates deadlocks and allows for the partitioning of application state so that it can safely be operated on in parallel.
@@ -23,7 +23,7 @@ Indigo is optimised for Java 8 and functional programming, while leaving the imp
 
 # Getting Started
 ## Get the binaries
-Indigo builds are hosted on JCenter (MavenCentral is coming soon). Just add the following snippet to your build file. Replace the version placeholder `x.y.z` in the snippet with the version shown on the Download badge at the top of this README.
+Just add the following snippet to your build file. Replace the version placeholder `x.y.z` in the snippet with the version shown on the Download badge at the top of this README.
 
 For Maven:
 
@@ -39,7 +39,7 @@ For Maven:
 For Gradle:
 
 ```groovy
-compile 'com.obsidiandynamics.indigo:indigo-core:x.y.z'
+api 'com.obsidiandynamics.indigo:indigo-core:x.y.z'
 ```
 
 ## Hello world
