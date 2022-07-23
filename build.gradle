@@ -127,9 +127,9 @@ jacoco {
 jacocoTestReport {
   dependsOn test
   reports {
-    html.enabled true
-    xml.enabled true
-    csv.enabled false
+    html.required = true
+    xml.required = true
+    csv.required = false
   }
 }
 
@@ -150,6 +150,15 @@ dependencies {
   testImplementation "org.awaitility:awaitility:${awaitilityVersion}"
   testImplementation "nl.jqno.equalsverifier:equalsverifier:${equalsverifierVersion}"
   testImplementation "com.obsidiandynamics.pojotester:core:${pojotesterVersion}"
+}
+
+jar {
+  finalizedBy jacocoTestReport
+}
+
+test {
+  include "com/obsidiandynamics/indigo/CycledPrimaryTests.class"
+  include "com/obsidiandynamics/indigo/SupportingTests.class"
 }
 
 publishing {
@@ -182,9 +191,4 @@ publishing {
       }
     }
   }
-}
-
-test {
-  include "com/obsidiandynamics/indigo/CycledPrimaryTests.class"
-  include "com/obsidiandynamics/indigo/SupportingTests.class"
 }
