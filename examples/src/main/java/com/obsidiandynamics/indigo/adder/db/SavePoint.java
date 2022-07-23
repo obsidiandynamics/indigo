@@ -14,16 +14,16 @@ public final class SavePoint {
   private int sum;
 
   @DynamoDBHashKey(attributeName="actorRef.role")  
-  public final String getActorRole() {
+  public String getActorRole() {
     return actorRole;
   }
   
-  public final void setActorRole(String actorRole) {
+  public void setActorRole(String actorRole) {
     this.actorRole = actorRole;
   }
 
   @DynamoDBRangeKey(attributeName="actorRef.key")  
-  public final String getActorKey() {
+  public String getActorKey() {
     return actorKey;
   }
   
@@ -32,16 +32,16 @@ public final class SavePoint {
     return ActorRef.of(actorRole, actorKey.equals(NULL_KEY) ? null : actorKey);
   }
 
-  public final void setActorKey(String actorKey) {
+  public void setActorKey(String actorKey) {
     this.actorKey = actorKey;
   }
 
   @DynamoDBAttribute(attributeName="sum")
-  public final int getSum() {
+  public int getSum() {
     return sum;
   }
 
-  public final void setSum(int sum) {
+  public void setSum(int sum) {
     this.sum = sum;
   }
 

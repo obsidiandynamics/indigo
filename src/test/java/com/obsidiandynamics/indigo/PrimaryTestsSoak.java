@@ -78,7 +78,7 @@ public final class PrimaryTestsSoak {
     Awaitility.doNotCatchUncaughtExceptionsByDefault();
     final int n = 10;
     final int threads = Runtime.getRuntime().availableProcessors() * 2;
-    final long end = System.currentTimeMillis() + minutesMinimum * 60_000;
+    final long end = System.currentTimeMillis() + minutesMinimum * 60_000L;
     int cycle = 1;
     while (System.currentTimeMillis() < end) {
       System.out.format("_\nCycle %d\n", cycle++);

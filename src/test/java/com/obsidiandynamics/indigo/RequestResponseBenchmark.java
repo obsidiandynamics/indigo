@@ -166,7 +166,7 @@ public final class RequestResponseBenchmark implements TestSupport, BenchmarkSup
       
       if (s.rx == c.pairs) {
         if (log.verbose) log.out.format("Done %s\n", a.self());
-        s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
+        s.timeTaken = (System.nanoTime() - s.started) / 1_000_000L;
         s.totalProcessed = (c.pairs - c.warmupPairs + c.pairs - s.txOnStart) / 2;
         a.to(ActorRef.of(TIMER)).tell(s);
       } else if (s.tx != c.pairs) {

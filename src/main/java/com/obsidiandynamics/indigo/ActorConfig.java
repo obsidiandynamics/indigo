@@ -42,7 +42,7 @@ public class ActorConfig {
     NODE_QUEUE(NodeQueueActivation::new);
     
     private final ActivationFactory factory;
-    private ActivationChoice(ActivationFactory factory) { this.factory = factory; }
+    ActivationChoice(ActivationFactory factory) { this.factory = factory; }
     @Override public Activation create(long id, ActorRef ref, ActorSystem system, 
                                        ActorConfig actorConfig, Actor actor, Executor executor) {
       return factory.create(id, ref, system, actorConfig, actor, executor);

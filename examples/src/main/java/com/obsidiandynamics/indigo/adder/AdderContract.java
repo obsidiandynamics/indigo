@@ -11,7 +11,7 @@ public final class AdderContract {
   
   /** Sent to the actor when adding a value. */
   public static final class Add {
-    private int value;
+    private final int value;
 
     public Add(int value) {
       this.value = value;
@@ -27,7 +27,7 @@ public final class AdderContract {
   
   /** Response sent by the actor containing the current sum. */
   public static final class GetResponse {
-    private int sum;
+    private final int sum;
 
     GetResponse(int sum) {
       this.sum = sum;

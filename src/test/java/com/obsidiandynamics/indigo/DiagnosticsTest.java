@@ -31,7 +31,7 @@ public final class DiagnosticsTest implements TestSupport {
     try (ByteArrayOutputStream out = new ByteArrayOutputStream(); PrintStream print = new PrintStream(out)) {
       system.getConfig().diagnostics.print(print);
       print.flush();
-      final String output = new String(out.toByteArray());
+      final String output = out.toString();
       log("output is %s\n", output);
       assertTrue("output.length=" + output.length(), output.length() >= 1);
     }

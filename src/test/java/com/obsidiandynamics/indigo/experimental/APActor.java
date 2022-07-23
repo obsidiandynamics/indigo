@@ -17,42 +17,30 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 /**
- *  Taken from https://github.com/plokhotnyuk/actors (initial work by Viktor Klang, performance
+ *  Taken from <a href="https://github.com/plokhotnyuk/actors">github.com/plokhotnyuk/actors</a> (initial work by Viktor Klang, performance
  *  enhancements by Andriy Plokhotnyuk) for comparative benchmarking.<p>
- *  
+ *
  *  This was back-ported to Java; the original work being in Scala.
  */
 public class APActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
-  public static interface Func<I, O> {
+  public interface Func<I, O> {
     O apply(I in);
   }
   
-  public static interface Effect extends Func<Behavior, Behavior> { }; // An Effect returns a Behavior given a Behavior
-  public static interface Behavior extends Func<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
+  public interface Effect extends Func<Behavior, Behavior> { } // An Effect returns a Behavior given a Behavior
+  public interface Behavior extends Func<Object, Effect> { } // A Behavior is a message (Object) which returns the behavior for the next message
 
-  public static interface Address { 
+  public interface Address {
     Address tell(Object msg);
-  }; // An Address is somewhere you can send messages
+  } // An Address is somewhere you can send messages
 
-  public final static Effect become(final Behavior behavior) { 
-    return new Effect() { 
-      @Override public Behavior apply(Behavior old) { 
-        return behavior; 
-      } 
-    }; 
+  public static Effect become(final Behavior behavior) {
+    return old -> behavior;
   } // Become is an Effect that returns a captured Behavior no matter what the old Behavior is
 
-  public final static Effect stay = new Effect() { 
-    @Override public Behavior apply(Behavior old) { 
-      return old; 
-    } 
-  }; // Stay is an Effect that returns the old Behavior when applied.
+  public final static Effect stay = old -> old; // Stay is an Effect that returns the old Behavior when applied.
 
-  public final static Effect die = become(new Behavior() { 
-    @Override public Effect apply(Object msg) { 
-      return stay; 
-    } 
-  }); // Die is an Effect which replaces the old Behavior with a new one which does nothing, forever.
+  public final static Effect die = become(msg -> stay); // Die is an Effect which replaces the old Behavior with a new one which does nothing, forever.
   
   private static class Node extends AtomicReference<Node> {
     private static final long serialVersionUID = 1L;
@@ -82,7 +70,7 @@ public class APActor { // Visibility is achieved by volatile-piggybacking of rea
       
       private final Behavior behavior = initial.apply(null);
 
-      @Override public final Address tell(Object m) {
+      @Override public Address tell(Object m) {
         final Node t = new Node(m);
         final Node t1 = getAndSet(t);
         

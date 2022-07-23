@@ -13,7 +13,7 @@ public interface Spec {
   
   Summary run() throws Exception;
   
-  public final class SpecMultiplier {
+  final class SpecMultiplier {
     private final Spec spec;
     private final int times;
     private CheckedRunnable<Throwable> onFinally = () -> {};
@@ -77,7 +77,7 @@ public interface Spec {
       if (log.intermediateSummaries) log.out.println(summary);
     }
     
-    Collections.sort(summaries, comparator);
+    summaries.sort(comparator);
     
     final Summary selected = summaries.get((int) Math.round(percentile * (keep - 1) / 100));
     if (log.summary) {

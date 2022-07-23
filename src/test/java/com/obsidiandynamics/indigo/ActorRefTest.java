@@ -1,6 +1,7 @@
 package com.obsidiandynamics.indigo;
 
 import static junit.framework.TestCase.*;
+import static org.junit.Assert.*;
 
 import org.junit.*;
 
@@ -9,7 +10,7 @@ public class ActorRefTest {
   public void testRoleOnly() {
     final ActorRef ref = ActorRef.of("foo");
     assertEquals("foo", ref.role());
-    assertNull(ref.key());
+    Assert.assertNull(ref.key());
   }
   
   @Test
@@ -22,37 +23,37 @@ public class ActorRefTest {
   @Test
   public void testEqualsSame() {
     final ActorRef ref = ActorRef.of("foo");
-    assertTrue(ref.equals(ref));
+    Assert.assertEquals(ref, ref);
   }
   
   @Test
   public void testEqualsNull() {
-    assertFalse(ActorRef.of("foo").equals(null));
+    assertNotEquals(null, ActorRef.of("foo"));
   }
   
   @Test
   public void testEqualsWrongType() {
-    assertFalse(((Object) ActorRef.of("foo")).equals(3));
+    assertNotEquals(3, ((Object) ActorRef.of("foo")));
   }
   
   @Test
   public void testEqualsWrongRole() {
-    assertFalse(ActorRef.of("foo").equals(ActorRef.of("oof")));
+    assertNotEquals(ActorRef.of("foo"), ActorRef.of("oof"));
   }
   
   @Test
   public void testEqualThisNullKey() {
-    assertFalse(ActorRef.of("foo").equals(ActorRef.of("foo", "bar")));
+    assertNotEquals(ActorRef.of("foo"), ActorRef.of("foo", "bar"));
   }
   
   @Test
   public void testEqualsOtherNullKey() {
-    assertFalse(ActorRef.of("foo", "bar").equals(ActorRef.of("foo")));
+    assertNotEquals(ActorRef.of("foo", "bar"), ActorRef.of("foo"));
   }
   
   @Test
   public void testEqualsWrongKey() {
-    assertFalse(ActorRef.of("foo", "bar").equals(ActorRef.of("foo", "baz")));
+    assertNotEquals(ActorRef.of("foo", "bar"), ActorRef.of("foo", "baz"));
   }
   
   @Test

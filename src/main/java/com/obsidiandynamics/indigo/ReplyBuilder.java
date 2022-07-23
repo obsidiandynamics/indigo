@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo;
 
 
 public final class ReplyBuilder {
-  private Activation activation;
+  private final Activation activation;
   
   private final Message message;
   

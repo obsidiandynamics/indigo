@@ -13,8 +13,8 @@ import com.obsidiandynamics.indigo.util.*;
 
 /**
  *  Benchmarks raw message throughput. Nearly identical to 
- *  http://letitcrash.com/post/20397701710/50-million-messages-per-second-on-a-single.
- *  
+ *  <a href="http://letitcrash.com/post/20397701710/50-million-messages-per-second-on-a-single">this</a>.
+ *
  *  Run with -server -XX:+TieredCompilation -XX:+UseNUMA -XX:+UseCondCardMark -XX:-UseBiasedLocking -Xms2G -Xmx2G -Xss1M -XX:+UseParallelGC
  */
 public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
@@ -149,7 +149,7 @@ public final class EchoBenchmark implements TestSupport, BenchmarkSupport {
           
           if (s.rx == c.messages / 2 && s.tx == c.messages / 2) {
             if (log.verbose) log.out.format("Done %s\n", a.self());
-            s.timeTaken = (System.nanoTime() - s.started) / 1_000_000l;
+            s.timeTaken = (System.nanoTime() - s.started) / 1_000_000L;
             s.totalProcessed = c.messages / 2 - c.warmupMessages + c.messages / 2 - s.txOnStart;
             a.to(ActorRef.of(TIMER)).tell(s);
           } else if (s.tx != c.messages / 2) {

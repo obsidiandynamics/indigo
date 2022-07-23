@@ -21,7 +21,7 @@ public final class ExceptionHandlerTest implements TestSupport {
     .createActorSystem();
   }
   
-  private final class HandlerTestException extends RuntimeException {
+  private static final class HandlerTestException extends RuntimeException {
     private static final long serialVersionUID = 1L;
   }
   
@@ -68,7 +68,7 @@ public final class ExceptionHandlerTest implements TestSupport {
       }
       
       customErr.flush();
-      output = new String(out.toByteArray());
+      output = out.toString();
     } finally {
       system.shutdownSilently();
     }

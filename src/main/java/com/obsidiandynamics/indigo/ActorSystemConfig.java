@@ -47,7 +47,7 @@ public class ActorSystemConfig {
     FIXED_THREAD_POOL(params -> Threads.prestartedFixedThreadPool(params.parallelism));
     
     private final Function<ExecutorParams, ExecutorService> func;
-    private ExecutorChoice(Function<ExecutorParams, ExecutorService> func) { this.func = func; }
+    ExecutorChoice(Function<ExecutorParams, ExecutorService> func) { this.func = func; }
     @Override public ExecutorService apply(ExecutorParams params) { return func.apply(params); }
   }
   
@@ -68,7 +68,7 @@ public class ActorSystemConfig {
     CONSOLE_DRAIN(CONSOLE.andThen(DRAIN));
     
     private final BiConsumer<ActorSystem, Throwable> handler;
-    private ExceptionHandlerChoice(BiConsumer<ActorSystem, Throwable> handler) { this.handler = handler; }
+    ExceptionHandlerChoice(BiConsumer<ActorSystem, Throwable> handler) { this.handler = handler; }
     @Override public void accept(ActorSystem sys, Throwable t) { handler.accept(sys, t); }
   }
   

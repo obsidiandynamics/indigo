@@ -170,9 +170,8 @@ public final class StatefulLifeCycleTest implements TestSupport {
     assertFalse(activated.get());
     assertFalse(passivating.get());
     assertTrue(passivated.get());
-    
-    assertTrue("activationCount=" + activationCount + ", passivationCount=" + passivationCount,
-               activationCount.get() == passivationCount.get());
+
+    assertEquals("activationCount=" + activationCount + ", passivationCount=" + passivationCount, activationCount.get(), passivationCount.get());
     assertTrue("activationCount=" + activationCount, activationCount.get() >= 1);
     assertTrue("activationCount=" + activationCount + ", n=" + n, activationCount.get() <= n);
     assertEquals(n, actCount.get());

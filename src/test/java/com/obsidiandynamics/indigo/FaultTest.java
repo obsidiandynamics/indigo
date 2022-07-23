@@ -246,18 +246,13 @@ public final class FaultTest implements IndigoTestSupport {
                failedActivations >= 1);
     assertTrue("activationAttempts=" + activationAttempts + ", failedActivations=" + failedActivations, 
                activationAttempts.get() >= failedActivations);
-    assertTrue("received=" + received + ", failedActivations=" + failedActivations + ", n=" + n, 
-               received.get() + failedActivations == n);
-    assertTrue("passivated=" + passivated + ", activationAttempts=" + activationAttempts + ", failedActivations=" + failedActivations,
-               passivated.get() == activationAttempts.get() - failedActivations);
-    assertTrue("failedAsyncActivations=" + failedAsyncActivations + ", failedSyncActivations=" + failedSyncActivations + ", dlq.size=" + system.getDeadLetterQueue().size(), 
-               failedAsyncActivations.get() * 2 + failedSyncActivations.get() == system.getDeadLetterQueue().size());
+    assertEquals("received=" + received + ", failedActivations=" + failedActivations + ", n=" + n, received.get() + failedActivations, n);
+    assertEquals("passivated=" + passivated + ", activationAttempts=" + activationAttempts + ", failedActivations=" + failedActivations, passivated.get(), activationAttempts.get() - failedActivations);
+    assertEquals("failedAsyncActivations=" + failedAsyncActivations + ", failedSyncActivations=" + failedSyncActivations + ", dlq.size=" + system.getDeadLetterQueue().size(), failedAsyncActivations.get() * 2 + failedSyncActivations.get(), system.getDeadLetterQueue().size());
     final int activationFaults = countFaults(ON_ACTIVATION, system.getDeadLetterQueue());
-    assertTrue("failedAsyncActivations=" + failedAsyncActivations + ", failedSyncActivations" + failedSyncActivations + ", activationFaults=" + activationFaults,
-               failedAsyncActivations.get() + failedSyncActivations.get() == activationFaults);
+    assertEquals("failedAsyncActivations=" + failedAsyncActivations + ", failedSyncActivations" + failedSyncActivations + ", activationFaults=" + activationFaults, failedAsyncActivations.get() + failedSyncActivations.get(), activationFaults);
     final int responseFaults = countFaults(ON_RESPONSE, system.getDeadLetterQueue());
-    assertTrue("failedAsyncActivations=" + failedAsyncActivations + ", responseFaults=" + responseFaults,
-               failedAsyncActivations.get() == responseFaults);
+    assertEquals("failedAsyncActivations=" + failedAsyncActivations + ", responseFaults=" + responseFaults, failedAsyncActivations.get(), responseFaults);
   }
   
   @Test
@@ -324,12 +319,10 @@ public final class FaultTest implements IndigoTestSupport {
     log("activationAttempts: %s, faults: %s\n", activationAttempts, faults);
     assertTrue("activationAttempts=" + activationAttempts, activationAttempts.get() >= 1);
     assertEquals(n, faults.get());
-    assertTrue("faults=" + faults + ", dlq.size=" + system.getDeadLetterQueue().size(),
-               faults.get() == system.getDeadLetterQueue().size());
+    assertEquals("faults=" + faults + ", dlq.size=" + system.getDeadLetterQueue().size(), faults.get(), system.getDeadLetterQueue().size());
     final int activationFaults = countFaults(ON_ACTIVATION, system.getDeadLetterQueue());
     final int actFaults = countFaults(ON_ACT, system.getDeadLetterQueue());
-    assertTrue("activationFaults=" + activationFaults + ", actFaults=" + actFaults + ", faults=" + faults,
-               activationFaults + actFaults == faults.get());
+    assertEquals("activationFaults=" + activationFaults + ", actFaults=" + actFaults + ", faults=" + faults, activationFaults + actFaults, faults.get());
   }
   
   @Test
@@ -425,17 +418,14 @@ public final class FaultTest implements IndigoTestSupport {
     assertTrue("passivationAttempts=" + passivationAttempts + ", failedPassivations=" + failedPassivations,
                passivationAttempts.get() >= failedPassivations.get());
     assertEquals(n, received.get());
-    assertTrue("passivated=" + passivated + ", passivationAttempts=" + passivationAttempts + ", failedPassivations=" + failedPassivations,
-               passivated.get() == passivationAttempts.get() - failedPassivations.get());
+    assertEquals("passivated=" + passivated + ", passivationAttempts=" + passivationAttempts + ", failedPassivations=" + failedPassivations, passivated.get(), passivationAttempts.get() - failedPassivations.get());
     final int dlqSize = system.getDeadLetterQueue().size();
     if (async) {
-      assertTrue("failedPassivations=" + failedPassivations + ", dlqSize=" + dlqSize,
-                 failedPassivations.get() * 2 == dlqSize);
+      assertEquals("failedPassivations=" + failedPassivations + ", dlqSize=" + dlqSize, failedPassivations.get() * 2, dlqSize);
       assertEquals(failedPassivations.get(), countFaults(ON_PASSIVATION, system.getDeadLetterQueue()));
       assertEquals(failedPassivations.get(), countFaults(ON_RESPONSE, system.getDeadLetterQueue()));
     } else {
-      assertTrue("failedPassivations=" + failedPassivations + ", dlqSize=" + dlqSize,
-                 failedPassivations.get() == dlqSize);
+      assertEquals("failedPassivations=" + failedPassivations + ", dlqSize=" + dlqSize, failedPassivations.get(), dlqSize);
       assertEquals(failedPassivations.get(), countFaults(ON_PASSIVATION, system.getDeadLetterQueue()));
     }
   }

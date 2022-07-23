@@ -254,7 +254,6 @@ public final class ActorSystem implements Endpoint {
           // by forcing timeout, the pending task is removed from the ingress actor; calling this
           // a second (and subsequent) times has no further effect
           timeoutScheduler.executeNow(task);
-          return;
         } else {
           timeoutTaskHolder.set(CANCELLED);
         }
@@ -360,7 +359,7 @@ public final class ActorSystem implements Endpoint {
           break;
         }
       }
-      throw new UnhandledMultiException(errorsReturn.toArray(new Throwable[errorsReturn.size()]));
+      throw new UnhandledMultiException(errorsReturn.toArray(new Throwable[0]));
     }
   }
   

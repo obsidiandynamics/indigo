@@ -15,7 +15,7 @@ public interface LinearRunnable extends Runnable, LinearTask {
    *  @param key The key used for ordering.
    *  @return A {@link LinearRunnable} instance.
    */
-  public static LinearRunnable decorate(Runnable runnable, String key) {
+  static LinearRunnable decorate(Runnable runnable, String key) {
     mustExist(runnable, "Runnable cannot be null");
     mustExist(key, "Key cannot be null");
     return new LinearRunnable() {

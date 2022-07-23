@@ -35,7 +35,6 @@ def setVersion(extension, version) {
 }
 
 def packageVersion = getVersion ".version"
-def packageBuild = getVersion ".build"
 
 task getBuild() {
   doLast {

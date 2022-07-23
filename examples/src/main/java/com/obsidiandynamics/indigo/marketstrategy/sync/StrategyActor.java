@@ -35,7 +35,7 @@ public final class StrategyActor implements Actor {
   public void act(Activation a, Message m) {
     m.select()
     .when(Bar.class).then(bar -> {
-      Optional.ofNullable(strategy.onBar(bar)).ifPresent(orderHandler::accept);
+      Optional.ofNullable(strategy.onBar(bar)).ifPresent(orderHandler);
     })
     .otherwise(a::messageFault);
   }

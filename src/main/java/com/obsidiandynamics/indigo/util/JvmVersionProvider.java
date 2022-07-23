@@ -2,7 +2,7 @@ package com.obsidiandynamics.indigo.util;
 
 @FunctionalInterface
 public interface JvmVersionProvider {
-  public static final class JvmVersion implements Comparable<JvmVersion> {
+  final class JvmVersion implements Comparable<JvmVersion> {
     public final int major;
     public final int minor;
     public final int update;
@@ -64,7 +64,7 @@ public interface JvmVersionProvider {
     }
   }
 
-  public static final class DefaultProvider implements JvmVersionProvider {
+  final class DefaultProvider implements JvmVersionProvider {
     private final String versionStr;
     
     public DefaultProvider() {

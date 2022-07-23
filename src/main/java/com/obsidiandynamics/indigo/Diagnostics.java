@@ -57,7 +57,7 @@ public class Diagnostics {
   }
   
   public LogEntry[] getLog() {
-    return log.toArray(new LogEntry[log.size()]);
+    return log.toArray(new LogEntry[0]);
   }
   
   public void print(PrintStream out) {

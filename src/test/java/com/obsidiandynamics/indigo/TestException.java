@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo;
 import java.util.function.*;
 
 final class TestException extends RuntimeException {
-  static BiConsumer<ActorSystem, Throwable> BYPASS_DRAIN_HANDLER = (sys, t) -> {
+  static final BiConsumer<ActorSystem, Throwable> BYPASS_DRAIN_HANDLER = (sys, t) -> {
     if (! (t instanceof TestException)) {
       sys.addError(t);
       t.printStackTrace();

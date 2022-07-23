@@ -18,7 +18,7 @@ public interface LinearCallable<V> extends Callable<V>, LinearTask {
    *  @param key The key used for ordering.
    *  @return A {@link LinearCallable} instance.
    */
-  public static <V> LinearCallable<V> decorate(Callable<V> callable, String key) {
+  static <V> LinearCallable<V> decorate(Callable<V> callable, String key) {
     mustExist(callable, "Callable cannot be null");
     mustExist(key, "Key cannot be null");
     return new LinearCallable<V>() {

@@ -3,7 +3,7 @@ package com.obsidiandynamics.indigo.util;
 import java.util.concurrent.atomic.*;
 
 public interface Integral64 {
-  static final class Sum {
+  final class Sum {
     private long value;
     private boolean certain;
     
@@ -60,7 +60,7 @@ public interface Integral64 {
     return sumCertain(new Sum()).value;
   }
   
-  static final class TripleStriped implements Integral64 {
+  final class TripleStriped implements Integral64 {
     private final LongAdder intents = new LongAdder();
     private final LongAdder completes = new LongAdder();
     private final LongAdder value = new LongAdder();
@@ -87,7 +87,7 @@ public interface Integral64 {
     }
   }
   
-  static final class Atomic implements Integral64 {
+  final class Atomic implements Integral64 {
     private final AtomicLong value = new AtomicLong();
 
     @Override

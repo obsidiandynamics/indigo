@@ -125,7 +125,7 @@ public final class ActorExecutorTest {
    *  
    *  This test uses {@link ActorExecutor#submit(Runnable, Object)} with a nominated return value.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testSubmitRunnableRandomOrder() throws InterruptedException {
@@ -164,7 +164,7 @@ public final class ActorExecutorTest {
    *  
    *  This test uses {@link ActorExecutor#submit(Callable)}.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testSubmitCallableRandomOrder() throws InterruptedException {
@@ -204,7 +204,7 @@ public final class ActorExecutorTest {
    *  
    *  This test uses {@link ActorExecutor#execute(Runnable)}.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testExecuteRunnableRandomOrder() throws InterruptedException {
@@ -245,7 +245,7 @@ public final class ActorExecutorTest {
    *  
    *  This test uses {@link ActorExecutor#submit(Runnable)}.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testSubmitLinearRunnableDeterministicOrder() throws InterruptedException {
@@ -290,7 +290,7 @@ public final class ActorExecutorTest {
    *  
    *  This test uses {@link ActorExecutor#submit(Runnable)}.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testSubmitHashedRunnableDeterministicOrder() throws InterruptedException {
@@ -335,7 +335,7 @@ public final class ActorExecutorTest {
    *  
    *  This test uses {@link ActorExecutor#submit(Callable)} and also adds bias to the agent actors.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testSubmitLinearCallableDeterministicOrderAndBias() throws InterruptedException {
@@ -378,10 +378,10 @@ public final class ActorExecutorTest {
   }
 
   /**
-   *  A variant of {@link #testSubmitLinearCallableDeterministicOrderAndBiasWithRandomTimings()} that
+   *  A variant of {@code testSubmitLinearCallableDeterministicOrderAndBiasWithRandomTimings()} that
    *  introduces a random delay in the execution of each task.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testSubmitLinearCallableDeterministicOrderAndBiasWithRandomTimings() throws InterruptedException {
@@ -432,7 +432,7 @@ public final class ActorExecutorTest {
    *  
    *  This test uses {@link ActorExecutor#execute(Runnable)}.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testExecuteLinearRunnableDeterministicOrder() throws InterruptedException {
@@ -471,7 +471,7 @@ public final class ActorExecutorTest {
    *  Submits tasks after the executor has been shut down, and verifies that the tasks have been
    *  cancelled.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testSubmitAfterShutdown() throws InterruptedException {
@@ -498,7 +498,7 @@ public final class ActorExecutorTest {
    *  Awaits termination on an executor that is still running (not shut down) in the
    *  main thread and times out while waiting.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testAwaitTerminationWhileRunningWithTimeout() throws InterruptedException {
@@ -513,7 +513,7 @@ public final class ActorExecutorTest {
    *  thread with a single task that terminates the executor shortly after launching. 
    *  The main thread will eventually await the termination condition.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testAwaitTerminationWhileRunningWithSuccess() throws InterruptedException {
@@ -532,7 +532,7 @@ public final class ActorExecutorTest {
    *  Invokes {@link ActorExecutor#shutdownNow()} with pending tasks using the default 
    *  behaviour (to interrupt running tasks) and verifies that they have been cancelled.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testShutdownNowCancelPendingTasksWithInterrupt() throws InterruptedException {
@@ -576,7 +576,7 @@ public final class ActorExecutorTest {
    *  Invokes {@link ActorExecutor#shutdownNow(boolean)} with pending tasks without interrupting
    *  them and verifies that they have been cancelled.
    *  
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testShutdownNowCancelPendingTasksWithoutInterrupt() throws InterruptedException {
@@ -586,7 +586,7 @@ public final class ActorExecutorTest {
     
     final CyclicBarrier startBarrier = new CyclicBarrier(2);
     final CyclicBarrier endBarrier = new CyclicBarrier(2);
-    final ArrayList<LinearFutureTask<?>> tasks = new ArrayList<LinearFutureTask<?>>(numTasks);
+    final ArrayList<LinearFutureTask<?>> tasks = new ArrayList<>(numTasks);
     for (int i = 0; i < numTasks; i++) {
       tasks.add(executor.submit(LinearRunnable.decorate(() -> {
         Threads.await(startBarrier);
@@ -623,8 +623,8 @@ public final class ActorExecutorTest {
    *  Awaits for pending tasks after executor shutdown, where the task is blocked,
    *  resulting in a timeout.
    *  
-   *  @throws InterruptedException
-   *  @throws TimeoutException 
+   *  @throws InterruptedException If the thread was interrupted.
+   *  @throws TimeoutException If a timeout occurred.
    */
   @Test
   public void testShutdownAndAwaitPendingTasksWithTimeout() throws InterruptedException, TimeoutException {
@@ -665,7 +665,7 @@ public final class ActorExecutorTest {
    *  Awaits for pending tasks after executor shutdown, where the task eventually completes
    *  with an error.
    *
-   *  @throws InterruptedException
+   *  @throws InterruptedException If the thread was interrupted.
    */
   @Test
   public void testShutdownAndAwaitPendingTasksWithError() throws InterruptedException {
@@ -697,8 +697,8 @@ public final class ActorExecutorTest {
    *  Tests the repeat cancellation of a task, specifically that a redundant 
    *  cancellation has no adverse affects.
    *  
-   *  @throws InterruptedException
-   *  @throws TimeoutException
+   *  @throws InterruptedException If the thread was interrupted.
+   *  @throws TimeoutException If a timeout occurred.
    */
   @Test
   public void testCancelTaskTwice() throws InterruptedException, TimeoutException {
@@ -742,8 +742,8 @@ public final class ActorExecutorTest {
   /**
    *  Tests a scenario where a task completes with an error.
    *  
-   *  @throws InterruptedException
-   *  @throws TimeoutException
+   *  @throws InterruptedException If the thread was interrupted.
+   *  @throws TimeoutException If a timeout occurred.
    */
   @Test
   public void testTaskError() throws InterruptedException, TimeoutException {

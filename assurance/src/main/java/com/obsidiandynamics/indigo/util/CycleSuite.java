@@ -15,15 +15,15 @@ public final class CycleSuite extends Suite {
   @Target(ElementType.TYPE)
   @Inherited
   public @interface ParameterMatrix {
-    public String[] keys();
-    public ParameterValues[] values();
+    String[] keys();
+    ParameterValues[] values();
   }
   
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.ANNOTATION_TYPE)
   @Inherited
   public @interface ParameterValues {
-    public String[] value();
+    String[] value();
   }
   
   private static final class Parameter {
@@ -130,7 +130,7 @@ public final class CycleSuite extends Suite {
         }
 
         private String paramsToString(Parameter[] params) {
-          return Arrays.asList(params).stream().map(p -> p.value).collect(Collectors.toList()).toString();
+          return Arrays.stream(params).map(p -> p.value).collect(Collectors.toList()).toString();
         }
       };
       return new ParametrisedRunner(r, params);

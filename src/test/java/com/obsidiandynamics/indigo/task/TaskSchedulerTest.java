@@ -7,6 +7,7 @@ import static org.awaitility.Awaitility.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import org.awaitility.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
@@ -67,7 +68,7 @@ public final class TaskSchedulerTest implements TestSupport {
       scheduler.schedule(task);
     }
    
-    await().atMost(10, SECONDS).until(receiver.isSize(tasks));
+    Awaitility.await().atMost(10, SECONDS).until(receiver.isSize(tasks));
     assertEquals(ids, receiver.ids);
   }
   
@@ -78,7 +79,7 @@ public final class TaskSchedulerTest implements TestSupport {
     scheduler.interrupt();
     scheduler.schedule(task);
     assertEquals(0, receiver.ids.size());
-    await().atMost(10, SECONDS).until(() -> ! scheduler.isAlive());
+    Awaitility.await().atMost(10, SECONDS).until(() -> ! scheduler.isAlive());
   }
 
   @Test
@@ -89,14 +90,14 @@ public final class TaskSchedulerTest implements TestSupport {
   private void testForceExecute(int tasks) {
     final List<UUID> ids = new ArrayList<>(tasks); 
     for (int i = 0; i < tasks; i++) {
-      final TestTask task = doIn(60_000 + i * 1_000);
+      final TestTask task = doIn(60_000 + i * 1_000L);
       ids.add(task.getId());
       scheduler.schedule(task);
     }
    
     assertEquals(0, receiver.ids.size());
     scheduler.forceExecute();
-    await().atMost(10, SECONDS).until(receiver.isSize(tasks));
+    Awaitility.await().atMost(10, SECONDS).until(receiver.isSize(tasks));
     assertEquals(ids, receiver.ids);
   }
   
@@ -114,7 +115,7 @@ public final class TaskSchedulerTest implements TestSupport {
   private void testAbort(int tasks) {
     final List<TestTask> timeouts = new ArrayList<>(tasks); 
     for (int i = 0; i < tasks; i++) {
-      final TestTask task = doIn(60_000 + i * 1_000);
+      final TestTask task = doIn(60_000 + i * 1_000L);
       timeouts.add(task);
       scheduler.schedule(task);
     }
@@ -139,7 +140,7 @@ public final class TaskSchedulerTest implements TestSupport {
   private void testEarlyExecute(int tasks) {
     final List<TestTask> timeouts = new ArrayList<>(tasks); 
     for (int i = 0; i < tasks; i++) {
-      final TestTask task = doIn(60_000 + i * 1_000);
+      final TestTask task = doIn(60_000 + i * 1_000L);
       timeouts.add(task);
       scheduler.schedule(task);
     }
@@ -155,7 +156,7 @@ public final class TaskSchedulerTest implements TestSupport {
   }
   
   private TestTask doIn(long millis) {
-    return new TestTask(System.nanoTime() + millis * 1_000_000l, 
+    return new TestTask(System.nanoTime() + millis * 1_000_000L,
                         UUID.randomUUID(),
                         receiver);
   }

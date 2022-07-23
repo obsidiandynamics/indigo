@@ -81,7 +81,7 @@ public class MessageBuilder {
       activation.pending.put(requestId, req);
       
       if (timeoutMillis != 0) {
-        timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000l,
+        timeoutTask = new TimeoutTask(System.nanoTime() + timeoutMillis * 1_000_000L,
                                       requestId,
                                       activation.ref,
                                       activation.system);

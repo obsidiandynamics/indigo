@@ -4,12 +4,13 @@ import static com.obsidiandynamics.indigo.ActorSystemConfig.ExceptionHandlerChoi
 import static com.obsidiandynamics.indigo.util.IndigoTestSupport.*;
 import static java.util.concurrent.TimeUnit.*;
 import static junit.framework.TestCase.*;
-import static org.awaitility.Awaitility.*;
+import static org.junit.Assert.*;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import org.awaitility.*;
 import org.junit.*;
 
 import com.obsidiandynamics.indigo.util.*;
@@ -55,7 +56,7 @@ public final class EgressTest implements IndigoTestSupport {
       }), parallel)
       .withExecutor("custom")
       .ask(s.value).onResponse(r -> {
-        assertFalse("Driven by an external thread", Thread.currentThread().getName().equals(EXTERNAL));
+            assertNotEquals("Driven by an external thread", EXTERNAL, Thread.currentThread().getName());
         
         final int res = r.body();
         if (res == runs) {
@@ -94,10 +95,10 @@ public final class EgressTest implements IndigoTestSupport {
     system
     .addExecutor(EXECUTOR).named("custom")
     .ingress().times(runs).act((a, i) -> {
-      egressMode(a.<Integer>egress(in -> received.add(in)), parallel)
+      egressMode(a.<Integer>egress(received::add), parallel)
       .withExecutor("custom")
       .ask(i)
-      .onResponse(r -> assertNull(r.body()));
+      .onResponse(r -> Assert.assertNull(r.body()));
     })
     .drain(0);
     
@@ -123,7 +124,7 @@ public final class EgressTest implements IndigoTestSupport {
       egressMode(a.egress(() -> { received.incrementAndGet(); }), parallel)
       .withExecutor("custom")
       .ask()
-      .onResponse(r -> assertNull(r.body()));
+      .onResponse(r -> Assert.assertNull(r.body()));
     })
     .drain(0);
     
@@ -152,7 +153,7 @@ public final class EgressTest implements IndigoTestSupport {
     })
     .drain(0);
     
-    if (parallel) await().atMost(10, SECONDS).until(() -> received.get() == runs);
+    if (parallel) Awaitility.await().atMost(10, SECONDS).until(() -> received.get() == runs);
     assertEquals(runs, received.get());
   }
 
@@ -177,12 +178,12 @@ public final class EgressTest implements IndigoTestSupport {
       .withExecutor("custom")
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
-      .onResponse(r -> assertNull(r.body()));
+      .onResponse(r -> Assert.assertNull(r.body()));
     });
     
     try {
       system.drain(0);
-      fail("Failed to catch UnhandledMultiException");
+      Assert.fail("Failed to catch UnhandledMultiException");
     } catch (UnhandledMultiException e) {
       assertEquals(1, e.getErrors().length);
       assertIllegalArgumentException(e.getErrors()[0]);
@@ -207,10 +208,10 @@ public final class EgressTest implements IndigoTestSupport {
     system
     .addExecutor(EXECUTOR).named("custom")
     .ingress().times(runs).act((a, i) -> {
-      egressMode(a.egress(() -> received.incrementAndGet()), parallel)
+      egressMode(a.egress(received::incrementAndGet), parallel)
       .withExecutor("custom")
       .ask()
-      .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
+      .onResponse(r -> Assert.assertEquals(Integer.class, r.body().getClass()));
     })
     .drain(0);
     
@@ -233,7 +234,7 @@ public final class EgressTest implements IndigoTestSupport {
     
     system.ingress().times(runs).act((a, i) -> {
       egressMode(a.egressAsync(in -> {
-        assertNull(in);
+        Assert.assertNull(in);
         final int newVal = received.incrementAndGet();
         final CompletableFuture<Integer> f = new CompletableFuture<>();
         Threads.asyncDaemon(() -> {
@@ -243,7 +244,7 @@ public final class EgressTest implements IndigoTestSupport {
         return f;
       }), parallel)
       .ask()
-      .onResponse(r -> assertEquals(Integer.class, r.body().getClass()));
+      .onResponse(r -> Assert.assertEquals(Integer.class, r.body().getClass()));
     })
     .drain(0);
     
@@ -268,16 +269,16 @@ public final class EgressTest implements IndigoTestSupport {
     system
     .addExecutor(EXECUTOR).named("custom")
     .ingress(a -> {
-      egressMode(a.egress(() -> received.incrementAndGet()), parallel)
+      egressMode(a.egress(received::incrementAndGet), parallel)
       .withExecutor("custom")
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
-      .onResponse(r -> assertNull(r.body()));
+      .onResponse(r -> Assert.assertNull(r.body()));
     });
     
     try {
       system.drain(0);
-      fail("Failed to catch UnhandledMultiException");
+      Assert.fail("Failed to catch UnhandledMultiException");
     } catch (UnhandledMultiException e) {
       assertEquals(1, e.getErrors().length);
       assertIllegalArgumentException(e.getErrors()[0]);
@@ -304,12 +305,12 @@ public final class EgressTest implements IndigoTestSupport {
       egressMode(a.egressAsync(() -> CompletableFuture.completedFuture(received.incrementAndGet())), parallel)
       .ask("foo")
       .onFault(f -> assertIllegalArgumentException(f.getReason()))
-      .onResponse(r -> assertNull(r.body()));
+      .onResponse(r -> Assert.assertNull(r.body()));
     });
     
     try {
       system.drain(0);
-      fail("Failed to catch UnhandledMultiException");
+      Assert.fail("Failed to catch UnhandledMultiException");
     } catch (UnhandledMultiException e) {
       assertEquals(1, e.getErrors().length);
       assertIllegalArgumentException(e.getErrors()[0]);
@@ -326,7 +327,7 @@ public final class EgressTest implements IndigoTestSupport {
     system.ingress(a -> {
       for (int i = 0; i < runs; i++) {
         a.egress(_i -> {
-          assertEquals(s.value, _i);
+          Assert.assertEquals(s.value, _i);
           s.value++;
         })
         .withCommonPool()
@@ -339,7 +340,7 @@ public final class EgressTest implements IndigoTestSupport {
   }
   
   private void assertIllegalArgumentException(Throwable t) {
-    assertEquals(IllegalArgumentException.class, t.getClass());
+    Assert.assertEquals(IllegalArgumentException.class, t.getClass());
     assertEquals("Cannot pass a value to this egress lambda", t.getMessage());
   }
 }

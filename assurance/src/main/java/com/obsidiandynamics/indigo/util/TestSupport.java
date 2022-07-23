@@ -24,14 +24,14 @@ public interface TestSupport {
     final long started = System.nanoTime();
     r.run();
     final long took = System.nanoTime() - started;
-    return took / 1_000_000l;
+    return took / 1_000_000L;
   }
 
   static long tookThrowing(CheckedRunnable<Throwable> r) throws Throwable {
     final long started = System.nanoTime();
     r.run();
     final long took = System.nanoTime() - started;
-    return took / 1_000_000l;
+    return took / 1_000_000L;
   }
 
   static void sleep(long millis) {

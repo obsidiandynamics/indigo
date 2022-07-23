@@ -19,55 +19,39 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 public class VKBatchActor { // Visibility is achieved by volatile-piggybacking of reads+writes to "on"
-  public static interface Effect extends Function<Behavior, Behavior> { }; // An Effect returns a Behavior given a Behavior
-  public static interface Behavior extends Function<Object, Effect> { }; // A Behavior is a message (Object) which returns the behavior for the next message
+  public interface Effect extends Function<Behavior, Behavior> { } // An Effect returns a Behavior given a Behavior
+  public interface Behavior extends Function<Object, Effect> { } // A Behavior is a message (Object) which returns the behavior for the next message
 
-  public static interface Address { 
+  public interface Address {
     Address tell(Object msg); 
-  }; // An Address is somewhere you can send messages
+  } // An Address is somewhere you can send messages
 
   static abstract class AtomicRunnableAddress implements Runnable, Address { 
     protected final AtomicInteger on = new AtomicInteger(); 
-  }; // Defining a composite of AtomcInteger, Runnable and Address
+  } // Defining a composite of AtomcInteger, Runnable and Address
 
-  public final static Effect become(final Behavior behavior) { 
-    return new Effect() { 
-      @Override public Behavior apply(Behavior old) { 
-        return behavior; 
-      } 
-    }; 
+  public static Effect become(final Behavior behavior) {
+    return old -> behavior;
   } // Become is an Effect that returns a captured Behavior no matter what the old Behavior is
 
-  public final static Effect stay = new Effect() { 
-    @Override public Behavior apply(Behavior old) { 
-      return old; 
-    } 
-  }; // Stay is an Effect that returns the old Behavior when applied.
+  public final static Effect stay = old -> old; // Stay is an Effect that returns the old Behavior when applied.
 
-  public final static Effect die = become(new Behavior() { 
-    @Override public Effect apply(Object msg) { 
-      return stay; 
-    } 
-  }); // Die is an Effect which replaces the old Behavior with a new one which does nothing, forever.
+  public final static Effect die = become(msg -> stay); // Die is an Effect which replaces the old Behavior with a new one which does nothing, forever.
 
   public static Address create(final Function<Address, Behavior> initial, final Executor e) {
     final Address a = new AtomicRunnableAddress() {
       private final Queue<Object> mb = new ConcurrentLinkedQueue<>();
 
-      private Behavior behavior = new Behavior() { 
-        @Override public Effect apply(Object msg) { 
-          return (msg instanceof Address) ? become(initial.apply((Address)msg)) : stay; 
-        } 
-      };
+      private Behavior behavior = msg -> (msg instanceof Address) ? become(initial.apply((Address)msg)) : stay;
 
-      @Override public final Address tell(Object msg) { 
+      @Override public Address tell(Object msg) {
         if (mb.add(msg)) {
           async(); 
         }
         return this; 
       }
 
-      @Override public final void run() { 
+      @Override public void run() {
         if(on.get() == 1) { 
           try {
             while (true) {
@@ -85,7 +69,7 @@ public class VKBatchActor { // Visibility is achieved by volatile-piggybacking o
         }
       }
 
-      private final void async() { 
+      private void async() {
         if(!mb.isEmpty() && on.compareAndSet(0, 1)) {
           try { 
             e.execute(this); 

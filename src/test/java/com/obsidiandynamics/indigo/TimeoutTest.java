@@ -27,7 +27,7 @@ public final class TimeoutTest implements TestSupport {
     }
   }
   
-  private static final long generateRandomTimeout() {
+  private static long generateRandomTimeout() {
     final int range = MAX_TIMEOUT - MIN_TIMEOUT;
     return MIN_TIMEOUT + (int) (Math.random() * range);
   }

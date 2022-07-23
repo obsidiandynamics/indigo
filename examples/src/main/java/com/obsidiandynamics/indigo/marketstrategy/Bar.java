@@ -19,23 +19,23 @@ public final class Bar {
     this.close = close;
   }
 
-  final String getSymbol() {
+  String getSymbol() {
     return symbol;
   }
 
-  final float getOpen() {
+  float getOpen() {
     return open;
   }
 
-  final float getHigh() {
+  float getHigh() {
     return high;
   }
 
-  final float getLow() {
+  float getLow() {
     return low;
   }
 
-  final float getClose() {
+  float getClose() {
     return close;
   }
 

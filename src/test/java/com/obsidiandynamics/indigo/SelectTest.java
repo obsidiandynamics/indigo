@@ -12,9 +12,9 @@ import com.obsidiandynamics.indigo.util.*;
 public final class SelectTest implements TestSupport {
   private static final String SINK = "sink";
   
-  private final class Foo {}
+  private static final class Foo {}
   
-  private final class Bar {}
+  private static final class Bar {}
   
   private ActorSystem system;
   

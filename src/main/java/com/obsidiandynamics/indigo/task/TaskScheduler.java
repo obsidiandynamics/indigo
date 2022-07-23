@@ -9,13 +9,13 @@ import java.util.concurrent.*;
 public final class TaskScheduler extends Thread {
   /** Maximum sleep time. If the next task's time is longer, the sleep will be performed in a loop.
    *  This is also the default time that the scheduler sleeps for if it has no pending tasks. */
-  private static final long MAX_SLEEP_NANOS = 1_000_000_000l;
+  private static final long MAX_SLEEP_NANOS = 1_000_000_000L;
   
   /** Minimum sleep time. Below this threshold sleeping isn't worthwhile. */
-  private static final long MIN_SLEEP_NANOS = 1_000_000l;
+  private static final long MIN_SLEEP_NANOS = 1_000_000L;
   
   /** Compensation for the overhead of scheduling a task. */
-  private static final long ADJ_NANOS = 500_000l;
+  private static final long ADJ_NANOS = 500_000L;
   
   /** List of pending tasks, ordered with the most immediate at the head. */
   private final SortedSet<Task<?>> tasks = new ConcurrentSkipListSet<>();
@@ -23,7 +23,7 @@ public final class TaskScheduler extends Thread {
   /** Lock for the scheduler thread to sleep on; can be used to wake the thread. */
   private final Object sleepLock = new Object();
   
-  /** The time when the thread should be woken, in absolute nanoseconds. See {@link System.nanoTime()}. */
+  /** The time when the thread should be woken, in absolute nanoseconds. See {@link System#nanoTime()}. */
   private volatile long nextWake;
   
   /** Whether the scheduler thread should be running. */
@@ -112,8 +112,8 @@ public final class TaskScheduler extends Thread {
         final long timeDiff = Math.min(MAX_SLEEP_NANOS, nextWake - System.nanoTime() - ADJ_NANOS);
         try {
           if (timeDiff >= MIN_SLEEP_NANOS) {
-            final long millis = timeDiff / 1_000_000l;
-            final int nanos = (int) (timeDiff - millis * 1_000_000l);
+            final long millis = timeDiff / 1_000_000L;
+            final int nanos = (int) (timeDiff - millis * 1_000_000L);
             sleepLock.wait(millis, nanos);
           } else {
             break;

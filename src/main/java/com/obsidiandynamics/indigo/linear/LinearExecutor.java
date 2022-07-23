@@ -35,7 +35,7 @@ public interface LinearExecutor extends ExecutorService {
    *  @param mayInterruptIfRunning Whether the aborted tasks should be interrupted.
    *  @return A {@link List} of pending {@link LinearFutureTask}s.
    */
-  public List<LinearFutureTask<?>> shutdownNow(boolean mayInterruptIfRunning);
+  List<LinearFutureTask<?>> shutdownNow(boolean mayInterruptIfRunning);
 
   /**
    *  Obtains a count of the number of submitted tasks that are still pending 

@@ -45,7 +45,7 @@ public final class ParallelConsistencyTest implements IndigoTestSupport {
       bias = 1;
     }})
     .cue((a, m) -> {
-      final ActorRef target = ActorRef.of(SINK, String.valueOf(Integer.valueOf(a.self().key()) % actors));
+      final ActorRef target = ActorRef.of(SINK, String.valueOf(Integer.parseInt(a.self().key()) % actors));
       for (int j = 1; j <= runs; j++) {
         a.to(target).tell(j);
       }
@@ -60,7 +60,7 @@ public final class ParallelConsistencyTest implements IndigoTestSupport {
     .cue(() -> new int[fanIn], (a, m, s) -> {
       final int msg = m.body();
       log("got %d from %s\n", msg, m.from());
-      final int actor = Integer.valueOf(m.from().key()) / actors;
+      final int actor = Integer.parseInt(m.from().key()) / actors;
       assertEquals(s[actor] + 1, msg);
       s[actor] = msg;
 

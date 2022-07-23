@@ -43,7 +43,7 @@ final class Reaper {
   
   private void scheduleNext() {
     if (isReapingEnabled() && ! system.isShuttingDown()) {
-      final long nextReap = System.nanoTime() + system.getConfig().reaperPeriodMillis * 1_000_000l;
+      final long nextReap = System.nanoTime() + system.getConfig().reaperPeriodMillis * 1_000_000L;
       system.getBackgroundScheduler().schedule(new Task<Long>(nextReap, Crypto.machineRandom()) {
         @Override protected void execute() {
           Threads.asyncDaemon(Reaper.this::reapAndReschedule, "Reaper-" + system.getIdAsHex());

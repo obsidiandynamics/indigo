@@ -77,7 +77,7 @@ public final class JvmVersionProviderTest implements TestSupport {
         assertEquals(1, version.build);
         
         customErr.flush();
-        output = new String(out.toByteArray());
+        output = out.toString();
         log("output is %s\n", output);
         assertTrue("output=" + output, output.startsWith("WARNING"));
       } finally {
