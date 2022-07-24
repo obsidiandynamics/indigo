@@ -1,6 +1,6 @@
 commands:
-  build: ./gradlew test --info --stacktrace --no-daemon
-  publish: ./gradlew setBuild && ./gradlew -x test bintrayUpload --no-daemon
+  build: ./gradlew build --info --stacktrace --no-daemon
+  publish: ./gradlew setBuild && ./gradlew -x test publishToSonatype closeAndReleaseSonatypeStagingRepository --no-daemon
 modules:
 - path: .
   dependencies:
